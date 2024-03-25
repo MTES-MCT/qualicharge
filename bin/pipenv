@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+
+set -eo pipefail
+
+docker compose run --rm -u "pipenv:pipenv" api pipenv "$@"
+docker compose build api
