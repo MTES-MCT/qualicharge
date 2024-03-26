@@ -5,30 +5,29 @@ name: Python application
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 permissions:
   contents: read
 
 jobs:
-
   build-api:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-    - name: Install Pipenv
-      run: pipx install pipenv
-    - name: Set up Python 3.12
-      uses: actions/setup-python@v5
-      with:
-        python-version: "3.12"
-        cache: "pipenv"
-    - name: Install dependencies
-      run: |
-        cd src/api
-        pipenv install -de .
+      - uses: actions/checkout@v4
+      - name: Install Pipenv
+        run: pipx install pipenv
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pipenv"
+      - name: Install dependencies
+        run: |
+          cd src/api
+          pipenv install -de .
 
   lint-api:
     needs: build-api
@@ -37,20 +36,20 @@ jobs:
       run:
         working-directory: ./src/api
     steps:
-    - uses: actions/checkout@v4
-    - name: Install pipenv
-      run: pipx install pipenv
-    - name: Set up Python 3.12
-      uses: actions/setup-python@v5
-      with:
-        python-version: "3.12"
-        cache: "pipenv"
-    - name: Lint with Black
-      run: pipenv run black qualicharge tests
-    - name: Lint with Ruff
-      run: pipenv run ruff check qualicharge tests
-    - name: Lint with MyPy
-      run: pipenv run mypy qualicharge tests
+      - uses: actions/checkout@v4
+      - name: Install pipenv
+        run: pipx install pipenv
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pipenv"
+      - name: Lint with Black
+        run: pipenv run black qualicharge tests
+      - name: Lint with Ruff
+        run: pipenv run ruff check qualicharge tests
+      - name: Lint with MyPy
+        run: pipenv run mypy qualicharge tests
 
   test-api:
     needs: build-api
@@ -59,13 +58,13 @@ jobs:
       run:
         working-directory: ./src/api
     steps:
-    - uses: actions/checkout@v4
-    - name: Install pipenv
-      run: pipx install pipenv
-    - name: Set up Python 3.12
-      uses: actions/setup-python@v5
-      with:
-        python-version: "3.12"
-        cache: "pipenv"
-    - name: Test with pytest
-      run: pipenv run pytest
+      - uses: actions/checkout@v4
+      - name: Install pipenv
+        run: pipx install pipenv
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pipenv"
+      - name: Test with pytest
+        run: pipenv run pytest
