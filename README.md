@@ -43,6 +43,18 @@ Les services qualicharge doivent maintenant tourner sur votre poste :
 - la documentation de l'API est accessible sur :
   [http://localhost:8010/api/v1/docs](http://localhost:8010/api/v1/docs)
 
+Pour linter le code source, le point d'entrée est :
+
+```
+make lint
+```
+
+Et enfin, pour lancer les tests du projet :
+
+```
+make test
+```
+
 ## Licence
 
 QualiCharge est distribué selon les termes de la licence MIT (voir le fichier

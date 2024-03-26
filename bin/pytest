@@ -10,4 +10,4 @@ DOCKER_USER="${DOCKER_UID}:${DOCKER_GID}"
 DOCKER_USER=${DOCKER_USER} \
   DOCKER_UID=${DOCKER_UID} \
   DOCKER_GID=${DOCKER_GID} \
-  docker compose run --rm api pytest "$@"
+  docker compose run --rm api pipenv run pytest "$@"

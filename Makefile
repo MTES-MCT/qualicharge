@@ -2,9 +2,10 @@
 SHELL := /bin/bash
 
 # -- Docker
-COMPOSE              = bin/compose
-COMPOSE_RUN          = $(COMPOSE) run --rm --no-deps
-COMPOSE_RUN_API      = $(COMPOSE_RUN) api
+COMPOSE                = bin/compose
+COMPOSE_RUN            = $(COMPOSE) run --rm --no-deps
+COMPOSE_RUN_API        = $(COMPOSE_RUN) api
+COMPOSE_RUN_API_PIPENV = $(COMPOSE_RUN_API) pipenv run
 
 # ==============================================================================
 # RULES
@@ -47,22 +48,22 @@ lint: \
 
 lint-black: ## lint api python sources with black
 	@echo 'lint:black started…'
-	@$(COMPOSE_RUN_API) black qualicharge tests
+	@$(COMPOSE_RUN_API_PIPENV) black qualicharge tests
 .PHONY: lint-black
 
 lint-ruff: ## lint api python sources with ruff
 	@echo 'lint:ruff started…'
-	@$(COMPOSE_RUN_API) ruff check qualicharge tests
+	@$(COMPOSE_RUN_API_PIPENV) ruff check qualicharge tests
 .PHONY: lint-ruff
 
 lint-ruff-fix: ## lint and fix api python sources with ruff
 	@echo 'lint:ruff-fix started…'
-	@$(COMPOSE_RUN_API) ruff check --fix qualicharge tests
+	@$(COMPOSE_RUN_API_PIPENV) ruff check --fix qualicharge tests
 .PHONY: lint-ruff-fix
 
 lint-mypy: ## lint api python sources with mypy
 	@echo 'lint:mypy started…'
-	@$(COMPOSE_RUN_API) mypy qualicharge tests
+	@$(COMPOSE_RUN_API_PIPENV) mypy qualicharge tests
 .PHONY: lint-mypy
 
 test: ## run tests
@@ -73,4 +74,3 @@ test: ## run tests
 help:
 	@grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 .PHONY: help
-
