@@ -8,8 +8,11 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.1.0] - 2024-03-26
+
 ### Added
 
 - Implement base FastAPI app
 
-[unreleased]: https://github.com/MTES-MCT/qualicharge/compare/dc6a9e2...HEAD
+[unreleased]: https://github.com/MTES-MCT/qualicharge/compare/v0.1.0...main
+[0.1.0]: https://github.com/MTES-MCT/qualicharge/compare/dc6a9e2...v0.1.0
