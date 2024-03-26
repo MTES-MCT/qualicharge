@@ -5,6 +5,9 @@ name = "pypi"
 
 [packages]
 setuptools = "==69.2.0"
+fastapi = "==0.110.0"
+uvicorn = {extras = ["standard"], version = "==0.29.0"}
+pydantic-settings = "==2.2.1"
 
 [dev-packages]
 honcho = "==1.1.0"
