@@ -2,5 +2,24 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     "config:recommended"
-  ]
+  ],
+  "commitBodyTable": true,
+  "commitMessageAction": "upgrade",
+  "commitMessagePrefix": "⬆️(project)",
+  "commitMessageTopic": "{{depName}}",
+  "packageRules": [
+    {
+      "groupName": "python dependencies",
+      "matchManagers": ["setup-cfg", "pep621"],
+      "schedule": ["before 7am on monday"],
+      "matchPackagePatterns": ["*"]
+    }
+  ],
+  "prConcurrentLimit": 2,
+  "prHourlyLimit": 2,
+  "prCreation": "immediate",
+  "semanticCommits": "disabled",
+  "separateMajorMinor": false,
+  "updateNotScheduled": true,
+  "rebaseWhen": "behind-base-branch"
 }
