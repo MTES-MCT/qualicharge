@@ -10,6 +10,39 @@ en analysant les données de supervision.
 Plus d'information sur la page dédiée à notre startup d'état 👉
 https://beta.gouv.fr/startups/qualicharge.html
 
+## Dépendances
+
+Pour travailler sur ce projet, vous aurez besoin d'installer les outils suivants
+sur votre poste de travail :
+
+- [Docker](https://www.docker.com)
+- [Docker compose](https://docs.docker.com/compose/)
+- [GNU Make](https://www.gnu.org/software/make/manual/make.html)
+
+## Démarrage rapide pour les développeurs
+
+Une fois le projet cloné, vous pouvez l'initier en utilisant la commande
+suivante :
+
+```
+make bootstrap
+```
+
+> 👉 Cette commande doit préparer votre environnement et builder les images
+> Docker nécessaires à l'initiation de votre environnement.
+
+Une fois votre environnement de travail initié, vous pouvez lancer le projet en
+utilisant :
+
+```
+make run
+```
+
+Les services qualicharge doivent maintenant tourner sur votre poste :
+
+- la documentation de l'API est accessible sur :
+  [http://localhost:8010/api/v1/docs](http://localhost:8010/api/v1/docs)
+
 ## Licence
 
 QualiCharge est distribué selon les termes de la licence MIT (voir le fichier
