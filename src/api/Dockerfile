@@ -41,7 +41,7 @@ RUN mkdir /app && \
 COPY --chown="${PIPENV_USER_NAME}:${PIPENV_GROUP_NAME}" . /app
 WORKDIR /app
 USER ${PIPENV_USER_NAME}:${PIPENV_GROUP_NAME}
-RUN pipenv install -d
+RUN pipenv install -de .
 
 # -- Run --
 CMD pipenv run honcho start
