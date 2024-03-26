@@ -21,7 +21,7 @@ sur votre poste de travail :
 
 ## Démarrage rapide pour les développeurs
 
-Une fois le projet cloné, vous pouvez l'initier en utilisant la commande
+Une fois le projet cloné, vous pouvez l'initialiser en utilisant la commande
 suivante :
 
 ```
@@ -29,16 +29,16 @@ make bootstrap
 ```
 
 > 👉 Cette commande doit préparer votre environnement et builder les images
-> Docker nécessaires à l'initiation de votre environnement.
+> Docker nécessaires au démarrage de votre environnement.
 
-Une fois votre environnement de travail initié, vous pouvez lancer le projet en
+Une fois votre environnement de travail initialisé, vous pouvez lancer le projet en
 utilisant :
 
 ```
 make run
 ```
 
-Les services qualicharge doivent maintenant tourner sur votre poste :
+Les services QualiCharge doivent maintenant tourner sur votre poste :
 
 - la documentation de l'API est accessible sur :
   [http://localhost:8010/api/v1/docs](http://localhost:8010/api/v1/docs)
