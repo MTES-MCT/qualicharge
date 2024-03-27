@@ -53,7 +53,5 @@ files = "./**/*.py"
 exclude = ["/tests/"]
 
 [[tool.mypy.overrides]]
-module = [
-    "py_ocpi.*",
-]
+module = []
 ignore_missing_imports = true
