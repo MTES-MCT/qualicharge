@@ -1,0 +1,3 @@
+POSTGRES_DB=qualicharge-api
+POSTGRES_USER=qualicharge
+POSTGRES_PASSWORD=pass

@@ -54,6 +54,20 @@ jobs:
   test-api:
     needs: build-api
     runs-on: ubuntu-latest
+    services:
+      postgresql:
+        image: postgres:14
+        env:
+          POSTGRES_DB: test-qualicharge-api
+          POSTGRES_USER: qualicharge
+          POSTGRES_PASSWORD: pass
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
     defaults:
       run:
         working-directory: ./src/api
@@ -68,3 +82,7 @@ jobs:
           cache: "pipenv"
       - name: Test with pytest
         run: pipenv run pytest
+        env:
+          QUALICHARGE_DB_HOST: localhost
+          QUALICHARGE_DB_NAME: test-qualicharge-api
+          QUALICHARGE_TEST_DB_NAME: test-qualicharge-api

@@ -1,12 +1,24 @@
 """QualiCharge API root."""
 
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from ..conf import settings
+from ..db import get_engine
 from .v1 import app as v1
 
-app = FastAPI()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Application life span."""
+    engine = get_engine()
+    yield
+    engine.dispose()
+
+
+app = FastAPI(lifespan=lifespan)
 
 
 app.add_middleware(

@@ -15,16 +15,26 @@ default: help
 # -- Docker/compose
 bootstrap: ## bootstrap the project for development
 bootstrap: \
-  build
+  build \
+  migrate-api \
+  create-api-test-db
 .PHONY: bootstrap
 
 build: ## build the app container(s)
 	$(COMPOSE) build
 .PHONY: build
 
-logs: ## display OCPI server logs (follow mode)
+down: ## stop and remove all containers
+	@$(COMPOSE) down
+.PHONY: down
+
+logs: ## display all services logs (follow mode)
 	@$(COMPOSE) logs -f
 .PHONY: logs
+
+logs-api: ## display API server logs (follow mode)
+	@$(COMPOSE) logs -f api
+.PHONY: logs-api
 
 run: ## run the whole stack
 	$(COMPOSE) up -d
@@ -38,7 +48,32 @@ stop: ## stop all servers
 	@$(COMPOSE) stop
 .PHONY: stop
 
-# -- OCPI
+# -- Provisioning
+create-api-test-db: ## create API test database
+	@echo "Creating api service test database…"
+	@$(COMPOSE) exec postgresql bash -c 'psql "postgresql://$${POSTGRES_USER}:$${POSTGRES_PASSWORD}@$${QUALICHARGE_DB_HOST}:$${QUALICHARGE_DB_PORT}/postgres" -c "create database \"$${QUALICHARGE_TEST_DB_NAME}\";"' || echo "Duly noted, skipping database creation."
+.PHONY: create-api-test-db
+
+drop-api-test-db: ## drop API test database
+	@echo "Droping api service test database…"
+	@$(COMPOSE) exec postgresql bash -c 'psql "postgresql://$${POSTGRES_USER}:$${POSTGRES_PASSWORD}@$${QUALICHARGE_DB_HOST}:$${QUALICHARGE_DB_PORT}/postgres" -c "drop database \"$${QUALICHARGE_TEST_DB_NAME}\";"' || echo "Duly noted, skipping database deletion."
+.PHONY: drop-api-test-db
+
+drop-api-db: ## drop API database
+	@echo "Droping api service database…"
+	@$(COMPOSE) exec postgresql bash -c 'psql "postgresql://$${POSTGRES_USER}:$${POSTGRES_PASSWORD}@$${QUALICHARGE_DB_HOST}:$${QUALICHARGE_DB_PORT}/postgres" -c "drop database \"$${QUALICHARGE_DB_NAME}\";"' || echo "Duly noted, skipping database deletion."
+.PHONY: drop-api-db
+
+migrate-api:  ## run alembic database migrations for the api service
+	@echo "Running api service database engine…"
+	@$(COMPOSE) up -d --wait postgresql
+	@echo "Creating api service database…"
+	@$(COMPOSE) exec postgresql bash -c 'psql "postgresql://$${POSTGRES_USER}:$${POSTGRES_PASSWORD}@$${QUALICHARGE_DB_HOST}:$${QUALICHARGE_DB_PORT}/postgres" -c "create database \"$${QUALICHARGE_DB_NAME}\";"' || echo "Duly noted, skipping database creation."
+	@echo "Running migrations for api service…"
+	@bin/alembic upgrade head
+.PHONY: migrate-api
+
+# -- API
 lint: ## lint api python sources
 lint: \
   lint-black \
