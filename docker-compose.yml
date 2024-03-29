@@ -32,3 +32,18 @@ services:
       - ./src/api:/app
     depends_on:
       - postgresql
+      - keycloak
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:24.0
+    env_file:
+      - env.d/keycloak
+    command: start-dev
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./bin/kc-init:/usr/local/bin/kc-init
+
+  # -- tools
+  dockerize:
+    image: jwilder/dockerize

@@ -10,6 +10,7 @@ and this project adheres to
 
 ## Added
 
+- Integrate OIDC support
 - Integrate PostgreSQL database persistency in an asynchronous context
 
 ## [0.1.0] - 2024-03-26
