@@ -84,5 +84,6 @@ jobs:
         run: pipenv run pytest
         env:
           QUALICHARGE_DB_HOST: localhost
+          # FIXME
           QUALICHARGE_DB_NAME: test-qualicharge-api
           QUALICHARGE_TEST_DB_NAME: test-qualicharge-api

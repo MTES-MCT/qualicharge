@@ -17,7 +17,8 @@ bootstrap: ## bootstrap the project for development
 bootstrap: \
   build \
   migrate-api \
-  create-api-test-db
+  create-api-test-db \
+  seed-oidc
 .PHONY: bootstrap
 
 build: ## build the app container(s)
@@ -72,6 +73,14 @@ migrate-api:  ## run alembic database migrations for the api service
 	@echo "Running migrations for api service…"
 	@bin/alembic upgrade head
 .PHONY: migrate-api
+
+seed-oidc:  ## seed the OIDC provider
+	@echo 'Starting OIDC provider…'
+	@$(COMPOSE) up -d keycloak
+	@$(COMPOSE_RUN) dockerize -wait http://keycloak:8080 -timeout 60s
+	@echo 'Seeding OIDC client…'
+	@$(COMPOSE) exec keycloak /usr/local/bin/kc-init
+.PHONY: seed-oidc
 
 # -- API
 lint: ## lint api python sources

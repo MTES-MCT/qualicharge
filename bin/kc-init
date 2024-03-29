@@ -1,0 +1,90 @@
+#!/usr/bin/env bash
+
+# This script will run at each keycload server startup to create:
+#
+#   - a dedicated realm
+#   - a test user for this realm
+#   - an OIDC client for the API
+#
+
+set -eo pipefail
+
+# Keycloak bin directory is not in the PATH
+function kcadm() {
+  /opt/keycloak/bin/kcadm.sh "$@"
+}
+
+# The new target realm
+declare realm="qualicharge"
+declare user="johndoe"
+declare password="pass"
+declare client_id="api"
+declare client_secret="super-secret"
+
+# Store admin credentials
+echo "⚙️ Setting up Keycloak server credentials…"
+kcadm config credentials \
+  --server http://localhost:8080 \
+  --realm master \
+  --user admin \
+  --password admin
+
+# Create QualiCharge realm
+echo "⚙️ Creating QualiCharge realm…"
+kcadm create realms \
+  --set realm="${realm}" \
+  --set enabled=true \
+  --output
+
+# Update realm configuration (disable required actions)
+echo "⚙️ Configure QualiCharge realm…"
+kcadm update /authentication/required-actions/VERIFY_PROFILE \
+  --target-realm "${realm}" \
+  --set enabled=false \
+  --output
+
+# Create test user
+echo "⚙️ Creating John Doe user…"
+kcadm create users \
+  --target-realm "${realm}" \
+  --set username="${user}" \
+  --set enabled=true \
+  --output \
+  --fields id,username
+
+# Set test user password
+echo "⚙️ Setting John Doe user password…"
+kcadm set-password \
+  --target-realm "${realm}" \
+  --username "${user}" \
+  --new-password "${password}"
+
+sleep 1
+
+# Create a client for the API
+echo "⚙️ creating api oidc client…"
+kcadm create clients \
+  --target-realm "${realm}" \
+  --set clientId="${client_id}" \
+  --set directAccessGrantsEnabled=true \
+  --output
+
+# Get client ID
+echo "⚙️ Getting api oidc client id…"
+declare api_id
+api_id=$( \
+  kcadm get clients \
+  -r qualicharge \
+  --fields id,clientId \
+  --format csv | \
+    grep "${client_id}" | \
+    cut -d "," -f 1 | \
+    tr -d '"'
+)
+
+# Set client client_secret
+echo "⚙️ Updating api oidc client secret…"
+kcadm update \
+  "clients/${api_id}" \
+  --target-realm "${realm}" \
+  --set secret="${client_secret}"
