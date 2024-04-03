@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "459eb5f9afaa486e224cbcb8bc8088f69bc39dd3046e133bf2ca9e424ae6903b"
+            "sha256": "b4d7a2c6dd6f512a84bcb3e2bf4f85d71123f984d1ea641f8be0d4eaacd37857"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -51,12 +51,12 @@
         },
         "fastapi": {
             "hashes": [
-                "sha256:266775f0dcc95af9d3ef39bad55cff525329a931d5fd51930aadd4f428bf7ff3",
-                "sha256:87a1f6fb632a218222c5984be540055346a8f5d8a68e8f6fb647b1dc9934de4b"
+                "sha256:5df913203c482f820d31f48e635e022f8cbfe7350e4830ef05a3163925b1addc",
+                "sha256:6feac43ec359dfe4f45b2c18ec8c94edb8dc2dfc461d417d9e626590c071baad"
             ],
             "index": "pypi",
             "markers": "python_version >= '3.8'",
-            "version": "==0.110.0"
+            "version": "==0.110.1"
         },
         "greenlet": {
             "hashes": [
@@ -581,11 +581,11 @@
         },
         "starlette": {
             "hashes": [
-                "sha256:13d429aa93a61dc40bf503e8c801db1f1bca3dc706b10ef2434a36123568f044",
-                "sha256:90a671733cfb35771d8cc605e0b679d23b992f8dcfad48cc60b38cb29aeb7080"
+                "sha256:6fe59f29268538e5d0d182f2791a479a0c64638e6935d1c6989e63fb2699c6ee",
+                "sha256:9af890290133b79fc3db55474ade20f6220a364a0402e0b556e7cd5e1e093823"
             ],
             "markers": "python_version >= '3.8'",
-            "version": "==0.36.3"
+            "version": "==0.37.2"
         },
         "typing-extensions": {
             "hashes": [
@@ -880,11 +880,11 @@
         },
         "httpcore": {
             "hashes": [
-                "sha256:ac418c1db41bade2ad53ae2f3834a3a0f5ae76b56cf5aa497d2d033384fc7d73",
-                "sha256:cb2839ccfcba0d2d3c1131d3c3e26dfc327326fbe7a5dc0dbfe9f6c9151bb022"
+                "sha256:34a38e2f9291467ee3b44e89dd52615370e152954ba21721378a87b2960f7a61",
+                "sha256:421f18bac248b25d310f3cacd198d55b8e6125c107797b609ff9b7a6ba7991b5"
             ],
             "markers": "python_version >= '3.8'",
-            "version": "==1.0.4"
+            "version": "==1.0.5"
         },
         "httpx": {
             "hashes": [

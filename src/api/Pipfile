@@ -5,7 +5,7 @@ name = "pypi"
 
 [packages]
 alembic = "==1.13.1"
-fastapi = "==0.110.0"
+fastapi = "==0.110.1"
 psycopg2-binary = "==2.9.9"
 pydantic-settings = "==2.2.1"
 setuptools = "==69.2.0"
