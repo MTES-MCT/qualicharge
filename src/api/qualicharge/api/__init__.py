@@ -18,7 +18,7 @@ async def lifespan(app: FastAPI):
     engine.dispose()
 
 
-app = FastAPI(lifespan=lifespan)
+app = FastAPI(title="QualiCharge", lifespan=lifespan)
 
 
 app.add_middleware(

@@ -5,9 +5,11 @@ name = "pypi"
 
 [packages]
 alembic = "==1.13.1"
+email-validator = "==2.1.1"
 fastapi = "==0.110.1"
 psycopg2-binary = "==2.9.9"
 pydantic-settings = "==2.2.1"
+python-jose = {extras = ["cryptography"], version = "==3.3.0"}
 setuptools = "==69.2.0"
 sqlmodel = "==0.0.16"
 uvicorn = {extras = ["standard"] }
@@ -20,6 +22,7 @@ polyfactory = "==2.15.0"
 pytest = "==8.1.1"
 pytest-httpx = "==0.30.0"
 ruff = "==0.3.5"
+types-python-jose = "==3.3.4.20240106"
 
 [requires]
 python_version = "3.12"
