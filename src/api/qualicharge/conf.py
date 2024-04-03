@@ -1,10 +1,14 @@
 """QualiCharge API settings."""
 
+import logging
 from pathlib import Path
 from typing import List
 
-from pydantic import computed_field
+from pydantic import AnyHttpUrl, PostgresDsn, computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# Configuration logger
+logger = logging.getLogger(__name__)
 
 
 class Settings(BaseSettings):
@@ -35,22 +39,53 @@ class Settings(BaseSettings):
 
     @computed_field  # type: ignore[misc]
     @property
-    def DATABASE_URL(self) -> str:
+    def DATABASE_URL(self) -> PostgresDsn:
         """Get the database URL as required by SQLAlchemy."""
-        return (
-            f"{self.DB_ENGINE}://"
-            f"{self.DB_USER}:{self.DB_PASSWORD}@"
-            f"{self.DB_HOST}/{self.DB_NAME}"
+        return PostgresDsn.build(
+            scheme=self.DB_ENGINE,
+            username=self.DB_USER,
+            password=self.DB_PASSWORD,
+            host=self.DB_HOST,
+            port=self.DB_PORT,
+            path=self.DB_NAME,
         )
 
     @computed_field  # type: ignore[misc]
     @property
-    def TEST_DATABASE_URL(self) -> str:
+    def TEST_DATABASE_URL(self) -> PostgresDsn:
         """Get the database URL as required by SQLAlchemy."""
-        return (
-            f"{self.DB_ENGINE}://"
-            f"{self.DB_USER}:{self.DB_PASSWORD}@"
-            f"{self.DB_HOST}/{self.TEST_DB_NAME}"
+        return PostgresDsn.build(
+            scheme=self.DB_ENGINE,
+            username=self.DB_USER,
+            password=self.DB_PASSWORD,
+            host=self.DB_HOST,
+            port=self.DB_PORT,
+            path=self.TEST_DB_NAME,
+        )
+
+    # OIDC
+    OIDC_PROVIDER_BASE_URL: AnyHttpUrl
+    OIDC_PROVIDER_DISCOVER_TIMEOUT: int = 5
+    OIDC_CONFIGURATION_PATH: Path = Path("/.well-known/openid-configuration")
+    # FIXME: we should be more specific
+    OIDC_EXPECTED_AUDIENCE: str = "account"
+
+    @computed_field  # type: ignore[misc]
+    @property
+    def OIDC_CONFIGURATION_URL(self) -> AnyHttpUrl:
+        """Get the OIDC provider configuration URL."""
+        if self.OIDC_PROVIDER_BASE_URL.host is None:
+            logger.warning(
+                "OIDC_PROVIDER_BASE_URL host is not defined. Defaulting to localhost."
+            )
+        host = self.OIDC_PROVIDER_BASE_URL.host or "localhost"
+
+        return AnyHttpUrl.build(
+            scheme=self.OIDC_PROVIDER_BASE_URL.scheme,
+            host=host,
+            port=self.OIDC_PROVIDER_BASE_URL.port,
+            path=(self.OIDC_PROVIDER_BASE_URL.path or "")
+            + f"/{self.OIDC_CONFIGURATION_PATH}",
         )
 
     model_config = SettingsConfigDict(

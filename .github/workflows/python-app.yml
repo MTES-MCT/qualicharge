@@ -84,6 +84,7 @@ jobs:
         run: pipenv run pytest
         env:
           QUALICHARGE_DB_HOST: localhost
-          # FIXME
           QUALICHARGE_DB_NAME: test-qualicharge-api
           QUALICHARGE_TEST_DB_NAME: test-qualicharge-api
+          # This is a fake setting required to run the app
+          QUALICHARGE_OIDC_PROVIDER_BASE_URL: http://localhost:8080/fake

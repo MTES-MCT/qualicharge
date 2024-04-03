@@ -3,6 +3,7 @@
 import logging
 from typing import Optional
 
+from pydantic import PostgresDsn
 from sqlalchemy import Engine as SAEngine
 from sqlalchemy import text
 from sqlalchemy.exc import OperationalError
@@ -31,11 +32,11 @@ class Engine(metaclass=Singleton):
 
     _engine: Optional[SAEngine] = None
 
-    def get_engine(self, url, echo=False) -> SAEngine:
+    def get_engine(self, url: PostgresDsn, echo: bool = False) -> SAEngine:
         """Get created engine or create a new one."""
         if self._engine is None:
             logger.debug("Create a new engine")
-            self._engine = create_engine(url, echo=echo)
+            self._engine = create_engine(str(url), echo=echo)
         logger.debug("Getting database engine %s", self._engine)
         return self._engine
 
@@ -45,7 +46,7 @@ class Session(metaclass=Singleton):
 
     _session: Optional[SMSession] = None
 
-    def get_session(self, engine) -> SMSession:
+    def get_session(self, engine: SAEngine) -> SMSession:
         """Get active session or create a new one."""
         if self._session is None:
             logger.debug("Create new session")

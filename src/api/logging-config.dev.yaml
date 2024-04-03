@@ -37,3 +37,8 @@ loggers:
       - default
     level: DEBUG
     propagate: false
+  qualicharge.auth.oidc:
+    handlers:
+      - default
+    level: DEBUG
+    propagate: true
