@@ -7,7 +7,7 @@ version = "0.1.0"
 
 # Third party packages configuration
 [tool.pytest.ini_options]
-addopts = "-v"
+addopts = "-v --cov-report term-missing --cov=qualicharge"
 python_files = [
     "test_*.py",
     "tests.py",
