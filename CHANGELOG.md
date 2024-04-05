@@ -8,9 +8,13 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Fixed
+
+- Add a custom exception handler for authentication failures
+
 ## [0.2.0] - 2024-04-05
 
-## Added
+### Added
 
 - Integrate OIDC support
 - Integrate PostgreSQL database persistency in an asynchronous context

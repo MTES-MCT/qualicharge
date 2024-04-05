@@ -104,7 +104,13 @@ def get_token(
                 "verify_aud": True,
             },
         )
-    except (ExpiredSignatureError, JWTError, JWTClaimsError) as exc:
+    except ExpiredSignatureError as exc:
+        logger.error("Token signature expired: %s", exc)
+        raise OIDCAuthenticationError("Token signature expired") from exc
+    except JWTClaimsError as exc:
+        logger.error("Bad token claims: %s", exc)
+        raise OIDCAuthenticationError("Bad token claims") from exc
+    except JWTError as exc:
         logger.error("Unable to decode the ID token: %s", exc)
         raise OIDCAuthenticationError("Unable to decode ID token") from exc
     logger.debug(f"{decoded_token=}")
