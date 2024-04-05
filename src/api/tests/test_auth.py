@@ -13,6 +13,12 @@ from qualicharge.conf import settings
 from qualicharge.exceptions import OIDCAuthenticationError, OIDCProviderException
 
 
+def setup_function():
+    """Inactivate auth-specific LRU cache."""
+    discover_provider.cache_clear()
+    get_public_keys.cache_clear()
+
+
 def test_discover_provider(httpx_mock):
     """Test the OIDC discover provider utility."""
     httpx_mock.add_response(
@@ -85,8 +91,28 @@ def test_get_token(httpx_mock, monkeypatch, id_token_factory: IDTokenFactory):
     token = get_token(security_scopes=SecurityScopes(), token=bearer_token)
     assert token.email == "john@doe.com"
 
-    # Expired token case
-    #
+
+def test_get_token_with_expired_token(
+    httpx_mock, monkeypatch, id_token_factory: IDTokenFactory
+):
+    """Test the OIDC get token utility when the token expired."""
+    monkeypatch.setenv("QUALICHARGE_OIDC_PROVIDER_BASE_URL", "http://oidc")
+    httpx_mock.add_response(
+        method="GET",
+        url=str(settings.OIDC_CONFIGURATION_URL),
+        json={
+            "jwks_uri": "https://oidc/certs",
+            "id_token_signing_alg_values_supported": "HS256",
+        },
+    )
+    httpx_mock.add_response(
+        method="GET",
+        url="https://oidc/certs",
+        json=[
+            "secret",
+        ],
+    )
+
     # As exp should be set to iat + 300, the token should be expired
     iat = int(datetime.now().timestamp()) - 500
     bearer_token = HTTPAuthorizationCredentials(
@@ -96,5 +122,5 @@ def test_get_token(httpx_mock, monkeypatch, id_token_factory: IDTokenFactory):
             key="secret",
         ),
     )
-    with pytest.raises(OIDCAuthenticationError, match="Unable to decode ID token"):
+    with pytest.raises(OIDCAuthenticationError, match="Token signature expired"):
         get_token(security_scopes=SecurityScopes(), token=bearer_token)
