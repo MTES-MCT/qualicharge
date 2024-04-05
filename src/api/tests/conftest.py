@@ -3,7 +3,9 @@
 # pylint: disable=unused-import
 # ruff: noqa: F401
 
-from .fixtures.app import client, client_auth, id_token_factory
+from qualicharge.auth.factories import IDTokenFactory
+
+from .fixtures.app import client, client_auth
 from .fixtures.db import (
     db_engine,
     db_session,

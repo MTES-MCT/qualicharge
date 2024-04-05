@@ -1,13 +1,16 @@
 """Tests for qualicharge.auth module."""
 
+from datetime import datetime
+
 import httpx
 import pytest
-from fastapi.security import HTTPAuthorizationCredentials
+from fastapi.security import HTTPAuthorizationCredentials, SecurityScopes
 from jose import jwt
 
+from qualicharge.auth.factories import IDTokenFactory
 from qualicharge.auth.oidc import discover_provider, get_public_keys, get_token
 from qualicharge.conf import settings
-from qualicharge.exceptions import OIDCProviderException
+from qualicharge.exceptions import OIDCAuthenticationError, OIDCProviderException
 
 
 def test_discover_provider(httpx_mock):
@@ -54,7 +57,7 @@ def test__get_public_keys_with_bad_configuration(httpx_mock):
         get_public_keys("http://oidc/wrong")
 
 
-def test_get_token(httpx_mock, monkeypatch, id_token_factory):
+def test_get_token(httpx_mock, monkeypatch, id_token_factory: IDTokenFactory):
     """Test the OIDC get token utility."""
     monkeypatch.setenv("QUALICHARGE_OIDC_PROVIDER_BASE_URL", "http://oidc")
     httpx_mock.add_response(
@@ -75,7 +78,23 @@ def test_get_token(httpx_mock, monkeypatch, id_token_factory):
 
     bearer_token = HTTPAuthorizationCredentials(
         scheme="Bearer",
-        credentials=jwt.encode(claims=id_token_factory.model_dump(), key="secret"),
+        credentials=jwt.encode(
+            claims=id_token_factory.build().model_dump(), key="secret"
+        ),
     )
-    token = get_token(security_scopes={}, token=bearer_token)
+    token = get_token(security_scopes=SecurityScopes(), token=bearer_token)
     assert token.email == "john@doe.com"
+
+    # Expired token case
+    #
+    # As exp should be set to iat + 300, the token should be expired
+    iat = int(datetime.now().timestamp()) - 500
+    bearer_token = HTTPAuthorizationCredentials(
+        scheme="Bearer",
+        credentials=jwt.encode(
+            claims=id_token_factory.build(iat=iat).model_dump(),
+            key="secret",
+        ),
+    )
+    with pytest.raises(OIDCAuthenticationError, match="Unable to decode ID token"):
+        get_token(security_scopes=SecurityScopes(), token=bearer_token)
