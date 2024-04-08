@@ -8,6 +8,8 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.2.1] - 2024-04-08
+
 ### Fixed
 
 - Add a custom exception handler for authentication failures
@@ -25,6 +27,7 @@ and this project adheres to
 
 - Implement base FastAPI app
 
-[unreleased]: https://github.com/MTES-MCT/qualicharge/compare/v0.2.0...main
+[unreleased]: https://github.com/MTES-MCT/qualicharge/compare/v0.2.1...main
+[0.2.1]: https://github.com/MTES-MCT/qualicharge/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/MTES-MCT/qualicharge/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/MTES-MCT/qualicharge/compare/dc6a9e2...v0.1.0
