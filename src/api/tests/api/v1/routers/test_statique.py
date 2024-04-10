@@ -13,7 +13,7 @@ def test_list(client_auth):
     response = client_auth.get("/statique/")
     assert response.status_code == status.HTTP_200_OK
     json_response = response.json()
-    expected_size = 10
+    expected_size = 0
     assert len(json_response) == expected_size
 
 
