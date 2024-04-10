@@ -8,6 +8,14 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Added
+
+- Implement `/statique` endpoints and models
+
+### Changed
+
+- Moved to `/whoami` endpoint to the `/auth` router
+
 ## [0.2.1] - 2024-04-08
 
 ### Fixed

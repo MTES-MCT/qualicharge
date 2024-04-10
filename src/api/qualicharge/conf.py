@@ -88,6 +88,9 @@ class Settings(BaseSettings):
             + f"/{self.OIDC_CONFIGURATION_PATH}",
         )
 
+    # API
+    API_BULK_CREATE_MAX_SIZE: int = 10
+
     model_config = SettingsConfigDict(
         case_sensitive=True, env_nested_delimiter="__", env_prefix="QUALICHARGE_"
     )
