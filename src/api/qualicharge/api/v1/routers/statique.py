@@ -8,7 +8,6 @@ from fastapi import APIRouter, status
 from pydantic import BaseModel, computed_field
 
 from qualicharge.conf import settings
-from qualicharge.factories.static import StatiqueFactory
 from qualicharge.models.static import Statique
 
 logger = logging.getLogger(__name__)
@@ -38,16 +37,7 @@ BulkStatiqueList = Annotated[List[Statique], Len(2, settings.API_BULK_CREATE_MAX
 @router.get("/")
 async def list() -> List[Statique]:
     """List statique items."""
-    telephone_operateur = "0123456789"
-    id_station_itinerance = "ESZUNP8891687432127666088"
-    id_pdc_itinerance = "ESZUNE1111ER1"
-
-    return StatiqueFactory.batch(
-        size=10,
-        telephone_operateur=telephone_operateur,
-        id_station_itinerance=id_station_itinerance,
-        id_pdc_itinerance=id_pdc_itinerance,
-    )
+    return []
 
 
 @router.post("/", status_code=status.HTTP_201_CREATED)
