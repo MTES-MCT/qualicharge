@@ -7,14 +7,29 @@ COMPOSE_RUN            = $(COMPOSE) run --rm --no-deps
 COMPOSE_RUN_API        = $(COMPOSE_RUN) api
 COMPOSE_RUN_API_PIPENV = $(COMPOSE_RUN_API) pipenv run
 
+# -- Tools
+CURL = $(COMPOSE_RUN) curl
+
+# -- Ressources
+IRVE_STATIC_DATASET_URL = https://www.data.gouv.fr/fr/datasets/r/eb76d20a-8501-400e-b336-d85724de5435
+
 # ==============================================================================
 # RULES
 
 default: help
 
+# -- Files
+data:
+	mkdir data
+
+data/irve-statique.csv: data
+	$(CURL) -L -o /work/data/irve-statique.csv $(IRVE_STATIC_DATASET_URL)
+
+
 # -- Docker/compose
 bootstrap: ## bootstrap the project for development
 bootstrap: \
+  data/irve-statique.csv \
   build \
   migrate-api \
   create-api-test-db \

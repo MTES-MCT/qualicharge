@@ -47,3 +47,9 @@ services:
   # -- tools
   dockerize:
     image: jwilder/dockerize
+
+  curl:
+    image: curlimages/curl:8.7.1
+    user: ${DOCKER_USER:-1000}
+    volumes:
+      - .:/work
