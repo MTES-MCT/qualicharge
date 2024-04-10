@@ -33,6 +33,9 @@ MANIFEST
 .cache
 .local
 
+# Directories
+data
+
 # -- Environments
 .env
 .venv
