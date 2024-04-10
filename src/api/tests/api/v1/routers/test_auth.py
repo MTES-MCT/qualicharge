@@ -1,4 +1,4 @@
-"""Tests for the QualiCharge API root routes."""
+"""Tests for the QualiCharge API auth router."""
 
 from datetime import datetime
 
@@ -18,14 +18,14 @@ def setup_function():
 
 def test_whoami_not_auth(client):
     """Test the whoami endpoint when user is not authenticated."""
-    response = client.get("/whoami")
+    response = client.get("/auth/whoami")
     assert response.status_code == status.HTTP_403_FORBIDDEN
     assert response.json() == {"detail": "Not authenticated"}
 
 
 def test_whoami_auth(client_auth):
     """Test the whoami endpoint when user is authenticated."""
-    response = client_auth.get("/whoami")
+    response = client_auth.get("/auth/whoami")
     assert response.status_code == status.HTTP_200_OK
     assert response.json() == {"email": "john@doe.com"}
 
@@ -57,7 +57,7 @@ def test_whoami_expired_signature(
         key="secret",
         algorithm="HS256",
     )
-    response = client.get("/whoami", headers={"Authorization": f"Bearer {token}"})
+    response = client.get("/auth/whoami", headers={"Authorization": f"Bearer {token}"})
     assert response.status_code == status.HTTP_403_FORBIDDEN
     assert response.json() == {
         "message": "Authentication failed: Token signature expired"
@@ -90,7 +90,7 @@ def test_whoami_with_bad_token_claims(
         key="secret",
         algorithm="HS256",
     )
-    response = client.get("/whoami", headers={"Authorization": f"Bearer {token}"})
+    response = client.get("/auth/whoami", headers={"Authorization": f"Bearer {token}"})
     assert response.status_code == status.HTTP_403_FORBIDDEN
     assert response.json() == {"message": "Authentication failed: Bad token claims"}
 
@@ -116,7 +116,7 @@ def test_whoami_jwt_decoding_error(
         ],
     )
     token = "faketoken"  # noqa: S105
-    response = client.get("/whoami", headers={"Authorization": f"Bearer {token}"})
+    response = client.get("/auth/whoami", headers={"Authorization": f"Bearer {token}"})
     assert response.status_code == status.HTTP_403_FORBIDDEN
     assert response.json() == {
         "message": "Authentication failed: Unable to decode ID token"
