@@ -10,7 +10,7 @@ and this project adheres to
 
 ### Added
 
-- Implement `/statique` endpoints and models
+- Defined `/statique` endpoints and models
 
 ### Changed
 
