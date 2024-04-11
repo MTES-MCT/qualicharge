@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(
     prefix="/statique",
-    tags=["IRVE Statique schema"],
+    tags=["IRVE Statique"],
 )
 
 
