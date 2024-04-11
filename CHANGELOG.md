@@ -8,14 +8,17 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.3.0] - 2024-04-11
+
 ### Added
 
-- Defined dynamic status model
-- Defined `/statique` endpoints and models
+- Define `/dynamique` endpoints
+- Define dynamic status and session models
+- Define `/statique` endpoints and models
 
 ### Changed
 
-- Moved to `/whoami` endpoint to the `/auth` router
+- Move the `/whoami` endpoint to the `/auth` router
 
 ## [0.2.1] - 2024-04-08
 
@@ -36,7 +39,8 @@ and this project adheres to
 
 - Implement base FastAPI app
 
-[unreleased]: https://github.com/MTES-MCT/qualicharge/compare/v0.2.1...main
+[unreleased]: https://github.com/MTES-MCT/qualicharge/compare/v0.3.0...main
+[0.3.0]: https://github.com/MTES-MCT/qualicharge/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/MTES-MCT/qualicharge/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/MTES-MCT/qualicharge/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/MTES-MCT/qualicharge/compare/dc6a9e2...v0.1.0

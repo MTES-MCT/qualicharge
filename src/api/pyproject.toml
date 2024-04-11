@@ -3,7 +3,7 @@
 #
 [project]
 name = "qualicharge"
-version = "0.2.1"
+version = "0.3.0"
 
 # Third party packages configuration
 [tool.pytest.ini_options]
