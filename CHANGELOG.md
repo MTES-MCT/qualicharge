@@ -10,6 +10,7 @@ and this project adheres to
 
 ### Added
 
+- Defined dynamic status model
 - Defined `/statique` endpoints and models
 
 ### Changed
