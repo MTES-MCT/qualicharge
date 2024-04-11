@@ -5,7 +5,7 @@ from typing import Annotated, List
 
 from fastapi import APIRouter, Path, status
 
-from qualicharge.models.dynamic import Status
+from qualicharge.models.dynamic import Session, Status
 
 logger = logging.getLogger(__name__)
 
@@ -40,4 +40,10 @@ async def read_status(
 @router.post("/status/", status_code=status.HTTP_201_CREATED, tags=["Status"])
 async def create_status(status: Status) -> Status:
     """Create a status."""
+    raise NotImplementedError
+
+
+@router.post("/session/", status_code=status.HTTP_201_CREATED, tags=["Session"])
+async def create_session(session: Session) -> Session:
+    """Create a session."""
     raise NotImplementedError

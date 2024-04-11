@@ -44,3 +44,12 @@ class Status(BaseModel):
     etat_prise_type_combo_ccs: Optional[EtatPriseEnum]
     etat_prise_type_chademo: Optional[EtatPriseEnum]
     etat_prise_type_ef: Optional[EtatPriseEnum]
+
+
+class Session(BaseModel):
+    """IRVE dynamic model: point of charge sessions."""
+
+    id_pdc_itinerance: Annotated[str, Field(pattern="^[A-Z]{2}[A-Z0-9]{4,33}$")]
+    start: PastDatetime
+    end: PastDatetime
+    energy: float
