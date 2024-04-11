@@ -9,7 +9,7 @@ from fastapi.responses import JSONResponse
 from qualicharge.auth.oidc import get_token
 from qualicharge.exceptions import OIDCAuthenticationError, OIDCProviderException
 
-from .routers import auth, static
+from .routers import auth, dynamic, static
 
 logger = logging.getLogger(__name__)
 
@@ -30,3 +30,4 @@ async def authentication_exception_handler(
 
 app.include_router(auth.router)
 app.include_router(static.router)
+app.include_router(dynamic.router)
