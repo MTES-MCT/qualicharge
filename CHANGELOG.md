@@ -8,6 +8,10 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Added
+
+- Implement static data database schemas
+
 ### Fixed
 
 - Mark Static.id_pdc_itinerance field as required

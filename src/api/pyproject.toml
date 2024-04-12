@@ -6,6 +6,11 @@ name = "qualicharge"
 version = "0.3.0"
 
 # Third party packages configuration
+[tool.coverage.run]
+omit = [
+  "qualicharge/migrations/*"
+]
+
 [tool.pytest.ini_options]
 addopts = "-v --cov-report term-missing --cov=qualicharge"
 python_files = [
@@ -14,6 +19,11 @@ python_files = [
 ]
 testpaths = [
     "tests",
+]
+[tool.ruff]
+# Exclude a variety of commonly ignored directories.
+exclude = [
+  "migrations",
 ]
 
 [tool.ruff.lint]
@@ -45,13 +55,22 @@ select = [
 convention = "google"
 
 [tool.ruff.lint.flake8-bugbear]
-extend-immutable-calls = ["fastapi.Depends", "fastapi.params.Depends", "fastapi.Query", "fastapi.params.Query"]
+extend-immutable-calls = [
+  "fastapi.Depends",
+  "fastapi.params.Depends",
+  "fastapi.params.Query",
+  "fastapi.Query",
+]
 
 [tool.mypy]
 plugins = "pydantic.mypy"
 files = "./**/*.py"
-exclude = ["/tests/"]
+exclude = [
+  "qualicharge/migrations/"
+]
 
 [[tool.mypy.overrides]]
-module = []
+module = [
+  "shapely.*",
+]
 ignore_missing_imports = true
