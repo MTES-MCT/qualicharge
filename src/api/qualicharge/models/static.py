@@ -109,10 +109,8 @@ class Statique(BaseModel):
     ]
     coordonneesXY: DataGouvCoordinate
     nbre_pdc: PositiveInt
-    id_pdc_itinerance: Optional[
-        Annotated[
-            str, Field(pattern="(?:(?:^|,)(^[A-Z]{2}[A-Z0-9]{4,33}$|Non concerné))+$")
-        ]
+    id_pdc_itinerance: Annotated[
+        str, Field(pattern="(?:(?:^|,)(^[A-Z]{2}[A-Z0-9]{4,33}$|Non concerné))+$")
     ]
     id_pdc_local: Optional[str]
     puissance_nominale: PositiveFloat

@@ -8,6 +8,10 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Fixed
+
+- Mark Static.id_pdc_itinerance field as required
+
 ## [0.3.0] - 2024-04-11
 
 ### Added
