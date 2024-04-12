@@ -2,7 +2,7 @@ version: "3.8"
 
 services:
   postgresql:
-    image: postgres:14
+    image: postgis/postgis:14-3.4
     env_file:
       - env.d/postgresql
       - env.d/api

@@ -24,6 +24,9 @@ else
   )
 fi
 
+echo "🗃️ Running database migrations..."
+alembic -c qualicharge/alembic.ini upgrade head
+
 # shellcheck disable=SC2068
 uvicorn \
   qualicharge.api:app \
