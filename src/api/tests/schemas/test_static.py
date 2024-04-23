@@ -21,6 +21,25 @@ from qualicharge.factories.static import (
 from qualicharge.schemas.static import Amenageur, Localisation
 
 
+@pytest.mark.parametrize(
+    "phone_number",
+    (
+        "+33144276350",
+        "+33.1 44 27 63 50",
+        "+33 (0)1 44 27 63 50",
+        "+33 1 44 27 63 50",
+        "0144276350",
+        "01 44 27 63 50",
+        "01-44-27-63-50",
+        "(01)44276350",
+    ),
+)
+def test_operateur_phone_numbers(phone_number):
+    """Test Operator schema accepted phone number formats."""
+    operateur = OperateurFactory.build(telephone_operateur=phone_number)
+    assert operateur.telephone_operateur == "tel:+33-1-44-27-63-50"
+
+
 def test_localisation_schema_set_geometry_point_validator(db_session):
     """Test the Localisation schema `set_geometry_point` validator."""
     # Create and save a new location
