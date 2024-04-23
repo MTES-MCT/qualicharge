@@ -63,21 +63,44 @@ def test_localisation_schema_set_geometry_point_validator(db_session):
 
 
 def test_localisation_schema_coordonneesXY_serializer(db_session):
-    """Test the Localisation schema `serialize_wkb_point` serializer."""
+    """Test the Localisation schema coordonneesXY serializer."""
     # Create and save a new location
     loc = Localisation(
-        adresse_station="4 baker street 75000 Tatooine",
-        coordonneesXY=Coordinate(longitude=3.129447, latitude=45.700327),
+        adresse_station="221B Baker street, London",
+        coordonneesXY=Coordinate(longitude=-3.129447, latitude=45.700327),
     )
+    assert loc.model_dump(include={"coordonneesXY"}) == {
+        "coordonneesXY": "POINT(-3.129447 45.700327)",
+    }
+
     db_session.add(loc)
     db_session.commit()
 
     # Query newly created location
     db_loc = db_session.exec(select(Localisation)).one()
 
-    assert db_loc.model_dump(include={"adresse_station", "coordonneesXY"}) == {
-        "adresse_station": "4 baker street 75000 Tatooine",
-        "coordonneesXY": {"latitude": 45.700327, "longitude": 3.129447},
+    assert db_loc.model_dump(include={"coordonneesXY"}) == {
+        "coordonneesXY": {
+            "latitude": 45.700327,
+            "longitude": -3.129447,
+        },
+    }
+
+    # Test update case
+    db_loc.coordonneesXY = Coordinate(longitude=-3.129447, latitude=-55.700327)
+    assert db_loc.model_dump(include={"coordonneesXY"}) == {
+        "coordonneesXY": "POINT(-3.129447 -55.700327)",
+    }
+
+    db_session.add(loc)
+    db_session.commit()
+    db_session.refresh(db_loc)
+
+    assert db_loc.model_dump(include={"coordonneesXY"}) == {
+        "coordonneesXY": {
+            "latitude": -55.700327,
+            "longitude": -3.129447,
+        },
     }
 
 
