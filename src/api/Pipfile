@@ -8,7 +8,7 @@ alembic = "==1.13.1"
 annotated-types = "==0.6.0"
 email-validator = "==2.1.1"
 fastapi = "==0.110.2"
-geoalchemy2 = {extras = ["shapely"], version = "==0.14.7"}
+geoalchemy2 = {extras = ["shapely"], version = "==0.15.0"}
 httpx = "==0.27.0"
 psycopg2-binary = "==2.9.9"
 pydantic-extra-types = {extras = ["all"], version = "==2.6.0"}
