@@ -18,6 +18,7 @@ function kcadm() {
 declare realm="qualicharge"
 declare user="johndoe"
 declare password="pass"
+declare email="john@doe.com"
 declare client_id="api"
 declare client_secret="super-secret"
 
@@ -48,9 +49,10 @@ echo "⚙️ Creating John Doe user…"
 kcadm create users \
   --target-realm "${realm}" \
   --set username="${user}" \
+  --set email="${email}" \
   --set enabled=true \
   --output \
-  --fields id,username
+  --fields id,username,email
 
 # Set test user password
 echo "⚙️ Setting John Doe user password…"

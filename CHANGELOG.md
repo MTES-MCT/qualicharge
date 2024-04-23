@@ -8,6 +8,10 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Added
+
+- Implement statique router endpoints
+
 ## [0.4.0] - 2024-04-23
 
 ### Added

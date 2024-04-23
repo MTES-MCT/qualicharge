@@ -19,6 +19,8 @@ from pydantic_extra_types.coordinate import Coordinate
 from pydantic_extra_types.phone_numbers import PhoneNumber
 from typing_extensions import Annotated
 
+from .utils import ModelSchemaMixin
+
 
 class ImplantationStationEnum(StrEnum):
     """Statique.implantation_station field enum."""
@@ -46,7 +48,7 @@ class AccessibilitePMREnum(StrEnum):
     INCONNUE = "Accessibilité inconnue"
 
 
-class RaccordementEmum(StrEnum):
+class RaccordementEnum(StrEnum):
     """Statique.raccordement field enum."""
 
     DIRECT = "Direct"
@@ -69,7 +71,7 @@ DataGouvCoordinate = Annotated[
         lambda x: tuple(reversed(json.loads(x))) if isinstance(x, str) else x
     ),
     # When serializing a coordinate we want a string array: "[long,lat]"
-    PlainSerializer(lambda x: f"[{x.longitude},{x.latitude}]", return_type=str),
+    PlainSerializer(lambda x: f"[{x.longitude}, {x.latitude}]", return_type=str),
     # Document expected longitude/latitude order in the description
     WithJsonSchema(
         {
@@ -87,7 +89,7 @@ DataGouvCoordinate = Annotated[
 ]
 
 
-class Statique(BaseModel):
+class Statique(ModelSchemaMixin, BaseModel):
     """IRVE static model."""
 
     nom_amenageur: Optional[str]
@@ -132,7 +134,7 @@ class Statique(BaseModel):
     accessibilite_pmr: AccessibilitePMREnum
     restriction_gabarit: str
     station_deux_roues: bool
-    raccordement: Optional[RaccordementEmum]
+    raccordement: Optional[RaccordementEnum]
     num_pdl: Optional[Annotated[str, Field(pattern=r"^\d{14}$")]]
     date_mise_en_service: Optional[PastDate]
     observations: Optional[str]

@@ -1,5 +1,6 @@
 """QualiCharge static models tests."""
 
+import pytest
 from pydantic_extra_types.coordinate import Coordinate
 
 from qualicharge.factories.static import StatiqueFactory
@@ -8,17 +9,11 @@ from qualicharge.models.static import Statique
 
 def test_statique_model_coordonneesXY():
     """Test the Statique model coordonneesXY field."""
-    telephone_operateur = "0123456789"
-    id_station_itinerance = "ESZUNP8891687432127666088"
-    id_pdc_itinerance = "ESZUNE1111ER1"
     longitude = 12.3
     latitude = 16.2
 
     # Expected raw input
     record = StatiqueFactory.build(
-        telephone_operateur=telephone_operateur,
-        id_station_itinerance=id_station_itinerance,
-        id_pdc_itinerance=id_pdc_itinerance,
         coordonneesXY=f"[{longitude},{latitude}]",
     )
     assert record.coordonneesXY.longitude == longitude
@@ -26,9 +21,6 @@ def test_statique_model_coordonneesXY():
 
     # Tuple input
     record = StatiqueFactory.build(
-        telephone_operateur=telephone_operateur,
-        id_station_itinerance=id_station_itinerance,
-        id_pdc_itinerance=id_pdc_itinerance,
         coordonneesXY=(latitude, longitude),
     )
     assert record.coordonneesXY.longitude == longitude
@@ -36,13 +28,30 @@ def test_statique_model_coordonneesXY():
 
     # Coordinate input
     record = StatiqueFactory.build(
-        telephone_operateur=telephone_operateur,
-        id_station_itinerance=id_station_itinerance,
-        id_pdc_itinerance=id_pdc_itinerance,
         coordonneesXY=Coordinate(latitude, longitude),
     )
     assert record.coordonneesXY.longitude == longitude
     assert record.coordonneesXY.latitude == latitude
+
+
+@pytest.mark.parametrize(
+    "phone_number",
+    (
+        "+33144276350",
+        "+33.1 44 27 63 50",
+        "+33 (0)1 44 27 63 50",
+        "+33 (0) 1 44 27 63 50",
+        "+33 1 44 27 63 50",
+        "0144276350",
+        "01 44 27 63 50",
+        "01-44-27-63-50",
+        "(01)44276350",
+    ),
+)
+def test_statique_model_french_phone_numbers(phone_number):
+    """Test all french phone numbers formats."""
+    statique = StatiqueFactory.build(telephone_operateur=phone_number)
+    assert statique.telephone_operateur == "tel:+33-1-44-27-63-50"
 
 
 def test_statique_model_json_schema():

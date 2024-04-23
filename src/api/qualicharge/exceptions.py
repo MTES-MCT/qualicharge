@@ -15,3 +15,23 @@ class OIDCAuthenticationError(QualiChargeExceptionMixin, Exception):
 
 class OIDCProviderException(QualiChargeExceptionMixin, Exception):
     """Raised when the OIDC provider does not behave as expected."""
+
+
+class ModelSerializerException(QualiChargeExceptionMixin, Exception):
+    """Raised when a custom model serialization occurs."""
+
+
+class DatabaseQueryException(QualiChargeExceptionMixin, Exception):
+    """Raised when a database query does not provide expected results."""
+
+
+class DuplicateEntriesSubmitted(QualiChargeExceptionMixin, Exception):
+    """Raised when submitted batch contains duplicated entries."""
+
+
+class IntegrityError(QualiChargeExceptionMixin, Exception):
+    """Raised when operation affects database integrity."""
+
+
+class ObjectDoesNotExist(QualiChargeExceptionMixin, Exception):
+    """Raised when queried object does not exist."""

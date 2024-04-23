@@ -1,10 +1,10 @@
 """QualiCharge static schemas."""
 
-from typing import List, Optional
+from typing import List, Optional, Union
 from uuid import UUID, uuid4
 
 from geoalchemy2.shape import to_shape
-from geoalchemy2.types import Geometry
+from geoalchemy2.types import Geometry, WKBElement
 from pydantic import (
     EmailStr,
     PositiveFloat,
@@ -16,16 +16,17 @@ from pydantic import (
 from pydantic.types import PastDate
 from pydantic_extra_types.coordinate import Coordinate
 from shapely.geometry import mapping
-from sqlalchemy.types import DateTime, String
+from sqlalchemy.types import Date, String
 from sqlmodel import Field, Relationship, UniqueConstraint
 from sqlmodel.main import SQLModelConfig
 
 from ..models.static import (
     AccessibilitePMREnum,
     ConditionAccesEnum,
+    DataGouvCoordinate,
     FrenchPhoneNumber,
     ImplantationStationEnum,
-    RaccordementEmum,
+    RaccordementEnum,
 )
 from . import BaseTimestampedSQLModel
 
@@ -47,6 +48,11 @@ class Amenageur(BaseTimestampedSQLModel, table=True):
     # Relationships
     stations: List["Station"] = Relationship(back_populates="amenageur")
 
+    def __eq__(self, other) -> bool:
+        """Assess instances equality given uniqueness criterions."""
+        fields = ("nom_amenageur", "siren_amenageur", "contact_amenageur")
+        return all(getattr(self, field) == getattr(other, field) for field in fields)
+
 
 class Operateur(BaseTimestampedSQLModel, table=True):
     """Operateur table."""
@@ -65,6 +71,11 @@ class Operateur(BaseTimestampedSQLModel, table=True):
     # Relationships
     stations: List["Station"] = Relationship(back_populates="operateur")
 
+    def __eq__(self, other) -> bool:
+        """Assess instances equality given uniqueness criterions."""
+        fields = ("nom_operateur", "contact_operateur", "telephone_operateur")
+        return all(getattr(self, field) == getattr(other, field) for field in fields)
+
 
 class Enseigne(BaseTimestampedSQLModel, table=True):
     """Enseigne table."""
@@ -77,22 +88,23 @@ class Enseigne(BaseTimestampedSQLModel, table=True):
     # Relationships
     stations: List["Station"] = Relationship(back_populates="enseigne")
 
+    def __eq__(self, other) -> bool:
+        """Assess instances equality given uniqueness criterions."""
+        fields = ("nom_enseigne",)
+        return all(getattr(self, field) == getattr(other, field) for field in fields)
+
 
 class Localisation(BaseTimestampedSQLModel, table=True):
     """Localisation table."""
-
-    __table_args__ = BaseTimestampedSQLModel.__table_args__ + (
-        UniqueConstraint("adresse_station", "coordonneesXY"),
-    )
 
     model_config = SQLModelConfig(
         validate_assignment=True, arbitrary_types_allowed=True
     )
 
     id: Optional[UUID] = Field(default_factory=lambda: uuid4().hex, primary_key=True)
-    adresse_station: str
+    adresse_station: str = Field(unique=True)
     code_insee_commune: Optional[str] = Field(regex=r"^([013-9]\d|2[AB1-9])\d{3}$")
-    coordonneesXY: Coordinate = Field(
+    coordonneesXY: DataGouvCoordinate = Field(
         sa_type=Geometry(
             geometry_type="POINT",
             # WGS84 coordinates system
@@ -104,18 +116,47 @@ class Localisation(BaseTimestampedSQLModel, table=True):
     # Relationships
     stations: List["Station"] = Relationship(back_populates="localisation")
 
+    def __eq__(self, other) -> bool:
+        """Assess instances equality given uniqueness criterions."""
+        fields = ("adresse_station",)
+        return all(getattr(self, field) == getattr(other, field) for field in fields)
+
+    @staticmethod
+    def _coordinates_to_geometry_point(value: Coordinate):
+        """Convert coordinate to Geometry point."""
+        return f"POINT({value.longitude} {value.latitude})"
+
+    @staticmethod
+    def _wkb_to_coordinates(value: WKBElement):
+        """Convert WKB to Coordinate."""
+        return Coordinate(*reversed(mapping(to_shape(value)).get("coordinates")))
+
     @field_validator("coordonneesXY")
     @classmethod
     def set_geometry_point(cls, value: Coordinate, info: ValidationInfo) -> str:
         """Set coordonneesXY geometry from Coordinate type."""
-        return f"POINT({value.longitude} {value.latitude})"
+        return cls._coordinates_to_geometry_point(value)
 
     @field_serializer("coordonneesXY")
-    def serialize_wkb_point(self, wkb, _):
-        """Serialize WKB element (Point type geometry) field to coordinates."""
-        # Coordinate type expects a (latitude, longitude) tuple as input, so we need to
-        # reverse the original tuple as the standard is (longitude, latitude).
-        return Coordinate(*reversed(mapping(to_shape(wkb)).get("coordinates")))
+    def serialize_coordonneesXY(
+        self, value: Union[str, WKBElement], _
+    ) -> Union[str, Coordinate]:
+        """Serialize coordonneesXY field.
+
+        If value is a string, we suppose that the SQLModel has been instanciated from a
+        Coordinate instance and converted to a Geometry WKT Point(long lat) definition.
+        This is the expected behavior to save the schema to database as this
+        serialization will be used in SQL requests.
+
+        By default, we expect the value to be a Geometry (WKB) field. In this case, its
+        value has been set from the database. In this case, it means that we expect it
+        to be serialized as a Coordinate instance.
+        """
+        # POINT(long lat) string case
+        if isinstance(value, str):
+            return value
+        # Geometry type case (default)
+        return self._wkb_to_coordinates(value)
 
 
 class Station(BaseTimestampedSQLModel, table=True):
@@ -136,10 +177,10 @@ class Station(BaseTimestampedSQLModel, table=True):
     condition_acces: ConditionAccesEnum
     horaires: str = Field(regex=r"(.*?)((\d{1,2}:\d{2})-(\d{1,2}:\d{2})|24/7)")
     station_deux_roues: bool
-    raccordement: Optional[RaccordementEmum]
+    raccordement: Optional[RaccordementEnum]
     num_pdl: Optional[str] = Field(regex=r"^\d{14}$")
-    date_maj: PastDate = Field(sa_type=DateTime)
-    date_mise_en_service: Optional[PastDate] = Field(sa_type=DateTime)
+    date_maj: PastDate = Field(sa_type=Date)
+    date_mise_en_service: Optional[PastDate] = Field(sa_type=Date)
 
     # Relationships
     amenageur_id: Optional[UUID] = Field(default=None, foreign_key="amenageur.id")
@@ -155,6 +196,11 @@ class Station(BaseTimestampedSQLModel, table=True):
     localisation: Localisation = Relationship(back_populates="stations")
 
     points_de_charge: List["PointDeCharge"] = Relationship(back_populates="station")
+
+    def __eq__(self, other) -> bool:
+        """Assess instances equality given uniqueness criterions."""
+        fields = ("id_station_itinerance",)
+        return all(getattr(self, field) == getattr(other, field) for field in fields)
 
 
 class PointDeCharge(BaseTimestampedSQLModel, table=True):
@@ -183,6 +229,11 @@ class PointDeCharge(BaseTimestampedSQLModel, table=True):
     restriction_gabarit: str
     observations: Optional[str]
     cable_t2_attache: Optional[bool]
+
+    def __eq__(self, other) -> bool:
+        """Assess instances equality given uniqueness criterions."""
+        fields = ("id_pdc_itinerance",)
+        return all(getattr(self, field) == getattr(other, field) for field in fields)
 
     # Relationships
     station_id: Optional[UUID] = Field(default=None, foreign_key="station.id")

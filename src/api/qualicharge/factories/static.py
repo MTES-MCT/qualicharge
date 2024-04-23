@@ -25,15 +25,52 @@ from ..schemas.static import (
 T = TypeVar("T")
 
 
-class StatiqueFactory(ModelFactory[Statique]):
-    """Statique model factory."""
-
-
 class FrenchDataclassFactory(Generic[T], DataclassFactory[T]):
     """Dataclass factory using the french locale."""
 
     __faker__ = Faker(locale="fr_FR")
     __is_base_factory__ = True
+
+
+class StatiqueFactory(ModelFactory[Statique]):
+    """Statique model factory."""
+
+    contact_amenageur = Use(FrenchDataclassFactory.__faker__.ascii_company_email)
+    contact_operateur = Use(FrenchDataclassFactory.__faker__.ascii_company_email)
+    # FIXME
+    #
+    # Faker phone number factory randomly generates invalid data (as evaluated by the
+    # phonenumbers library). We choose to use a less valuable factory to avoid flaky
+    # tests.
+    #
+    # telephone_operateur = Use(FrenchDataclassFactory.__faker__.phone_number)
+    telephone_operateur = Use(
+        DataclassFactory.__random__.choice,
+        [
+            "+33144276350",
+            "+33.1 44 27 63 50",
+            "+33 (0)1 44 27 63 50",
+            "+33 1 44 27 63 50",
+            "0144276350",
+            "01 44 27 63 50",
+            "01-44-27-63-50",
+            "(01)44276350",
+        ],
+    )
+    puissance_nominale = Use(
+        DataclassFactory.__faker__.pyfloat,
+        right_digits=2,
+        min_value=2.0,
+        max_value=100.0,
+    )
+    date_maj = Use(DataclassFactory.__faker__.past_date)
+    date_mise_en_service = Use(DataclassFactory.__faker__.past_date)
+    id_station_itinerance = Use(
+        FrenchDataclassFactory.__faker__.pystr_format, "FR###P######"
+    )
+    id_pdc_itinerance = Use(
+        FrenchDataclassFactory.__faker__.pystr_format, "FR###E######"
+    )
 
 
 class TimestampedSQLModelFactory(Generic[T], SQLAlchemyFactory[T]):
@@ -93,6 +130,9 @@ class OperateurFactory(TimestampedSQLModelFactory[Operateur]):
 class PointDeChargeFactory(TimestampedSQLModelFactory[PointDeCharge]):
     """PointDeCharge schema factory."""
 
+    id_pdc_itinerance = Use(
+        FrenchDataclassFactory.__faker__.pystr_format, "FR###E######"
+    )
     puissance_nominale = Use(
         DataclassFactory.__faker__.pyfloat,
         right_digits=2,
@@ -104,6 +144,9 @@ class PointDeChargeFactory(TimestampedSQLModelFactory[PointDeCharge]):
 class StationFactory(TimestampedSQLModelFactory[Station]):
     """Station schema factory."""
 
+    id_station_itinerance = Use(
+        FrenchDataclassFactory.__faker__.pystr_format, "FR###P######"
+    )
     date_maj = Use(DataclassFactory.__faker__.past_date)
     date_mise_en_service = Use(DataclassFactory.__faker__.past_date)
 
