@@ -56,7 +56,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       postgresql:
-        image: postgis/postgis:14-3.4
+        image: timescale/timescaledb-ha:pg14-ts2.14-oss
         env:
           POSTGRES_DB: test-qualicharge-api
           POSTGRES_USER: qualicharge
@@ -73,6 +73,8 @@ jobs:
         working-directory: ./src/api
     steps:
       - uses: actions/checkout@v4
+      - name: Create postgis extension
+        run: psql "postgresql://qualicharge:pass@localhost:5432/test-qualicharge-api" -c "create extension postgis;"
       - name: Install pipenv
         run: pipx install pipenv
       - name: Set up Python 3.12

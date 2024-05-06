@@ -2,7 +2,7 @@ version: "3.8"
 
 services:
   postgresql:
-    image: postgis/postgis:14-3.4
+    image: timescale/timescaledb-ha:pg14-ts2.14-oss
     env_file:
       - env.d/postgresql
       - env.d/api
