@@ -12,6 +12,10 @@ and this project adheres to
 
 - Implement statique router endpoints
 
+### Changed
+
+- Switch to TimescaleDB
+
 ## [0.4.0] - 2024-04-23
 
 ### Added
