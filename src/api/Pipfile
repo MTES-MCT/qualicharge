@@ -19,7 +19,7 @@ sqlmodel = "==0.0.16"
 uvicorn = {extras = ["standard"] }
 
 [dev-packages]
-black = "==24.4.0"
+black = "==24.4.2"
 csvkit = "==1.5.0"
 honcho = "==1.1.0"
 mypy = "==1.10.0"
