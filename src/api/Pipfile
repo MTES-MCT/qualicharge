@@ -27,7 +27,7 @@ polyfactory = "==2.15.0"
 pytest = "==8.1.1"
 pytest-cov = "==5.0.0"
 pytest-httpx = "==0.30.0"
-ruff = "==0.4.1"
+ruff = "==0.4.3"
 types-python-jose = "==3.3.4.20240106"
 
 [requires]
