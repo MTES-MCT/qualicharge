@@ -18,7 +18,7 @@ from qualicharge.factories.static import (
     PointDeChargeFactory,
     StationFactory,
 )
-from qualicharge.schemas.static import Amenageur, Localisation
+from qualicharge.schemas import Amenageur, Localisation
 
 
 @pytest.mark.parametrize(

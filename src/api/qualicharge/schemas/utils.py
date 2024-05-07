@@ -15,7 +15,7 @@ from ..exceptions import (
     ObjectDoesNotExist,
 )
 from ..models.static import Statique
-from .static import (
+from . import (
     Amenageur,
     Enseigne,
     Localisation,

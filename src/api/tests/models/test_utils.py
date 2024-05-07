@@ -1,7 +1,7 @@
 """QualiCharge models utilities tests."""
 
 from qualicharge.factories.static import StatiqueFactory
-from qualicharge.schemas.static import Amenageur
+from qualicharge.schemas import Amenageur
 
 
 def test_statique_model_get_fields_for_schema():

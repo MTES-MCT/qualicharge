@@ -13,7 +13,7 @@ from polyfactory.factories.sqlalchemy_factory import SQLAlchemyFactory
 from pydantic_extra_types.coordinate import Coordinate
 
 from ..models.static import Statique
-from ..schemas.static import (
+from ..schemas import (
     Amenageur,
     Enseigne,
     Localisation,

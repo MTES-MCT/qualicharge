@@ -12,7 +12,7 @@ from qualicharge.exceptions import (
     ObjectDoesNotExist,
 )
 from qualicharge.factories.static import AmenageurFactory, StatiqueFactory
-from qualicharge.schemas.static import (
+from qualicharge.schemas import (
     Amenageur,
     Enseigne,
     Localisation,

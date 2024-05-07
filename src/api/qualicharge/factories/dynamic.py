@@ -2,12 +2,12 @@
 
 from polyfactory.factories.pydantic_factory import ModelFactory
 
-from ..models.dynamic import Session, Status
+from ..models.dynamic import SessionCreate, StatusCreate
 
 
-class SessionFactory(ModelFactory[Session]):
+class SessionCreateFactory(ModelFactory[SessionCreate]):
     """Session model factory."""
 
 
-class StatusFactory(ModelFactory[Status]):
+class StatusCreateFactory(ModelFactory[StatusCreate]):
     """Status model factory."""
