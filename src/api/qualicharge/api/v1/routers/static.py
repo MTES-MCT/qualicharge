@@ -61,7 +61,9 @@ class PaginatedStatiqueListResponse(BaseModel):
         return len(self.items)
 
 
-BulkStatiqueList = Annotated[List[Statique], Len(2, settings.API_BULK_CREATE_MAX_SIZE)]
+BulkStatiqueList = Annotated[
+    List[Statique], Len(2, settings.API_STATIQUE_BULK_CREATE_MAX_SIZE)
+]
 
 
 @router.get("/")
@@ -69,7 +71,8 @@ async def list(
     request: Request,
     offset: int = 0,
     limit: int = Query(
-        default=settings.API_BULK_CREATE_MAX_SIZE, le=settings.API_BULK_CREATE_MAX_SIZE
+        default=settings.API_STATIQUE_BULK_CREATE_MAX_SIZE,
+        le=settings.API_STATIQUE_BULK_CREATE_MAX_SIZE,
     ),
     session: Session = Depends(get_session),
 ) -> PaginatedStatiqueListResponse:

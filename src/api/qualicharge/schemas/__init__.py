@@ -13,6 +13,7 @@ from pydantic import (
     PositiveFloat,
     PositiveInt,
     ValidationInfo,
+    computed_field,
     field_serializer,
     field_validator,
 )
@@ -313,3 +314,9 @@ class Status(BaseTimestampedSQLModel, StatusBase, table=True):
         default=None, foreign_key="pointdecharge.id"
     )
     point_de_charge: PointDeCharge = Relationship(back_populates="statuses")
+
+    @computed_field  # type: ignore[misc]
+    @property
+    def id_pdc_itinerance(self) -> str:
+        """Return the PointDeCharge.id_pdc_itinerance (used for serialization only)."""
+        return self.point_de_charge.id_pdc_itinerance

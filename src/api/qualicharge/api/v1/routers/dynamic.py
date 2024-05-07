@@ -1,15 +1,24 @@
 """QualiCharge API v1 dynamique router."""
 
 import logging
-from typing import Annotated, List
+from typing import Annotated, List, cast
 
-from fastapi import APIRouter, Path, status
+from annotated_types import Len
+from fastapi import APIRouter, Depends, HTTPException, Path
+from fastapi import status as fa_status
+from sqlalchemy import func
+from sqlalchemy.schema import Column as SAColumn
+from sqlmodel import Session, select
 
+from qualicharge.conf import settings
+from qualicharge.db import get_session
 from qualicharge.models.dynamic import (
     SessionCreate,
     StatusCreate,
     StatusRead,
 )
+from qualicharge.schemas import PointDeCharge, Status
+from qualicharge.schemas import Session as QCSession
 
 logger = logging.getLogger(__name__)
 
@@ -18,11 +27,47 @@ router = APIRouter(
     tags=["IRVE Dynamique"],
 )
 
+BulkStatusCreateList = Annotated[
+    List[StatusCreate], Len(2, settings.API_STATUS_BULK_CREATE_MAX_SIZE)
+]
+BulkSessionCreateList = Annotated[
+    List[SessionCreate], Len(2, settings.API_SESSION_BULK_CREATE_MAX_SIZE)
+]
+
 
 @router.get("/status/", tags=["Status"])
-async def list_statuses() -> List[StatusRead]:
+async def list_statuses(
+    session: Session = Depends(get_session),
+) -> List[StatusRead]:
     """List last known point of charge statuses."""
-    raise NotImplementedError
+    # Get latest status per point of charge
+    latest_db_statuses_stmt = (
+        select(
+            Status.point_de_charge_id,
+            func.last(Status.id, Status.horodatage).label("status_id"),
+        )
+        .group_by(cast(SAColumn, Status.point_de_charge_id))
+        .subquery()
+    )
+    db_statuses = session.exec(
+        select(Status).join_from(
+            Status,
+            latest_db_statuses_stmt,
+            Status.id == latest_db_statuses_stmt.c.status_id,  # type: ignore[arg-type]
+        )
+    ).all()
+    return [
+        StatusRead(
+            **s.model_dump(
+                exclude={
+                    "id",
+                    "point_de_charge_id",
+                }
+            )
+        )
+        for s in db_statuses
+        if s is not None
+    ]
 
 
 @router.get("/status/{id_pdc_itinerance}", tags=["Status"])
@@ -36,9 +81,50 @@ async def read_status(
             ),
         ),
     ],
+    session: Session = Depends(get_session),
 ) -> StatusRead:
     """Read last known point of charge status."""
-    raise NotImplementedError
+    # Get target point de charge
+    pdc_id = session.exec(
+        select(PointDeCharge.id).where(
+            PointDeCharge.id_pdc_itinerance == id_pdc_itinerance
+        )
+    ).one_or_none()
+    if pdc_id is None:
+        raise HTTPException(
+            status_code=fa_status.HTTP_404_NOT_FOUND,
+            detail="Selected point of charge does not exist",
+        )
+
+    # Get latest status (if any)
+    latest_db_status_stmt = (
+        select(
+            func.last(Status.id, Status.horodatage).label("status_id"),
+        )
+        .where(Status.point_de_charge_id == pdc_id)
+        .subquery()
+    )
+    db_status = session.exec(
+        select(Status).join_from(
+            Status,
+            latest_db_status_stmt,
+            Status.id == latest_db_status_stmt.c.status_id,  # type: ignore[arg-type]
+        )
+    ).one_or_none()
+    if db_status is None:
+        raise HTTPException(
+            status_code=fa_status.HTTP_404_NOT_FOUND,
+            detail="Selected point of charge does not have status record yet",
+        )
+
+    return StatusRead(
+        **db_status.model_dump(
+            exclude={
+                "id",
+                "point_de_charge_id",
+            }
+        )
+    )
 
 
 @router.get("/status/{id_pdc_itinerance}/history", tags=["Status"])
@@ -52,30 +138,164 @@ async def read_status_history(
             ),
         ),
     ],
+    session: Session = Depends(get_session),
 ) -> List[StatusRead]:
     """Read point of charge status history."""
-    raise NotImplementedError
+    pdc_id = session.exec(
+        select(PointDeCharge.id).where(
+            PointDeCharge.id_pdc_itinerance == id_pdc_itinerance
+        )
+    ).one_or_none()
+    if pdc_id is None:
+        raise HTTPException(
+            status_code=fa_status.HTTP_404_NOT_FOUND,
+            detail="Selected point of charge does not exist",
+        )
+
+    # Get latest statuses
+    db_statuses = session.exec(
+        select(Status)
+        .where(Status.point_de_charge_id == pdc_id)
+        .order_by(cast(SAColumn, Status.horodatage))
+    ).all()
+    if not len(db_statuses):
+        raise HTTPException(
+            status_code=fa_status.HTTP_404_NOT_FOUND,
+            detail="Selected point of charge does not have status record yet",
+        )
+    return [
+        StatusRead(
+            **s.model_dump(
+                exclude={
+                    "id",
+                    "point_de_charge_id",
+                }
+            )
+        )
+        for s in db_statuses
+    ]
 
 
-@router.post("/status/", status_code=status.HTTP_201_CREATED, tags=["Status"])
-async def create_status(status: StatusCreate) -> None:
+@router.post("/status/", status_code=fa_status.HTTP_201_CREATED, tags=["Status"])
+async def create_status(
+    status: StatusCreate,
+    session: Session = Depends(get_session),
+) -> None:
     """Create a status."""
-    raise NotImplementedError
+    pdc = session.exec(
+        select(PointDeCharge).where(
+            PointDeCharge.id_pdc_itinerance == status.id_pdc_itinerance
+        )
+    ).one_or_none()
+    if pdc is None:
+        raise HTTPException(
+            status_code=fa_status.HTTP_404_NOT_FOUND,
+            detail="Attached point of charge does not exist",
+        )
+    db_status = Status(**status.model_dump(exclude={"id_pdc_itinerance"}))
+    db_status.point_de_charge_id = pdc.id
+    session.add(db_status)
+    session.commit()
 
 
-@router.post("/status/bulk", status_code=status.HTTP_201_CREATED, tags=["Status"])
-async def create_status_bulk(statuses: List[StatusCreate]) -> None:
+@router.post("/status/bulk", status_code=fa_status.HTTP_201_CREATED, tags=["Status"])
+async def create_status_bulk(
+    statuses: BulkStatusCreateList,
+    session: Session = Depends(get_session),
+) -> None:
     """Create a statuses batch."""
-    raise NotImplementedError
+    # Check if all points of charge exist
+    # ids_pdc_itinerance = list({status.id_pdc_itinerance for status in statuses})
+    ids_pdc_itinerance = [status.id_pdc_itinerance for status in statuses]
+    ids_pdc_itinerance_set = set(ids_pdc_itinerance)
+    db_pdcs = session.exec(
+        select(PointDeCharge).filter(
+            cast(SAColumn, PointDeCharge.id_pdc_itinerance).in_(ids_pdc_itinerance_set)
+        )
+    ).all()
+
+    if len(db_pdcs) != len(ids_pdc_itinerance_set):
+        raise HTTPException(
+            status_code=fa_status.HTTP_404_NOT_FOUND,
+            detail=(
+                "Undeclared attached point(s) of charge, "
+                "you should create them all first"
+            ),
+        )
+
+    # Prepare statuses PDC index
+    db_pdc_ids = [pdc.id_pdc_itinerance for pdc in db_pdcs]
+    pdc_indexes = [db_pdc_ids.index(id_) for id_ in ids_pdc_itinerance]
+
+    # Create all statuses
+    db_statuses = []
+    for status, pdc_index in zip(statuses, pdc_indexes):
+        db_status = Status(**status.model_dump(exclude={"id_pdc_itinerance"}))
+        db_status.point_de_charge_id = db_pdcs[pdc_index].id
+        db_statuses.append(db_status)
+    session.add_all(db_statuses)
+    session.commit()
 
 
-@router.post("/session/", status_code=status.HTTP_201_CREATED, tags=["Session"])
-async def create_session(session: SessionCreate) -> None:
+@router.post("/session/", status_code=fa_status.HTTP_201_CREATED, tags=["Session"])
+async def create_session(
+    session: SessionCreate,
+    db_session: Session = Depends(get_session),
+) -> None:
     """Create a session."""
-    raise NotImplementedError
+    # ⚠️ Please pay attention to the semantic:
+    #
+    # - `db_session` / `Session` refers to the database session, while,
+    # - `session` / `QCSession` / `SessionCreate` refers to qualicharge charging session
+    pdc = db_session.exec(
+        select(PointDeCharge).where(
+            PointDeCharge.id_pdc_itinerance == session.id_pdc_itinerance
+        )
+    ).one_or_none()
+    if pdc is None:
+        raise HTTPException(
+            status_code=fa_status.HTTP_404_NOT_FOUND,
+            detail="Attached point of charge does not exist",
+        )
+    db_qc_session = QCSession(**session.model_dump(exclude={"id_pdc_itinerance"}))
+    db_qc_session.point_de_charge_id = pdc.id
+    db_session.add(db_qc_session)
+    db_session.commit()
 
 
-@router.post("/session/bulk", status_code=status.HTTP_201_CREATED, tags=["Session"])
-async def create_session_bulk(sessions: List[SessionCreate]) -> None:
+@router.post("/session/bulk", status_code=fa_status.HTTP_201_CREATED, tags=["Session"])
+async def create_session_bulk(
+    sessions: BulkSessionCreateList,
+    db_session: Session = Depends(get_session),
+) -> None:
     """Create a sessions batch."""
-    raise NotImplementedError
+    # Check if all points of charge exist
+    ids_pdc_itinerance = [session.id_pdc_itinerance for session in sessions]
+    ids_pdc_itinerance_set = set(ids_pdc_itinerance)
+    db_pdcs = db_session.exec(
+        select(PointDeCharge).filter(
+            cast(SAColumn, PointDeCharge.id_pdc_itinerance).in_(ids_pdc_itinerance_set)
+        )
+    ).all()
+
+    if len(db_pdcs) != len(ids_pdc_itinerance_set):
+        raise HTTPException(
+            status_code=fa_status.HTTP_404_NOT_FOUND,
+            detail=(
+                "Undeclared attached point(s) of charge, "
+                "you should create them all first"
+            ),
+        )
+
+    # Prepare statuses PDC index
+    db_pdc_ids = [pdc.id_pdc_itinerance for pdc in db_pdcs]
+    pdc_indexes = [db_pdc_ids.index(id_) for id_ in ids_pdc_itinerance]
+
+    # Create all statuses
+    db_qc_sessions = []
+    for session, pdc_index in zip(sessions, pdc_indexes):
+        db_qc_session = QCSession(**session.model_dump(exclude={"id_pdc_itinerance"}))
+        db_qc_session.point_de_charge_id = db_pdcs[pdc_index].id
+        db_qc_sessions.append(db_qc_session)
+    db_session.add_all(db_qc_sessions)
+    db_session.commit()

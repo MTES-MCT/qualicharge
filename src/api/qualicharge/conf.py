@@ -89,7 +89,9 @@ class Settings(BaseSettings):
         )
 
     # API
-    API_BULK_CREATE_MAX_SIZE: int = 10
+    API_STATIQUE_BULK_CREATE_MAX_SIZE: int = 10
+    API_STATUS_BULK_CREATE_MAX_SIZE: int = 10
+    API_SESSION_BULK_CREATE_MAX_SIZE: int = 10
 
     model_config = SettingsConfigDict(
         case_sensitive=True, env_nested_delimiter="__", env_prefix="QUALICHARGE_"
