@@ -1,15 +1,11 @@
 """QualiCharge static factories."""
 
-from datetime import datetime, timedelta, timezone
-from typing import Any, Callable, Dict, Generic, TypeVar
-from uuid import uuid4
+from typing import Any, Callable, Dict, TypeVar
 
-from faker import Faker
 from geoalchemy2.types import Geometry
 from polyfactory import Use
 from polyfactory.factories.dataclass_factory import DataclassFactory
 from polyfactory.factories.pydantic_factory import ModelFactory
-from polyfactory.factories.sqlalchemy_factory import SQLAlchemyFactory
 from pydantic_extra_types.coordinate import Coordinate
 
 from ..models.static import Statique
@@ -21,15 +17,9 @@ from ..schemas import (
     PointDeCharge,
     Station,
 )
+from . import FrenchDataclassFactory, TimestampedSQLModelFactory
 
 T = TypeVar("T")
-
-
-class FrenchDataclassFactory(Generic[T], DataclassFactory[T]):
-    """Dataclass factory using the french locale."""
-
-    __faker__ = Faker(locale="fr_FR")
-    __is_base_factory__ = True
 
 
 class StatiqueFactory(ModelFactory[Statique]):
@@ -71,23 +61,6 @@ class StatiqueFactory(ModelFactory[Statique]):
     id_pdc_itinerance = Use(
         FrenchDataclassFactory.__faker__.pystr_format, "FR###E######"
     )
-
-
-class TimestampedSQLModelFactory(Generic[T], SQLAlchemyFactory[T]):
-    """A base factory for timestamped SQLModel.
-
-    We expect SQLModel to define the following fields:
-
-    - id: UUID
-    - created_at: datetime
-    - updated_at: datetime
-    """
-
-    __is_base_factory__ = True
-
-    id = Use(uuid4)
-    created_at = Use(lambda: datetime.now(timezone.utc) - timedelta(hours=1))
-    updated_at = Use(datetime.now, timezone.utc)
 
 
 class AmenageurFactory(TimestampedSQLModelFactory[Amenageur]):

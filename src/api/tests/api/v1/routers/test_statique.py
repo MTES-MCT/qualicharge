@@ -1,4 +1,4 @@
-"""Tests for the QualiCharge API statique router."""
+"""Tests for the QualiCharge API static router."""
 
 import json
 
@@ -206,7 +206,7 @@ def test_bulk_with_outbound_sizes(client_auth):
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
     data = StatiqueFactory.batch(
-        size=settings.API_BULK_CREATE_MAX_SIZE + 1,
+        size=settings.API_STATIQUE_BULK_CREATE_MAX_SIZE + 1,
     )
     payload = [json.loads(d.model_dump_json()) for d in data]
     response = client_auth.post("/statique/bulk", json=payload)
