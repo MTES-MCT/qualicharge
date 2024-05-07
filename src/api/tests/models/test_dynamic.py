@@ -2,19 +2,19 @@
 
 from datetime import datetime
 
-from qualicharge.factories.dynamic import SessionFactory, StatusFactory
+from qualicharge.factories.dynamic import SessionCreateFactory, StatusCreateFactory
 
 
-def test_session_model():
-    """Test the dynamic Session model."""
-    session = SessionFactory.build()
+def test_session_create_model():
+    """Test the dynamic SessionCreate model."""
+    session = SessionCreateFactory.build()
 
     assert session.start < datetime.now()
     assert session.end < datetime.now()
 
 
-def test_status_model():
-    """Test the dynamic Status model."""
-    status = StatusFactory.build()
+def test_status_create_model():
+    """Test the dynamic StatusCreate model."""
+    status = StatusCreateFactory.build()
 
     assert status.horodatage < datetime.now()

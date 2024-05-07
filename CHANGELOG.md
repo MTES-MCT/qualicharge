@@ -11,6 +11,7 @@ and this project adheres to
 ### Added
 
 - Implement statique router endpoints
+- Draft dynamique database schemas
 
 ### Changed
 

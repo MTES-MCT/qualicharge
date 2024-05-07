@@ -15,6 +15,7 @@ pydantic-extra-types = {extras = ["all"], version = "==2.7.0"}
 pydantic-settings = "==2.2.1"
 python-jose = {extras = ["cryptography"], version = "==3.3.0"}
 setuptools = "==69.5.1"
+sqlalchemy-timescaledb = "==0.4.1"
 sqlmodel = "==0.0.18"
 uvicorn = {extras = ["standard"] }
 
