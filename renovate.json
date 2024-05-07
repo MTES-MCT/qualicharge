@@ -1,8 +1,6 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": [
-    "config:recommended"
-  ],
+  "extends": ["config:recommended"],
   "commitBodyTable": true,
   "commitMessageAction": "upgrade",
   "commitMessagePrefix": "⬆️(project)",
@@ -11,7 +9,7 @@
   "packageRules": [
     {
       "groupName": "python dependencies",
-      "matchManagers": ["setup-cfg", "pep621"],
+      "matchManagers": ["pep621", "pipenv", "setup-cfg"],
       "schedule": ["before 7am on monday"],
       "matchPackagePatterns": ["*"]
     }
