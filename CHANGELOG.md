@@ -17,6 +17,7 @@ and this project adheres to
 ### Changed
 
 - Switch to TimescaleDB
+- Upgrade FastAPI to 0.111.0
 
 ## [0.4.0] - 2024-04-23
 
