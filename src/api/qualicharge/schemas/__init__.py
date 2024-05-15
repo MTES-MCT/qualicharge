@@ -1,6 +1,7 @@
 """QualiCharge schemas."""
 
 from datetime import datetime, timezone
+from enum import IntEnum
 from typing import Any, List, Optional, Union
 from uuid import UUID, uuid4
 
@@ -33,6 +34,13 @@ from ..models.static import (
     ImplantationStationEnum,
     RaccordementEnum,
 )
+
+
+class OperationalUnitTypeEnum(IntEnum):
+    """Operational unit types."""
+
+    CHARGING = 1
+    MOBILITY = 2
 
 
 class BaseTimestampedSQLModel(SQLModel):
@@ -189,6 +197,21 @@ class Localisation(BaseTimestampedSQLModel, table=True):
         return self._wkb_to_coordinates(value)
 
 
+class OperationalUnit(BaseTimestampedSQLModel, table=True):
+    """OperationalUnit table."""
+
+    id: Optional[UUID] = Field(default_factory=lambda: uuid4().hex, primary_key=True)
+    code: str = Field(
+        regex="^[A-Z]{2}[A-Z0-9]{3}$",
+        index=True,
+        unique=True,
+    )
+    name: str
+    type: OperationalUnitTypeEnum
+
+    stations: List["Station"] = Relationship(back_populates="operational_unit")
+
+
 class Station(BaseTimestampedSQLModel, table=True):
     """Station table."""
 
@@ -224,6 +247,11 @@ class Station(BaseTimestampedSQLModel, table=True):
 
     localisation_id: Optional[UUID] = Field(default=None, foreign_key="localisation.id")
     localisation: Localisation = Relationship(back_populates="stations")
+
+    operational_unit_id: Optional[UUID] = Field(
+        default=None, foreign_key="operationalunit.id"
+    )
+    operational_unit: OperationalUnit = Relationship(back_populates="stations")
 
     points_de_charge: List["PointDeCharge"] = Relationship(back_populates="station")
 

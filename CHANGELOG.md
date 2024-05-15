@@ -8,6 +8,10 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Added
+
+- Draft `OperationalUnit` schema
+
 ## [0.5.0] - 2024-05-15
 
 ### Added

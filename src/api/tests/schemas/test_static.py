@@ -15,6 +15,7 @@ from qualicharge.factories.static import (
     EnseigneFactory,
     LocalisationFactory,
     OperateurFactory,
+    OperationalUnitFactory,
     PointDeChargeFactory,
     StationFactory,
 )
@@ -188,6 +189,7 @@ def test_timestamped_model_constraints_composition(db_session):
         [OperateurFactory, "operateur"],
         [EnseigneFactory, "enseigne"],
         [LocalisationFactory, "localisation"],
+        [OperationalUnitFactory, "operational_unit"],
     ],
 )
 def test_relationships_for_stations(db_session, related_factory, related_field):

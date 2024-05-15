@@ -14,6 +14,7 @@ from ..schemas import (
     Enseigne,
     Localisation,
     Operateur,
+    OperationalUnit,
     PointDeCharge,
     Station,
 )
@@ -114,6 +115,13 @@ class PointDeChargeFactory(TimestampedSQLModelFactory[PointDeCharge]):
     )
 
 
+class OperationalUnitFactory(TimestampedSQLModelFactory[OperationalUnit]):
+    """OperationalUnit schema factory."""
+
+    code = Use(FrenchDataclassFactory.__faker__.pystr_format, "FR###")
+    name = Use(FrenchDataclassFactory.__faker__.company)
+
+
 class StationFactory(TimestampedSQLModelFactory[Station]):
     """Station schema factory."""
 
@@ -127,3 +135,4 @@ class StationFactory(TimestampedSQLModelFactory[Station]):
     operateur_id = None
     enseigne_id = None
     localisation_id = None
+    operational_unit_id = None

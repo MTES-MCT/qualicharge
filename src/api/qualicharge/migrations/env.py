@@ -14,6 +14,7 @@ from qualicharge.schemas import (  # noqa: F401
     Enseigne,
     Localisation,
     Operateur,
+    OperationalUnit,
     PointDeCharge,
     Session,
     Station,
