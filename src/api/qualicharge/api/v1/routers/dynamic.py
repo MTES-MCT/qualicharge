@@ -4,11 +4,12 @@ import logging
 from typing import Annotated, List, cast
 
 from annotated_types import Len
-from fastapi import APIRouter, Depends, HTTPException, Path
+from fastapi import APIRouter, Depends, HTTPException, Path, Query
 from fastapi import status as fa_status
+from pydantic import PastDatetime, StringConstraints
 from sqlalchemy import func
 from sqlalchemy.schema import Column as SAColumn
-from sqlmodel import Session, select
+from sqlmodel import Session, join, select
 
 from qualicharge.conf import settings
 from qualicharge.db import get_session
@@ -17,7 +18,7 @@ from qualicharge.models.dynamic import (
     StatusCreate,
     StatusRead,
 )
-from qualicharge.schemas import PointDeCharge, Status
+from qualicharge.schemas import PointDeCharge, Station, Status
 from qualicharge.schemas import Session as QCSession
 
 logger = logging.getLogger(__name__)
@@ -33,13 +34,74 @@ BulkStatusCreateList = Annotated[
 BulkSessionCreateList = Annotated[
     List[SessionCreate], Len(2, settings.API_SESSION_BULK_CREATE_MAX_SIZE)
 ]
+IdItinerance = Annotated[
+    str,
+    StringConstraints(pattern="(?:(?:^|,)(^[A-Z]{2}[A-Z0-9]{4,33}$|Non concerné))+$"),
+]
 
 
 @router.get("/status/", tags=["Status"])
 async def list_statuses(
+    from_: Annotated[
+        PastDatetime | None,
+        Query(
+            alias="from",
+            title="Date/time from",
+            description="The datetime from when we want statuses to be collected",
+        ),
+    ] = None,
+    pdc: Annotated[
+        List[IdItinerance] | None,
+        Query(
+            title="Point de charge",
+            description=(
+                "Filter status by `id_pdc_itinerance` "
+                "(can be provided multiple times)"
+            ),
+        ),
+    ] = None,
+    station: Annotated[
+        List[IdItinerance] | None,
+        Query(
+            title="Station",
+            description=(
+                "Filter status by `id_station_itinerance` "
+                "(can be provided multiple times)"
+            ),
+        ),
+    ] = None,
     session: Session = Depends(get_session),
 ) -> List[StatusRead]:
-    """List last known point of charge statuses."""
+    """List last known points of charge status."""
+    pdc_ids_filter = set()
+
+    # Filter by station
+    if station:
+        pdc_ids_filter = set(
+            session.exec(
+                select(PointDeCharge.id)
+                .select_from(
+                    join(
+                        PointDeCharge,
+                        Station,
+                        cast(SAColumn, PointDeCharge.station_id)
+                        == cast(SAColumn, Station.id),
+                    )
+                )
+                .filter(cast(SAColumn, Station.id_station_itinerance).in_(station))
+            ).all()
+        )
+
+    # Filter by point of charge
+    if pdc:
+        pdc_ids_filter = pdc_ids_filter | set(
+            session.exec(
+                select(PointDeCharge.id).filter(
+                    cast(SAColumn, PointDeCharge.id_pdc_itinerance).in_(pdc)
+                )
+            ).all()
+        )
+
     # Get latest status per point of charge
     latest_db_statuses_stmt = (
         select(
@@ -49,13 +111,23 @@ async def list_statuses(
         .group_by(cast(SAColumn, Status.point_de_charge_id))
         .subquery()
     )
-    db_statuses = session.exec(
-        select(Status).join_from(
-            Status,
-            latest_db_statuses_stmt,
-            Status.id == latest_db_statuses_stmt.c.status_id,  # type: ignore[arg-type]
+    db_statuses_stmt = select(Status)
+
+    if from_:
+        db_statuses_stmt = db_statuses_stmt.where(Status.horodatage >= from_)
+
+    if len(pdc_ids_filter):
+        db_statuses_stmt = db_statuses_stmt.filter(
+            cast(SAColumn, Status.point_de_charge_id).in_(pdc_ids_filter)
         )
-    ).all()
+
+    db_statuses_stmt = db_statuses_stmt.join_from(
+        Status,
+        latest_db_statuses_stmt,
+        Status.id == latest_db_statuses_stmt.c.status_id,  # type: ignore[arg-type]
+    )
+    db_statuses = session.exec(db_statuses_stmt).all()
+
     return [
         StatusRead(
             **s.model_dump(
@@ -138,6 +210,14 @@ async def read_status_history(
             ),
         ),
     ],
+    from_: Annotated[
+        PastDatetime | None,
+        Query(
+            alias="from",
+            title="Date/time from",
+            description="The datetime from when we want statuses to be collected",
+        ),
+    ] = None,
     session: Session = Depends(get_session),
 ) -> List[StatusRead]:
     """Read point of charge status history."""
@@ -153,11 +233,15 @@ async def read_status_history(
         )
 
     # Get latest statuses
+    db_statuses_stmt = select(Status).where(Status.point_de_charge_id == pdc_id)
+
+    if from_:
+        db_statuses_stmt = db_statuses_stmt.where(Status.horodatage >= from_)
+
     db_statuses = session.exec(
-        select(Status)
-        .where(Status.point_de_charge_id == pdc_id)
-        .order_by(cast(SAColumn, Status.horodatage))
+        db_statuses_stmt.order_by(cast(SAColumn, Status.horodatage))
     ).all()
+
     if not len(db_statuses):
         raise HTTPException(
             status_code=fa_status.HTTP_404_NOT_FOUND,

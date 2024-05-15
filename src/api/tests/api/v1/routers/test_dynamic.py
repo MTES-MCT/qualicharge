@@ -2,6 +2,7 @@
 
 import json
 from typing import cast
+from urllib.parse import quote_plus
 
 from fastapi import status
 from sqlalchemy import func
@@ -14,7 +15,11 @@ from qualicharge.factories.dynamic import (
     StatusCreateFactory,
     StatusFactory,
 )
-from qualicharge.factories.static import StatiqueFactory
+from qualicharge.factories.static import (
+    PointDeChargeFactory,
+    StationFactory,
+    StatiqueFactory,
+)
 from qualicharge.models.dynamic import StatusRead
 from qualicharge.schemas import PointDeCharge, Session, Status
 from qualicharge.schemas.utils import save_statique, save_statiques
@@ -72,6 +77,131 @@ def test_list_statuses(db_session, client_auth):
             db_status.etat_prise_type_chademo == response_status.etat_prise_type_chademo
         )
         assert db_status.etat_prise_type_ef == response_status.etat_prise_type_ef
+
+
+def test_list_statuses_filters(db_session, client_auth):  # noqa: PLR0915
+    """Test the /status/ get endpoint filters."""
+    StationFactory.__session__ = db_session
+    PointDeChargeFactory.__session__ = db_session
+    StatusFactory.__session__ = db_session
+
+    # Create stations, points of charge and statuses
+    n_station = 2
+    n_pdc_by_station = 2
+    n_status_by_pdc = 2
+    stations = StationFactory.create_batch_sync(n_station)
+    for station in stations:
+        PointDeChargeFactory.create_batch_sync(n_pdc_by_station, station_id=station.id)
+    pdcs = db_session.exec(select(PointDeCharge)).all()
+    assert len(pdcs) == n_station * n_pdc_by_station
+    for pdc in pdcs:
+        StatusFactory.create_batch_sync(n_status_by_pdc, point_de_charge_id=pdc.id)
+    assert db_session.exec(select(func.count(Status.id))).one() == (
+        n_station * n_pdc_by_station * n_status_by_pdc
+    )
+
+    # List all latest statuses by pdc
+    response = client_auth.get("/dynamique/status/")
+    assert response.status_code == status.HTTP_200_OK
+    statuses = [StatusRead(**s) for s in response.json()]
+    assert len(statuses) == n_station * n_pdc_by_station
+
+    # Filter with invalid PDC
+    response = client_auth.get("/dynamique/status/?pdc=foo")
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+
+    # Filter with one pdc
+    response = client_auth.get(f"/dynamique/status/?pdc={pdcs[0].id_pdc_itinerance}")
+    assert response.status_code == status.HTTP_200_OK
+    statuses = [StatusRead(**s) for s in response.json()]
+    assert len(statuses) == 1
+
+    # Filter with two pdcs
+    selected_pdc_indexes = (0, 1)
+    query = "&".join(
+        f"pdc={pdcs[idx].id_pdc_itinerance}" for idx in selected_pdc_indexes
+    )
+    response = client_auth.get(f"/dynamique/status/?{query}")
+    assert response.status_code == status.HTTP_200_OK
+    statuses = [StatusRead(**s) for s in response.json()]
+    assert len(statuses) == len(selected_pdc_indexes)
+
+    # Filter with invalid station
+    response = client_auth.get("/dynamique/status/?station=foo")
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+
+    # Filter with one station
+    response = client_auth.get(
+        f"/dynamique/status/?station={stations[0].id_station_itinerance}"
+    )
+    assert response.status_code == status.HTTP_200_OK
+    statuses = [StatusRead(**s) for s in response.json()]
+    assert len(statuses) == n_pdc_by_station
+    assert {s.id_pdc_itinerance for s in statuses} == {
+        p.id_pdc_itinerance for p in stations[0].points_de_charge
+    }
+
+    # Filter with two stations
+    query = "&".join(f"station={station.id_station_itinerance}" for station in stations)
+    response = client_auth.get(f"/dynamique/status/?{query}")
+    assert response.status_code == status.HTTP_200_OK
+    statuses = [StatusRead(**s) for s in response.json()]
+    assert len(statuses) == n_station * n_pdc_by_station
+
+    # Filter with one station and one pdc from another station
+    query = (
+        f"station={stations[0].id_station_itinerance}&"
+        f"pdc={stations[1].points_de_charge[0].id_pdc_itinerance}"
+    )
+    response = client_auth.get(f"/dynamique/status/?{query}")
+    assert response.status_code == status.HTTP_200_OK
+    statuses = [StatusRead(**s) for s in response.json()]
+    # 2 for the station and 1 for the pdc (from a different station)
+    expected_statuses = 3
+    assert len(statuses) == expected_statuses
+
+    # Filter with one station and one pdc from the same station
+    query = (
+        f"station={stations[0].id_station_itinerance}&"
+        f"pdc={stations[0].points_de_charge[0].id_pdc_itinerance}"
+    )
+    response = client_auth.get(f"/dynamique/status/?{query}")
+    assert response.status_code == status.HTTP_200_OK
+    statuses = [StatusRead(**s) for s in response.json()]
+    # 2 for the station (as the extra pdc is from the same station)
+    expected_statuses = 2
+    assert len(statuses) == expected_statuses
+    assert {s.id_pdc_itinerance for s in statuses} == {
+        p.id_pdc_itinerance for p in stations[0].points_de_charge
+    }
+
+    # Filter with invalid from date time
+    response = client_auth.get("/dynamique/status/?from=foo")
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+
+    # Filter with only latest status datetime
+    statuses = db_session.exec(select(Status).order_by(Status.horodatage)).all()
+    from_ = quote_plus(statuses[-1].horodatage.isoformat())
+    response = client_auth.get(f"/dynamique/status/?from={from_}")
+    assert response.status_code == status.HTTP_200_OK
+    statuses = [StatusRead(**s) for s in response.json()]
+    assert len(statuses) == 1
+
+    # Filter with only latest status datetime and pdc
+    response = client_auth.get(
+        f"/dynamique/status/?from={from_}&pdc={statuses[-1].id_pdc_itinerance}"
+    )
+    assert response.status_code == status.HTTP_200_OK
+    statuses = [StatusRead(**s) for s in response.json()]
+    assert len(statuses) == 1
+
+    # Filter with the oldest status datetime
+    statuses = db_session.exec(select(Status).order_by(Status.horodatage)).all()
+    from_ = quote_plus(statuses[0].horodatage.isoformat())
+    response = client_auth.get(f"/dynamique/status/?from={from_}")
+    assert response.status_code == status.HTTP_200_OK
+    statuses = [StatusRead(**s) for s in response.json()]
+    assert len(statuses) == n_station * n_pdc_by_station
 
 
 def test_read_status_for_non_existing_point_of_charge(client_auth):
@@ -218,6 +348,56 @@ def test_read_status_history(db_session, client_auth):
             == response_status.etat_prise_type_chademo
         )
         assert expected_status.etat_prise_type_ef == response_status.etat_prise_type_ef
+
+
+def test_read_status_history_filters(db_session, client_auth):
+    """Test the /status/{id_pdc_itinerance}/history endpoint filters."""
+    StatusFactory.__session__ = db_session
+
+    # Create the PointDeCharge
+    id_pdc_itinerance = "ESZUNE1111ER1"
+    save_statique(
+        db_session, StatiqueFactory.build(id_pdc_itinerance=id_pdc_itinerance)
+    )
+    pdc = db_session.exec(
+        select(PointDeCharge).where(
+            PointDeCharge.id_pdc_itinerance == id_pdc_itinerance
+        )
+    ).one()
+
+    # Create 20 attached statuses
+    n_statuses = 20
+    StatusFactory.create_batch_sync(n_statuses, point_de_charge_id=pdc.id)
+    assert (
+        db_session.exec(
+            select(func.count(Status.id)).where(Status.point_de_charge_id == pdc.id)
+        ).one()
+        == n_statuses
+    )
+    # All statuses
+    db_statuses = db_session.exec(
+        select(Status)
+        .where(Status.point_de_charge_id == pdc.id)
+        .order_by(Status.horodatage)
+    ).all()
+
+    # Get latest status
+    from_ = quote_plus(db_statuses[-1].horodatage.isoformat())
+    response = client_auth.get(
+        f"/dynamique/status/{id_pdc_itinerance}/history?from={from_}"
+    )
+    assert response.status_code == status.HTTP_200_OK
+    response_statuses = [StatusRead(**s) for s in response.json()]
+    assert len(response_statuses) == 1
+
+    # Filter with the oldest status datetime
+    from_ = quote_plus(db_statuses[0].horodatage.isoformat())
+    response = client_auth.get(
+        f"/dynamique/status/{id_pdc_itinerance}/history?from={from_}"
+    )
+    assert response.status_code == status.HTTP_200_OK
+    statuses = [StatusRead(**s) for s in response.json()]
+    assert len(statuses) == n_statuses
 
 
 def test_create_status_for_non_existing_point_of_charge(client_auth):
