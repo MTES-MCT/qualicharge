@@ -8,6 +8,8 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.5.0] - 2024-05-15
+
 ### Added
 
 - Implement statique router endpoints
@@ -60,7 +62,8 @@ and this project adheres to
 
 - Implement base FastAPI app
 
-[unreleased]: https://github.com/MTES-MCT/qualicharge/compare/v0.4.0...main
+[unreleased]: https://github.com/MTES-MCT/qualicharge/compare/v0.5.0...main
+[0.5.0]: https://github.com/MTES-MCT/qualicharge/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/MTES-MCT/qualicharge/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/MTES-MCT/qualicharge/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/MTES-MCT/qualicharge/compare/v0.2.0...v0.2.1
