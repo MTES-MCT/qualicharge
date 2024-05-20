@@ -141,14 +141,15 @@ async def update(
     try:
         update = update_statique(session, id_pdc_itinerance, statique)
     except IntegrityError as err:
+        session.rollback()
         raise HTTPException(
             status_code=status.HTTP_406_NOT_ACCEPTABLE,
             detail="id_pdc_itinerance does not match request body",
         ) from err
     except ObjectDoesNotExist as err:
+        session.rollback()
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Statique to update does not exist",
+            status_code=status.HTTP_404_NOT_FOUND, detail=str(err)
         ) from err
     return update
 
@@ -158,7 +159,15 @@ async def create(
     statique: Statique, session: Session = Depends(get_session)
 ) -> StatiqueItemsCreatedResponse:
     """Create a statique item."""
-    return StatiqueItemsCreatedResponse(items=[save_statique(session, statique)])
+    try:
+        db_statique = save_statique(session, statique)
+    except ObjectDoesNotExist as err:
+        session.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=str(err)
+        ) from err
+
+    return StatiqueItemsCreatedResponse(items=[db_statique])
 
 
 @router.post("/bulk", status_code=status.HTTP_201_CREATED)
@@ -166,7 +175,14 @@ async def bulk(
     statiques: BulkStatiqueList, session: Session = Depends(get_session)
 ) -> StatiqueItemsCreatedResponse:
     """Create a set of statique items."""
-    statiques = [statique for statique in save_statiques(session, statiques)]
+    try:
+        statiques = [statique for statique in save_statiques(session, statiques)]
+    except ObjectDoesNotExist as err:
+        session.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=str(err)
+        ) from err
+
     if not len(statiques):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
