@@ -26,6 +26,7 @@ from sqlmodel import Field, Relationship, UniqueConstraint, select
 from sqlmodel import Session as SMSession
 from sqlmodel.main import SQLModelConfig
 
+from qualicharge.auth.schemas import Group, GroupOperationalUnit
 from qualicharge.exceptions import ObjectDoesNotExist
 
 from ..models.dynamic import SessionBase, StatusBase
@@ -187,7 +188,11 @@ class OperationalUnit(BaseTimestampedSQLModel, table=True):
     name: str
     type: OperationalUnitTypeEnum
 
+    # Relationships
     stations: List["Station"] = Relationship(back_populates="operational_unit")
+    groups: List["Group"] = Relationship(
+        back_populates="operational_units", link_model=GroupOperationalUnit
+    )
 
     def create_stations_fk(self, session: SMSession):
         """Create linked stations foreign keys."""
