@@ -1,0 +1,1 @@
+"""QualiCharge auth module tests."""
