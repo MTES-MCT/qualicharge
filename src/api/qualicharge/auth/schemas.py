@@ -36,7 +36,7 @@ class User(BaseTimestampedSQLModel, table=True):
 
     id: Optional[UUID] = Field(default_factory=lambda: uuid4().hex, primary_key=True)
     username: str = Field(unique=True, max_length=150)
-    email: EmailStr = Field(sa_type=String)
+    email: EmailStr = Field(unique=True, sa_type=String)
     first_name: Optional[str] = Field(max_length=150)
     last_name: Optional[str] = Field(max_length=150)
     is_active: bool = False
