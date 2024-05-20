@@ -12,6 +12,7 @@ CURL = $(COMPOSE_RUN) curl
 
 # -- Ressources
 IRVE_STATIC_DATASET_URL = https://www.data.gouv.fr/fr/datasets/r/eb76d20a-8501-400e-b336-d85724de5435
+AFIREV_CHARGING_DATASET_URL = https://afirev.fr/en/liste-des-identifiants-attribues/
 
 # ==============================================================================
 # RULES
@@ -25,6 +26,8 @@ data:
 data/irve-statique.csv: data
 	$(CURL) -L -o /work/data/irve-statique.csv $(IRVE_STATIC_DATASET_URL)
 
+data/afirev-charging.csv: data
+	@echo "You should download CSV file from $(AFIREV_CHARGING_DATASET_URL)"
 
 # -- Docker/compose
 bootstrap: ## bootstrap the project for development

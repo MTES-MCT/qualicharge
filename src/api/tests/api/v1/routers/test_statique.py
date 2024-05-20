@@ -3,9 +3,12 @@
 import json
 
 from fastapi import status
+from sqlalchemy import func
+from sqlmodel import select
 
 from qualicharge.conf import settings
 from qualicharge.factories.static import StatiqueFactory
+from qualicharge.schemas import Station
 from qualicharge.schemas.utils import save_statique, save_statiques
 
 
@@ -128,6 +131,22 @@ def test_create(client_auth):
     assert json_response["items"][0]["id_pdc_itinerance"] == id_pdc_itinerance
 
 
+def test_create_for_unknown_operational_unit(client_auth):
+    """Test the /statique/ create endpoint."""
+    id_station_itinerance = "FRFOOP0001"
+    data = StatiqueFactory.build(
+        id_station_itinerance=id_station_itinerance,
+    )
+
+    response = client_auth.post("/statique/", json=json.loads(data.model_dump_json()))
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+    json_response = response.json()
+    assert (
+        json_response["detail"]
+        == "OperationalUnit with code FRFOO should be created first"
+    )
+
+
 def test_update(client_auth, db_session):
     """Test the /statique/{id_pdc_itinerance} update endpoint."""
     id_pdc_itinerance = "ESZUNE1111ER1"
@@ -140,11 +159,41 @@ def test_update(client_auth, db_session):
 
     response = client_auth.put(
         f"/statique/{id_pdc_itinerance}",
-        json=json.loads(db_statique.model_dump_json()),
+        json=json.loads(new_statique.model_dump_json()),
     )
     assert response.status_code == status.HTTP_200_OK
     json_response = response.json()
     assert json_response == json.loads(new_statique.model_dump_json())
+
+
+def test_update_for_unknown_operational_unit(client_auth, db_session):
+    """Test the statique update endpoint with unknown operational unit prefix."""
+    id_pdc_itinerance = "ESZUNE1111ER1"
+    db_statique = save_statique(
+        db_session,
+        StatiqueFactory.build(
+            id_pdc_itinerance=id_pdc_itinerance,
+        ),
+    )
+
+    id_station_itinerance = "FRFOOP0001"
+    new_statique = db_statique.model_copy(
+        update={
+            "id_station_itinerance": id_station_itinerance,
+        },
+        deep=True,
+    )
+
+    response = client_auth.put(
+        f"/statique/{id_pdc_itinerance}",
+        json=json.loads(new_statique.model_dump_json()),
+    )
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+    json_response = response.json()
+    assert (
+        json_response["detail"]
+        == "OperationalUnit with code FRFOO should be created first"
+    )
 
 
 def test_update_on_wrong_id_pdc_itinerance(client_auth):
@@ -173,7 +222,7 @@ def test_update_when_statique_does_not_exist(client_auth):
     )
     assert response.status_code == status.HTTP_404_NOT_FOUND
     json_response = response.json()
-    assert json_response == {"detail": "Statique to update does not exist"}
+    assert json_response == {"detail": "Statique with id_pdc_itinerance does not exist"}
 
 
 def test_bulk(client_auth):
@@ -191,6 +240,36 @@ def test_bulk(client_auth):
     assert json_response["size"] == len(payload)
     assert json_response["items"][0]["id_pdc_itinerance"] == data[0].id_pdc_itinerance
     assert json_response["items"][1]["id_pdc_itinerance"] == data[1].id_pdc_itinerance
+
+
+def test_bulk_for_unknown_operational_unit(client_auth, db_session):
+    """Test the /statique/bulk create endpoint for unknown operational unit."""
+    id_station_itinerance = "FRFOOP0001"
+    data = StatiqueFactory.batch(
+        size=2,
+    )
+    data += [
+        StatiqueFactory.build(
+            id_station_itinerance=id_station_itinerance,
+        )
+    ]
+    data += StatiqueFactory.batch(
+        size=2,
+    )
+
+    payload = [json.loads(d.model_dump_json()) for d in data]
+    response = client_auth.post("/statique/bulk", json=payload)
+
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+    json_response = response.json()
+    assert (
+        json_response["detail"]
+        == "OperationalUnit with code FRFOO should be created first"
+    )
+
+    # Check created statiques (if any)
+    n_stations = db_session.exec(select(func.count(Station.id))).one()
+    assert n_stations == 0
 
 
 def test_bulk_with_outbound_sizes(client_auth):

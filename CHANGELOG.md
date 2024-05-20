@@ -10,7 +10,8 @@ and this project adheres to
 
 ### Added
 
-- Draft `OperationalUnit` schema
+- Implement `OperationalUnit` schema
+- Link `OperationalUnit` to `Station` using AFIREV prefixes
 
 ## [0.5.0] - 2024-05-15
 

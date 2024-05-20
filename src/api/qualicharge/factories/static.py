@@ -8,6 +8,7 @@ from polyfactory.factories.dataclass_factory import DataclassFactory
 from polyfactory.factories.pydantic_factory import ModelFactory
 from pydantic_extra_types.coordinate import Coordinate
 
+from ..fixtures.operational_units import prefixes
 from ..models.static import Statique
 from ..schemas import (
     Amenageur,
@@ -57,10 +58,12 @@ class StatiqueFactory(ModelFactory[Statique]):
     date_maj = Use(DataclassFactory.__faker__.past_date)
     date_mise_en_service = Use(DataclassFactory.__faker__.past_date)
     id_station_itinerance = Use(
-        FrenchDataclassFactory.__faker__.pystr_format, "FR###P######"
+        lambda: DataclassFactory.__random__.choice(prefixes)
+        + FrenchDataclassFactory.__faker__.pystr_format("P######")
     )
     id_pdc_itinerance = Use(
-        FrenchDataclassFactory.__faker__.pystr_format, "FR###E######"
+        lambda: DataclassFactory.__random__.choice(prefixes)
+        + FrenchDataclassFactory.__faker__.pystr_format("E######")
     )
 
 
@@ -105,7 +108,8 @@ class PointDeChargeFactory(TimestampedSQLModelFactory[PointDeCharge]):
     """PointDeCharge schema factory."""
 
     id_pdc_itinerance = Use(
-        FrenchDataclassFactory.__faker__.pystr_format, "FR###E######"
+        lambda: DataclassFactory.__random__.choice(prefixes)
+        + FrenchDataclassFactory.__faker__.pystr_format("E######")
     )
     puissance_nominale = Use(
         DataclassFactory.__faker__.pyfloat,
@@ -118,7 +122,7 @@ class PointDeChargeFactory(TimestampedSQLModelFactory[PointDeCharge]):
 class OperationalUnitFactory(TimestampedSQLModelFactory[OperationalUnit]):
     """OperationalUnit schema factory."""
 
-    code = Use(FrenchDataclassFactory.__faker__.pystr_format, "FR###")
+    code = Use(DataclassFactory.__random__.choice, prefixes)
     name = Use(FrenchDataclassFactory.__faker__.company)
 
 
@@ -126,7 +130,8 @@ class StationFactory(TimestampedSQLModelFactory[Station]):
     """Station schema factory."""
 
     id_station_itinerance = Use(
-        FrenchDataclassFactory.__faker__.pystr_format, "FR###P######"
+        lambda: DataclassFactory.__random__.choice(prefixes)
+        + FrenchDataclassFactory.__faker__.pystr_format("P######")
     )
     date_maj = Use(DataclassFactory.__faker__.past_date)
     date_mise_en_service = Use(DataclassFactory.__faker__.past_date)

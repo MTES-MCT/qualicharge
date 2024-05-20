@@ -8,6 +8,7 @@ from sqlmodel import Session, SQLModel, create_engine
 from qualicharge.api.v1 import app as v1
 from qualicharge.conf import settings
 from qualicharge.db import get_session
+from qualicharge.fixtures.operational_units import operational_units
 
 
 @pytest.fixture(scope="session")
@@ -58,4 +59,13 @@ def override_db_test_session(db_session):
 
     v1.dependency_overrides[get_session] = get_session_override
 
+    yield
+
+
+@pytest.fixture(autouse=True, scope="session")
+def load_operational_units(db_engine):
+    """Load operational units fixture."""
+    with Session(db_engine) as session:
+        session.add_all(operational_units)
+        session.commit()
     yield
