@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   postgresql:
     image: timescale/timescaledb-ha:pg14-ts2.14-oss
