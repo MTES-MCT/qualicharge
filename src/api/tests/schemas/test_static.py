@@ -19,7 +19,7 @@ from qualicharge.factories.static import (
     PointDeChargeFactory,
     StationFactory,
 )
-from qualicharge.schemas import Amenageur, Localisation
+from qualicharge.schemas import Amenageur, Localisation, OperationalUnit, Station
 
 
 @pytest.mark.parametrize(
@@ -189,11 +189,14 @@ def test_timestamped_model_constraints_composition(db_session):
         [OperateurFactory, "operateur"],
         [EnseigneFactory, "enseigne"],
         [LocalisationFactory, "localisation"],
-        [OperationalUnitFactory, "operational_unit"],
     ],
 )
 def test_relationships_for_stations(db_session, related_factory, related_field):
-    """Test Schema.stations one-to-many relationship."""
+    """Test Schema.stations one-to-many relationship.
+
+    Note that the OperationalUnit FK is tested separately as operational units already
+    exist in database and the FK is automatically set via a dedicated event listener.
+    """
     related_factory.__session__ = db_session
     StationFactory.__session__ = db_session
 
@@ -224,3 +227,96 @@ def test_relationships_for_point_de_charge(db_session):
     )
     assert len(station.points_de_charge) == size
     assert all(pdc.station_id == station.id for pdc in points_de_charge)
+
+
+def test_station_events(db_session):
+    """Test Station events."""
+    StationFactory.__session__ = db_session
+    OperationalUnitFactory.__session__ = db_session
+
+    # Create random stations
+    StationFactory.create_batch_sync(5)
+
+    # The operation unit
+    operational_unit_code = "FRS63"
+    operational_unit = db_session.exec(
+        select(OperationalUnit).where(OperationalUnit.code == operational_unit_code)
+    ).one()
+    assert len(operational_unit.stations) == 0
+
+    # Create stations that are supposed to be automatically linked
+    n_stations = 3
+    station = StationFactory.create_sync(
+        id_station_itinerance=f"{operational_unit_code}P0001"
+    )
+    StationFactory.create_sync(id_station_itinerance=f"{operational_unit_code}P0002")
+    StationFactory.create_sync(id_station_itinerance=f"{operational_unit_code}P0003")
+    assert len(operational_unit.stations) == n_stations
+
+    # Another operation unit
+    other_operational_unit_code = "FRS72"
+    other_operational_unit = db_session.exec(
+        select(OperationalUnit).where(
+            OperationalUnit.code == other_operational_unit_code
+        )
+    ).one()
+    assert len(other_operational_unit.stations) == 0
+
+    # Update station id_station_itinerance
+    station.id_station_itinerance = f"{other_operational_unit_code}P0001"
+    db_session.add(station)
+    db_session.commit()
+    assert len(other_operational_unit.stations) == 1
+    assert other_operational_unit.stations[0] == station
+
+
+def test_operational_unit_create_stations_fk_no_station(db_session):
+    """Test OperationalUnit.create_stations_fk method with no matching station."""
+    OperationalUnitFactory.__session__ = db_session
+
+    operational_unit_code = "FRFOO"
+    operational_unit = OperationalUnitFactory.create_sync(code=operational_unit_code)
+
+    operational_unit.create_stations_fk(db_session)
+    assert operational_unit.stations == []
+
+
+def test_operational_unit_create_stations_fk(db_session):
+    """Test OperationalUnit.create_stations_fk method."""
+    StationFactory.__session__ = db_session
+    OperationalUnitFactory.__session__ = db_session
+
+    # Create random stations
+    StationFactory.create_batch_sync(5)
+
+    # The operation unit
+    operational_unit_code = "FRFOO"
+    operational_unit = OperationalUnitFactory.create_sync(code=operational_unit_code)
+
+    # Create stations we want to link to the operational unit
+    n_stations = 3
+    for idx in range(n_stations):
+        StationFactory.create_sync(
+            id_station_itinerance=f"{operational_unit_code}P{idx:04d}"
+        )
+    operational_unit.create_stations_fk(db_session)
+
+    # We expect to select 3 linked stations
+    stations = db_session.exec(
+        select(Station).where(Station.operational_unit_id == operational_unit.id)
+    ).all()
+    assert len(stations) == n_stations
+
+    # Create new stations and iterate
+    extra_stations = 2
+    for idx in range(n_stations, n_stations + extra_stations):
+        StationFactory.create_sync(
+            id_station_itinerance=f"{operational_unit_code}P{idx:04d}"
+        )
+    operational_unit.create_stations_fk(db_session)
+
+    # We expect to select 5 linked stations
+    stations = db_session.exec(
+        select(Station).where(Station.operational_unit_id == operational_unit.id)
+    ).all()
+    assert len(stations) == n_stations + extra_stations

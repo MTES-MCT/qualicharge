@@ -316,6 +316,7 @@ def test_save_statiques_number_of_database_queries(db_session):
             6,  # create non existing PDC-related entries
             2,  # update foreign keys
             6 * n_statiques,  # PDC to statique
+            2 * n_statiques,  # get station's linked operational unit and link it
         )
     )
     assert first_counter.count == expected_queries

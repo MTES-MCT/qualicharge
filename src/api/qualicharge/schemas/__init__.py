@@ -2,7 +2,7 @@
 
 from datetime import datetime, timezone
 from enum import IntEnum
-from typing import Any, List, Optional, Union
+from typing import Any, List, Optional, Union, cast
 from uuid import UUID, uuid4
 
 from geoalchemy2.shape import to_shape
@@ -20,10 +20,14 @@ from pydantic import (
 )
 from pydantic_extra_types.coordinate import Coordinate
 from shapely.geometry import mapping
-from sqlalchemy import CheckConstraint
+from sqlalchemy import CheckConstraint, event
+from sqlalchemy.schema import Column as SAColumn
 from sqlalchemy.types import Date, DateTime, String
-from sqlmodel import Field, Relationship, SQLModel, UniqueConstraint
+from sqlmodel import Field, Relationship, SQLModel, UniqueConstraint, select
+from sqlmodel import Session as SMSession
 from sqlmodel.main import SQLModelConfig
+
+from qualicharge.exceptions import ObjectDoesNotExist
 
 from ..models.dynamic import SessionBase, StatusBase
 from ..models.static import (
@@ -211,6 +215,25 @@ class OperationalUnit(BaseTimestampedSQLModel, table=True):
 
     stations: List["Station"] = Relationship(back_populates="operational_unit")
 
+    def create_stations_fk(self, session: SMSession):
+        """Create linked stations foreign keys."""
+        stations = session.exec(
+            select(Station).where(
+                cast(SAColumn, Station.id_station_itinerance).regexp_match(
+                    f"^{self.code}P.*$"
+                )
+            )
+        ).all()
+
+        # No matching station!
+        if not len(stations):
+            return
+
+        for station in stations:
+            station.operational_unit_id = self.id
+        session.add_all(stations)
+        session.commit()
+
 
 class Station(BaseTimestampedSQLModel, table=True):
     """Station table."""
@@ -259,6 +282,21 @@ class Station(BaseTimestampedSQLModel, table=True):
         """Assess instances equality given uniqueness criterions."""
         fields = ("id_station_itinerance",)
         return all(getattr(self, field) == getattr(other, field) for field in fields)
+
+
+@event.listens_for(Station, "before_insert")
+@event.listens_for(Station, "before_update")
+def link_station_to_operational_unit(mapper, connection, target):
+    """Automatically link station to an operational unit."""
+    code = target.id_station_itinerance[:5]
+    operational_unit = connection.execute(
+        select(OperationalUnit).where(OperationalUnit.code == code)
+    ).one_or_none()
+    if operational_unit is None:
+        raise ObjectDoesNotExist(
+            f"OperationalUnit with code {code} should be created first"
+        )
+    target.operational_unit_id = operational_unit.id
 
 
 class PointDeCharge(BaseTimestampedSQLModel, table=True):

@@ -9,5 +9,6 @@ from .fixtures.app import client, client_auth
 from .fixtures.db import (
     db_engine,
     db_session,
+    load_operational_units,
     override_db_test_session,
 )
