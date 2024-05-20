@@ -51,6 +51,46 @@ jobs:
       - name: Lint with MyPy
         run: pipenv run mypy qualicharge tests
 
+  test-database-migrations:
+    needs: build-api
+    runs-on: ubuntu-latest
+    services:
+      postgresql:
+        image: timescale/timescaledb-ha:pg14-ts2.14-oss
+        env:
+          POSTGRES_DB: test-qualicharge-api
+          POSTGRES_USER: qualicharge
+          POSTGRES_PASSWORD: pass
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    defaults:
+      run:
+        working-directory: ./src/api
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create postgis extension
+        run: psql "postgresql://qualicharge:pass@localhost:5432/test-qualicharge-api" -c "create extension postgis;"
+      - name: Install pipenv
+        run: pipx install pipenv
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pipenv"
+      - name: Run migrations
+        run: pipenv run alembic -c qualicharge/alembic.ini upgrade head
+        env:
+          QUALICHARGE_DB_HOST: localhost
+          QUALICHARGE_DB_NAME: test-qualicharge-api
+          QUALICHARGE_TEST_DB_NAME: test-qualicharge-api
+          # This is a fake setting required to run the app
+          QUALICHARGE_OIDC_PROVIDER_BASE_URL: http://localhost:8080/fake
+
   test-api:
     needs: build-api
     runs-on: ubuntu-latest
