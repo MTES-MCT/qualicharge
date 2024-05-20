@@ -16,7 +16,7 @@ Values have been cleaned manually (trimmed and fixed encoding issues).
 
 from collections import namedtuple
 
-from qualicharge.schemas import OperationalUnit, OperationalUnitTypeEnum
+from qualicharge.schemas.core import OperationalUnit, OperationalUnitTypeEnum
 
 # Operational units
 Item = namedtuple("Item", ["code", "name"])

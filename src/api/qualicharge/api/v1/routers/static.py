@@ -14,7 +14,7 @@ from qualicharge.conf import settings
 from qualicharge.db import get_session
 from qualicharge.exceptions import IntegrityError, ObjectDoesNotExist
 from qualicharge.models.static import Statique
-from qualicharge.schemas import PointDeCharge
+from qualicharge.schemas.core import PointDeCharge
 from qualicharge.schemas.utils import (
     build_statique,
     list_statique,

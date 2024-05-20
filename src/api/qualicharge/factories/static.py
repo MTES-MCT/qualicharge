@@ -10,7 +10,7 @@ from pydantic_extra_types.coordinate import Coordinate
 
 from ..fixtures.operational_units import prefixes
 from ..models.static import Statique
-from ..schemas import (
+from ..schemas.core import (
     Amenageur,
     Enseigne,
     Localisation,

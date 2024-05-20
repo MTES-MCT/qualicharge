@@ -8,7 +8,7 @@ from sqlmodel import select
 
 from qualicharge.conf import settings
 from qualicharge.factories.static import StatiqueFactory
-from qualicharge.schemas import Station
+from qualicharge.schemas.core import Station
 from qualicharge.schemas.utils import save_statique, save_statiques
 
 

@@ -4,7 +4,7 @@ from polyfactory import Use
 from polyfactory.factories.pydantic_factory import ModelFactory
 
 from ..models.dynamic import SessionCreate, StatusCreate
-from ..schemas import Status
+from ..schemas.core import Status
 from . import FrenchDataclassFactory, TimestampedSQLModelFactory
 
 

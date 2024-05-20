@@ -18,8 +18,8 @@ from qualicharge.models.dynamic import (
     StatusCreate,
     StatusRead,
 )
-from qualicharge.schemas import PointDeCharge, Station, Status
-from qualicharge.schemas import Session as QCSession
+from qualicharge.schemas.core import PointDeCharge, Station, Status
+from qualicharge.schemas.core import Session as QCSession
 
 logger = logging.getLogger(__name__)
 
