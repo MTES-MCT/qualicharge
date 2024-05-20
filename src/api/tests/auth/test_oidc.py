@@ -1,4 +1,4 @@
-"""Tests for qualicharge.auth module."""
+"""Tests for qualicharge.auth.oidc module."""
 
 from datetime import datetime
 
