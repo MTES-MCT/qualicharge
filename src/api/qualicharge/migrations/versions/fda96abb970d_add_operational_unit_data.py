@@ -9,9 +9,8 @@ Create Date: 2024-05-15 16:08:19.687606
 from typing import Sequence, Union
 
 from alembic import op
-from sqlmodel import select
+from sqlmodel import Session, select
 
-from qualicharge.db import get_session
 from qualicharge.fixtures.operational_units import operational_units
 from qualicharge.schemas import Station
 
@@ -21,9 +20,6 @@ revision: str = "fda96abb970d"
 down_revision: Union[str, None] = "9d22385a3ae8"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
-
-# Database session
-session = get_session()
 
 
 def upgrade():
@@ -37,6 +33,9 @@ def downgrade():
 def data_upgrades():
     """Add any optional data upgrade migrations here!"""
 
+    # We are running in a transaction, hence we need to get the current active connection
+    session = Session(op.get_bind())
+
     # Reset table before inserting data
     data_downgrades()
     session.add_all(operational_units)
@@ -49,6 +48,9 @@ def data_upgrades():
 
 def data_downgrades():
     """Add any optional data downgrade migrations here!"""
+
+    # We are running in a transaction, hence we need to get the current active connection
+    session = Session(op.get_bind())
 
     # Reset FK
     stations = session.exec(select(Station)).all()
