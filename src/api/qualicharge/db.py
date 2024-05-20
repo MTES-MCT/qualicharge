@@ -1,7 +1,7 @@
 """QualiCharge database connection."""
 
 import logging
-from typing import Optional
+from typing import Generator, Optional
 
 from pydantic import PostgresDsn
 from sqlalchemy import Engine as SAEngine
@@ -86,16 +86,19 @@ def get_engine() -> SAEngine:
     return Engine().get_engine(url=settings.DATABASE_URL, echo=settings.DEBUG)
 
 
-def get_session() -> SMSession:
+def get_session() -> Generator[SMSession, None, None]:
     """Get database session."""
     session = Session().get_session(get_engine())
     logger.debug("Getting session %s", session)
-    return session
+    try:
+        yield session
+    finally:
+        session.close()
 
 
 def is_alive() -> bool:
     """Check if database connection is alive."""
-    session = get_session()
+    session = next(get_session())
     try:
         session.execute(text("SELECT 1 as is_alive"))
         return True
