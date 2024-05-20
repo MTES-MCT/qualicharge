@@ -12,7 +12,7 @@ from alembic import op
 from sqlmodel import Session, select
 
 from qualicharge.fixtures.operational_units import operational_units
-from qualicharge.schemas import Station
+from qualicharge.schemas.core import Station
 
 
 # revision identifiers, used by Alembic.

@@ -9,7 +9,7 @@ from sqlmodel import SQLModel
 from qualicharge.conf import settings
 
 # Nota bene: be sure to import all models that need to be migrated here
-from qualicharge.schemas import (  # noqa: F401
+from qualicharge.schemas.core import (  # noqa: F401
     Amenageur,
     Enseigne,
     Localisation,

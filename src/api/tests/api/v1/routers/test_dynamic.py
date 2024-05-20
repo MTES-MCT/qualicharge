@@ -21,7 +21,7 @@ from qualicharge.factories.static import (
     StatiqueFactory,
 )
 from qualicharge.models.dynamic import StatusRead
-from qualicharge.schemas import PointDeCharge, Session, Status
+from qualicharge.schemas.core import PointDeCharge, Session, Status
 from qualicharge.schemas.utils import save_statique, save_statiques
 
 
