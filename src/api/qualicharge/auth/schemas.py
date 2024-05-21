@@ -1,10 +1,11 @@
 """QualiCharge authentication schemas."""
 
-from typing import TYPE_CHECKING, Optional
+from enum import StrEnum
+from typing import TYPE_CHECKING, List, Optional
 from uuid import UUID, uuid4
 
 from pydantic import EmailStr
-from sqlalchemy.types import String
+from sqlalchemy.types import ARRAY, String
 from sqlmodel import Field, Relationship, SQLModel
 
 from qualicharge.schemas import BaseTimestampedSQLModel
@@ -30,6 +31,28 @@ class GroupOperationalUnit(SQLModel, table=True):
     )
 
 
+class ScopesEnum(StrEnum):
+    """API scopes enum."""
+
+    # All (statique + dynamique)
+    ALL_CREATE = "all:create"
+    ALL_READ = "all:read"
+    ALL_UPDATE = "all:update"
+    ALL_DELETE = "all:delete"
+
+    # Statique
+    STATIC_CREATE = "static:create"
+    STATIC_READ = "static:read"
+    STATIC_UPDATE = "static:update"
+    STATIC_DELETE = "static:delete"
+
+    # Dynamique
+    DYNAMIC_CREATE = "dynamic:create"
+    DYNAMIC_READ = "dynamic:read"
+    DYNAMIC_UPDATE = "dynamic:update"
+    DYNAMIC_DELETE = "dynamic:delete"
+
+
 # -- Core schemas
 class User(BaseTimestampedSQLModel, table=True):
     """QualiCharge User."""
@@ -42,6 +65,9 @@ class User(BaseTimestampedSQLModel, table=True):
     is_active: bool = False
     is_staff: bool = False
     is_superuser: bool = False
+
+    # Permissions
+    scopes: List[ScopesEnum] = Field(sa_type=ARRAY(String))
 
     # Relationships
     groups: list["Group"] = Relationship(back_populates="users", link_model=UserGroup)

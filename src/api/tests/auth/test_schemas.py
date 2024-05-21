@@ -3,7 +3,7 @@
 from sqlmodel import select
 
 from qualicharge.auth.factories import GroupFactory, UserFactory
-from qualicharge.auth.schemas import GroupOperationalUnit, UserGroup
+from qualicharge.auth.schemas import GroupOperationalUnit, ScopesEnum, User, UserGroup
 from qualicharge.schemas.core import OperationalUnit
 
 
@@ -37,3 +37,22 @@ def test_create_user_group_operational_units(db_session):
     )
 
     assert user_one.groups[0].operational_units[0].id == operational_unit.id
+
+
+def test_create_user_scopes(db_session):
+    """Test user scope creation."""
+    UserFactory.__session__ = db_session
+
+    user = UserFactory.create_sync(
+        scopes=[
+            ScopesEnum.STATIC_CREATE,
+            ScopesEnum.STATIC_READ,
+        ]
+    )
+    db_user = db_session.exec(select(User).where(User.email == user.email)).one()
+
+    assert db_user.scopes == [
+        ScopesEnum.STATIC_CREATE,
+        ScopesEnum.STATIC_READ,
+    ]
+    assert user == db_user
