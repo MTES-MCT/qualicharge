@@ -41,6 +41,17 @@ def test_discover_provider_with_bad_configuration(httpx_mock):
         discover_provider("http://oidc/wrong")
 
 
+def test_discover_provider_with_unknown_realm(httpx_mock):
+    """Test the OIDC discover provider utility with a unknown realm."""
+    httpx_mock.add_response(status_code=404)
+
+    with pytest.raises(
+        OIDCProviderException,
+        match="Unable to discover the OIDC provider configuration",
+    ):
+        discover_provider("http://oidc/wrong")
+
+
 def test_get_public_keys(httpx_mock):
     """Test the OIDC get public keys utility."""
     httpx_mock.add_response(
@@ -52,10 +63,17 @@ def test_get_public_keys(httpx_mock):
     assert get_public_keys("http://oidc/certs") == [{"kid": "1"}, {"kid": "2"}]
 
 
-def test__get_public_keys_with_bad_configuration(httpx_mock):
+def test_get_public_keys_with_bad_configuration(httpx_mock):
     """Test the OIDC get public keys utility with a bad configuration."""
     httpx_mock.add_exception(httpx.RequestError("Not found!"))
 
+    with pytest.raises(
+        OIDCProviderException,
+        match="Unable to retrieve OIDC server signing public keys",
+    ):
+        get_public_keys("http://oidc/wrong")
+
+    httpx_mock.add_response(status_code=404)
     with pytest.raises(
         OIDCProviderException,
         match="Unable to retrieve OIDC server signing public keys",

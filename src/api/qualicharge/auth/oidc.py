@@ -37,7 +37,7 @@ def discover_provider(
         response.raise_for_status()
         logger.debug("Got response: %d -> %s", response.status_code, response.json())
         return response.json()
-    except httpx.RequestError as exc:
+    except (httpx.RequestError, httpx.HTTPStatusError) as exc:
         logger.error("Unable to discover the OIDC provider configuration: %s", exc)
         raise OIDCProviderException(
             "Unable to discover the OIDC provider configuration"
@@ -54,7 +54,7 @@ def get_public_keys(
         response = httpx.get(str(jwks_uri), timeout=timeout)
         response.raise_for_status()
         return response.json()
-    except httpx.RequestError as exc:
+    except (httpx.RequestError, httpx.HTTPStatusError) as exc:
         logger.error(
             (
                 "Unable to retrieve the public keys used by the provider server"
