@@ -4,13 +4,15 @@ import logging
 from typing import Annotated, List, cast
 
 from annotated_types import Len
-from fastapi import APIRouter, Depends, HTTPException, Path, Query
+from fastapi import APIRouter, Depends, HTTPException, Path, Query, Security
 from fastapi import status as fa_status
 from pydantic import PastDatetime, StringConstraints
 from sqlalchemy import func
 from sqlalchemy.schema import Column as SAColumn
 from sqlmodel import Session, join, select
 
+from qualicharge.auth.oidc import get_user
+from qualicharge.auth.schemas import ScopesEnum, User
 from qualicharge.conf import settings
 from qualicharge.db import get_session
 from qualicharge.models.dynamic import (
@@ -42,6 +44,7 @@ IdItinerance = Annotated[
 
 @router.get("/status/", tags=["Status"])
 async def list_statuses(
+    user: Annotated[User, Security(get_user, scopes=[ScopesEnum.DYNAMIC_READ.value])],
     from_: Annotated[
         PastDatetime | None,
         Query(
@@ -144,6 +147,7 @@ async def list_statuses(
 
 @router.get("/status/{id_pdc_itinerance}", tags=["Status"])
 async def read_status(
+    user: Annotated[User, Security(get_user, scopes=[ScopesEnum.DYNAMIC_READ.value])],
     id_pdc_itinerance: Annotated[
         str,
         Path(
@@ -201,6 +205,7 @@ async def read_status(
 
 @router.get("/status/{id_pdc_itinerance}/history", tags=["Status"])
 async def read_status_history(
+    user: Annotated[User, Security(get_user, scopes=[ScopesEnum.DYNAMIC_READ.value])],
     id_pdc_itinerance: Annotated[
         str,
         Path(
@@ -262,6 +267,7 @@ async def read_status_history(
 
 @router.post("/status/", status_code=fa_status.HTTP_201_CREATED, tags=["Status"])
 async def create_status(
+    user: Annotated[User, Security(get_user, scopes=[ScopesEnum.DYNAMIC_CREATE.value])],
     status: StatusCreate,
     session: Session = Depends(get_session),
 ) -> None:
@@ -284,6 +290,7 @@ async def create_status(
 
 @router.post("/status/bulk", status_code=fa_status.HTTP_201_CREATED, tags=["Status"])
 async def create_status_bulk(
+    user: Annotated[User, Security(get_user, scopes=[ScopesEnum.DYNAMIC_CREATE.value])],
     statuses: BulkStatusCreateList,
     session: Session = Depends(get_session),
 ) -> None:
@@ -323,6 +330,7 @@ async def create_status_bulk(
 
 @router.post("/session/", status_code=fa_status.HTTP_201_CREATED, tags=["Session"])
 async def create_session(
+    user: Annotated[User, Security(get_user, scopes=[ScopesEnum.DYNAMIC_CREATE.value])],
     session: SessionCreate,
     db_session: Session = Depends(get_session),
 ) -> None:
@@ -349,6 +357,7 @@ async def create_session(
 
 @router.post("/session/bulk", status_code=fa_status.HTTP_201_CREATED, tags=["Session"])
 async def create_session_bulk(
+    user: Annotated[User, Security(get_user, scopes=[ScopesEnum.DYNAMIC_CREATE.value])],
     sessions: BulkSessionCreateList,
     db_session: Session = Depends(get_session),
 ) -> None:

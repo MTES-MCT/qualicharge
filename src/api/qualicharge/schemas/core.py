@@ -1,7 +1,7 @@
 """QualiCharge core statique and dynamique schemas."""
 
 from enum import IntEnum
-from typing import List, Optional, Union, cast
+from typing import TYPE_CHECKING, List, Optional, Union, cast
 from uuid import UUID, uuid4
 
 from geoalchemy2.shape import to_shape
@@ -26,7 +26,6 @@ from sqlmodel import Field, Relationship, UniqueConstraint, select
 from sqlmodel import Session as SMSession
 from sqlmodel.main import SQLModelConfig
 
-from qualicharge.auth.schemas import Group, GroupOperationalUnit
 from qualicharge.exceptions import ObjectDoesNotExist
 
 from ..models.dynamic import SessionBase, StatusBase
@@ -39,6 +38,9 @@ from ..models.static import (
     RaccordementEnum,
 )
 from . import BaseTimestampedSQLModel
+
+if TYPE_CHECKING:
+    from qualicharge.auth.schemas import Group
 
 
 class OperationalUnitTypeEnum(IntEnum):
@@ -191,7 +193,8 @@ class OperationalUnit(BaseTimestampedSQLModel, table=True):
     # Relationships
     stations: List["Station"] = Relationship(back_populates="operational_unit")
     groups: List["Group"] = Relationship(
-        back_populates="operational_units", link_model=GroupOperationalUnit
+        back_populates="operational_units",
+        sa_relationship_kwargs={"secondary": "groupoperationalunit"},
     )
 
     def create_stations_fk(self, session: SMSession):

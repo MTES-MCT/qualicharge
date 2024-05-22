@@ -9,6 +9,14 @@ class QualiChargeExceptionMixin:
         self.name = name
 
 
+class AuthenticationError(QualiChargeExceptionMixin, Exception):
+    """Raised when the authentication flow fails."""
+
+
+class PermissionDenied(QualiChargeExceptionMixin, Exception):
+    """Raised when authenticated user does not have required permissions."""
+
+
 class OIDCAuthenticationError(QualiChargeExceptionMixin, Exception):
     """Raised when the OIDC authentication flow fails."""
 

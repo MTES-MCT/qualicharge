@@ -3,27 +3,45 @@
 import logging
 from typing import Union
 
-from fastapi import FastAPI, Request, Security, status
+from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 
-from qualicharge.auth.oidc import get_token
-from qualicharge.exceptions import OIDCAuthenticationError, OIDCProviderException
+from qualicharge.exceptions import (
+    AuthenticationError,
+    OIDCAuthenticationError,
+    OIDCProviderException,
+    PermissionDenied,
+)
 
 from .routers import auth, dynamic, static
 
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="QualiCharge API (v1)", dependencies=[Security(get_token)])
+app = FastAPI(title="QualiCharge API (v1)")
 
 
+@app.exception_handler(PermissionDenied)
+async def authorization_exception_handler(
+    request: Request,
+    exc: PermissionDenied,
+):
+    """Handle authorization errors."""
+    return JSONResponse(
+        status_code=status.HTTP_403_FORBIDDEN,
+        content={"message": f"Unsufficient permissions: {exc.name}"},
+    )
+
+
+@app.exception_handler(AuthenticationError)
 @app.exception_handler(OIDCAuthenticationError)
 @app.exception_handler(OIDCProviderException)
 async def authentication_exception_handler(
-    request: Request, exc: Union[OIDCAuthenticationError, OIDCProviderException]
+    request: Request,
+    exc: Union[AuthenticationError, OIDCAuthenticationError, OIDCProviderException],
 ):
     """Handle authentication errors."""
     return JSONResponse(
-        status_code=status.HTTP_403_FORBIDDEN,
+        status_code=status.HTTP_401_UNAUTHORIZED,
         content={"message": f"Authentication failed: {exc.name}"},
     )
 

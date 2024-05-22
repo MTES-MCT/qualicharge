@@ -4,11 +4,13 @@ import json
 from typing import cast
 from urllib.parse import quote_plus
 
+import pytest
 from fastapi import status
 from sqlalchemy import func
 from sqlalchemy.schema import Column as SAColumn
 from sqlmodel import select
 
+from qualicharge.auth.schemas import ScopesEnum
 from qualicharge.conf import settings
 from qualicharge.factories.dynamic import (
     SessionCreateFactory,
@@ -25,6 +27,39 @@ from qualicharge.schemas.core import PointDeCharge, Session, Status
 from qualicharge.schemas.utils import save_statique, save_statiques
 
 
+@pytest.mark.parametrize(
+    "client_auth",
+    (
+        (True, {"is_superuser": False, "scopes": []}),
+        *[
+            (True, {"is_superuser": False, "scopes": [scope]})
+            for scope in ScopesEnum
+            if scope != ScopesEnum.DYNAMIC_READ
+        ],
+    ),
+    indirect=True,
+)
+def test_list_statuses_with_missing_scopes(db_session, client_auth):
+    """Test the /status/ get endpoint scopes."""
+    response = client_auth.get("/dynamique/status/")
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+
+
+@pytest.mark.parametrize(
+    "client_auth",
+    (
+        (True, {"is_superuser": True}),
+        (True, {"is_superuser": False, "scopes": [ScopesEnum.DYNAMIC_READ]}),
+        (
+            True,
+            {
+                "is_superuser": False,
+                "scopes": [ScopesEnum.DYNAMIC_READ, ScopesEnum.STATIC_CREATE],
+            },
+        ),
+    ),
+    indirect=True,
+)
 def test_list_statuses(db_session, client_auth):
     """Test the /status/ get endpoint."""
     StatusFactory.__session__ = db_session
@@ -225,6 +260,42 @@ def test_read_status_for_non_existing_status(db_session, client_auth):
     }
 
 
+@pytest.mark.parametrize(
+    "client_auth",
+    (
+        (True, {"is_superuser": False, "scopes": []}),
+        *[
+            (True, {"is_superuser": False, "scopes": [scope]})
+            for scope in ScopesEnum
+            if scope != ScopesEnum.DYNAMIC_READ
+        ],
+    ),
+    indirect=True,
+)
+def test_read_status_with_missing_scopes(client_auth):
+    """Test the /status/{id_pdc_itinerance} endpoint scopes."""
+    # Create the PointDeCharge
+    id_pdc_itinerance = "ESZUNE1111ER1"
+    # Get latest status
+    response = client_auth.get(f"/dynamique/status/{id_pdc_itinerance}")
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+
+
+@pytest.mark.parametrize(
+    "client_auth",
+    (
+        (True, {"is_superuser": True}),
+        (True, {"is_superuser": False, "scopes": [ScopesEnum.DYNAMIC_READ]}),
+        (
+            True,
+            {
+                "is_superuser": False,
+                "scopes": [ScopesEnum.DYNAMIC_READ, ScopesEnum.STATIC_CREATE],
+            },
+        ),
+    ),
+    indirect=True,
+)
 def test_read_status(db_session, client_auth):
     """Test the /status/{id_pdc_itinerance} endpoint."""
     StatusFactory.__session__ = db_session
@@ -297,6 +368,40 @@ def test_read_status_history_for_non_existing_status(db_session, client_auth):
     }
 
 
+@pytest.mark.parametrize(
+    "client_auth",
+    (
+        (True, {"is_superuser": False, "scopes": []}),
+        *[
+            (True, {"is_superuser": False, "scopes": [scope]})
+            for scope in ScopesEnum
+            if scope != ScopesEnum.DYNAMIC_READ
+        ],
+    ),
+    indirect=True,
+)
+def test_read_status_history_with_missing_scopes(client_auth):
+    """Test the /status/{id_pdc_itinerance}/history endpoint scopes."""
+    id_pdc_itinerance = "ESZUNE1111ER1"
+    response = client_auth.get(f"/dynamique/status/{id_pdc_itinerance}/history")
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+
+
+@pytest.mark.parametrize(
+    "client_auth",
+    (
+        (True, {"is_superuser": True}),
+        (True, {"is_superuser": False, "scopes": [ScopesEnum.DYNAMIC_READ]}),
+        (
+            True,
+            {
+                "is_superuser": False,
+                "scopes": [ScopesEnum.DYNAMIC_READ, ScopesEnum.STATIC_CREATE],
+            },
+        ),
+    ),
+    indirect=True,
+)
 def test_read_status_history(db_session, client_auth):
     """Test the /status/{id_pdc_itinerance}/history endpoint."""
     StatusFactory.__session__ = db_session
@@ -413,6 +518,45 @@ def test_create_status_for_non_existing_point_of_charge(client_auth):
     assert response.json() == {"detail": "Attached point of charge does not exist"}
 
 
+@pytest.mark.parametrize(
+    "client_auth",
+    (
+        (True, {"is_superuser": False, "scopes": []}),
+        *[
+            (True, {"is_superuser": False, "scopes": [scope]})
+            for scope in ScopesEnum
+            if scope != ScopesEnum.DYNAMIC_CREATE
+        ],
+    ),
+    indirect=True,
+)
+def test_create_status_with_missing_scopes(client_auth):
+    """Test the /status/ create endpoint scopes."""
+    id_pdc_itinerance = "ESZUNE1111ER1"
+    qc_status = StatusCreateFactory.build(id_pdc_itinerance=id_pdc_itinerance)
+
+    # Create a new status
+    response = client_auth.post(
+        "/dynamique/status/", json=json.loads(qc_status.model_dump_json())
+    )
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+
+
+@pytest.mark.parametrize(
+    "client_auth",
+    (
+        (True, {"is_superuser": True}),
+        (True, {"is_superuser": False, "scopes": [ScopesEnum.DYNAMIC_CREATE]}),
+        (
+            True,
+            {
+                "is_superuser": False,
+                "scopes": [ScopesEnum.DYNAMIC_READ, ScopesEnum.DYNAMIC_CREATE],
+            },
+        ),
+    ),
+    indirect=True,
+)
 def test_create_status(db_session, client_auth):
     """Test the /status/ create endpoint."""
     id_pdc_itinerance = "ESZUNE1111ER1"
@@ -481,6 +625,43 @@ def test_create_status_bulk_for_missing_point_of_charge(db_session, client_auth)
     }
 
 
+@pytest.mark.parametrize(
+    "client_auth",
+    (
+        (True, {"is_superuser": False, "scopes": []}),
+        *[
+            (True, {"is_superuser": False, "scopes": [scope]})
+            for scope in ScopesEnum
+            if scope != ScopesEnum.DYNAMIC_CREATE
+        ],
+    ),
+    indirect=True,
+)
+def test_create_status_bulk_with_missing_scopes(client_auth):
+    """Test the /status/bulk create endpoint."""
+    qc_statuses = StatusCreateFactory.batch(3)
+    response = client_auth.post(
+        "/dynamique/status/bulk",
+        json=[json.loads(s.model_dump_json()) for s in qc_statuses],
+    )
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+
+
+@pytest.mark.parametrize(
+    "client_auth",
+    (
+        (True, {"is_superuser": True}),
+        (True, {"is_superuser": False, "scopes": [ScopesEnum.DYNAMIC_CREATE]}),
+        (
+            True,
+            {
+                "is_superuser": False,
+                "scopes": [ScopesEnum.DYNAMIC_READ, ScopesEnum.DYNAMIC_CREATE],
+            },
+        ),
+    ),
+    indirect=True,
+)
 def test_create_status_bulk(db_session, client_auth):
     """Test the /status/bulk create endpoint."""
     qc_statuses = StatusCreateFactory.batch(3)
@@ -570,6 +751,44 @@ def test_create_session_for_non_existing_point_of_charge(client_auth):
     assert response.json() == {"detail": "Attached point of charge does not exist"}
 
 
+@pytest.mark.parametrize(
+    "client_auth",
+    (
+        (True, {"is_superuser": False, "scopes": []}),
+        *[
+            (True, {"is_superuser": False, "scopes": [scope]})
+            for scope in ScopesEnum
+            if scope != ScopesEnum.DYNAMIC_CREATE
+        ],
+    ),
+    indirect=True,
+)
+def test_create_session_with_missing_scopes(client_auth):
+    """Test the /session/ create endpoint scopes."""
+    id_pdc_itinerance = "ESZUNE1111ER1"
+    qc_session = SessionCreateFactory.build(id_pdc_itinerance=id_pdc_itinerance)
+
+    response = client_auth.post(
+        "/dynamique/session/", json=json.loads(qc_session.model_dump_json())
+    )
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+
+
+@pytest.mark.parametrize(
+    "client_auth",
+    (
+        (True, {"is_superuser": True}),
+        (True, {"is_superuser": False, "scopes": [ScopesEnum.DYNAMIC_CREATE]}),
+        (
+            True,
+            {
+                "is_superuser": False,
+                "scopes": [ScopesEnum.DYNAMIC_READ, ScopesEnum.DYNAMIC_CREATE],
+            },
+        ),
+    ),
+    indirect=True,
+)
 def test_create_session(db_session, client_auth):
     """Test the /session/ create endpoint."""
     id_pdc_itinerance = "ESZUNE1111ER1"
@@ -638,6 +857,44 @@ def test_create_session_bulk_for_missing_point_of_charge(db_session, client_auth
     }
 
 
+@pytest.mark.parametrize(
+    "client_auth",
+    (
+        (True, {"is_superuser": False, "scopes": []}),
+        *[
+            (True, {"is_superuser": False, "scopes": [scope]})
+            for scope in ScopesEnum
+            if scope != ScopesEnum.DYNAMIC_CREATE
+        ],
+    ),
+    indirect=True,
+)
+def test_create_session_bulk_with_missing_scopes(client_auth):
+    """Test the /session/bulk create endpoint scopes."""
+    qc_sessions = SessionCreateFactory.batch(3)
+
+    response = client_auth.post(
+        "/dynamique/session/bulk",
+        json=[json.loads(s.model_dump_json()) for s in qc_sessions],
+    )
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+
+
+@pytest.mark.parametrize(
+    "client_auth",
+    (
+        (True, {"is_superuser": True}),
+        (True, {"is_superuser": False, "scopes": [ScopesEnum.DYNAMIC_CREATE]}),
+        (
+            True,
+            {
+                "is_superuser": False,
+                "scopes": [ScopesEnum.DYNAMIC_READ, ScopesEnum.DYNAMIC_CREATE],
+            },
+        ),
+    ),
+    indirect=True,
+)
 def test_create_session_bulk(db_session, client_auth):
     """Test the /session/bulk create endpoint."""
     qc_sessions = SessionCreateFactory.batch(3)

@@ -14,10 +14,20 @@ from fastapi.security import (
 from jose import ExpiredSignatureError, JWTError, jwt
 from jose.exceptions import JWTClaimsError
 from pydantic import AnyHttpUrl
+from sqlmodel import Session as SMSession
+from sqlmodel import select
+
+from qualicharge.db import get_session
 
 from ..conf import settings
-from ..exceptions import OIDCAuthenticationError, OIDCProviderException
+from ..exceptions import (
+    AuthenticationError,
+    OIDCAuthenticationError,
+    OIDCProviderException,
+    PermissionDenied,
+)
 from .models import IDToken
+from .schemas import User
 
 # API auth logger
 logger = logging.getLogger(__name__)
@@ -116,3 +126,40 @@ def get_token(
     logger.debug(f"{decoded_token=}")
 
     return IDToken(**decoded_token)
+
+
+def get_user(
+    security_scopes: SecurityScopes,
+    token: Annotated[IDToken, Depends(get_token)],
+    session: Annotated[
+        SMSession,
+        Depends(get_session),
+    ],
+) -> User:
+    """Get request user."""
+    # Get registered user
+    user = session.exec(select(User).where(User.email == token.email)).one_or_none()
+
+    # User does not exist: raise an error
+    if user is None:
+        logger.error(f"User {token.email} tried to login but is not registered yet")
+        raise AuthenticationError("User is not registered yet")
+
+    # User is not active: raise an error
+    if not user.is_active:
+        logger.error(f"User {token.email} tried to login but is not active")
+        raise AuthenticationError("User is not active")
+
+    # We do not check scopes for admin users
+    if user.is_superuser:
+        return user
+
+    # Get user scopes from Token scope and database
+    user_scopes = set(token.scope.split() if token.scope else []) | set(user.scopes)
+
+    # Validate scopes
+    for required_scope in security_scopes.scopes:
+        if required_scope not in user_scopes:
+            raise PermissionDenied("You are not allowed to access this ressource")
+
+    return user

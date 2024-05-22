@@ -4,12 +4,23 @@ import logging
 from typing import Annotated, List, Optional, cast
 
 from annotated_types import Len
-from fastapi import APIRouter, Depends, HTTPException, Path, Query, Request, status
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    Path,
+    Query,
+    Request,
+    Security,
+    status,
+)
 from pydantic import AnyHttpUrl, BaseModel, computed_field
 from sqlalchemy import func
 from sqlalchemy.schema import Column as SAColumn
 from sqlmodel import Session, select
 
+from qualicharge.auth.oidc import get_user
+from qualicharge.auth.schemas import ScopesEnum, User
 from qualicharge.conf import settings
 from qualicharge.db import get_session
 from qualicharge.exceptions import IntegrityError, ObjectDoesNotExist
@@ -68,6 +79,7 @@ BulkStatiqueList = Annotated[
 
 @router.get("/")
 async def list(
+    user: Annotated[User, Security(get_user, scopes=[ScopesEnum.STATIC_READ.value])],
     request: Request,
     offset: int = 0,
     limit: int = Query(
@@ -101,6 +113,7 @@ async def list(
 
 @router.get("/{id_pdc_itinerance}")
 async def read(
+    user: Annotated[User, Security(get_user, scopes=[ScopesEnum.STATIC_READ.value])],
     id_pdc_itinerance: Annotated[
         str,
         Path(
@@ -125,6 +138,7 @@ async def read(
 
 @router.put("/{id_pdc_itinerance}", status_code=status.HTTP_200_OK)
 async def update(
+    user: Annotated[User, Security(get_user, scopes=[ScopesEnum.STATIC_UPDATE.value])],
     id_pdc_itinerance: Annotated[
         str,
         Path(
@@ -156,7 +170,9 @@ async def update(
 
 @router.post("/", status_code=status.HTTP_201_CREATED)
 async def create(
-    statique: Statique, session: Session = Depends(get_session)
+    user: Annotated[User, Security(get_user, scopes=[ScopesEnum.STATIC_CREATE.value])],
+    statique: Statique,
+    session: Session = Depends(get_session),
 ) -> StatiqueItemsCreatedResponse:
     """Create a statique item."""
     try:
@@ -172,7 +188,9 @@ async def create(
 
 @router.post("/bulk", status_code=status.HTTP_201_CREATED)
 async def bulk(
-    statiques: BulkStatiqueList, session: Session = Depends(get_session)
+    user: Annotated[User, Security(get_user, scopes=[ScopesEnum.STATIC_CREATE.value])],
+    statiques: BulkStatiqueList,
+    session: Session = Depends(get_session),
 ) -> StatiqueItemsCreatedResponse:
     """Create a set of statique items."""
     try:

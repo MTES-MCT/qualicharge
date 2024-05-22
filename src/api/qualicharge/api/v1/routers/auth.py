@@ -5,8 +5,9 @@ from typing import Annotated
 
 from fastapi import APIRouter, Security
 
-from qualicharge.auth.models import IDToken, User
-from qualicharge.auth.oidc import get_token
+from qualicharge.auth.models import UserRead
+from qualicharge.auth.oidc import get_user
+from qualicharge.auth.schemas import User
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +18,7 @@ router = APIRouter(
 
 
 @router.get("/whoami")
-async def me(token: Annotated[IDToken, Security(get_token)]) -> User:
+async def me(user: Annotated[User, Security(get_user)]) -> UserRead:
     """A test endpoint to validate user authentication."""
-    logger.debug(f"{token=}")
-    return User(email=token.email)
+    logger.debug(f"{user=}")
+    return UserRead(**user.model_dump())

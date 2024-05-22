@@ -1,8 +1,10 @@
 """Authentication models."""
 
-from typing import Optional
+from typing import List, Optional
 
 from pydantic import BaseModel, ConfigDict, EmailStr
+
+from .schemas import ScopesEnum
 
 
 class IDToken(BaseModel):
@@ -32,7 +34,19 @@ class IDToken(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
 
-class User(BaseModel):
-    """QualiCharge user."""
+class UserRead(BaseModel):
+    """QualiCharge user read model."""
 
+    username: str
     email: EmailStr
+    first_name: Optional[str]
+    last_name: Optional[str]
+    is_active: bool
+    is_staff: bool
+    is_superuser: bool
+
+    # Permissions
+    scopes: List[ScopesEnum] = []
+
+    # Relationships
+    groups: List[str] = []

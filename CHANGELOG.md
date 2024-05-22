@@ -13,6 +13,7 @@ and this project adheres to
 - Implement `OperationalUnit` schema
 - Link `OperationalUnit` to `Station` using AFIREV prefixes
 - Implement `User` and `Group` schemas
+- Implement `User` scopes (fine-tuned permissions)
 
 ## [0.5.0] - 2024-05-15
 
