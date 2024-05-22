@@ -2,16 +2,51 @@
 
 import json
 
+import pytest
 from fastapi import status
 from sqlalchemy import func
 from sqlmodel import select
 
+from qualicharge.auth.schemas import ScopesEnum
 from qualicharge.conf import settings
 from qualicharge.factories.static import StatiqueFactory
 from qualicharge.schemas.core import Station
 from qualicharge.schemas.utils import save_statique, save_statiques
 
 
+@pytest.mark.parametrize(
+    "client_auth",
+    (
+        (True, {"is_superuser": False, "scopes": []}),
+        *[
+            (True, {"is_superuser": False, "scopes": [scope]})
+            for scope in ScopesEnum
+            if scope != ScopesEnum.STATIC_READ
+        ],
+    ),
+    indirect=True,
+)
+def test_list_with_missing_scopes(client_auth):
+    """Test the /statique/ list endpoint scopes."""
+    response = client_auth.get("/statique/")
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+
+
+@pytest.mark.parametrize(
+    "client_auth",
+    (
+        (True, {"is_superuser": True}),
+        (True, {"is_superuser": False, "scopes": [ScopesEnum.STATIC_READ]}),
+        (
+            True,
+            {
+                "is_superuser": False,
+                "scopes": [ScopesEnum.STATIC_READ, ScopesEnum.STATIC_CREATE],
+            },
+        ),
+    ),
+    indirect=True,
+)
 def test_list(client_auth, db_session):
     """Test the /statique/ list endpoint."""
     # Empty response (no statiques exist)
@@ -94,6 +129,40 @@ def test_list_pagination(client_auth, db_session):
     assert json_response.get("next") is None
 
 
+@pytest.mark.parametrize(
+    "client_auth",
+    (
+        (True, {"is_superuser": False, "scopes": []}),
+        *[
+            (True, {"is_superuser": False, "scopes": [scope]})
+            for scope in ScopesEnum
+            if scope != ScopesEnum.STATIC_READ
+        ],
+    ),
+    indirect=True,
+)
+def test_read_with_missing_scopes(client_auth):
+    """Test the /statique/{id_pdc_itinerance} list endpoint scopes."""
+    id_pdc_itinerance = "ESZUNE1111ER1"
+    response = client_auth.get(f"/statique/{id_pdc_itinerance}")
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+
+
+@pytest.mark.parametrize(
+    "client_auth",
+    (
+        (True, {"is_superuser": True, "scopes": []}),
+        (True, {"is_superuser": False, "scopes": [ScopesEnum.STATIC_READ]}),
+        (
+            True,
+            {
+                "is_superuser": False,
+                "scopes": [ScopesEnum.STATIC_READ, ScopesEnum.STATIC_CREATE],
+            },
+        ),
+    ),
+    indirect=True,
+)
 def test_read(client_auth, db_session):
     """Test the /statique/{id_pdc_itinerance} endpoint."""
     id_pdc_itinerance = "ESZUNE1111ER1"
@@ -116,6 +185,44 @@ def test_read_when_statique_does_not_exist(client_auth):
     assert json_response == {"detail": "Requested statique does not exist"}
 
 
+@pytest.mark.parametrize(
+    "client_auth",
+    (
+        (True, {"is_superuser": False, "scopes": []}),
+        *[
+            (True, {"is_superuser": False, "scopes": [scope]})
+            for scope in ScopesEnum
+            if scope != ScopesEnum.STATIC_CREATE
+        ],
+    ),
+    indirect=True,
+)
+def test_create_with_missing_scope(client_auth):
+    """Test the /statique/ create endpoint scopes."""
+    id_pdc_itinerance = "ESZUNE1111ER1"
+    data = StatiqueFactory.build(
+        id_pdc_itinerance=id_pdc_itinerance,
+    )
+
+    response = client_auth.post("/statique/", json=json.loads(data.model_dump_json()))
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+
+
+@pytest.mark.parametrize(
+    "client_auth",
+    (
+        (True, {"is_superuser": True, "scopes": []}),
+        (True, {"is_superuser": False, "scopes": [ScopesEnum.STATIC_CREATE]}),
+        (
+            True,
+            {
+                "is_superuser": False,
+                "scopes": [ScopesEnum.STATIC_READ, ScopesEnum.STATIC_CREATE],
+            },
+        ),
+    ),
+    indirect=True,
+)
 def test_create(client_auth):
     """Test the /statique/ create endpoint."""
     id_pdc_itinerance = "ESZUNE1111ER1"
@@ -147,6 +254,50 @@ def test_create_for_unknown_operational_unit(client_auth):
     )
 
 
+@pytest.mark.parametrize(
+    "client_auth",
+    (
+        (True, {"is_superuser": False, "scopes": []}),
+        *[
+            (True, {"is_superuser": False, "scopes": [scope]})
+            for scope in ScopesEnum
+            if scope != ScopesEnum.STATIC_UPDATE
+        ],
+    ),
+    indirect=True,
+)
+def test_update_with_missing_scope(client_auth, db_session):
+    """Test the /statique/{id_pdc_itinerance} update endpoint."""
+    id_pdc_itinerance = "ESZUNE1111ER1"
+    db_statique = save_statique(
+        db_session, StatiqueFactory.build(id_pdc_itinerance=id_pdc_itinerance)
+    )
+    new_statique = db_statique.model_copy(
+        update={"contact_oprateur": "john@doe.com"}, deep=True
+    )
+
+    response = client_auth.put(
+        f"/statique/{id_pdc_itinerance}",
+        json=json.loads(new_statique.model_dump_json()),
+    )
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+
+
+@pytest.mark.parametrize(
+    "client_auth",
+    (
+        (True, {"is_superuser": True, "scopes": []}),
+        (True, {"is_superuser": False, "scopes": [ScopesEnum.STATIC_UPDATE]}),
+        (
+            True,
+            {
+                "is_superuser": False,
+                "scopes": [ScopesEnum.STATIC_READ, ScopesEnum.STATIC_UPDATE],
+            },
+        ),
+    ),
+    indirect=True,
+)
 def test_update(client_auth, db_session):
     """Test the /statique/{id_pdc_itinerance} update endpoint."""
     id_pdc_itinerance = "ESZUNE1111ER1"
@@ -225,6 +376,45 @@ def test_update_when_statique_does_not_exist(client_auth):
     assert json_response == {"detail": "Statique with id_pdc_itinerance does not exist"}
 
 
+@pytest.mark.parametrize(
+    "client_auth",
+    (
+        (True, {"is_superuser": False, "scopes": []}),
+        *[
+            (True, {"is_superuser": False, "scopes": [scope]})
+            for scope in ScopesEnum
+            if scope != ScopesEnum.STATIC_CREATE
+        ],
+    ),
+    indirect=True,
+)
+def test_bulk_with_missing_scope(client_auth):
+    """Test the /statique/bulk create endpoint."""
+    data = StatiqueFactory.batch(
+        size=2,
+    )
+
+    payload = [json.loads(d.model_dump_json()) for d in data]
+    response = client_auth.post("/statique/bulk", json=payload)
+
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+
+
+@pytest.mark.parametrize(
+    "client_auth",
+    (
+        (True, {"is_superuser": True, "scopes": []}),
+        (True, {"is_superuser": False, "scopes": [ScopesEnum.STATIC_CREATE]}),
+        (
+            True,
+            {
+                "is_superuser": False,
+                "scopes": [ScopesEnum.STATIC_READ, ScopesEnum.STATIC_CREATE],
+            },
+        ),
+    ),
+    indirect=True,
+)
 def test_bulk(client_auth):
     """Test the /statique/bulk create endpoint."""
     data = StatiqueFactory.batch(

@@ -1,7 +1,7 @@
 """QualiCharge authentication schemas."""
 
 from enum import StrEnum
-from typing import TYPE_CHECKING, List, Optional
+from typing import List, Optional
 from uuid import UUID, uuid4
 
 from pydantic import EmailStr
@@ -9,9 +9,7 @@ from sqlalchemy.types import ARRAY, String
 from sqlmodel import Field, Relationship, SQLModel
 
 from qualicharge.schemas import BaseTimestampedSQLModel
-
-if TYPE_CHECKING:
-    from qualicharge.schemas.core import OperationalUnit
+from qualicharge.schemas.core import OperationalUnit
 
 
 # -- Many-to-many relationships
@@ -67,10 +65,16 @@ class User(BaseTimestampedSQLModel, table=True):
     is_superuser: bool = False
 
     # Permissions
-    scopes: List[ScopesEnum] = Field(sa_type=ARRAY(String))
+    scopes: List[ScopesEnum] = Field(sa_type=ARRAY(String), default=[])  # type: ignore[call-overload]
 
     # Relationships
     groups: list["Group"] = Relationship(back_populates="users", link_model=UserGroup)
+
+    def model_dump(self, *args, **kwargs):
+        """Serialize m2m."""
+        dump = super().model_dump(*args, **kwargs)
+        dump["groups"] = [group.name for group in self.groups]
+        return dump
 
 
 class Group(BaseTimestampedSQLModel, table=True):

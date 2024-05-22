@@ -2,10 +2,12 @@
 
 from datetime import datetime
 
+import pytest
 from fastapi import status
 from jose import jwt
 
 from qualicharge.auth.factories import IDTokenFactory
+from qualicharge.auth.models import UserRead
 from qualicharge.auth.oidc import discover_provider, get_public_keys
 from qualicharge.conf import settings
 
@@ -23,11 +25,29 @@ def test_whoami_not_auth(client):
     assert response.json() == {"detail": "Not authenticated"}
 
 
+@pytest.mark.parametrize("client_auth", ((False, {}),), indirect=True)
+def test_whoami_auth_not_registered_user(client_auth):
+    """Test the whoami endpoint when user is authenticated but not registered."""
+    response = client_auth.get("/auth/whoami")
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED
+    assert response.json() == {
+        "message": "Authentication failed: User is not registered yet"
+    }
+
+
+@pytest.mark.parametrize(
+    "client_auth", ((True, {"email": "jane@doe.com"}),), indirect=True
+)
 def test_whoami_auth(client_auth):
     """Test the whoami endpoint when user is authenticated."""
     response = client_auth.get("/auth/whoami")
     assert response.status_code == status.HTTP_200_OK
-    assert response.json() == {"email": "john@doe.com"}
+
+    user = UserRead(**response.json())
+    assert user.email == "jane@doe.com"
+    assert user.is_active is True
+    assert user.is_superuser is True
+    assert user.is_staff is True
 
 
 def test_whoami_expired_signature(
@@ -58,7 +78,7 @@ def test_whoami_expired_signature(
         algorithm="HS256",
     )
     response = client.get("/auth/whoami", headers={"Authorization": f"Bearer {token}"})
-    assert response.status_code == status.HTTP_403_FORBIDDEN
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED
     assert response.json() == {
         "message": "Authentication failed: Token signature expired"
     }
@@ -91,7 +111,7 @@ def test_whoami_with_bad_token_claims(
         algorithm="HS256",
     )
     response = client.get("/auth/whoami", headers={"Authorization": f"Bearer {token}"})
-    assert response.status_code == status.HTTP_403_FORBIDDEN
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED
     assert response.json() == {"message": "Authentication failed: Bad token claims"}
 
 
@@ -117,7 +137,7 @@ def test_whoami_jwt_decoding_error(
     )
     token = "faketoken"  # noqa: S105
     response = client.get("/auth/whoami", headers={"Authorization": f"Bearer {token}"})
-    assert response.status_code == status.HTTP_403_FORBIDDEN
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED
     assert response.json() == {
         "message": "Authentication failed: Unable to decode ID token"
     }

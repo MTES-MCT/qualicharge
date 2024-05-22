@@ -7,10 +7,21 @@ import pytest
 from fastapi.security import HTTPAuthorizationCredentials, SecurityScopes
 from jose import jwt
 
-from qualicharge.auth.factories import IDTokenFactory
-from qualicharge.auth.oidc import discover_provider, get_public_keys, get_token
+from qualicharge.auth.factories import IDTokenFactory, UserFactory
+from qualicharge.auth.oidc import (
+    discover_provider,
+    get_public_keys,
+    get_token,
+    get_user,
+)
+from qualicharge.auth.schemas import ScopesEnum
 from qualicharge.conf import settings
-from qualicharge.exceptions import OIDCAuthenticationError, OIDCProviderException
+from qualicharge.exceptions import (
+    AuthenticationError,
+    OIDCAuthenticationError,
+    OIDCProviderException,
+    PermissionDenied,
+)
 
 
 def setup_function():
@@ -142,3 +153,127 @@ def test_get_token_with_expired_token(
     )
     with pytest.raises(OIDCAuthenticationError, match="Token signature expired"):
         get_token(security_scopes=SecurityScopes(), token=bearer_token)
+
+
+def test_get_user_with_not_registered_user(
+    id_token_factory: IDTokenFactory, db_session
+):
+    """Test the OIDC get user utility when user is not registered."""
+    with pytest.raises(AuthenticationError, match="User is not registered yet"):
+        get_user(
+            security_scopes=SecurityScopes(),
+            token=id_token_factory.build(),
+            session=db_session,
+        )
+
+
+def test_get_user_with_not_active_user(id_token_factory: IDTokenFactory, db_session):
+    """Test the OIDC get user utility when user is not active."""
+    UserFactory.__session__ = db_session
+
+    token = id_token_factory.build()
+    UserFactory.create_sync(
+        email=token.email, is_superuser=False, is_staff=False, is_active=False
+    )
+    with pytest.raises(AuthenticationError, match="User is not active"):
+        get_user(
+            security_scopes=SecurityScopes(),
+            token=id_token_factory.build(),
+            session=db_session,
+        )
+
+
+def test_get_user_for_admin_user(id_token_factory: IDTokenFactory, db_session):
+    """Test the OIDC get user utility for an admin user."""
+    UserFactory.__session__ = db_session
+
+    token = id_token_factory.build()
+    db_user = UserFactory.create_sync(
+        email=token.email, is_superuser=True, is_active=True
+    )
+
+    # Test with no particular scopes
+    user = get_user(
+        security_scopes=SecurityScopes(),
+        token=token,
+        session=db_session,
+    )
+    assert user == db_user
+
+    # Test with all scopes required
+    user = get_user(
+        security_scopes=SecurityScopes(scopes=list(ScopesEnum)),
+        token=token,
+        session=db_session,
+    )
+    assert user == db_user
+
+
+def test_get_user_for_user_with_limited_scopes(
+    id_token_factory: IDTokenFactory, db_session
+):
+    """Test the OIDC get user utility for an admin user."""
+    UserFactory.__session__ = db_session
+
+    token = id_token_factory.build()
+    db_user = UserFactory.create_sync(
+        email=token.email,
+        is_superuser=False,
+        is_active=True,
+        scopes=[ScopesEnum.STATIC_READ, ScopesEnum.DYNAMIC_READ],
+    )
+
+    # Test with no particular scopes
+    user = get_user(
+        security_scopes=SecurityScopes(),
+        token=token,
+        session=db_session,
+    )
+    assert user == db_user
+
+    # Test with matching user scopes
+    user = get_user(
+        security_scopes=SecurityScopes(scopes=[ScopesEnum.STATIC_READ]),
+        token=token,
+        session=db_session,
+    )
+    assert user == db_user
+    user = get_user(
+        security_scopes=SecurityScopes(scopes=[ScopesEnum.DYNAMIC_READ]),
+        token=token,
+        session=db_session,
+    )
+    assert user == db_user
+    user = get_user(
+        security_scopes=SecurityScopes(
+            scopes=[ScopesEnum.DYNAMIC_READ, ScopesEnum.STATIC_READ]
+        ),
+        token=token,
+        session=db_session,
+    )
+    assert user == db_user
+
+    # Test with missing required scopes
+    with pytest.raises(
+        PermissionDenied, match="You are not allowed to access this ressource"
+    ):
+        get_user(
+            security_scopes=SecurityScopes(
+                scopes=[
+                    ScopesEnum.DYNAMIC_READ,
+                    ScopesEnum.STATIC_READ,
+                    ScopesEnum.STATIC_CREATE,
+                ]
+            ),
+            token=id_token_factory.build(),
+            session=db_session,
+        )
+
+    with pytest.raises(
+        PermissionDenied, match="You are not allowed to access this ressource"
+    ):
+        get_user(
+            security_scopes=SecurityScopes(scopes=[ScopesEnum.STATIC_CREATE]),
+            token=id_token_factory.build(),
+            session=db_session,
+        )
