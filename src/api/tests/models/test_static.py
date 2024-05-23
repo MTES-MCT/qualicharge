@@ -65,3 +65,25 @@ def test_statique_model_json_schema():
     assert schema["properties"]["coordonneesXY"]["title"] == "coordonneesXY"
     assert schema["properties"]["coordonneesXY"]["description"] == expected_description
     assert schema["properties"]["coordonneesXY"]["examples"] == ["[12.3, 41.5]"]
+
+
+def test_statique_model_afirev_previx_check():
+    """Test the id_pdc/station_itinerance consistency."""
+    with pytest.raises(
+        ValueError,
+        match=(
+            "AFIREV prefixes from id_station_itinerance and "
+            "id_pdc_itinerance do not match"
+        ),
+    ):
+        StatiqueFactory.build(
+            id_pdc_itinerance="FR147E0042", id_station_itinerance="FR073P00001"
+        )
+
+    # Should be a valid usage
+    StatiqueFactory.build(
+        id_pdc_itinerance="FR073E0042", id_station_itinerance="FR073P00001"
+    )
+
+    # Default factory behavior should be consistent
+    StatiqueFactory.build()

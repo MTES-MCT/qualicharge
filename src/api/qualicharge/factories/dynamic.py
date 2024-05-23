@@ -1,8 +1,10 @@
 """QualiCharge dynamic factories."""
 
 from polyfactory import Use
+from polyfactory.factories.dataclass_factory import DataclassFactory
 from polyfactory.factories.pydantic_factory import ModelFactory
 
+from ..fixtures.operational_units import prefixes
 from ..models.dynamic import SessionCreate, StatusCreate
 from ..schemas.core import Status
 from . import FrenchDataclassFactory, TimestampedSQLModelFactory
@@ -12,7 +14,8 @@ class SessionCreateFactory(ModelFactory[SessionCreate]):
     """Session model factory."""
 
     id_pdc_itinerance = Use(
-        FrenchDataclassFactory.__faker__.pystr_format, "FR###E######"
+        lambda: DataclassFactory.__random__.choice(prefixes)
+        + FrenchDataclassFactory.__faker__.pystr_format("E######")
     )
 
 
@@ -20,7 +23,8 @@ class StatusCreateFactory(ModelFactory[StatusCreate]):
     """Status model factory."""
 
     id_pdc_itinerance = Use(
-        FrenchDataclassFactory.__faker__.pystr_format, "FR###E######"
+        lambda: DataclassFactory.__random__.choice(prefixes)
+        + FrenchDataclassFactory.__faker__.pystr_format("E######")
     )
 
 

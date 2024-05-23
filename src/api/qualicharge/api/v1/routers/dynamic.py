@@ -15,6 +15,7 @@ from qualicharge.auth.oidc import get_user
 from qualicharge.auth.schemas import ScopesEnum, User
 from qualicharge.conf import settings
 from qualicharge.db import get_session
+from qualicharge.exceptions import PermissionDenied
 from qualicharge.models.dynamic import (
     SessionCreate,
     StatusCreate,
@@ -22,6 +23,7 @@ from qualicharge.models.dynamic import (
 )
 from qualicharge.schemas.core import PointDeCharge, Station, Status
 from qualicharge.schemas.core import Session as QCSession
+from qualicharge.schemas.utils import is_pdc_allowed_for_user
 
 logger = logging.getLogger(__name__)
 
@@ -124,6 +126,21 @@ async def list_statuses(
             cast(SAColumn, Status.point_de_charge_id).in_(pdc_ids_filter)
         )
 
+    if not user.is_superuser:
+        db_statuses_stmt = (
+            db_statuses_stmt.join_from(
+                Status,
+                PointDeCharge,
+                Status.point_de_charge_id == PointDeCharge.id,  # type: ignore[arg-type]
+            )
+            .join_from(PointDeCharge, Station, PointDeCharge.station_id == Station.id)  # type: ignore[arg-type]
+            .filter(
+                cast(SAColumn, Station.operational_unit_id).in_(
+                    ou.id for ou in user.operational_units
+                )
+            )
+        )
+
     db_statuses_stmt = db_statuses_stmt.join_from(
         Status,
         latest_db_statuses_stmt,
@@ -160,6 +177,9 @@ async def read_status(
     session: Session = Depends(get_session),
 ) -> StatusRead:
     """Read last known point of charge status."""
+    if not is_pdc_allowed_for_user(id_pdc_itinerance, user):
+        raise PermissionDenied("You cannot read the status of this point of charge")
+
     # Get target point de charge
     pdc_id = session.exec(
         select(PointDeCharge.id).where(
@@ -226,6 +246,9 @@ async def read_status_history(
     session: Session = Depends(get_session),
 ) -> List[StatusRead]:
     """Read point of charge status history."""
+    if not is_pdc_allowed_for_user(id_pdc_itinerance, user):
+        raise PermissionDenied("You cannot read statuses of this point of charge")
+
     pdc_id = session.exec(
         select(PointDeCharge.id).where(
             PointDeCharge.id_pdc_itinerance == id_pdc_itinerance
@@ -272,6 +295,9 @@ async def create_status(
     session: Session = Depends(get_session),
 ) -> None:
     """Create a status."""
+    if not is_pdc_allowed_for_user(status.id_pdc_itinerance, user):
+        raise PermissionDenied("You cannot create statuses for this point of charge")
+
     pdc = session.exec(
         select(PointDeCharge).where(
             PointDeCharge.id_pdc_itinerance == status.id_pdc_itinerance
@@ -295,6 +321,12 @@ async def create_status_bulk(
     session: Session = Depends(get_session),
 ) -> None:
     """Create a statuses batch."""
+    for status in statuses:
+        if not is_pdc_allowed_for_user(status.id_pdc_itinerance, user):
+            raise PermissionDenied(
+                "You cannot submit data for an organization you are not assigned to"
+            )
+
     # Check if all points of charge exist
     # ids_pdc_itinerance = list({status.id_pdc_itinerance for status in statuses})
     ids_pdc_itinerance = [status.id_pdc_itinerance for status in statuses]
@@ -335,6 +367,9 @@ async def create_session(
     db_session: Session = Depends(get_session),
 ) -> None:
     """Create a session."""
+    if not is_pdc_allowed_for_user(session.id_pdc_itinerance, user):
+        raise PermissionDenied("You cannot create sessions for this point of charge")
+
     # ⚠️ Please pay attention to the semantic:
     #
     # - `db_session` / `Session` refers to the database session, while,
@@ -362,6 +397,12 @@ async def create_session_bulk(
     db_session: Session = Depends(get_session),
 ) -> None:
     """Create a sessions batch."""
+    for session in sessions:
+        if not is_pdc_allowed_for_user(session.id_pdc_itinerance, user):
+            raise PermissionDenied(
+                "You cannot submit data for an organization you are not assigned to"
+            )
+
     # Check if all points of charge exist
     ids_pdc_itinerance = [session.id_pdc_itinerance for session in sessions]
     ids_pdc_itinerance_set = set(ids_pdc_itinerance)
