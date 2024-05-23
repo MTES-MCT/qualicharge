@@ -23,11 +23,12 @@ from qualicharge.auth.oidc import get_user
 from qualicharge.auth.schemas import ScopesEnum, User
 from qualicharge.conf import settings
 from qualicharge.db import get_session
-from qualicharge.exceptions import IntegrityError, ObjectDoesNotExist
+from qualicharge.exceptions import IntegrityError, ObjectDoesNotExist, PermissionDenied
 from qualicharge.models.static import Statique
-from qualicharge.schemas.core import PointDeCharge
+from qualicharge.schemas.core import OperationalUnit, PointDeCharge, Station
 from qualicharge.schemas.utils import (
     build_statique,
+    is_pdc_allowed_for_user,
     list_statique,
     save_statique,
     save_statiques,
@@ -91,8 +92,32 @@ async def list(
     """List statique items."""
     current_url = request.url
     previous_url = next_url = None
-    total = session.exec(select(func.count(cast(SAColumn, PointDeCharge.id)))).one()
-    statiques = [statique for statique in list_statique(session, offset, limit)]
+    total_statement = select(func.count(cast(SAColumn, PointDeCharge.id)))
+    operational_units = None
+    if not user.is_superuser:
+        operational_units = user.operational_units
+        total_statement = (
+            total_statement.join_from(
+                PointDeCharge,
+                Station,
+                PointDeCharge.station_id == Station.id,  # type: ignore[arg-type]
+            )
+            .join_from(
+                Station,
+                OperationalUnit,
+                Station.operational_unit_id == OperationalUnit.id,  # type: ignore[arg-type]
+            )
+            .where(
+                cast(SAColumn, OperationalUnit.id).in_(
+                    ou.id for ou in user.operational_units
+                )
+            )
+        )
+    total = session.exec(total_statement).one()
+    statiques = [
+        statique
+        for statique in list_statique(session, offset, limit, operational_units)
+    ]
 
     previous_offset = offset - limit if offset > limit else 0
     if offset:
@@ -126,6 +151,9 @@ async def read(
     session: Session = Depends(get_session),
 ) -> Statique:
     """Read statique item (point de charge)."""
+    if not is_pdc_allowed_for_user(id_pdc_itinerance, user):
+        raise PermissionDenied("You don't manage this point of charge")
+
     try:
         statique = build_statique(session, id_pdc_itinerance)
     except ObjectDoesNotExist as err:
@@ -152,6 +180,9 @@ async def update(
     session: Session = Depends(get_session),
 ) -> Statique:
     """Update statique item (point de charge)."""
+    if not is_pdc_allowed_for_user(id_pdc_itinerance, user):
+        raise PermissionDenied("You don't manage this point of charge")
+
     try:
         update = update_statique(session, id_pdc_itinerance, statique)
     except IntegrityError as err:
@@ -175,6 +206,11 @@ async def create(
     session: Session = Depends(get_session),
 ) -> StatiqueItemsCreatedResponse:
     """Create a statique item."""
+    if not is_pdc_allowed_for_user(statique.id_pdc_itinerance, user):
+        raise PermissionDenied(
+            "You cannot submit data for an organization you are not assigned to"
+        )
+
     try:
         db_statique = save_statique(session, statique)
     except ObjectDoesNotExist as err:
@@ -193,6 +229,12 @@ async def bulk(
     session: Session = Depends(get_session),
 ) -> StatiqueItemsCreatedResponse:
     """Create a set of statique items."""
+    for statique in statiques:
+        if not is_pdc_allowed_for_user(statique.id_pdc_itinerance, user):
+            raise PermissionDenied(
+                "You cannot submit data for an organization you are not assigned to"
+            )
+
     try:
         statiques = [statique for statique in save_statiques(session, statiques)]
     except ObjectDoesNotExist as err:

@@ -8,6 +8,8 @@ from sqlalchemy.exc import MultipleResultsFound
 from sqlalchemy.schema import Column as SAColumn
 from sqlmodel import Session, SQLModel, select
 
+from qualicharge.auth.schemas import User
+
 from ..exceptions import (
     DatabaseQueryException,
     DuplicateEntriesSubmitted,
@@ -20,6 +22,7 @@ from .core import (
     Enseigne,
     Localisation,
     Operateur,
+    OperationalUnit,
     PointDeCharge,
     Station,
 )
@@ -309,13 +312,42 @@ def build_statique(session: Session, id_pdc_itinerance: str) -> Statique:
 
 # TODO add filters support
 def list_statique(
-    session: Session, offset: int = 0, limit: int = 50
+    session: Session,
+    offset: int = 0,
+    limit: int = 50,
+    operational_units: Optional[List[OperationalUnit]] = None,
 ) -> Generator[Statique, None, None]:
     """List Statique entries."""
-    for pdc in session.exec(
-        select(PointDeCharge)
-        .order_by(PointDeCharge.id_pdc_itinerance)
-        .offset(offset)
-        .limit(limit)
-    ).all():
+    statement = select(PointDeCharge)
+    if operational_units:
+        statement = (
+            statement.join_from(
+                PointDeCharge,
+                Station,
+                PointDeCharge.station_id == Station.id,  # type: ignore[arg-type]
+            )
+            .join_from(
+                Station,
+                OperationalUnit,
+                Station.operational_unit_id == OperationalUnit.id,  # type: ignore[arg-type]
+            )
+            .where(
+                cast(SAColumn, OperationalUnit.id).in_(
+                    ou.id for ou in operational_units
+                )
+            )
+        )
+    statement = (
+        statement.order_by(PointDeCharge.id_pdc_itinerance).offset(offset).limit(limit)
+    )
+    for pdc in session.exec(statement).all():
         yield pdc_to_statique(pdc)
+
+
+def is_pdc_allowed_for_user(id_pdc_itinerance: str, user: User) -> bool:
+    """Check if a user can create/read/update a PDC given its identifier."""
+    if user.is_superuser:
+        return True
+    if id_pdc_itinerance[:5] in [ou.code for ou in user.operational_units]:
+        return True
+    return False

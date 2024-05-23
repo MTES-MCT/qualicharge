@@ -76,6 +76,15 @@ class User(BaseTimestampedSQLModel, table=True):
         dump["groups"] = [group.name for group in self.groups]
         return dump
 
+    @property
+    def operational_units(self):
+        """Get user's linked operational units."""
+        return [
+            operational_unit
+            for group in self.groups
+            for operational_unit in group.operational_units
+        ]
+
 
 class Group(BaseTimestampedSQLModel, table=True):
     """QualiCharge Group."""

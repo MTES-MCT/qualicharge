@@ -39,6 +39,34 @@ def test_create_user_group_operational_units(db_session):
     assert user_one.groups[0].operational_units[0].id == operational_unit.id
 
 
+def test_user_operational_units_property(db_session):
+    """Test the `User.operational_units` property."""
+    UserFactory.__session__ = db_session
+    GroupFactory.__session__ = db_session
+
+    # Create a user and three groups
+    user = UserFactory.create_sync()
+    groups = GroupFactory.create_batch_sync(3)
+    for group in groups:
+        db_session.add(UserGroup(user_id=user.id, group_id=group.id))
+
+    # Link groups to operational units
+    codes = ["FRS63", "FRA31", "FRAIR"]
+    for code, group in zip(codes, groups):
+        operational_unit = db_session.exec(
+            select(OperationalUnit).where(OperationalUnit.code == code)
+        ).one()
+        db_session.add(
+            GroupOperationalUnit(
+                group_id=group.id, operational_unit_id=operational_unit.id
+            )
+        )
+
+    assert {
+        operational_unit.code for operational_unit in user.operational_units
+    } == set(codes)
+
+
 def test_create_user_scopes(db_session):
     """Test user scope creation."""
     UserFactory.__session__ = db_session

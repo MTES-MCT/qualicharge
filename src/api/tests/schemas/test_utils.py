@@ -1,9 +1,15 @@
 """QualiCharge schemas utilities tests."""
 
+from random import sample
+from typing import cast
+
 import pytest
+from sqlalchemy import Column as SAColumn
 from sqlalchemy import func
 from sqlmodel import select
 
+from qualicharge.auth.factories import GroupFactory, UserFactory
+from qualicharge.auth.schemas import GroupOperationalUnit, UserGroup
 from qualicharge.db import SAQueryCounter
 from qualicharge.exceptions import (
     DatabaseQueryException,
@@ -17,13 +23,16 @@ from qualicharge.schemas.core import (
     Enseigne,
     Localisation,
     Operateur,
+    OperationalUnit,
     PointDeCharge,
     Station,
 )
 from qualicharge.schemas.utils import (
     build_statique,
     get_or_create,
+    is_pdc_allowed_for_user,
     list_statique,
+    pdc_to_statique,
     save_schema_from_statique,
     save_statique,
     save_statiques,
@@ -374,3 +383,101 @@ def test_list_statique(db_session):
         assert {statique.id_pdc_itinerance for statique in statiques} == set(
             ids_pdc_itinerance[offset : offset + size]
         )
+
+
+def test_list_statique_operational_units_filtering(db_session):
+    """Test list_statique utility filtering by operational units."""
+    # Save random statiques
+    n_statiques = 20
+    list(save_statiques(db_session, StatiqueFactory.batch(n_statiques)))
+
+    # Select operational units linked to stations
+    operational_units = db_session.exec(
+        select(OperationalUnit)
+        .join_from(
+            Station, OperationalUnit, Station.operational_unit_id == OperationalUnit.id
+        )
+        .where(Station.operational_unit_id is not None)
+        .distinct()
+    ).all()
+
+    # Select operational units randomly
+    n_operational_units = 3
+    selected_operational_units = sample(operational_units, n_operational_units)
+
+    # Expected PDC
+    selected_pdcs = db_session.exec(
+        select(PointDeCharge)
+        .join_from(PointDeCharge, Station, PointDeCharge.station_id == Station.id)
+        .join_from(
+            Station, OperationalUnit, Station.operational_unit_id == OperationalUnit.id
+        )
+        .where(
+            cast(SAColumn, OperationalUnit.id).in_(
+                ou.id for ou in selected_operational_units
+            )
+        )
+    ).all()
+    expected_statiques = [pdc_to_statique(pdc) for pdc in selected_pdcs]
+    statiques = list(
+        list_statique(db_session, operational_units=selected_operational_units)
+    )
+    assert len(statiques) == len(expected_statiques)
+    assert {s.id_pdc_itinerance for s in statiques} == {
+        s.id_pdc_itinerance for s in expected_statiques
+    }
+
+
+def test_is_pdc_allowed_for_user(db_session):
+    """Test the is_pdc_allowed_for_user utility."""
+    UserFactory.__session__ = db_session
+    GroupFactory.__session__ = db_session
+
+    id_pdc_itinerance = "FRS63E0001"
+    id_station_itinerance = "FRS63P0001"
+
+    # Superuser
+    user = UserFactory.create_sync(is_superuser=True)
+    assert is_pdc_allowed_for_user(id_pdc_itinerance, user) is True
+
+    # Normal user with no assigned operational units
+    user = UserFactory.create_sync(is_superuser=False)
+    assert user.operational_units == []
+    assert is_pdc_allowed_for_user(id_pdc_itinerance, user) is False
+
+    # Normal user with matching assigned operational units
+    save_statique(
+        db_session,
+        StatiqueFactory.build(
+            id_pdc_itinerance=id_pdc_itinerance,
+            id_station_itinerance=id_station_itinerance,
+        ),
+    )
+    group = GroupFactory.create_sync()
+    db_session.add(
+        GroupOperationalUnit(
+            group_id=group.id,
+            operational_unit_id=db_session.exec(
+                select(OperationalUnit.id).where(
+                    OperationalUnit.code == id_pdc_itinerance[:5]
+                )
+            ).one(),
+        )
+    )
+    user = UserFactory.create_sync(is_superuser=False)
+    db_session.add(UserGroup(user_id=user.id, group_id=group.id))
+    assert is_pdc_allowed_for_user(id_pdc_itinerance, user) is True
+
+    # Normal user with assigned operational units not linked to the point of charge
+    group = GroupFactory.create_sync()
+    db_session.add(
+        GroupOperationalUnit(
+            group_id=group.id,
+            operational_unit_id=db_session.exec(
+                select(OperationalUnit.id).where(OperationalUnit.code == "FRS72")
+            ).one(),
+        )
+    )
+    user = UserFactory.create_sync(is_superuser=False)
+    db_session.add(UserGroup(user_id=user.id, group_id=group.id))
+    assert is_pdc_allowed_for_user(id_pdc_itinerance, user) is False

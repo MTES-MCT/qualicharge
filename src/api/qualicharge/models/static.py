@@ -13,11 +13,12 @@ from pydantic import (
     PositiveFloat,
     PositiveInt,
     WithJsonSchema,
+    model_validator,
 )
 from pydantic.types import PastDate
 from pydantic_extra_types.coordinate import Coordinate
 from pydantic_extra_types.phone_numbers import PhoneNumber
-from typing_extensions import Annotated
+from typing_extensions import Annotated, Self
 
 from .utils import ModelSchemaMixin
 
@@ -140,3 +141,15 @@ class Statique(ModelSchemaMixin, BaseModel):
     observations: Optional[str]
     date_maj: PastDate
     cable_t2_attache: Optional[bool]
+
+    @model_validator(mode="after")
+    def check_afirev_prefix(self) -> Self:
+        """Check that id_pdc_itinerance and id_station_itinerance prefixes match."""
+        if self.id_pdc_itinerance[:5] != self.id_station_itinerance[:5]:
+            raise ValueError(
+                (
+                    "AFIREV prefixes from id_station_itinerance and "
+                    "id_pdc_itinerance do not match"
+                )
+            )
+        return self

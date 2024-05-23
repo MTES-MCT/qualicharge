@@ -14,6 +14,7 @@ and this project adheres to
 - Link `OperationalUnit` to `Station` using AFIREV prefixes
 - Implement `User` and `Group` schemas
 - Implement `User` scopes (fine-tuned permissions)
+- Implement row permissions on API endpoints (given assigned operational units)
 
 ## [0.5.0] - 2024-05-15
 

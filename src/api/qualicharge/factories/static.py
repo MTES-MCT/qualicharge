@@ -4,6 +4,7 @@ from typing import Any, Callable, Dict, TypeVar
 
 from geoalchemy2.types import Geometry
 from polyfactory import Use
+from polyfactory.decorators import post_generated
 from polyfactory.factories.dataclass_factory import DataclassFactory
 from polyfactory.factories.pydantic_factory import ModelFactory
 from pydantic_extra_types.coordinate import Coordinate
@@ -57,14 +58,23 @@ class StatiqueFactory(ModelFactory[Statique]):
     )
     date_maj = Use(DataclassFactory.__faker__.past_date)
     date_mise_en_service = Use(DataclassFactory.__faker__.past_date)
-    id_station_itinerance = Use(
-        lambda: DataclassFactory.__random__.choice(prefixes)
-        + FrenchDataclassFactory.__faker__.pystr_format("P######")
-    )
     id_pdc_itinerance = Use(
         lambda: DataclassFactory.__random__.choice(prefixes)
         + FrenchDataclassFactory.__faker__.pystr_format("E######")
     )
+
+    @post_generated
+    @classmethod
+    def id_station_itinerance(cls, id_pdc_itinerance: str):
+        """Ensure id_pdc_itinerance and id_station_itinerance consistency.
+
+        They need to share the same operational unit code (AFIREV prefix).
+        """
+        if id_pdc_itinerance:
+            prefix = id_pdc_itinerance[:5]
+        else:
+            prefix = DataclassFactory.__random__.choice(prefixes)
+        return prefix + FrenchDataclassFactory.__faker__.pystr_format("E######")
 
 
 class AmenageurFactory(TimestampedSQLModelFactory[Amenageur]):
