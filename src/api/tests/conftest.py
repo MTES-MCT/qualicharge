@@ -1,6 +1,5 @@
 """Fixtures for pytest."""
 
-# pylint: disable=unused-import
 # ruff: noqa: F401
 
 from qualicharge.auth.factories import IDTokenFactory

@@ -4,6 +4,7 @@ import logging
 from pathlib import Path
 from typing import List
 
+from passlib.context import CryptContext
 from pydantic import AnyHttpUrl, PostgresDsn, computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -87,6 +88,17 @@ class Settings(BaseSettings):
             path=(self.OIDC_PROVIDER_BASE_URL.path or "")
             + f"/{self.OIDC_CONFIGURATION_PATH}",
         )
+
+    # Security
+    PASSWORD_HASHERS: list[str] = [
+        "bcrypt",
+    ]
+
+    @computed_field  # type: ignore[misc]
+    @property
+    def PASSWORD_CONTEXT(self) -> CryptContext:
+        """Get passlib CryptContext."""
+        return CryptContext(schemes=self.PASSWORD_HASHERS, deprecated="auto")
 
     # API
     API_STATIQUE_BULK_CREATE_MAX_SIZE: int = 10

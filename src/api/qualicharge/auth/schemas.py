@@ -8,6 +8,7 @@ from pydantic import EmailStr
 from sqlalchemy.types import ARRAY, String
 from sqlmodel import Field, Relationship, SQLModel
 
+from qualicharge.conf import settings
 from qualicharge.schemas import BaseTimestampedSQLModel
 from qualicharge.schemas.core import OperationalUnit
 
@@ -60,6 +61,7 @@ class User(BaseTimestampedSQLModel, table=True):
     email: EmailStr = Field(unique=True, sa_type=String)
     first_name: Optional[str] = Field(max_length=150)
     last_name: Optional[str] = Field(max_length=150)
+    password: str = Field(max_length=128)
     is_active: bool = False
     is_staff: bool = False
     is_superuser: bool = False
@@ -84,6 +86,10 @@ class User(BaseTimestampedSQLModel, table=True):
             for group in self.groups
             for operational_unit in group.operational_units
         ]
+
+    def check_password(self, password: str) -> bool:
+        """Check raw password hash compared to database hashed password."""
+        return settings.PASSWORD_CONTEXT.verify(password, self.password)
 
 
 class Group(BaseTimestampedSQLModel, table=True):

@@ -2,7 +2,9 @@
 
 from typing import List, Optional
 
-from pydantic import BaseModel, ConfigDict, EmailStr
+from pydantic import BaseModel, ConfigDict, EmailStr, field_validator
+
+from qualicharge.conf import settings
 
 from .schemas import ScopesEnum
 
@@ -34,13 +36,13 @@ class IDToken(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
 
-class UserRead(BaseModel):
-    """QualiCharge user read model."""
+class BaseUser(BaseModel):
+    """QualiCharge base user model."""
 
     username: str
     email: EmailStr
-    first_name: Optional[str]
-    last_name: Optional[str]
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
     is_active: bool
     is_staff: bool
     is_superuser: bool
@@ -50,3 +52,21 @@ class UserRead(BaseModel):
 
     # Relationships
     groups: List[str] = []
+
+
+class UserRead(BaseUser):
+    """QualiCharge user read model."""
+
+
+class UserCreate(BaseUser):
+    """QualiCharge user read model."""
+
+    password: str
+
+    @field_validator("password", mode="before")
+    @classmethod
+    def set_password(cls, password: str) -> str:
+        """Password field setter."""
+        if password is None:
+            raise ValueError("Password required")
+        return settings.PASSWORD_CONTEXT.hash(password)

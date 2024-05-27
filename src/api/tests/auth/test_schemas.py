@@ -1,9 +1,12 @@
 """Tests for qualicharge.auth.schemas module."""
 
+import pytest
 from sqlmodel import select
 
 from qualicharge.auth.factories import GroupFactory, UserFactory
+from qualicharge.auth.models import UserCreate
 from qualicharge.auth.schemas import GroupOperationalUnit, ScopesEnum, User, UserGroup
+from qualicharge.conf import settings
 from qualicharge.schemas.core import OperationalUnit
 
 
@@ -84,3 +87,48 @@ def test_create_user_scopes(db_session):
         ScopesEnum.STATIC_READ,
     ]
     assert user == db_user
+
+
+def test_user_set_password(db_session):
+    """Test user set_password setter."""
+    # By default no password has been set
+    user = UserCreate(
+        username="johndoe",
+        email="john@doe.com",
+        is_active=True,
+        is_staff=True,
+        is_superuser=True,
+        password="foo",  # noqa: S106
+    )
+    assert user.password is not None
+    # Make sure that its a hash password with a supported algorithm
+    assert settings.PASSWORD_CONTEXT.identify(user.password)
+
+    # Create a database user from this user instance
+    db_user = User(**user.model_dump())
+
+    # Save user to database
+    db_session.add(db_user)
+    db_session.commit()
+    db_session.refresh(db_user)
+    assert settings.PASSWORD_CONTEXT.identify(db_user.password)
+
+
+def test_user_check_password(db_session):
+    """Test user check_password validator."""
+    UserFactory.__session__ = db_session
+
+    user = UserFactory.build()
+    with pytest.raises(ValueError, match="Password required"):
+        user.password = UserCreate.set_password(None)
+    user.password = UserCreate.set_password("foo")
+
+    # Save user to database
+    db_session.add(user)
+    db_session.commit()
+    db_session.refresh(user)
+
+    # Check password
+    assert settings.PASSWORD_CONTEXT.identify(user.password)
+    assert user.check_password("bar") is False
+    assert user.check_password("foo")
