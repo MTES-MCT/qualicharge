@@ -5,7 +5,7 @@ name = "pypi"
 
 [packages]
 alembic = "==1.13.1"
-annotated-types = "==0.6.0"
+annotated-types = "==0.7.0"
 email-validator = "==2.1.1"
 fastapi = "==0.111.0"
 geoalchemy2 = {extras = ["shapely"], version = "==0.15.1"}
@@ -14,7 +14,7 @@ psycopg2-binary = "==2.9.9"
 pydantic-extra-types = {extras = ["all"], version = "==2.7.0"}
 pydantic-settings = "==2.2.1"
 python-jose = {extras = ["cryptography"], version = "==3.3.0"}
-setuptools = "==69.5.1"
+setuptools = "==70.0.0"
 sqlalchemy-timescaledb = "==0.4.1"
 sqlmodel = "==0.0.18"
 uvicorn = {extras = ["standard"] }
@@ -28,7 +28,7 @@ polyfactory = "==2.16.0"
 pytest = "==8.2.1"
 pytest-cov = "==5.0.0"
 pytest-httpx = "==0.30.0"
-ruff = "==0.4.4"
+ruff = "==0.4.5"
 types-python-jose = "==3.3.4.20240106"
 
 [requires]
