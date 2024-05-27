@@ -37,7 +37,7 @@ def test_list_with_missing_scopes(client_auth):
 
 
 def test_list_for_superuser(client_auth, db_session):
-    """Test the /statique/ list endpoint using a superuser."""
+    """Test the /statique/ list endpoint (superuser case)."""
     # Empty response (no statiques exist)
     response = client_auth.get("/statique/")
     assert response.status_code == status.HTTP_200_OK
@@ -274,7 +274,7 @@ def test_read_with_missing_scopes(client_auth):
 
 
 def test_read_for_superuser(client_auth, db_session):
-    """Test the /statique/{id_pdc_itinerance} endpoint."""
+    """Test the /statique/{id_pdc_itinerance} endpoint (superuser case)."""
     id_pdc_itinerance = "FR911E1111ER1"
     db_statique = save_statique(
         db_session, StatiqueFactory.build(id_pdc_itinerance=id_pdc_itinerance)
@@ -361,7 +361,7 @@ def test_create_with_missing_scope(client_auth):
 
 
 def test_create_for_superuser(client_auth):
-    """Test the /statique/ create endpoint."""
+    """Test the /statique/ create endpoint (superuser case)."""
     id_pdc_itinerance = "FR911E1111ER1"
     data = StatiqueFactory.build(
         id_pdc_itinerance=id_pdc_itinerance,
@@ -464,7 +464,7 @@ def test_update_with_missing_scope(client_auth, db_session):
 
 
 def test_update_for_superuser(client_auth, db_session):
-    """Test the /statique/{id_pdc_itinerance} update endpoint."""
+    """Test the /statique/{id_pdc_itinerance} update endpoint (superuser case)."""
     id_pdc_itinerance = "FR911E1111ER1"
     db_statique = save_statique(
         db_session, StatiqueFactory.build(id_pdc_itinerance=id_pdc_itinerance)
@@ -587,7 +587,7 @@ def test_bulk_with_missing_scope(client_auth):
 
 
 def test_bulk_for_superuser(client_auth):
-    """Test the /statique/bulk create endpoint (superuser)."""
+    """Test the /statique/bulk create endpoint (superuser case)."""
     data = StatiqueFactory.batch(
         size=2,
     )
