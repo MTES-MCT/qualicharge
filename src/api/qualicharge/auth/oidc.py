@@ -2,13 +2,14 @@
 
 import logging
 from functools import lru_cache
-from typing import Annotated, Dict
+from typing import Annotated, Dict, Union
 
 import httpx
 from fastapi import Depends
 from fastapi.security import (
     HTTPAuthorizationCredentials,
     HTTPBearer,
+    OAuth2PasswordBearer,
     SecurityScopes,
 )
 from jose import ExpiredSignatureError, JWTError, jwt
@@ -32,7 +33,11 @@ from .schemas import User
 # API auth logger
 logger = logging.getLogger(__name__)
 
-oidc_scheme = HTTPBearer()
+auth_scheme: Union[OAuth2PasswordBearer, HTTPBearer] = OAuth2PasswordBearer(
+    tokenUrl=settings.OAUTH2_TOKEN_URL
+)
+if settings.OIDC_IS_ENABLED:
+    auth_scheme = HTTPBearer()
 
 
 @lru_cache()
@@ -79,7 +84,7 @@ def get_public_keys(
 
 def get_token(
     security_scopes: SecurityScopes,
-    token: Annotated[HTTPAuthorizationCredentials, Depends(oidc_scheme)],
+    token: Annotated[Union[HTTPAuthorizationCredentials, str], Depends(auth_scheme)],
 ) -> IDToken:
     """Decode and validate OpenId Connect ID token given a configured provider.
 
@@ -96,23 +101,34 @@ def get_token(
     """
     logger.debug(f"{token=}")
 
-    provider_config = discover_provider(settings.OIDC_CONFIGURATION_URL)
-    logger.debug(f"{provider_config=}")
+    key: Union[str, dict] = settings.OAUTH2_TOKEN_ENCODING_KEY
+    algorithms = settings.OAUTH2_TOKEN_ALGORITHMS
+    extra_decode_options = {
+        "audience": settings.OIDC_EXPECTED_AUDIENCE,
+        "options": {
+            "verify_signature": True,
+            "verify_exp": True,
+            "verify_aud": True,
+        },
+    }
 
-    keys = get_public_keys(provider_config["jwks_uri"])
-    logger.debug(f"{keys=}")
+    if settings.OIDC_IS_ENABLED:
+        provider_config = discover_provider(settings.OIDC_CONFIGURATION_URL)
+        logger.debug(f"{provider_config=}")
+
+        algorithms = provider_config["id_token_signing_alg_values_supported"]
+        key = get_public_keys(provider_config["jwks_uri"])
+
+    logger.debug(f"{key=}")
+    logger.debug(f"{algorithms=}")
+    logger.debug(f"{extra_decode_options=}")
 
     try:
         decoded_token = jwt.decode(
-            token=token.credentials,
-            key=keys,
-            algorithms=provider_config["id_token_signing_alg_values_supported"],
-            audience=settings.OIDC_EXPECTED_AUDIENCE,
-            options={
-                "verify_signature": True,
-                "verify_exp": True,
-                "verify_aud": True,
-            },
+            token=token.credentials if settings.OIDC_IS_ENABLED else token,  # type: ignore[union-attr, arg-type]
+            key=key,
+            algorithms=algorithms,
+            **extra_decode_options,  # type: ignore[arg-type]
         )
     except ExpiredSignatureError as exc:
         logger.error("Token signature expired: %s", exc)

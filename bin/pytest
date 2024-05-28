@@ -10,4 +10,7 @@ DOCKER_USER="${DOCKER_UID}:${DOCKER_GID}"
 DOCKER_USER=${DOCKER_USER} \
   DOCKER_UID=${DOCKER_UID} \
   DOCKER_GID=${DOCKER_GID} \
-  docker compose run --rm api pipenv run pytest "$@"
+  docker compose run --rm \
+    -e QUALICHARGE_OIDC_IS_ENABLED=True \
+    api \
+    pipenv run pytest "$@"

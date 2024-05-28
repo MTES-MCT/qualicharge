@@ -7,8 +7,9 @@ from fastapi import status
 from jose import jwt
 
 from qualicharge.auth.factories import IDTokenFactory
-from qualicharge.auth.models import UserRead
+from qualicharge.auth.models import IDToken, UserCreate, UserRead
 from qualicharge.auth.oidc import discover_provider, get_public_keys
+from qualicharge.auth.schemas import User
 from qualicharge.conf import settings
 
 
@@ -141,3 +142,94 @@ def test_whoami_jwt_decoding_error(
     assert response.json() == {
         "message": "Authentication failed: Unable to decode ID token"
     }
+
+
+def test_login_with_invalid_user(client):
+    """Test the login endpoint with invalid user."""
+    response = client.post(
+        "/auth/token", data={"username": "johndoe", "password": "foo"}
+    )
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED
+    assert response.json() == {
+        "message": "Authentication failed: Wrong login or password"
+    }
+
+
+def test_login_with_invalid_password(client, db_session):
+    """Test the login endpoint with invalid password."""
+    user = User(
+        **UserCreate(
+            username="johndoe",
+            password="foo",  # noqa: S106
+            email="john@doe.com",
+            first_name="John",
+            last_name="Doe",
+            is_superuser=False,
+            is_staff=False,
+            is_active=True,
+        ).model_dump()
+    )
+    db_session.add(user)
+
+    response = client.post(
+        "/auth/token", data={"username": "johndoe", "password": "bar"}
+    )
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED
+    assert response.json() == {
+        "message": "Authentication failed: Wrong login or password"
+    }
+
+
+def test_login_with_inactive_user(client, db_session):
+    """Test the login endpoint with an inactive user."""
+    user = User(
+        **UserCreate(
+            username="johndoe",
+            password="foo",  # noqa: S106
+            email="john@doe.com",
+            first_name="John",
+            last_name="Doe",
+            is_superuser=False,
+            is_staff=False,
+            is_active=False,
+        ).model_dump()
+    )
+    db_session.add(user)
+
+    response = client.post(
+        "/auth/token", data={"username": "johndoe", "password": "foo"}
+    )
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED
+    assert response.json() == {"message": "Authentication failed: User is not active"}
+
+
+def test_login(client, db_session):
+    """Test the login endpoint."""
+    user = User(
+        **UserCreate(
+            username="johndoe",
+            password="foo",  # noqa: S106
+            email="john@doe.com",
+            first_name="John",
+            last_name="Doe",
+            is_superuser=False,
+            is_staff=False,
+            is_active=True,
+        ).model_dump()
+    )
+    db_session.add(user)
+
+    response = client.post(
+        "/auth/token", data={"username": "johndoe", "password": "foo"}
+    )
+    assert response.status_code == status.HTTP_200_OK
+    token = response.json()
+    assert token["token_type"] == "bearer"  # noqa: S105
+    decoded = jwt.decode(
+        token=token["access_token"],
+        key=settings.OAUTH2_TOKEN_ENCODING_KEY,
+        audience=settings.OIDC_EXPECTED_AUDIENCE,
+    )
+    id_token = IDToken(**decoded)
+    assert id_token.sub == "johndoe"
+    assert id_token.email == "john@doe.com"

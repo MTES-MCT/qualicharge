@@ -9,6 +9,13 @@ from qualicharge.conf import settings
 from .schemas import ScopesEnum
 
 
+class Token(BaseModel):
+    """Token bearer model."""
+
+    access_token: str
+    token_type: str
+
+
 class IDToken(BaseModel):
     """Pydantic model representing the core of an OpenID Connect ID Token.
 
