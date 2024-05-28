@@ -8,6 +8,12 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Security
+
+- Switch from `python-jose` to `PyJWT` as the
+  [CVE-2022-29217](https://github.com/advisories/GHSA-ffqj-6fqr-9h24)
+  does not seem to be fixed
+
 ## [0.6.0] - 2024-05-28
 
 ### Added

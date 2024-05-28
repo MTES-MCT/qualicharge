@@ -4,9 +4,9 @@ import logging
 from datetime import datetime, timezone
 from typing import Annotated
 
+import jwt
 from fastapi import APIRouter, Depends, Security
 from fastapi.security import OAuth2PasswordRequestForm
-from jose import jwt
 from sqlmodel import Session as SMSession
 from sqlmodel import select
 
