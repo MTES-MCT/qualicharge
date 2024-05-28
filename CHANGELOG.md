@@ -8,6 +8,8 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.6.0] - 2024-05-28
+
 ### Added
 
 - Implement `OperationalUnit` schema
@@ -72,7 +74,8 @@ and this project adheres to
 
 - Implement base FastAPI app
 
-[unreleased]: https://github.com/MTES-MCT/qualicharge/compare/v0.5.0...main
+[unreleased]: https://github.com/MTES-MCT/qualicharge/compare/v0.6.0...main
+[0.6.0]: https://github.com/MTES-MCT/qualicharge/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/MTES-MCT/qualicharge/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/MTES-MCT/qualicharge/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/MTES-MCT/qualicharge/compare/v0.2.1...v0.3.0
