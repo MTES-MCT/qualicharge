@@ -65,11 +65,21 @@ class Settings(BaseSettings):
         )
 
     # OIDC
+    OIDC_IS_ENABLED: bool = True  # If false, fallback to (local) OAuth2 scheme
     OIDC_PROVIDER_BASE_URL: AnyHttpUrl
     OIDC_PROVIDER_DISCOVER_TIMEOUT: int = 5
     OIDC_CONFIGURATION_PATH: Path = Path("/.well-known/openid-configuration")
     # FIXME: we should be more specific
     OIDC_EXPECTED_AUDIENCE: str = "account"
+
+    # OAuth2 (local provider)
+    OAUTH2_TOKEN_ALGORITHMS: list[str] = [
+        "HS256",
+    ]
+    OAUTH2_TOKEN_ENCODING_KEY: str
+    OAUTH2_TOKEN_ISSUER: AnyHttpUrl
+    OAUTH2_TOKEN_LIFETIME: int = 30 * 60  # in seconds
+    OAUTH2_TOKEN_URL: str = "/api/v1/auth/token"
 
     @computed_field  # type: ignore[misc]
     @property

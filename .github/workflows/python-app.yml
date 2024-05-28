@@ -90,6 +90,8 @@ jobs:
           QUALICHARGE_TEST_DB_NAME: test-qualicharge-api
           # This is a fake setting required to run the app
           QUALICHARGE_OIDC_PROVIDER_BASE_URL: http://localhost:8080/fake
+          QUALICHARGE_OAUTH2_TOKEN_ENCODING_KEY: thisissupersecret
+          QUALICHARGE_OAUTH2_TOKEN_ISSUER: http://test:8010
 
   test-api:
     needs: build-api
@@ -130,3 +132,5 @@ jobs:
           QUALICHARGE_TEST_DB_NAME: test-qualicharge-api
           # This is a fake setting required to run the app
           QUALICHARGE_OIDC_PROVIDER_BASE_URL: http://localhost:8080/fake
+          QUALICHARGE_OAUTH2_TOKEN_ENCODING_KEY: thisissupersecret
+          QUALICHARGE_OAUTH2_TOKEN_ISSUER: http://test:8010

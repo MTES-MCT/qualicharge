@@ -43,6 +43,7 @@ async def authentication_exception_handler(
     return JSONResponse(
         status_code=status.HTTP_401_UNAUTHORIZED,
         content={"message": f"Authentication failed: {exc.name}"},
+        headers={"WWW-Authenticate": "Bearer"},
     )
 
 

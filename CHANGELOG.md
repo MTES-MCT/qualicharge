@@ -15,6 +15,8 @@ and this project adheres to
 - Implement `User` and `Group` schemas
 - Implement `User` scopes (fine-tuned permissions)
 - Implement row permissions on API endpoints (given assigned operational units)
+- Integrate OAuth2 password flow authentication fallback when OIDC is not
+  enabled
 
 ## [0.5.0] - 2024-05-15
 
