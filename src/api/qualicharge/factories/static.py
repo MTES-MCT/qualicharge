@@ -111,7 +111,19 @@ class OperateurFactory(TimestampedSQLModelFactory[Operateur]):
     """Operateur schema factory."""
 
     contact_operateur = Use(FrenchDataclassFactory.__faker__.ascii_company_email)
-    telephone_operateur = Use(FrenchDataclassFactory.__faker__.phone_number)
+    telephone_operateur = Use(
+        DataclassFactory.__random__.choice,
+        [
+            "+33144276350",
+            "+33.1 44 27 63 50",
+            "+33 (0)1 44 27 63 50",
+            "+33 1 44 27 63 50",
+            "0144276350",
+            "01 44 27 63 50",
+            "01-44-27-63-50",
+            "(01)44276350",
+        ],
+    )
 
 
 class PointDeChargeFactory(TimestampedSQLModelFactory[PointDeCharge]):
