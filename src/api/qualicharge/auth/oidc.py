@@ -5,6 +5,7 @@ from functools import lru_cache
 from typing import Annotated, Dict, Union
 
 import httpx
+import jwt
 from fastapi import Depends
 from fastapi.security import (
     HTTPAuthorizationCredentials,
@@ -12,8 +13,11 @@ from fastapi.security import (
     OAuth2PasswordBearer,
     SecurityScopes,
 )
-from jose import ExpiredSignatureError, JWTError, jwt
-from jose.exceptions import JWTClaimsError
+from jwt.exceptions import (
+    ExpiredSignatureError,
+    InvalidAudienceError,
+    InvalidTokenError,
+)
 from pydantic import AnyHttpUrl
 from sqlmodel import Session as SMSession
 from sqlmodel import select
@@ -23,7 +27,6 @@ from qualicharge.db import get_session
 from ..conf import settings
 from ..exceptions import (
     AuthenticationError,
-    OIDCAuthenticationError,
     OIDCProviderException,
     PermissionDenied,
 )
@@ -117,7 +120,7 @@ def get_token(
         logger.debug(f"{provider_config=}")
 
         algorithms = provider_config["id_token_signing_alg_values_supported"]
-        key = get_public_keys(provider_config["jwks_uri"])
+        key = get_public_keys(provider_config["jwks_uri"])[0]
 
     logger.debug(f"{key=}")
     logger.debug(f"{algorithms=}")
@@ -125,20 +128,20 @@ def get_token(
 
     try:
         decoded_token = jwt.decode(
-            token=token.credentials if settings.OIDC_IS_ENABLED else token,  # type: ignore[union-attr, arg-type]
+            token.credentials if settings.OIDC_IS_ENABLED else token,  # type: ignore[union-attr, arg-type]
             key=key,
             algorithms=algorithms,
             **extra_decode_options,  # type: ignore[arg-type]
         )
     except ExpiredSignatureError as exc:
         logger.error("Token signature expired: %s", exc)
-        raise OIDCAuthenticationError("Token signature expired") from exc
-    except JWTClaimsError as exc:
-        logger.error("Bad token claims: %s", exc)
-        raise OIDCAuthenticationError("Bad token claims") from exc
-    except JWTError as exc:
+        raise AuthenticationError("Token signature expired") from exc
+    except InvalidAudienceError as exc:
+        logger.error("Invalid audience: %s", exc)
+        raise AuthenticationError("Invalid audience") from exc
+    except InvalidTokenError as exc:
         logger.error("Unable to decode the ID token: %s", exc)
-        raise OIDCAuthenticationError("Unable to decode ID token") from exc
+        raise AuthenticationError("Unable to decode ID token") from exc
     logger.debug(f"{decoded_token=}")
 
     return IDToken(**decoded_token)

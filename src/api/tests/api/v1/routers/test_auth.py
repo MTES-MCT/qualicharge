@@ -2,9 +2,9 @@
 
 from datetime import datetime
 
+import jwt
 import pytest
 from fastapi import status
-from jose import jwt
 
 from qualicharge.auth.factories import IDTokenFactory
 from qualicharge.auth.models import IDToken, UserCreate, UserRead
@@ -74,7 +74,7 @@ def test_whoami_expired_signature(
     # As exp should be set to iat + 300, the token should be expired
     iat = int(datetime.now().timestamp()) - 500
     token = jwt.encode(
-        claims=id_token_factory.build(iat=iat).model_dump(),
+        id_token_factory.build(iat=iat).model_dump(),
         key="secret",
         algorithm="HS256",
     )
@@ -107,13 +107,13 @@ def test_whoami_with_bad_token_claims(
     )
     # As exp should be set to iat + 300, the token should be expired
     token = jwt.encode(
-        claims=id_token_factory.build(aud="fake").model_dump(),
+        id_token_factory.build(aud="fake").model_dump(),
         key="secret",
         algorithm="HS256",
     )
     response = client.get("/auth/whoami", headers={"Authorization": f"Bearer {token}"})
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
-    assert response.json() == {"message": "Authentication failed: Bad token claims"}
+    assert response.json() == {"message": "Authentication failed: Invalid audience"}
 
 
 def test_whoami_jwt_decoding_error(
@@ -226,8 +226,9 @@ def test_login(client, db_session):
     token = response.json()
     assert token["token_type"] == "bearer"  # noqa: S105
     decoded = jwt.decode(
-        token=token["access_token"],
+        token["access_token"],
         key=settings.OAUTH2_TOKEN_ENCODING_KEY,
+        algorithms=settings.OAUTH2_TOKEN_ALGORITHMS,
         audience=settings.OIDC_EXPECTED_AUDIENCE,
     )
     id_token = IDToken(**decoded)

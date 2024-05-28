@@ -4,9 +4,9 @@ from datetime import datetime
 from typing import Union
 
 import httpx
+import jwt
 import pytest
 from fastapi.security import HTTPAuthorizationCredentials, SecurityScopes
-from jose import jwt
 
 from qualicharge.auth.factories import IDTokenFactory, UserFactory
 from qualicharge.auth.oidc import (
@@ -19,7 +19,6 @@ from qualicharge.auth.schemas import ScopesEnum
 from qualicharge.conf import settings
 from qualicharge.exceptions import (
     AuthenticationError,
-    OIDCAuthenticationError,
     OIDCProviderException,
     PermissionDenied,
 )
@@ -120,7 +119,7 @@ def test_get_token(
         )
 
     token = jwt.encode(
-        claims=id_token_factory.build().model_dump(),
+        id_token_factory.build().model_dump(),
         key="secret",
     )
     bearer_token: Union[str, HTTPAuthorizationCredentials] = token
@@ -163,7 +162,7 @@ def test_get_token_with_expired_token(
     # As exp should be set to iat + 300, the token should be expired
     iat = int(datetime.now().timestamp()) - 500
     token = jwt.encode(
-        claims=id_token_factory.build(iat=iat).model_dump(),
+        id_token_factory.build(iat=iat).model_dump(),
         key="secret",
     )
     bearer_token: Union[str, HTTPAuthorizationCredentials] = token
@@ -173,7 +172,7 @@ def test_get_token_with_expired_token(
             credentials=token,
         )
 
-    with pytest.raises(OIDCAuthenticationError, match="Token signature expired"):
+    with pytest.raises(AuthenticationError, match="Token signature expired"):
         get_token(security_scopes=SecurityScopes(), token=bearer_token)
 
 
