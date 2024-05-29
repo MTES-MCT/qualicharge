@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "058cffe6eb9e418e7eafae82c78545d446ca0c0274475f68bb852de0bb81161c"
+            "sha256": "372846321e036cd1116f061f09bbb41f4e08936da1064abfee02eed63b7737f1"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -578,6 +578,14 @@
             ],
             "version": "==8.13.37"
         },
+        "prompt-toolkit": {
+            "hashes": [
+                "sha256:3e163f254bef5a03b146397d7c1963bd3e2812f0964bb9a24e6ec761fd28db63",
+                "sha256:aa64ad242a462c5ff0363a7b9cfe696c20d55d9fc60c11fd8e632d064804d305"
+            ],
+            "markers": "python_full_version >= '3.6.2'",
+            "version": "==3.0.36"
+        },
         "psycopg2-binary": {
             "hashes": [
                 "sha256:03ef7df18daf2c4c07e2695e8cfd5ee7f748a1d54d802330985a78d2a5a6dca9",
@@ -881,6 +889,15 @@
             ],
             "version": "==6.0.1"
         },
+        "questionary": {
+            "hashes": [
+                "sha256:8ab9a01d0b91b68444dff7f6652c1e754105533f083cbe27597c8110ecc230a2",
+                "sha256:bcce898bf3dbb446ff62830c86c5c6fb9a22a54146f0f5597d3da43b10d8fc8b"
+            ],
+            "index": "pypi",
+            "markers": "python_version >= '3.8'",
+            "version": "==2.0.1"
+        },
         "rich": {
             "hashes": [
                 "sha256:4edbae314f59eb482f54e9e30bf00d33350aaa94f4bfcd4e9e3110e64d0d7222",
@@ -1126,6 +1143,7 @@
                 "sha256:070d7ca53f785acbccba8e7d28b08dcd88f79f1fbda035ade0aecec71ca5c914",
                 "sha256:49e73131481d804288ef62598d97a1ceef3058905aa536a1134f90891ba35482"
             ],
+            "index": "pypi",
             "markers": "python_version >= '3.7'",
             "version": "==0.12.3"
         },
@@ -1363,6 +1381,13 @@
                 "sha256:fe82d13461418ca5e5a808a9e40f79c1879351fcaeddbede094028e74d836e86"
             ],
             "version": "==0.22.0"
+        },
+        "wcwidth": {
+            "hashes": [
+                "sha256:3da69048e4540d84af32131829ff948f1e022c1c6bdb8d6102117aac784f6859",
+                "sha256:72ea0c06399eb286d978fdedb6923a9eb47e1c486ce63e9b4e64fc18303972b5"
+            ],
+            "version": "==0.2.13"
         },
         "websockets": {
             "hashes": [

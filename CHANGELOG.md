@@ -11,6 +11,7 @@ and this project adheres to
 ### Added
 
 * Integrate Sentry
+* Manage users and groups using a new CLI
 
 ### Security
 

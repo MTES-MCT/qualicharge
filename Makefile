@@ -36,7 +36,8 @@ bootstrap: \
   build \
   migrate-api \
   create-api-test-db \
-  seed-oidc
+  seed-oidc \
+  create-superuser
 .PHONY: bootstrap
 
 build: ## build the app container(s)
@@ -94,7 +95,19 @@ migrate-api:  ## run alembic database migrations for the api service
 	@bin/alembic upgrade head
 .PHONY: migrate-api
 
-seed-oidc:  ## seed the OIDC provider
+create-superuser: ## create super user
+	@echo "Creating super user…"
+	@$(COMPOSE_RUN_API_PIPENV) python -m qualicharge create-user \
+		--username admin \
+		--email admin@example.com \
+		--password admin \
+		--is-active \
+		--is-superuser \
+		--is-staff \
+		--force
+.PHONY: create-superuser
+
+seed-oidc: ## seed the OIDC provider
 	@echo 'Starting OIDC provider…'
 	@$(COMPOSE) up -d keycloak
 	@$(COMPOSE_RUN) dockerize -wait http://keycloak:8080 -timeout 60s
