@@ -17,10 +17,6 @@ class PermissionDenied(QualiChargeExceptionMixin, Exception):
     """Raised when authenticated user does not have required permissions."""
 
 
-class OIDCAuthenticationError(QualiChargeExceptionMixin, Exception):
-    """Raised when the OIDC authentication flow fails."""
-
-
 class OIDCProviderException(QualiChargeExceptionMixin, Exception):
     """Raised when the OIDC provider does not behave as expected."""
 

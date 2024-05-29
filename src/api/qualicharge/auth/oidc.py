@@ -100,7 +100,7 @@ def get_token(
         id_token (IDToken): Authenticated user ID token.
 
     Raises:
-        OIDCAuthenticationError
+        AuthenticationError
     """
     logger.debug(f"{token=}")
 

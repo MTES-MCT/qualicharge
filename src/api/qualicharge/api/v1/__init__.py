@@ -8,7 +8,6 @@ from fastapi.responses import JSONResponse
 
 from qualicharge.exceptions import (
     AuthenticationError,
-    OIDCAuthenticationError,
     OIDCProviderException,
     PermissionDenied,
 )
@@ -33,11 +32,10 @@ async def authorization_exception_handler(
 
 
 @app.exception_handler(AuthenticationError)
-@app.exception_handler(OIDCAuthenticationError)
 @app.exception_handler(OIDCProviderException)
 async def authentication_exception_handler(
     request: Request,
-    exc: Union[AuthenticationError, OIDCAuthenticationError, OIDCProviderException],
+    exc: Union[AuthenticationError, OIDCProviderException],
 ):
     """Handle authentication errors."""
     return JSONResponse(
