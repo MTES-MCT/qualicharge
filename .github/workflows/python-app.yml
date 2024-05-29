@@ -92,6 +92,7 @@ jobs:
           QUALICHARGE_OIDC_PROVIDER_BASE_URL: http://localhost:8080/fake
           QUALICHARGE_OAUTH2_TOKEN_ENCODING_KEY: thisissupersecret
           QUALICHARGE_OAUTH2_TOKEN_ISSUER: http://test:8010
+          QUALICHARGE_EXECUTION_ENVIRONMENT: ci
 
   test-api:
     needs: build-api
@@ -134,3 +135,4 @@ jobs:
           QUALICHARGE_OIDC_PROVIDER_BASE_URL: http://localhost:8080/fake
           QUALICHARGE_OAUTH2_TOKEN_ENCODING_KEY: thisissupersecret
           QUALICHARGE_OAUTH2_TOKEN_ISSUER: http://test:8010
+          QUALICHARGE_EXECUTION_ENVIRONMENT: ci

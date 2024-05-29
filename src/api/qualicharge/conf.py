@@ -2,10 +2,10 @@
 
 import logging
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 from passlib.context import CryptContext
-from pydantic import AnyHttpUrl, PostgresDsn, computed_field
+from pydantic import AnyHttpUrl, HttpUrl, PostgresDsn, computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # Configuration logger
@@ -109,6 +109,13 @@ class Settings(BaseSettings):
     def PASSWORD_CONTEXT(self) -> CryptContext:
         """Get passlib CryptContext."""
         return CryptContext(schemes=self.PASSWORD_HASHERS, deprecated="auto")
+
+    # Third-party integrations
+    SENTRY_DSN: Optional[HttpUrl] = None
+    SENTRY_TRACES_SAMPLE_RATE: float = 1.0
+
+    # Misc
+    EXECUTION_ENVIRONMENT: str
 
     # API
     API_STATIQUE_BULK_CREATE_MAX_SIZE: int = 10
