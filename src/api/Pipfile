@@ -15,6 +15,7 @@ psycopg2-binary = "==2.9.9"
 pydantic-extra-types = {extras = ["all"], version = "==2.7.0"}
 pydantic-settings = "==2.2.1"
 pyjwt = "==2.8.0"
+sentry-sdk = {extras = ["fastapi"], version = "==2.3.1"}
 setuptools = "==70.0.0"
 sqlalchemy-timescaledb = "==0.4.1"
 sqlmodel = "==0.0.18"

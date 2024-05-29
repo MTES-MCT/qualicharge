@@ -8,6 +8,10 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Added
+
+* Integrate Sentry
+
 ### Security
 
 - Switch from `python-jose` to `PyJWT` as the
