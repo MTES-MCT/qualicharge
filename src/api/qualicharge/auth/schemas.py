@@ -75,6 +75,10 @@ class User(BaseTimestampedSQLModel, table=True):
     def model_dump(self, *args, **kwargs):
         """Serialize m2m."""
         dump = super().model_dump(*args, **kwargs)
+        if "include" in kwargs and "groups" not in kwargs["include"]:
+            return dump
+        if "exclude" in kwargs and "groups" in kwargs["exclude"]:
+            return dump
         dump["groups"] = [group.name for group in self.groups]
         return dump
 
