@@ -8,16 +8,18 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.7.0] - 2024-05-30
+
 ### Added
 
-* Integrate Sentry
-* Manage users and groups using a new CLI
+- Integrate Sentry
+- Manage users and groups using a new CLI
 
 ### Security
 
 - Switch from `python-jose` to `PyJWT` as the
-  [CVE-2022-29217](https://github.com/advisories/GHSA-ffqj-6fqr-9h24)
-  does not seem to be fixed
+  [CVE-2022-29217](https://github.com/advisories/GHSA-ffqj-6fqr-9h24) does not
+  seem to be fixed
 
 ## [0.6.0] - 2024-05-28
 
@@ -85,7 +87,8 @@ and this project adheres to
 
 - Implement base FastAPI app
 
-[unreleased]: https://github.com/MTES-MCT/qualicharge/compare/v0.6.0...main
+[unreleased]: https://github.com/MTES-MCT/qualicharge/compare/v0.7.0...main
+[0.7.0]: https://github.com/MTES-MCT/qualicharge/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/MTES-MCT/qualicharge/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/MTES-MCT/qualicharge/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/MTES-MCT/qualicharge/compare/v0.3.0...v0.4.0
