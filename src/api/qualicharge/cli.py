@@ -188,7 +188,6 @@ def list_users(ctx: typer.Context):
         "is_active",
         "is_superuser",
         "is_staff",
-        "scopes",
     ]
     table = Table(*fields, title="QualiCharge API users")
 
