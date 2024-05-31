@@ -172,7 +172,7 @@ def test_list_users(runner, db_session):
     assert result.exit_code == 0
 
     # Expected number of rows
-    assert len(result.stdout.split("\n")) >= 6 + n_users
+    assert len(result.stdout.split("\n")) == 6 + n_users
 
 
 def test_create_user(runner, db_session):

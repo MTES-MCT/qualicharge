@@ -8,6 +8,10 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Changed
+
+- CLI: remove the scopes column from the `list-users` command
+
 ## [0.7.0] - 2024-05-30
 
 ### Added
