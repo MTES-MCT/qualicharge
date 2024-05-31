@@ -1,6 +1,6 @@
 """Tests for the QualiCharge API auth router."""
 
-from datetime import datetime
+import datetime
 
 import jwt
 import pytest
@@ -72,7 +72,7 @@ def test_whoami_expired_signature(
         ],
     )
     # As exp should be set to iat + 300, the token should be expired
-    iat = int(datetime.now().timestamp()) - 500
+    iat = int(datetime.datetime.now().timestamp()) - 500
     token = jwt.encode(
         id_token_factory.build(iat=iat).model_dump(),
         key="secret",
@@ -203,7 +203,7 @@ def test_login_with_inactive_user(client, db_session):
     assert response.json() == {"message": "Authentication failed: User is not active"}
 
 
-def test_login(client, db_session):
+def test_login(client, db_session, monkeypatch):
     """Test the login endpoint."""
     user = User(
         **UserCreate(
@@ -215,9 +215,23 @@ def test_login(client, db_session):
             is_superuser=False,
             is_staff=False,
             is_active=True,
-        ).model_dump()
+        ).model_dump(),
+        last_login=None,
     )
     db_session.add(user)
+
+    # User never logged in
+    assert user.last_login is None
+
+    # Freeze time
+    frozen = datetime.datetime.now(datetime.timezone.utc)
+
+    class Freezed(datetime.datetime):
+        @classmethod
+        def now(cls, *args, **kwargs):
+            return frozen
+
+    monkeypatch.setattr(datetime, "datetime", Freezed)
 
     response = client.post(
         "/auth/token", data={"username": "johndoe", "password": "foo"}
@@ -234,3 +248,8 @@ def test_login(client, db_session):
     id_token = IDToken(**decoded)
     assert id_token.sub == "johndoe"
     assert id_token.email == "john@doe.com"
+
+    # last_login field should have been updated
+    db_session.refresh(user)
+    assert user.last_login is not None
+    assert user.last_login == frozen

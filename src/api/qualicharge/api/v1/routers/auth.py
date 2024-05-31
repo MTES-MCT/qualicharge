@@ -1,7 +1,7 @@
 """QualiCharge API v1 auth router."""
 
+import datetime
 import logging
-from datetime import datetime, timezone
 from typing import Annotated
 
 import jwt
@@ -63,13 +63,19 @@ async def login(
         logger.error(f"User {form_data.username} tried to login but is not active")
         raise AuthenticationError("User is not active")
 
+    # Update user last login field
+    now: datetime.datetime = datetime.datetime.now(datetime.timezone.utc)
+    now_timestamp: int = int(now.timestamp())
+    user.last_login = now
+    session.add(user)
+    session.commit()
+
     # Forge Token
-    now: int = int(datetime.now(timezone.utc).timestamp())
     id_token = IDToken(
         iss=str(settings.OAUTH2_TOKEN_ISSUER),
         sub=user.username,
-        exp=now + settings.OAUTH2_TOKEN_LIFETIME,
-        iat=now,
+        exp=now_timestamp + settings.OAUTH2_TOKEN_LIFETIME,
+        iat=now_timestamp,
         email=user.email,
         aud=settings.OIDC_EXPECTED_AUDIENCE,
         scope="",
