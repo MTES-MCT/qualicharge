@@ -11,6 +11,7 @@ and this project adheres to
 ### Changed
 
 - CLI: remove the scopes column from the `list-users` command
+- CLI: the `username` parameter is now required for the `create-user` command
 
 ### Fixed
 
