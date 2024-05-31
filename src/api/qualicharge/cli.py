@@ -205,6 +205,15 @@ def list_users(ctx: typer.Context):
 
 
 @app.command()
+def read_user(ctx: typer.Context, username: str):
+    """Read detailled user informations."""
+    session: SMSession = ctx.obj
+
+    db_user = session.exec(select(User).where(User.username == username)).one_or_none()
+    print(db_user)
+
+
+@app.command()
 def create_user(  # noqa: PLR0913
     ctx: typer.Context,
     username: str,
