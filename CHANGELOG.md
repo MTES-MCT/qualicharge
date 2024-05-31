@@ -12,6 +12,10 @@ and this project adheres to
 
 - CLI: remove the scopes column from the `list-users` command
 
+### Fixed
+
+- CLI: fix `create-user` command failure when no group exists (#70)
+
 ## [0.7.0] - 2024-05-30
 
 ### Added

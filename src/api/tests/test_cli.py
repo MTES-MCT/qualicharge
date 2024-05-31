@@ -175,6 +175,56 @@ def test_list_users(runner, db_session):
     assert len(result.stdout.split("\n")) == 6 + n_users
 
 
+def test_create_user_with_no_group(runner, db_session):
+    """Test the `create-user` command when no group exists."""
+    # Check that no user or group exists
+    assert db_session.exec(select(func.count(User.id))).one() == 0
+    assert db_session.exec(select(func.count(UserGroup.group_id))).one() == 0
+    assert db_session.exec(select(func.count(Group.id))).one() == 0
+
+    # Proceed
+    user = UserFactory.build()
+    result = runner.invoke(
+        app,
+        [
+            "create-user",
+            "--username",
+            user.username,
+            "--email",
+            user.email,
+            "--first-name",
+            user.first_name,
+            "--last-name",
+            user.last_name,
+            "--password",
+            "supersecret",
+            "--scopes",
+            "all:read",
+            "--scopes",
+            "all:create",
+            "--is-active",
+            "--no-is-superuser",
+            "--is-staff",
+        ],
+        obj=db_session,
+        input="y\n",
+    )
+    assert result.exit_code == 0
+    assert db_session.exec(select(func.count(User.id))).one() == 1
+
+    # Check created user
+    db_user = db_session.exec(select(User).where(User.username == user.username)).one()
+    assert db_user.email == user.email
+    assert db_user.first_name == user.first_name
+    assert db_user.last_name == user.last_name
+    assert db_user.password != "supersecret"  # noqa: S105
+    assert set(db_user.scopes) == {"all:read", "all:create"}
+    assert db_user.is_active is True
+    assert db_user.is_superuser is False
+    assert db_user.is_staff is True
+    assert db_user.groups == []
+
+
 def test_create_user(runner, db_session):
     """Test the `create-user` command."""
     GroupFactory.__session__ = db_session
