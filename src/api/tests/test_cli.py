@@ -175,6 +175,24 @@ def test_list_users(runner, db_session):
     assert len(result.stdout.split("\n")) == 6 + n_users
 
 
+def test_read_user(runner, db_session):
+    """Test the `read-user` command."""
+    UserFactory.__session__ = db_session
+
+    db_user = UserFactory.create_sync()
+
+    # Proceed
+    result = runner.invoke(app, ["read-user", db_user.username], obj=db_session)
+    assert result.exit_code == 0
+
+    # Expected number of rows
+    assert db_user.first_name in result.stdout
+    assert db_user.last_name in result.stdout
+    assert db_user.email in result.stdout
+    assert db_user.first_name in result.stdout
+    assert str(db_user.id) in result.stdout
+
+
 def test_create_user_with_no_group(runner, db_session):
     """Test the `create-user` command when no group exists."""
     # Check that no user or group exists
