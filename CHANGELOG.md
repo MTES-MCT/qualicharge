@@ -8,6 +8,10 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Added
+
+- Track user last login date time
+
 ### Changed
 
 - CLI: remove the scopes column from the `list-users` command

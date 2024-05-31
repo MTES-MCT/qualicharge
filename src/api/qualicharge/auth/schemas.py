@@ -4,8 +4,8 @@ from enum import StrEnum
 from typing import List, Optional
 from uuid import UUID, uuid4
 
-from pydantic import EmailStr
-from sqlalchemy.types import ARRAY, String
+from pydantic import EmailStr, PastDatetime
+from sqlalchemy.types import ARRAY, DateTime, String
 from sqlmodel import Field, Relationship, SQLModel
 
 from qualicharge.conf import settings
@@ -65,6 +65,13 @@ class User(BaseTimestampedSQLModel, table=True):
     is_active: bool = False
     is_staff: bool = False
     is_superuser: bool = False
+    last_login: PastDatetime = Field(
+        sa_type=DateTime(timezone=True),
+        description=(
+            "The timestamp indicating when the user logged in for the last time."
+        ),
+        nullable=True,
+    )  # type: ignore
 
     # Permissions
     scopes: List[ScopesEnum] = Field(sa_type=ARRAY(String), default=[])  # type: ignore[call-overload]
