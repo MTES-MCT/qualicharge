@@ -207,7 +207,7 @@ def list_users(ctx: typer.Context):
 @app.command()
 def create_user(  # noqa: PLR0913
     ctx: typer.Context,
-    username: Optional[str] = None,
+    username: str,
     email: Optional[str] = None,
     first_name: Optional[str] = None,
     last_name: Optional[str] = None,
@@ -222,8 +222,6 @@ def create_user(  # noqa: PLR0913
     """Create an API user."""
     session: SMSession = ctx.obj
 
-    if username is None and not force:
-        username = questionary.text("Username:").ask()
     if email is None and not force:
         email = questionary.text("Email:").ask()
     if first_name is None and not force:

@@ -188,7 +188,6 @@ def test_create_user_with_no_group(runner, db_session):
         app,
         [
             "create-user",
-            "--username",
             user.username,
             "--email",
             user.email,
@@ -242,7 +241,6 @@ def test_create_user(runner, db_session):
         app,
         [
             "create-user",
-            "--username",
             user.username,
             "--email",
             user.email,
