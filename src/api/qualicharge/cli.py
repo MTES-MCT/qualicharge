@@ -248,9 +248,10 @@ def create_user(  # noqa: PLR0913
     if groups is None:
         if not force:
             group_names = session.exec(select(Group.name)).all()
-            selected_group_names = questionary.checkbox(
-                "Select user group(s)", choices=group_names
-            ).ask()
+            if len(group_names):
+                selected_group_names = questionary.checkbox(
+                    "Select user group(s)", choices=group_names
+                ).ask()
     else:
         selected_group_names = groups
     user_groups = session.exec(
