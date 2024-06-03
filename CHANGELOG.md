@@ -8,6 +8,10 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Added
+
+- Document API authentication flow
+
 ## [0.8.0] - 2024-05-31
 
 ### Added
