@@ -11,6 +11,7 @@ and this project adheres to
 ### Added
 
 - Document API authentication flow
+- Document API data schemas
 
 ## [0.8.0] - 2024-05-31
 
