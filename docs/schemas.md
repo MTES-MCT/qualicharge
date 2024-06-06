@@ -23,7 +23,7 @@ QualiCharge's API:
   [AFIREV's list of identifiers](https://afirev.fr/en/list-of-assigned-identifiers/)
   and [rules to define them](https://afirev.fr/en/general-informations/).
 - `id_station_itinerance`: similarly to `id_pdc_itinerance` this unique
-  roaming-ready identifier applies for charging stations (not points of charge).
+  roaming-ready identifier applies for charging stations (not charge points).
 
 The Qualicharge API **will not** accept \* nor any usual separator. Make sure to remove all separators before sending IDs through the API.  
 
@@ -51,7 +51,7 @@ minimalist and documented in the
 
 | Field               | Description                                                                                                                         | Example value                      |
 | ------------------- | ----------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- |
-| `id_pdc_itinerance` | Roaming identifier used for a point of charge (see static data schema )                                                             | `FRXXXEYYY`                        |
+| `id_pdc_itinerance` | Roaming identifier used for a charge point (see static data schema )                                                             | `FRXXXEYYY`                        |
 | `start`             | Date and time at which the charging session started (as a timezone-aware [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) string) | `2024-06-04T14:26:44.562476+00:00` |
 | `end`               | Date and time at which the charging session ended (as a timezone-aware [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) string)   | `2024-06-04T16:06:41.571435+00:00` |
 | `energy`            | The amount (floating point number) of energy consumed (in kilowatt-hour)                                                                    | `12.34567`                         |
