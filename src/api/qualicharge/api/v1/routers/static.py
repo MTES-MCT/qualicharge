@@ -183,19 +183,24 @@ async def update(
     if not is_pdc_allowed_for_user(id_pdc_itinerance, user):
         raise PermissionDenied("You don't manage this point of charge")
 
+    transaction = session.begin_nested()
     try:
         update = update_statique(session, id_pdc_itinerance, statique)
     except IntegrityError as err:
-        session.rollback()
+        transaction.rollback()
         raise HTTPException(
             status_code=status.HTTP_406_NOT_ACCEPTABLE,
             detail="id_pdc_itinerance does not match request body",
         ) from err
     except ObjectDoesNotExist as err:
-        session.rollback()
+        transaction.rollback()
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=str(err)
         ) from err
+
+    # Commit changes
+    session.commit()
+
     return update
 
 
@@ -211,13 +216,17 @@ async def create(
             "You cannot submit data for an organization you are not assigned to"
         )
 
+    transaction = session.begin_nested()
     try:
         db_statique = save_statique(session, statique)
     except ObjectDoesNotExist as err:
-        session.rollback()
+        transaction.rollback()
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=str(err)
         ) from err
+
+    # Commit changes
+    session.commit()
 
     return StatiqueItemsCreatedResponse(items=[db_statique])
 
@@ -235,10 +244,11 @@ async def bulk(
                 "You cannot submit data for an organization you are not assigned to"
             )
 
+    transaction = session.begin_nested()
     try:
         statiques = [statique for statique in save_statiques(session, statiques)]
     except ObjectDoesNotExist as err:
-        session.rollback()
+        transaction.rollback()
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=str(err)
         ) from err
@@ -248,4 +258,8 @@ async def bulk(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="All Statique entries already exist",
         )
+
+    # Commit changes
+    session.commit()
+
     return StatiqueItemsCreatedResponse(items=statiques)

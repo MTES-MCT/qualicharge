@@ -418,8 +418,11 @@ def test_create_for_user(client_auth, db_session):
     assert json_response["items"][0]["id_pdc_itinerance"] == id_pdc_itinerance
 
 
-def test_create_for_unknown_operational_unit(client_auth):
+def test_create_for_unknown_operational_unit(client_auth, db_session):
     """Test the /statique/ create endpoint."""
+    n_pdc = db_session.exec(select(func.count(PointDeCharge.id))).one()
+    assert n_pdc == 0
+
     id_pdc_itinerance = "FRFOOE0001"
     data = StatiqueFactory.build(
         id_pdc_itinerance=id_pdc_itinerance,
@@ -432,6 +435,9 @@ def test_create_for_unknown_operational_unit(client_auth):
         json_response["detail"]
         == "OperationalUnit with code FRFOO should be created first"
     )
+
+    n_pdc = db_session.exec(select(func.count(PointDeCharge.id))).one()
+    assert n_pdc == 0
 
 
 @pytest.mark.parametrize(
