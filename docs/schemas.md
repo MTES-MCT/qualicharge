@@ -6,10 +6,10 @@ designed for static and dynamic EVSE-related data.
 ## Static data
 
 Static data relates to EVSEs metadata to describe them, _e.g._ their location,
-accessibility, operator, etc. The data schema is documented (in French :fr:) in
+accessibility, operator, etc. The data schema is documented (in French :fr:) here 👉
 [schema.data.gouv.fr/etalab/schema-irve-statique](https://schema.data.gouv.fr/etalab/schema-irve-statique/2.3.1/documentation.html).
 
-> :bulb: This schema may evolve in time as the European commission is working on
+> :bulb: This schema will evolve in time as the European Commission is working on
 > an interoperability standard, that we will adopt progressively as soon as it
 > will be publicly available.
 
@@ -17,13 +17,15 @@ We require your attention on two fields that will be extensively used in
 QualiCharge's API:
 
 - `id_pdc_itinerance`: this field is a unique roaming-ready identifier used to
-  refer to a particular point of charge in a charging station, it uses a prefix
-  that is delivered for operators by the AFIREV organism. We invite you to see
+  refer to a particular charge point in a charging station, it uses an operating unit prefix
+  that is delivered for operators by the French ID Registration Organization. We invite you to see
   the
   [AFIREV's list of identifiers](https://afirev.fr/en/list-of-assigned-identifiers/)
   and [rules to define them](https://afirev.fr/en/general-informations/).
 - `id_station_itinerance`: similarly to `id_pdc_itinerance` this unique
-  roaming-ready identifier applies for charging stations (not points of charge).
+  roaming-ready identifier applies for charging stations (not charge points).
+
+The Qualicharge API **will not** accept \* nor any usual separator. Make sure to remove all separators before sending IDs through the API.  
 
 ## Dynamic data
 
@@ -32,7 +34,7 @@ sessions (_aka_ sessions in the present documentation).
 
 ### Statuses
 
-When a charging point status changes, an event is emitted. This event may be
+When a charge point status changes, an event is emitted. This event may be
 serialized given the proposed standard we've adopted that is documented (in
 French :fr:) at:
 [schema.data.gouv.fr/etalab/schema-irve-dynamique](https://schema.data.gouv.fr/etalab/schema-irve-dynamique/2.3.1/documentation.html).
@@ -49,10 +51,10 @@ minimalist and documented in the
 
 | Field               | Description                                                                                                                         | Example value                      |
 | ------------------- | ----------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- |
-| `id_pdc_itinerance` | Roaming identifier used for a point of charge (see static data schema )                                                             | `FRXXXEYYY`                        |
+| `id_pdc_itinerance` | Roaming identifier used for a charge point (see static data schema )                                                             | `FRXXXEYYY`                        |
 | `start`             | Date and time at which the charging session started (as a timezone-aware [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) string) | `2024-06-04T14:26:44.562476+00:00` |
 | `end`               | Date and time at which the charging session ended (as a timezone-aware [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) string)   | `2024-06-04T16:06:41.571435+00:00` |
-| `energy`            | The amount (floating point number) of energy consumed (in Watts)                                                                    | `12345.67`                         |
+| `energy`            | The amount (floating point number) of energy consumed (in kilowatt-hour)                                                                    | `12.34567`                         |
 
 An exemple JSON-formatted charging session may be serialized as follow:
 
@@ -61,6 +63,6 @@ An exemple JSON-formatted charging session may be serialized as follow:
   "id_pdc_itinerance": "FRXXXEYYY",
   "start": "2024-06-04T14:26:44.562476+00:00",
   "end": "2024-06-04T16:06:41.571435+00:00",
-  "energy": "12345.67"
+  "energy": "12.34567"
 }
 ```
