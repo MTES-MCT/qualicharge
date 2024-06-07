@@ -32,13 +32,8 @@ logger = logging.getLogger(__name__)
 DB_TO_STATIC_EXCLUDED_FIELDS = {"id", "created_at", "updated_at"}
 
 
-def get_or_create(  # noqa: PLR0913
-    session: Session,
-    entry: SQLModel,
-    fields: Optional[Set] = None,
-    add: bool = True,
-    commit: bool = True,
-    refresh: bool = False,
+def get_or_create(
+    session: Session, entry: SQLModel, fields: Optional[Set] = None, add: bool = True
 ) -> Tuple[bool, SQLModel]:
     """Get or create schema instance.
 
@@ -48,8 +43,6 @@ def get_or_create(  # noqa: PLR0913
         fields: entry fields used in database query to select target entry.
                 Defaults to None (use all fields).
         add: should we add the schema instance to the session?
-        commit: should we commit transation to database?
-        refresh: should we refresh the schema instance from database?
 
     Returns:
         A (bool, entry) tuple. The boolean states on the entry creation.
@@ -72,13 +65,10 @@ def get_or_create(  # noqa: PLR0913
         logger.debug(f"Found database entry with id: {db_entry.id}")  # type: ignore[attr-defined]
         return False, db_entry
 
-    # Handle new entry
+    # Add new entry
     if add:
         session.add(entry)
-    if commit:
-        session.commit()
-    if refresh:
-        session.refresh(entry)
+
     return True, entry
 
 
@@ -152,9 +142,11 @@ def save_statique(session: Session, statique: Statique) -> Statique:
     station.enseigne_id = enseigne.id  # type: ignore[attr-defined]
     station.localisation_id = localisation.id  # type: ignore[attr-defined]
 
-    session.add(pdc)
-    session.add(station)
-    session.commit()
+    session.refresh(amenageur)
+    session.refresh(operateur)
+    session.refresh(enseigne)
+    session.refresh(localisation)
+    session.refresh(station)
     session.refresh(pdc)
 
     return pdc_to_statique(cast(PointDeCharge, pdc))
@@ -267,9 +259,7 @@ def save_statiques(
         (localisations, {"adresse_station"}),
     ):
         for idx, entry in enumerate(entries):  # type: ignore[arg-type]
-            _, db_entry = get_or_create(
-                session, entry, fields, add=False, commit=False, refresh=False
-            )
+            _, db_entry = get_or_create(session, entry, fields, add=False)
             entries[idx] = db_entry  # type: ignore[index]
         session.add_all(entries)  # type: ignore[arg-type]
 
@@ -287,12 +277,14 @@ def save_statiques(
         stations[station_idx].operateur_id = operateurs[operateur_idx].id  # type: ignore[attr-defined]
         stations[station_idx].enseigne_id = enseignes[enseigne_idx].id  # type: ignore[attr-defined]
         stations[station_idx].localisation_id = localisations[localisation_idx].id  # type: ignore[attr-defined]
-
-    # Commit transaction
-    session.commit()
+        session.refresh(amenageurs[amenageur_idx])
+        session.refresh(operateurs[operateur_idx])
+        session.refresh(enseignes[enseigne_idx])
+        session.refresh(localisations[localisation_idx])
+        session.refresh(stations[station_idx])
+        session.refresh(points_de_charge[pdc_idx])
 
     for pdc in points_de_charge:
-        session.refresh(pdc)
         yield pdc_to_statique(pdc)
 
 

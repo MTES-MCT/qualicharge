@@ -13,6 +13,10 @@ and this project adheres to
 - Document API authentication flow
 - Document API data schemas
 
+### Fixed
+
+- Improve database transactions in statique endpoints
+
 ## [0.8.0] - 2024-05-31
 
 ### Added
