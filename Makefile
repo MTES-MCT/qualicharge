@@ -98,7 +98,7 @@ migrate-api:  ## run alembic database migrations for the api service
 create-superuser: ## create super user
 	@echo "Creating super user…"
 	@$(COMPOSE_RUN_API_PIPENV) python -m qualicharge create-user \
-		--username admin \
+		admin \
 		--email admin@example.com \
 		--password admin \
 		--is-active \
