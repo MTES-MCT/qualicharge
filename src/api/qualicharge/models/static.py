@@ -1,6 +1,7 @@
 """QualiCharge static models."""
 
 import json
+import re
 from enum import StrEnum
 from typing import Optional
 
@@ -62,15 +63,31 @@ class FrenchPhoneNumber(PhoneNumber):
     default_region_code = "FR"
 
 
+def to_coordinates_tuple(value):
+    """Convert input string to a Coordinate tuple.
+
+    Two string formats are supported:
+
+    1. "[longitude: float, latitude: float]"
+    2. "POINT(longitude latitude)"
+
+    In both cases, the input string is converted to a reversed tuple
+    (latitude: float, longitude: float) that will be used as Coordinate input.
+    """
+    if not isinstance(value, str):
+        return value
+    if m := re.match(
+        r"POINT\((?P<longitude>-?\d+\.\d+) (?P<latitude>-?\d+\.\d+)\)", value
+    ):
+        return (m["latitude"], m["longitude"])
+    return tuple(reversed(json.loads(value)))
+
+
 # A pivot type to handle DataGouv coordinates de/serialization.
 DataGouvCoordinate = Annotated[
     Coordinate,
-    # Input string format is: "[longitude: float, latitude: float]". It is converted to
-    # a reversed tuple (latitude: float, longitude: float) that will be used as
-    # Coordinate input.
-    BeforeValidator(
-        lambda x: tuple(reversed(json.loads(x))) if isinstance(x, str) else x
-    ),
+    # Convert input string to a (latitude, longitude) Coordinate tuple input
+    BeforeValidator(to_coordinates_tuple),
     # When serializing a coordinate we want a string array: "[long,lat]"
     PlainSerializer(lambda x: f"[{x.longitude}, {x.latitude}]", return_type=str),
     # Document expected longitude/latitude order in the description

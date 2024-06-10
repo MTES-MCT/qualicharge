@@ -9,7 +9,7 @@ from qualicharge.models.static import Statique
 
 def test_statique_model_coordonneesXY():
     """Test the Statique model coordonneesXY field."""
-    longitude = 12.3
+    longitude = -12.3
     latitude = 16.2
 
     # Expected raw input
@@ -29,6 +29,13 @@ def test_statique_model_coordonneesXY():
     # Coordinate input
     record = StatiqueFactory.build(
         coordonneesXY=Coordinate(latitude, longitude),
+    )
+    assert record.coordonneesXY.longitude == longitude
+    assert record.coordonneesXY.latitude == latitude
+
+    # Geometry input
+    record = StatiqueFactory.build(
+        coordonneesXY=f"POINT({longitude} {latitude})",
     )
     assert record.coordonneesXY.longitude == longitude
     assert record.coordonneesXY.latitude == latitude

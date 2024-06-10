@@ -16,6 +16,7 @@ and this project adheres to
 ### Fixed
 
 - Improve database transactions in statique endpoints
+- Allow to update all statique-related model fields
 
 ## [0.8.0] - 2024-05-31
 
