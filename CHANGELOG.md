@@ -13,6 +13,13 @@ and this project adheres to
 - Document API authentication flow
 - Document API data schemas
 
+### Changed
+
+- Upgrade `pydantic-extra-types` to `2.8.0`
+- Upgrade `pydantic-settings` to `2.3.1`
+- Upgrade `sentry-sdk` to `2.5.1`
+- Upgrade `sqlmodel` to `0.0.19`
+
 ### Fixed
 
 - Improve database transactions in statique endpoints
