@@ -1,6 +1,7 @@
 """QualiCharge schemas utilities."""
 
 import logging
+from enum import IntEnum
 from typing import Generator, List, NamedTuple, Optional, Set, Tuple, Type, cast
 
 from sqlalchemy import func
@@ -32,9 +33,21 @@ logger = logging.getLogger(__name__)
 DB_TO_STATIC_EXCLUDED_FIELDS = {"id", "created_at", "updated_at"}
 
 
+class EntryStatus(IntEnum):
+    """Describe entry status."""
+
+    EXISTS = 0
+    CREATED = 1
+    UPDATED = 2
+
+
 def get_or_create(
-    session: Session, entry: SQLModel, fields: Optional[Set] = None, add: bool = True
-) -> Tuple[bool, SQLModel]:
+    session: Session,
+    entry: SQLModel,
+    fields: Optional[Set] = None,
+    add: bool = True,
+    update: bool = False,
+) -> Tuple[EntryStatus, SQLModel]:
     """Get or create schema instance.
 
     Args:
@@ -43,9 +56,10 @@ def get_or_create(
         fields: entry fields used in database query to select target entry.
                 Defaults to None (use all fields).
         add: should we add the schema instance to the session?
+        update: should we update existing instance if required?
 
     Returns:
-        A (bool, entry) tuple. The boolean states on the entry creation.
+        A (EntryStatus, entry) tuple. The status refers on the entry creation/update.
 
     Raises:
         DatabaseQueryException: Found multiple entries given input fields.
@@ -63,13 +77,23 @@ def get_or_create(
 
     if db_entry is not None:
         logger.debug(f"Found database entry with id: {db_entry.id}")  # type: ignore[attr-defined]
-        return False, db_entry
+        if not update:
+            return EntryStatus.EXISTS, db_entry
+
+        # Update database entry
+        for key, value in entry.model_dump(
+            exclude=DB_TO_STATIC_EXCLUDED_FIELDS
+        ).items():
+            setattr(db_entry, key, value)
+        session.add(db_entry)
+
+        return EntryStatus.UPDATED, db_entry
 
     # Add new entry
     if add:
         session.add(entry)
 
-    return True, entry
+    return EntryStatus.CREATED, entry
 
 
 def save_schema_from_statique(
@@ -77,7 +101,8 @@ def save_schema_from_statique(
     schema_klass: Type[SQLModel],
     statique: Statique,
     fields: Optional[Set] = None,
-) -> Tuple[bool, SQLModel]:
+    update: bool = False,
+) -> Tuple[EntryStatus, SQLModel]:
     """Save schema to database from Statique instance.
 
     Args:
@@ -86,9 +111,10 @@ def save_schema_from_statique(
         statique: input static model definition
         fields: entry fields used in database query to select target entry.
                 Defaults to None (use all fields).
+        update: should we update existing instance if required?
 
     Returns:
-        A (bool, entry) tuple. The boolean states on the entry creation.
+        A (EntryStatus, entry) tuple. The status refers on the entry creation/update.
 
     Raises:
         DatabaseQueryException: Found multiple entries given input fields.
@@ -99,6 +125,7 @@ def save_schema_from_statique(
         session,
         entry,
         fields=fields,
+        update=update,
     )
 
 
@@ -114,18 +141,24 @@ def pdc_to_statique(pdc: PointDeCharge) -> Statique:
     )
 
 
-def save_statique(session: Session, statique: Statique) -> Statique:
+def save_statique(
+    session: Session, statique: Statique, update: bool = False
+) -> Statique:
     """Save Statique instance to database."""
     # Core schemas
     _, pdc = save_schema_from_statique(
-        session, PointDeCharge, statique, fields={"id_pdc_itinerance"}
+        session, PointDeCharge, statique, fields={"id_pdc_itinerance"}, update=update
     )
     _, station = save_schema_from_statique(
-        session, Station, statique, fields={"id_station_itinerance"}
+        session, Station, statique, fields={"id_station_itinerance"}, update=update
     )
-    _, amenageur = save_schema_from_statique(session, Amenageur, statique)
-    _, operateur = save_schema_from_statique(session, Operateur, statique)
-    _, enseigne = save_schema_from_statique(session, Enseigne, statique)
+    _, amenageur = save_schema_from_statique(
+        session, Amenageur, statique, update=update
+    )
+    _, operateur = save_schema_from_statique(
+        session, Operateur, statique, update=update
+    )
+    _, enseigne = save_schema_from_statique(session, Enseigne, statique, update=update)
     _, localisation = save_schema_from_statique(
         session,
         Localisation,
@@ -133,6 +166,7 @@ def save_statique(session: Session, statique: Statique) -> Statique:
         fields={
             "adresse_station",
         },
+        update=update,
     )
 
     # Relationships
@@ -153,11 +187,11 @@ def save_statique(session: Session, statique: Statique) -> Statique:
 
 
 def update_statique(
-    session: Session, id_pdc_itinerance: str, update: Statique
+    session: Session, id_pdc_itinerance: str, to_update: Statique
 ) -> Statique:
     """Update given statique from its id_pdc_itinerance."""
     # Check that submitted id_pdc_itinerance corresponds to the update
-    if id_pdc_itinerance != update.id_pdc_itinerance:
+    if id_pdc_itinerance != to_update.id_pdc_itinerance:
         raise IntegrityError(
             "Cannot update statique with a different id_pdc_itinerance"
         )
@@ -173,7 +207,7 @@ def update_statique(
     ):
         raise ObjectDoesNotExist("Statique with id_pdc_itinerance does not exist")
 
-    return save_statique(session, update)
+    return save_statique(session, to_update, update=True)
 
 
 def save_statiques(

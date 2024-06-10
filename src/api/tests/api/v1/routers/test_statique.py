@@ -6,6 +6,7 @@ from typing import cast
 
 import pytest
 from fastapi import status
+from pydantic_extra_types.coordinate import Coordinate
 from sqlalchemy import Column as SAColumn
 from sqlalchemy import func
 from sqlmodel import select
@@ -14,7 +15,11 @@ from qualicharge.auth.factories import GroupFactory
 from qualicharge.auth.schemas import GroupOperationalUnit, ScopesEnum, User, UserGroup
 from qualicharge.conf import settings
 from qualicharge.factories.static import StatiqueFactory
-from qualicharge.schemas.core import OperationalUnit, PointDeCharge, Station
+from qualicharge.schemas.core import (
+    OperationalUnit,
+    PointDeCharge,
+    Station,
+)
 from qualicharge.schemas.utils import pdc_to_statique, save_statique, save_statiques
 
 
@@ -473,10 +478,28 @@ def test_update_for_superuser(client_auth, db_session):
     """Test the /statique/{id_pdc_itinerance} update endpoint (superuser case)."""
     id_pdc_itinerance = "FR911E1111ER1"
     db_statique = save_statique(
-        db_session, StatiqueFactory.build(id_pdc_itinerance=id_pdc_itinerance)
+        db_session,
+        StatiqueFactory.build(
+            id_pdc_itinerance=id_pdc_itinerance,
+            nom_amenageur="ACME Inc.",
+            nom_operateur="ACME Inc.",
+            nom_enseigne="ACME Inc.",
+            coordonneesXY=Coordinate(-1.0, 1.0),
+            station_deux_roues=False,
+            cable_t2_attache=False,
+        ),
     )
     new_statique = db_statique.model_copy(
-        update={"contact_oprateur": "john@doe.com"}, deep=True
+        update={
+            "contact_operateur": "john@doe.com",
+            "nom_amenageur": "Magma Corp.",
+            "nom_operateur": "Magma Corp.",
+            "nom_enseigne": "Magma Corp.",
+            "coordonneesXY": Coordinate(1.0, 2.0),
+            "station_deux_roues": True,
+            "cable_t2_attache": True,
+        },
+        deep=True,
     )
 
     response = client_auth.put(

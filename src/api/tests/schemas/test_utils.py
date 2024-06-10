@@ -4,6 +4,7 @@ from random import sample
 from typing import cast
 
 import pytest
+from pydantic_extra_types.coordinate import Coordinate
 from sqlalchemy import Column as SAColumn
 from sqlalchemy import func
 from sqlmodel import select
@@ -17,7 +18,11 @@ from qualicharge.exceptions import (
     IntegrityError,
     ObjectDoesNotExist,
 )
-from qualicharge.factories.static import AmenageurFactory, StatiqueFactory
+from qualicharge.factories.static import (
+    AmenageurFactory,
+    StationFactory,
+    StatiqueFactory,
+)
 from qualicharge.schemas.core import (
     Amenageur,
     Enseigne,
@@ -28,6 +33,7 @@ from qualicharge.schemas.core import (
     Station,
 )
 from qualicharge.schemas.utils import (
+    EntryStatus,
     build_statique,
     get_or_create,
     is_pdc_allowed_for_user,
@@ -45,8 +51,8 @@ def test_get_or_create(db_session):
     amenageur = AmenageurFactory.build()
 
     # Create case
-    created, db_entry = get_or_create(db_session, amenageur)
-    assert created is True
+    status, db_entry = get_or_create(db_session, amenageur)
+    assert status == EntryStatus.CREATED
     assert db_entry.id is not None
     assert db_entry.id == amenageur.id
     assert db_entry.nom_amenageur == amenageur.nom_amenageur
@@ -54,12 +60,34 @@ def test_get_or_create(db_session):
     assert db_entry.contact_amenageur == amenageur.contact_amenageur
 
     # Get case
-    created, db_entry = get_or_create(db_session, amenageur)
-    assert created is False
+    status, db_entry = get_or_create(db_session, amenageur)
+    assert status == EntryStatus.EXISTS
     assert db_entry.id == amenageur.id
     assert db_entry.nom_amenageur == amenageur.nom_amenageur
     assert db_entry.siren_amenageur == amenageur.siren_amenageur
     assert db_entry.contact_amenageur == amenageur.contact_amenageur
+
+
+def test_get_or_create_update(db_session):
+    """Test get_or_create utility with update=True."""
+    station = StationFactory.build(num_pdl="01234567890123")
+
+    # Create station
+    status, db_entry = get_or_create(
+        db_session, station, fields={"id_station_itinerance"}
+    )
+    assert status == EntryStatus.CREATED
+    assert db_entry.num_pdl == "01234567890123"
+
+    # Update case
+    num_pdl = "12345678901234"
+    to_update = station.model_copy(update={"num_pdl": num_pdl})
+    status, db_entry = get_or_create(
+        db_session, to_update, fields={"id_station_itinerance"}, update=True
+    )
+    assert status == EntryStatus.UPDATED
+    assert db_entry.id == station.id
+    assert db_entry.num_pdl == num_pdl
 
 
 def test_get_or_create_with_explicit_fields_selection(db_session):
@@ -70,8 +98,8 @@ def test_get_or_create_with_explicit_fields_selection(db_session):
     }
 
     # Create case
-    created, db_entry = get_or_create(db_session, amenageur, fields=fields)
-    assert created is True
+    status, db_entry = get_or_create(db_session, amenageur, fields=fields)
+    assert status == EntryStatus.CREATED
     assert db_entry.id is not None
     assert db_entry.id == amenageur.id
     assert db_entry.nom_amenageur == amenageur.nom_amenageur
@@ -79,8 +107,8 @@ def test_get_or_create_with_explicit_fields_selection(db_session):
     assert db_entry.contact_amenageur == amenageur.contact_amenageur
 
     # Get case
-    created, db_entry = get_or_create(db_session, amenageur, fields=fields)
-    assert created is False
+    status, db_entry = get_or_create(db_session, amenageur, fields=fields)
+    assert status == EntryStatus.EXISTS
     assert db_entry.id == amenageur.id
     assert db_entry.nom_amenageur == amenageur.nom_amenageur
     assert db_entry.siren_amenageur == amenageur.siren_amenageur
@@ -106,9 +134,9 @@ def test_save_schema_from_statique(db_session):
     statique = StatiqueFactory.build()
 
     # Create entry
-    created, amenageur = save_schema_from_statique(db_session, Amenageur, statique)
+    status, amenageur = save_schema_from_statique(db_session, Amenageur, statique)
     assert amenageur.id is not None
-    assert created is True
+    assert status == EntryStatus.CREATED
 
     # Check database entry
     db_amenageur = db_session.exec(
@@ -182,18 +210,52 @@ def test_save_statique(db_session):
 
 def test_update_statique(db_session):
     """Test update_statique utility."""
-    statique = StatiqueFactory.build()
+    id_pdc_itinerance = "FR911E1111ER1"
+    statique = StatiqueFactory.build(
+        id_pdc_itinerance=id_pdc_itinerance,
+        nom_amenageur="ACME Inc.",
+        nom_operateur="ACME Inc.",
+        nom_enseigne="ACME Inc.",
+        coordonneesXY=Coordinate(-1.0, 1.0),
+        station_deux_roues=False,
+        cable_t2_attache=False,
+    )
     db_statique = save_statique(db_session, statique)
     assert statique == db_statique
 
     assert db_session.exec(select(func.count(Operateur.id))).one() == 1
-    # Update statique field
-    db_statique.contact_operateur = "john@doe.com"
-    db_statique = update_statique(db_session, statique.id_pdc_itinerance, db_statique)
+    assert db_session.exec(select(func.count(Enseigne.id))).one() == 1
+    assert db_session.exec(select(func.count(Amenageur.id))).one() == 1
+    assert db_session.exec(select(func.count(Localisation.id))).one() == 1
+    assert db_session.exec(select(func.count(Station.id))).one() == 1
+    assert db_session.exec(select(func.count(PointDeCharge.id))).one() == 1
+
+    # Update statique fields
+    statique.contact_operateur = "john@doe.com"
+    statique.nom_amenageur = "Magma Corp."
+    statique.nom_operateur = "Magma Corp."
+    statique.nom_enseigne = "Magma Corp."
+    statique.coordonneesXY = Coordinate(1.0, 2.0)
+    statique.station_deux_roues = True
+    statique.cable_t2_attache = True
+
+    db_statique = update_statique(db_session, statique.id_pdc_itinerance, statique)
     assert db_statique.contact_operateur == "john@doe.com"
+    assert db_statique.nom_amenageur == "Magma Corp."
+    assert db_statique.nom_operateur == "Magma Corp."
+    assert db_statique.nom_enseigne == "Magma Corp."
+    assert db_statique.coordonneesXY == Coordinate(1.0, 2.0)
+    assert db_statique.station_deux_roues
+    assert db_statique.cable_t2_attache
+
     # We expect to create a new operator that will be linked to this statique
     expected = 2
     assert db_session.exec(select(func.count(Operateur.id))).one() == expected
+    assert db_session.exec(select(func.count(Enseigne.id))).one() == expected
+    assert db_session.exec(select(func.count(Amenageur.id))).one() == expected
+    assert db_session.exec(select(func.count(Localisation.id))).one() == 1
+    assert db_session.exec(select(func.count(Station.id))).one() == 1
+    assert db_session.exec(select(func.count(PointDeCharge.id))).one() == 1
 
 
 def test_update_statique_with_wrong_pdc_id_itinerance(db_session):
