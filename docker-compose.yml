@@ -33,7 +33,7 @@ services:
       - keycloak
 
   keycloak:
-    image: quay.io/keycloak/keycloak:24.0
+    image: quay.io/keycloak/keycloak:25.0
     env_file:
       - env.d/keycloak
     command: start-dev
