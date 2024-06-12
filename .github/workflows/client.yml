@@ -1,0 +1,70 @@
+# This workflow will install Python dependencies, run tests and lint with a single version of Python
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
+
+name: QCC
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+permissions:
+  contents: read
+
+jobs:
+  build-client:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install poetry
+        run: pipx install poetry
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "poetry"
+      - name: Install dependencies
+        run: |
+          cd src/client
+          poetry install
+
+  lint-client:
+    needs: build-client
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./src/client
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install poetry
+        run: pipx install poetry
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "poetry"
+      - name: Lint with Black
+        run: poetry run black qcc tests
+      - name: Lint with Ruff
+        run: poetry run ruff check qcc tests
+      - name: Lint with MyPy
+        run: poetry run mypy qcc tests
+
+  test-client:
+    needs: build-client
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./src/client
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install poetry
+        run: pipx install poetry
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "poetry"
+      - name: Test with pytest
+        run: poetry run pytest
