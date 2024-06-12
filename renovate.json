@@ -9,7 +9,7 @@
   "packageRules": [
     {
       "groupName": "python dependencies",
-      "matchManagers": ["pep621", "pipenv", "setup-cfg"],
+      "matchManagers": ["pep621", "pipenv", "setup-cfg", "poetry"],
       "schedule": ["before 7am on monday"],
       "matchPackagePatterns": ["*"]
     }
