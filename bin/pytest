@@ -2,15 +2,23 @@
 
 set -eo pipefail
 
+declare service=${SERVICE:-api}
+declare cmd
 declare DOCKER_USER
 DOCKER_UID="$(id -u)"
 DOCKER_GID="$(id -g)"
 DOCKER_USER="${DOCKER_UID}:${DOCKER_GID}"
+
+if [ "${service}" == "api" ]; then
+  cmd="pipenv run pytest";
+else
+  cmd="pytest";
+fi
 
 DOCKER_USER=${DOCKER_USER} \
   DOCKER_UID=${DOCKER_UID} \
   DOCKER_GID=${DOCKER_GID} \
   docker compose run --rm \
     -e QUALICHARGE_OIDC_IS_ENABLED=True \
-    api \
-    pipenv run pytest "$@"
+    "${service}" \
+    ${cmd} "$@"

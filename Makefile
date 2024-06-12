@@ -6,6 +6,7 @@ COMPOSE                = bin/compose
 COMPOSE_RUN            = $(COMPOSE) run --rm --no-deps
 COMPOSE_RUN_API        = $(COMPOSE_RUN) api
 COMPOSE_RUN_API_PIPENV = $(COMPOSE_RUN_API) pipenv run
+COMPOSE_RUN_CLIENT     = $(COMPOSE_RUN) client
 
 # -- Tools
 CURL = $(COMPOSE_RUN) curl
@@ -40,9 +41,17 @@ bootstrap: \
   create-superuser
 .PHONY: bootstrap
 
-build: ## build the app container(s)
+build: ## build services image
 	$(COMPOSE) build
 .PHONY: build
+
+build-api: ## build the api image
+	$(COMPOSE) build api
+.PHONY: build-api
+
+build-client: ## build the client image
+	$(COMPOSE) build client
+.PHONY: build-client
 
 down: ## stop and remove all containers
 	@$(COMPOSE) down
@@ -116,36 +125,80 @@ seed-oidc: ## seed the OIDC provider
 .PHONY: seed-oidc
 
 # -- API
-lint: ## lint api python sources
+lint: ## lint all sources
 lint: \
-  lint-black \
-  lint-ruff \
-  lint-mypy
+	lint-api \
+	lint-client
 .PHONY: lint
 
-lint-black: ## lint api python sources with black
+lint-api: ## lint api python sources
+lint-api: \
+  lint-api-black \
+  lint-api-ruff \
+  lint-api-mypy
+.PHONY: lint-api
+
+lint-client: ## lint api python sources
+lint-client: \
+  lint-client-black \
+  lint-client-ruff \
+  lint-client-mypy
+.PHONY: lint-client
+
+lint-api-black: ## lint api python sources with black
 	@echo 'lint:black started…'
 	@$(COMPOSE_RUN_API_PIPENV) black qualicharge tests
-.PHONY: lint-black
+.PHONY: lint-api-black
 
-lint-ruff: ## lint api python sources with ruff
+lint-api-ruff: ## lint api python sources with ruff
 	@echo 'lint:ruff started…'
 	@$(COMPOSE_RUN_API_PIPENV) ruff check qualicharge tests
-.PHONY: lint-ruff
+.PHONY: lint-api-ruff
 
-lint-ruff-fix: ## lint and fix api python sources with ruff
+lint-api-ruff-fix: ## lint and fix api python sources with ruff
 	@echo 'lint:ruff-fix started…'
 	@$(COMPOSE_RUN_API_PIPENV) ruff check --fix qualicharge tests
-.PHONY: lint-ruff-fix
+.PHONY: lint-api-ruff-fix
 
-lint-mypy: ## lint api python sources with mypy
+lint-api-mypy: ## lint api python sources with mypy
 	@echo 'lint:mypy started…'
 	@$(COMPOSE_RUN_API_PIPENV) mypy qualicharge tests
-.PHONY: lint-mypy
+.PHONY: lint-api-mypy
 
-test: ## run tests
-	bin/pytest
+lint-client-black: ## lint api python sources with black
+	@echo 'lint:black started…'
+	@$(COMPOSE_RUN_CLIENT) black qcc tests
+.PHONY: lint-client-black
+
+lint-client-ruff: ## lint api python sources with ruff
+	@echo 'lint:ruff started…'
+	@$(COMPOSE_RUN_CLIENT) ruff check qcc tests
+.PHONY: lint-client-ruff
+
+lint-client-ruff-fix: ## lint and fix api python sources with ruff
+	@echo 'lint:ruff-fix started…'
+	@$(COMPOSE_RUN_CLIENT) ruff check --fix qcc tests
+.PHONY: lint-client-ruff-fix
+
+lint-client-mypy: ## lint api python sources with mypy
+	@echo 'lint:mypy started…'
+	@$(COMPOSE_RUN_CLIENT) mypy qcc tests
+.PHONY: lint-client-mypy
+
+
+test: ## run all services tests
+test: \
+	test-api \
+	test-client
 .PHONY: test
+
+test-api: ## run API tests
+	SERVICE=api bin/pytest
+.PHONY: test-api
+
+test-client: ## run client tests
+	SERVICE=client bin/pytest
+.PHONY: test-client
 
 # -- Misc
 help:
