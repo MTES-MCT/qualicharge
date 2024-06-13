@@ -1,6 +1,7 @@
 """QualiCharge API client."""
 
 from .endpoints.auth import Auth
+from .endpoints.dynamic import Session, Status
 from .endpoints.static import Static
 from .exceptions import ConfigurationError
 from .http import HTTPClient
@@ -26,3 +27,5 @@ class QCC:
         )
         self.auth = Auth(self.client)
         self.static = Static(self.client)
+        self.status = Status(self.client)
+        self.session = Session(self.client)

@@ -41,13 +41,7 @@ async def test_static_list(client, httpx_mock):
     )
     assert [item async for item in static.list()] == list(range(0, 20))
 
-
-@pytest.mark.anyio
-async def test_static_list_with_error(client, httpx_mock):
-    """Test the /statique endpoint call when an error occurs."""
-    static = Static(client)
-
-    # Raise an HTTP 500 error
+    # API errors
     httpx_mock.add_response(
         method="GET",
         url="http://example.com/api/v1/statique/",
@@ -71,12 +65,7 @@ async def test_static_create(client, httpx_mock):
     )
     assert await static.create(statique) == statique
 
-
-@pytest.mark.anyio
-async def test_static_create_with_error(client, httpx_mock):
-    """Test the /statique/ POST endpoint call when an error occurs."""
-    static = Static(client)
-
+    # API errors
     statique = {"id_pdc_itinerance": "FRS63E0001"}
     httpx_mock.add_response(
         method="POST",
@@ -103,12 +92,7 @@ async def test_static_read(client, httpx_mock):
         "id_pdc_itinerance": id_pdc_itinerance
     }
 
-
-@pytest.mark.anyio
-async def test_static_read_with_error(client, httpx_mock):
-    """Test the /statique/{id_pdc_itinerance} endpoint call when an error occurs."""
-    static = Static(client)
-
+    # API errors
     id_pdc_itinerance = "FRS63E0001"
     httpx_mock.add_response(
         method="GET",
@@ -136,12 +120,7 @@ async def test_static_update(client, httpx_mock):
         "id_pdc_itinerance": id_pdc_itinerance
     }
 
-
-@pytest.mark.anyio
-async def test_static_update_with_error(client, httpx_mock):
-    """Test the /statique/{id_pdc_itinerance} PUT endpoint call when an error occurs."""
-    static = Static(client)
-
+    # API errors
     id_pdc_itinerance = "FRS63E0001"
     statique = {"id_pdc_itinerance": "FRS63E0001"}
     httpx_mock.add_response(
@@ -185,12 +164,7 @@ async def test_static_bulk(client, httpx_mock):
     )
     assert await static.bulk(statiques, chunk_size=10) == total
 
-
-@pytest.mark.anyio
-async def test_static_bulk_with_error(client, httpx_mock):
-    """Test the /statique/bulk endpoint call when an error occurs."""
-    static = Static(client)
-
+    # API errors
     total = 7
     statiques = [{"id_pdc_itinerance": f"FRS63E00{x:02d}"} for x in range(total)]
     chunk_size = 5
