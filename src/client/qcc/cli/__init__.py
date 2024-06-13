@@ -7,11 +7,13 @@ from typing_extensions import Annotated
 
 from ..client import QCC
 from ..conf import settings
-from . import auth, static
+from . import auth, session, static, status
 
 app = typer.Typer(name="qcc", no_args_is_help=True)
 app.add_typer(auth.app)
 app.add_typer(static.app)
+app.add_typer(status.app)
+app.add_typer(session.app)
 
 
 @app.callback()

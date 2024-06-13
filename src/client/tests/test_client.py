@@ -4,6 +4,7 @@ import pytest
 
 from qcc.client import QCC
 from qcc.endpoints.auth import Auth
+from qcc.endpoints.dynamic import Session, Status
 from qcc.endpoints.static import Static
 from qcc.exceptions import ConfigurationError
 from qcc.http import HTTPClient
@@ -34,3 +35,7 @@ def test_client_initialization():
     assert qcc.auth.client == qcc.client
     assert isinstance(qcc.static, Static)
     assert qcc.static.client == qcc.client
+    assert isinstance(qcc.status, Status)
+    assert qcc.status.client == qcc.client
+    assert isinstance(qcc.session, Session)
+    assert qcc.session.client == qcc.client

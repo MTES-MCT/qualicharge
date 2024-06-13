@@ -1,35 +1,24 @@
 """QualiCharge API client CLI: static."""
 
 import json
-from typing import Any, Generator, Optional
+from typing import Optional
 
 import click
 import typer
-from anyio import run
 from rich import print
 from typing_extensions import Annotated
 
 from ..client import QCC
-from ..exceptions import APIRequestError
+from .api import async_run_api_query
 from .codes import QCCExitCodes
+from .utils import parse_input_json_lines, parse_json_parameter
 
 app = typer.Typer(name="static", no_args_is_help=True)
 
 
-def async_run_api_query(*args) -> Any:
-    """An anyio.run wrapper to handle APIRequestError."""
-    try:
-        return_value = run(*args)
-    except APIRequestError as err:
-        print("[red]An error occurred while querying the API! More details follow.")
-        print(err.args[0])
-        raise typer.Exit(QCCExitCodes.API_EXCEPTION) from err
-    return return_value
-
-
 @app.command()
 def list(ctx: typer.Context):
-    """Get all static entries."""
+    """Get all statique entries."""
     client: QCC = ctx.obj
 
     async def statiques():
@@ -57,30 +46,15 @@ def create(
     expects your JSON string on a single row.
     """
     client: QCC = ctx.obj
-    if not statique and interactive:
-        statique = click.get_text_stream("stdin").readline()
-
-    if statique is None:
-        print(
-            "[red]A statique object is required either from stdin or as an option[/red]"
-        )
-        raise typer.Exit(QCCExitCodes.PARAMETER_EXCEPTION)
-
-    try:
-        data = json.loads(statique)
-    except json.JSONDecodeError as err:
-        print("[red]Invalid JSON input string[/red]")
-        raise typer.Exit(QCCExitCodes.PARAMETER_EXCEPTION) from err
-
+    data = parse_json_parameter("statique", statique, interactive)  # type: ignore[arg-type]
     created = async_run_api_query(client.static.create, data)
-
     print("[green]Created statique successfully.[/green]")
     print(created)
 
 
 @app.command()
 def read(ctx: typer.Context, id_pdc_itinerance: str):
-    """Get all static entries."""
+    """Read a statique entry."""
     client: QCC = ctx.obj
 
     read = async_run_api_query(client.static.read, id_pdc_itinerance)
@@ -105,20 +79,7 @@ def update(
     expects your JSON string on a single row.
     """
     client: QCC = ctx.obj
-    if not statique and interactive:
-        statique = click.get_text_stream("stdin").readline()
-
-    if statique is None:
-        print(
-            "[red]A statique object is required either from stdin or as an option[/red]"
-        )
-        raise typer.Exit(QCCExitCodes.PARAMETER_EXCEPTION)
-
-    try:
-        data = json.loads(statique)
-    except json.JSONDecodeError as err:
-        print("[red]Invalid JSON input string[/red]")
-        raise typer.Exit(QCCExitCodes.PARAMETER_EXCEPTION) from err
+    data = parse_json_parameter("statique", statique, interactive)  # type: ignore[arg-type]
 
     if "id_pdc_itinerance" not in data:
         print("[red]Statique object requires an `id_pdc_itinerance` field[/red]")
@@ -142,22 +103,9 @@ def bulk(
     """
     client: QCC = ctx.obj
 
-    def parse_input_json_lines(lines) -> Generator[dict, None, None]:
-        """Read and JSON parse stdin line by line."""
-        for statique in lines:
-            try:
-                data = json.loads(statique)
-            except json.JSONDecodeError as err:
-                if ignore_errors:
-                    print(f"[orange]Ignored invalid line:[/orange]\n{statique}")
-                    continue
-                print("[red]Invalid JSON input string[/red]")
-                raise typer.Exit(QCCExitCodes.PARAMETER_EXCEPTION) from err
-            yield data
-
     n_created = async_run_api_query(
         client.static.bulk,
-        parse_input_json_lines(click.get_text_stream("stdin")),
+        parse_input_json_lines(click.get_text_stream("stdin"), ignore_errors),
         chunk_size,
         ignore_errors,
     )
