@@ -55,6 +55,10 @@ Et enfin, pour lancer les tests du projet :
 make test
 ```
 
+## Utilisation du client d'API et du CLI `qcc`
+
+Voir la documentation du projet : [./src/client/](./src/client/)
+
 ## Licence
 
 QualiCharge est distribué selon les termes de la licence MIT (voir le fichier
