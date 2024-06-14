@@ -1,0 +1,44 @@
+name: Publish python packages
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  release-build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./src/client
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "poetry"
+      - name: Build release distributions
+        run: poetry build
+      - name: Upload dists
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-dists
+          path: dist/
+
+  pypi-publish:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./src/client
+    needs:
+      - release-build
+    permissions:
+      id-token: write
+    steps:
+      - name: Retrieve release distributions
+        uses: actions/download-artifact@v4
+        with:
+          name: release-dists
+          path: dist/
+      - name: Publish release distributions to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+
