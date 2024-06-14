@@ -5,7 +5,7 @@
 `qcc` can be installed using `pip`:
 
 ```
-pip install qcc
+pip install qualicharge-client
 ```
 
 Get the list of commands and usage using the `--help` option:
