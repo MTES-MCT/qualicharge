@@ -28,9 +28,6 @@ jobs:
 
   pypi-publish:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./src/client
     needs:
       - release-build
     permissions:
@@ -44,5 +41,5 @@ jobs:
       - name: Publish release distributions to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          packages_dir: src/client/dist/
+          packages-dir: src/client/dist/
 
