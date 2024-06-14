@@ -906,7 +906,7 @@ def test_create_status_bulk_for_superuser(db_session, client_auth):
         json=[json.loads(s.model_dump_json()) for s in qc_statuses],
     )
     assert response.status_code == status.HTTP_201_CREATED
-    assert response.json() is None
+    assert response.json() == {"size": 3}
 
     # Check created statuses
     db_statuses = db_session.exec(select(Status)).all()
@@ -1023,7 +1023,7 @@ def test_create_status_bulk_for_user(db_session, client_auth):
         json=[json.loads(s.model_dump_json()) for s in qc_statuses],
     )
     assert response.status_code == status.HTTP_201_CREATED
-    assert response.json() is None
+    assert response.json() == {"size": 3}
 
     # Check created statuses
     db_statuses = db_session.exec(select(Status)).all()
@@ -1280,7 +1280,7 @@ def test_create_session_bulk_for_superuser(db_session, client_auth):
         json=[json.loads(s.model_dump_json()) for s in qc_sessions],
     )
     assert response.status_code == status.HTTP_201_CREATED
-    assert response.json() is None
+    assert response.json() == {"size": 3}
 
     # Check created statuses
     db_qc_sessions = db_session.exec(select(Session)).all()
@@ -1391,7 +1391,7 @@ def test_create_session_bulk_for_user(db_session, client_auth):
         json=[json.loads(s.model_dump_json()) for s in qc_sessions],
     )
     assert response.status_code == status.HTTP_201_CREATED
-    assert response.json() is None
+    assert response.json() == {"size": 3}
 
     # Check created statuses
     db_qc_sessions = db_session.exec(select(Session)).all()

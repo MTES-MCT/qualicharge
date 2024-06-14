@@ -8,6 +8,10 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Changed
+
+- API dynamique bulk requests now returns the number of created items
+
 ## [0.9.0] - 2024-06-11
 
 ### Added

@@ -6,7 +6,7 @@ from typing import Annotated, List, cast
 from annotated_types import Len
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, Security
 from fastapi import status as fa_status
-from pydantic import PastDatetime, StringConstraints
+from pydantic import BaseModel, PastDatetime, StringConstraints
 from sqlalchemy import func
 from sqlalchemy.schema import Column as SAColumn
 from sqlmodel import Session, join, select
@@ -42,6 +42,12 @@ IdItinerance = Annotated[
     str,
     StringConstraints(pattern="(?:(?:^|,)(^[A-Z]{2}[A-Z0-9]{4,33}$|Non concerné))+$"),
 ]
+
+
+class DynamiqueItemsCreatedResponse(BaseModel):
+    """API response model used when dynamic items are created."""
+
+    size: int
 
 
 @router.get("/status/", tags=["Status"])
@@ -319,7 +325,7 @@ async def create_status_bulk(
     user: Annotated[User, Security(get_user, scopes=[ScopesEnum.DYNAMIC_CREATE.value])],
     statuses: BulkStatusCreateList,
     session: Session = Depends(get_session),
-) -> None:
+) -> DynamiqueItemsCreatedResponse:
     """Create a statuses batch."""
     for status in statuses:
         if not is_pdc_allowed_for_user(status.id_pdc_itinerance, user):
@@ -359,6 +365,8 @@ async def create_status_bulk(
     session.add_all(db_statuses)
     session.commit()
 
+    return DynamiqueItemsCreatedResponse(size=len(db_statuses))
+
 
 @router.post("/session/", status_code=fa_status.HTTP_201_CREATED, tags=["Session"])
 async def create_session(
@@ -395,7 +403,7 @@ async def create_session_bulk(
     user: Annotated[User, Security(get_user, scopes=[ScopesEnum.DYNAMIC_CREATE.value])],
     sessions: BulkSessionCreateList,
     db_session: Session = Depends(get_session),
-) -> None:
+) -> DynamiqueItemsCreatedResponse:
     """Create a sessions batch."""
     for session in sessions:
         if not is_pdc_allowed_for_user(session.id_pdc_itinerance, user):
@@ -433,3 +441,5 @@ async def create_session_bulk(
         db_qc_sessions.append(db_qc_session)
     db_session.add_all(db_qc_sessions)
     db_session.commit()
+
+    return DynamiqueItemsCreatedResponse(size=len(db_qc_sessions))
