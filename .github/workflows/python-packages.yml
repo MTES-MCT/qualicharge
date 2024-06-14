@@ -43,4 +43,6 @@ jobs:
           path: src/client/dist/
       - name: Publish release distributions to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages_dir: src/client/dist/
 
