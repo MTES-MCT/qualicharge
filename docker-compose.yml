@@ -71,11 +71,29 @@ services:
       - postgresql
 
   # -- tools
-  dockerize:
-    image: jwilder/dockerize
-
   curl:
     image: curlimages/curl:8.8.0
     user: ${DOCKER_USER:-1000}
+    env_file:
+      - env.d/metabase
     volumes:
       - .:/work
+
+  dockerize:
+    image: jwilder/dockerize
+
+  jq:
+    # There is no other tags than latest
+    image: ddev/ddev-utilities:latest
+    entrypoint: jq
+    env_file:
+      - env.d/metabase
+
+  terraform:
+    image: hashicorp/terraform:1.8.5
+    env_file:
+      - env.d/terraform
+    user: ${DOCKER_USER:-1000}
+    working_dir: /home/terraform
+    volumes:
+      - ./provisioning:/home/terraform

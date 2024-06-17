@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+
+# This script will run at project bootstrap to initialize a metabase instance
+#
+# It is inspired from the metabase setup script of the metabase terraform provider:
+# github.com/bnjns/terraform-provider-metabase
+
+set -eo pipefail
+
+# Utilities
+declare COMPOSE_RUN="docker compose run --rm -T"
+declare CURL="${COMPOSE_RUN} curl"
+declare JQ="${COMPOSE_RUN} jq"
+
+# Vars
+declare METABASE_HOST="http://metabase:3000"
+declare METABASE_EMAIL="admin@example.com"
+declare METABASE_PASSWORD="supersecret"
+
+# Get the setup token
+echo "⚙️ Getting setup token…"
+if ! setupToken=$(${CURL} -s --fail "${METABASE_HOST}/api/session/properties" | ${JQ} -er '."setup-token"'); then
+  echo "Failed to extract setup token"
+  exit 2
+fi
+
+echo "⚙️ Configuring metabase…"
+${JQ} -n "{ \
+  database: null, \
+  invite: null, \
+  prefs: { \
+    allow_tracking: false, \
+    site_locale: \"en\", \
+    site_name: \"QualiCharge\" \
+  }, \
+  user: { \
+    email: \"${METABASE_EMAIL}\", \
+    first_name: \"Admin\", \
+    last_name: \"User\", \
+    password: \"${METABASE_PASSWORD}\", \
+    password_confirm: \"${METABASE_PASSWORD}\", \
+    site_name: \"QualiCharge\" \
+  }, \
+  token: \"${setupToken}\" \
+}" | ${CURL} -s --fail \
+  -X POST \
+  -H "Content-Type: application/json" \
+  -d @- \
+  "${METABASE_HOST}/api/setup"
+
+echo "✅ all done."
