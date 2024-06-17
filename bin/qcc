@@ -10,6 +10,6 @@ DOCKER_USER="${DOCKER_UID}:${DOCKER_GID}"
 DOCKER_USER=${DOCKER_USER} \
   DOCKER_UID=${DOCKER_UID} \
   DOCKER_GID=${DOCKER_GID} \
-  docker compose run --rm \
+  docker compose run --rm -T \
     client \
     qcc "$@"
