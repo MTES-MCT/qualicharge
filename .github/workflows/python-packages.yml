@@ -1,8 +1,9 @@
 name: Publish python packages
 
 on:
-  release:
-    types: [published]
+  push:
+    tags:
+      - 'v*-client'
 
 jobs:
   release-build:
