@@ -37,7 +37,8 @@ bootstrap: \
   build \
   migrate-api \
   create-api-test-db \
-	create-metabase-db \
+  create-metabase-db \
+  seed-metabase \
   seed-oidc \
   create-superuser
 .PHONY: bootstrap
@@ -130,6 +131,16 @@ create-superuser: ## create super user
 		--is-staff \
 		--force
 .PHONY: create-superuser
+
+seed-metabase: ## seed the Metabase server
+	@echo "Running metabase service …"
+	@$(COMPOSE) up -d --wait metabase
+	@echo "Create metabase initial admin user…"
+	bin/metabase-init
+	@echo "Create API data source…"
+	$(COMPOSE_RUN) terraform init
+	$(COMPOSE_RUN) terraform apply -auto-approve
+.PHONY: seed-metabase
 
 seed-oidc: ## seed the OIDC provider
 	@echo 'Starting OIDC provider…'

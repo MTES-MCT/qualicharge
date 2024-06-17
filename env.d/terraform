@@ -1,0 +1,3 @@
+METABASE_HOST=http://metabase:3000
+METABASE_USERNAME=admin@example.com
+METABASE_PASSWORD=supersecret

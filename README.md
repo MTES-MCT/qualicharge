@@ -31,11 +31,11 @@ make bootstrap
 > 👉 Cette commande doit préparer votre environnement et builder les images
 > Docker nécessaires au démarrage de votre environnement.
 
-Une fois votre environnement de travail initialisé, vous pouvez lancer le projet en
-utilisant :
+Une fois votre environnement de travail initialisé, vous pouvez lancer le projet
+en utilisant :
 
 ```
-make run
+make run-all
 ```
 
 Les services QualiCharge doivent maintenant tourner sur votre poste :
@@ -54,6 +54,16 @@ Et enfin, pour lancer les tests du projet :
 ```
 make test
 ```
+
+## Explorer les données collectées avec Metabase
+
+Si vous avez utilisé la commande `make bootstrap` pour initialiser le projet,
+vous devez avoir provisionné une instance de Metabase qui est accessible depuis
+un navigateur sur l'URL suivante :
+[http://localhost:3000](http://localhost:3000).
+
+> :bulb: Vous pouvez vous connecter en utilisant le login `admin@example.com` et
+> le mot de passe `supersecret`.
 
 ## Utilisation du client d'API et du CLI `qcc`
 
