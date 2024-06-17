@@ -8,12 +8,17 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Changed
+
+- Upgrade Pydantic to `2.7.4`
+- Upgrade pydantic-settings to `2.3.3`
+
 ## [0.1.0] - 2024-06-14
 
 ### Added
 
-* Add `QCC` QualiCharge API client
-* Add `qcc` CLI
+- Add `QCC` QualiCharge API client
+- Add `qcc` CLI
 
 [unreleased]: https://github.com/MTES-MCT/qualicharge/compare/v0.1.0-cli...main
 [0.1.0]: https://github.com/MTES-MCT/qualicharge/releases/tag/v0.1.0-cli
