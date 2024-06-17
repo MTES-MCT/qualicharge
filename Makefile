@@ -37,6 +37,7 @@ bootstrap: \
   build \
   migrate-api \
   create-api-test-db \
+	create-metabase-db \
   seed-oidc \
   create-superuser
 .PHONY: bootstrap
@@ -65,9 +66,13 @@ logs-api: ## display API server logs (follow mode)
 	@$(COMPOSE) logs -f api
 .PHONY: logs-api
 
-run: ## run the whole stack
-	$(COMPOSE) up -d
+run: ## run the api server (and dependencies)
+	$(COMPOSE) up -d api
 .PHONY: run
+
+run-all: ## run the whole stack
+	$(COMPOSE) up -d api keycloak metabase
+.PHONY: run-all
 
 status: ## an alias for "docker compose ps"
 	@$(COMPOSE) ps
@@ -84,6 +89,11 @@ create-api-test-db: ## create API test database
 	@$(COMPOSE) exec postgresql bash -c 'psql "postgresql://$${POSTGRES_USER}:$${POSTGRES_PASSWORD}@$${QUALICHARGE_DB_HOST}:$${QUALICHARGE_DB_PORT}/$${QUALICHARGE_TEST_DB_NAME}" -c "create extension postgis;"' || echo "Duly noted, skipping extension creation."
 .PHONY: create-api-test-db
 
+create-metabase-db: ## create metabase database
+	@echo "Creating metabase service database…"
+	@$(COMPOSE) exec postgresql bash -c 'psql "postgresql://$${POSTGRES_USER}:$${POSTGRES_PASSWORD}@$${QUALICHARGE_DB_HOST}:$${QUALICHARGE_DB_PORT}/postgres" -c "create database \"$${MB_DB_DBNAME}\";"' || echo "Duly noted, skipping database creation."
+.PHONY: create-metabase-db
+
 drop-api-test-db: ## drop API test database
 	@echo "Droping api service test database…"
 	@$(COMPOSE) exec postgresql bash -c 'psql "postgresql://$${POSTGRES_USER}:$${POSTGRES_PASSWORD}@$${QUALICHARGE_DB_HOST}:$${QUALICHARGE_DB_PORT}/postgres" -c "drop database \"$${QUALICHARGE_TEST_DB_NAME}\";"' || echo "Duly noted, skipping database deletion."
@@ -93,6 +103,11 @@ drop-api-db: ## drop API database
 	@echo "Droping api service database…"
 	@$(COMPOSE) exec postgresql bash -c 'psql "postgresql://$${POSTGRES_USER}:$${POSTGRES_PASSWORD}@$${QUALICHARGE_DB_HOST}:$${QUALICHARGE_DB_PORT}/postgres" -c "drop database \"$${QUALICHARGE_DB_NAME}\";"' || echo "Duly noted, skipping database deletion."
 .PHONY: drop-api-db
+
+drop-metabase-db: ## drop Metabase database
+	@echo "Droping metabase service database…"
+	@$(COMPOSE) exec postgresql bash -c 'psql "postgresql://$${POSTGRES_USER}:$${POSTGRES_PASSWORD}@$${QUALICHARGE_DB_HOST}:$${QUALICHARGE_DB_PORT}/postgres" -c "drop database \"$${MB_DB_DBNAME}\";"' || echo "Duly noted, skipping database deletion."
+.PHONY: drop-metabase-db
 
 migrate-api:  ## run alembic database migrations for the api service
 	@echo "Running api service database engine…"

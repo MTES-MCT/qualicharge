@@ -4,6 +4,7 @@ services:
     env_file:
       - env.d/postgresql
       - env.d/api
+      - env.d/metabase
     healthcheck:
       test:
         - "CMD-SHELL"
@@ -30,7 +31,6 @@ services:
       - ./src/api:/app
     depends_on:
       - postgresql
-      - keycloak
 
   client:
     build:
@@ -55,6 +55,20 @@ services:
       - "8080:8080"
     volumes:
       - ./bin/kc-init:/usr/local/bin/kc-init
+
+  metabase:
+    image: metabase/metabase:v0.50.5
+    ports:
+      - 3000:3000
+    env_file:
+      - env.d/metabase
+    healthcheck:
+      test: curl --fail -I http://localhost:3000/api/health || exit 1
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    depends_on:
+      - postgresql
 
   # -- tools
   dockerize:
