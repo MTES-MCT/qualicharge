@@ -11,6 +11,10 @@ and this project adheres to
 ### Changed
 
 - API dynamique bulk requests now returns the number of created items
+- Upgrade Pydantic to `2.7.4`
+- Upgrade pydantic-settings to `2.3.3`
+- Upgrade pydantic-extra-types to `2.8.2`
+- Upgrade email-validator to `2.1.2`
 
 ## [0.9.0] - 2024-06-11
 
