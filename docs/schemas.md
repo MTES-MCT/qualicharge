@@ -6,7 +6,7 @@ designed for static and dynamic EVSE-related data.
 ## Static data
 
 Static data relates to EVSEs metadata to describe them, _e.g._ their location,
-accessibility, operator, etc. The data schema is documented (in French :fr:) here 👉
+accessibility, operator, etc. The data schema is documented (in French 🇫🇷) here 👉
 [schema.data.gouv.fr/etalab/schema-irve-statique](https://schema.data.gouv.fr/etalab/schema-irve-statique/2.3.1/documentation.html).
 
 > :bulb: This schema will evolve in time as the European Commission is working on
@@ -25,7 +25,7 @@ QualiCharge's API:
 - `id_station_itinerance`: similarly to `id_pdc_itinerance` this unique
   roaming-ready identifier applies for charging stations (not charge points).
 
-The Qualicharge API **will not** accept \* nor any usual separator. Make sure to remove all separators before sending IDs through the API.  
+The Qualicharge API **will not** accept \* nor any usual separator. Make sure to remove all separators before sending IDs through the API.
 
 ## Dynamic data
 
@@ -36,7 +36,7 @@ sessions (_aka_ sessions in the present documentation).
 
 When a charge point status changes, an event is emitted. This event may be
 serialized given the proposed standard we've adopted that is documented (in
-French :fr:) at:
+French 🇫🇷) at:
 [schema.data.gouv.fr/etalab/schema-irve-dynamique](https://schema.data.gouv.fr/etalab/schema-irve-dynamique/2.3.1/documentation.html).
 
 > :bulb: This standard may also evolve in a near future. Stay tuned!

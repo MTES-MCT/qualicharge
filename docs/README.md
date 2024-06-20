@@ -4,7 +4,7 @@ QualiCharge developed an HTTP API to collect electric mobility-related data from
 focus on [EVSE](https://en.wikipedia.org/wiki/Charging_station) static
 (location, operator, etc.) and dynamic data (statuses and charging session) to
 provide **high-quality** and **up-to-date** datasets to our national access point:
-https://transports.data.gouv.fr :fr:
+https://transports.data.gouv.fr 🇫🇷
 
 ## :loudspeaker: Choose your path
 

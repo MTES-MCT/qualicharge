@@ -104,7 +104,7 @@ your browser! Happy face :sunglasses:
 From your terminal, post your `username` and `password` to the
 `/api/v1/auth/token`:
 
-```
+```bash
 curl -X POST \
   --data-urlencode "username=USERNAME" \
   --data-urlencode "password=PASSWORD" \
@@ -130,7 +130,7 @@ access token we will use in future authenticated API server requests:
 As an example implementation of how to use this token, we can use a little bit
 of Bash magic (:sweat_smile:) to store and use it:
 
-```Bash
+```bash
 # This variable will store our access token
 declare ACCESS_TOKEN
 
