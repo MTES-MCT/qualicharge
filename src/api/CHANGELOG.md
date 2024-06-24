@@ -14,7 +14,8 @@ and this project adheres to
 - Upgrade Pydantic to `2.7.4`
 - Upgrade pydantic-settings to `2.3.3`
 - Upgrade pydantic-extra-types to `2.8.2`
-- Upgrade email-validator to `2.1.2`
+- Upgrade email-validator to `2.2.0`
+- Upgrade sentry-sdk to `2.6.0`
 
 ## [0.9.0] - 2024-06-11
 
