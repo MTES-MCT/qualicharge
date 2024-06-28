@@ -48,6 +48,9 @@ venv.bak/
 # -- Tools
 .coverage
 
+# Jupytext: we version converted md files not ipynb sources
+*.ipynb
+
 # -- Provisioning
 provisioning/.terraform*
 provisioning/terraform.tfstate*
