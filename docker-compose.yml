@@ -57,7 +57,7 @@ services:
       - ./bin/kc-init:/usr/local/bin/kc-init
 
   metabase:
-    image: metabase/metabase:v0.50.7
+    image: metabase/metabase:v0.50.8
     ports:
       - 3000:3000
     env_file:
