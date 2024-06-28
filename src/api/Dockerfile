@@ -12,7 +12,7 @@ RUN apt-get update && \
 # Upgrade pip to its latest release to speed up dependencies
 # installation
 RUN pip install --upgrade pip && \
-    pip install pipenv
+    pip install pipenv==2024.0.1
 
 # Pipenv configuration
 ENV PIPENV_USER_UID ${DOCKER_UID}
