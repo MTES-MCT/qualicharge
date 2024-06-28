@@ -70,6 +70,23 @@ services:
     depends_on:
       - postgresql
 
+  notebook:
+    build:
+      context: .
+      dockerfile: src/notebook/Dockerfile
+    user: ${DOCKER_USER:-1000}
+    environment:
+      NB_UID: ${DOCKER_UID:-1000}
+      NB_GID: ${DOCKER_GID:-1000}
+      CHOWN_HOME: 'yes'
+      CHOWN_HOME_OPTS: -R
+    ports:
+      - 8888:8888
+    volumes:
+      - .:/home/jovyan/work
+    depends_on:
+      - postgresql
+
   # -- tools
   curl:
     image: curlimages/curl:8.8.0

@@ -40,7 +40,8 @@ bootstrap: \
   create-metabase-db \
   seed-metabase \
   seed-oidc \
-  create-superuser
+  create-superuser \
+  jupytext--to-ipynb
 .PHONY: bootstrap
 
 build: ## build services image
@@ -55,6 +56,10 @@ build-client: ## build the client image
 	$(COMPOSE) build client
 .PHONY: build-client
 
+build-notebook: ## build custom jupyter notebook image
+	@$(COMPOSE) build notebook
+.PHONY: build-notebook
+
 down: ## stop and remove all containers
 	@$(COMPOSE) down
 .PHONY: down
@@ -67,13 +72,21 @@ logs-api: ## display API server logs (follow mode)
 	@$(COMPOSE) logs -f api
 .PHONY: logs-api
 
+logs-notebook: ## display notebook logs (follow mode)
+	@$(COMPOSE) logs -f notebook
+.PHONY: logs-notebook
+
 run: ## run the api server (and dependencies)
 	$(COMPOSE) up -d api
 .PHONY: run
 
 run-all: ## run the whole stack
-	$(COMPOSE) up -d api keycloak metabase
+	$(COMPOSE) up -d api keycloak metabase notebook
 .PHONY: run-all
+
+run-notebook: ## run the notebook service
+	$(COMPOSE) up -d notebook
+.PHONY: run-notebook
 
 status: ## an alias for "docker compose ps"
 	@$(COMPOSE) ps
@@ -131,6 +144,14 @@ create-superuser: ## create super user
 		--is-staff \
 		--force
 .PHONY: create-superuser
+
+jupytext--to-md: ## convert local ipynb files into md
+	bin/jupytext --to md work/src/notebook/**/*.ipynb
+.PHONY: jupytext--to-md
+
+jupytext--to-ipynb: ## convert remote md files into ipynb
+	bin/jupytext --to ipynb work/src/notebook/**/*.md
+.PHONY: jupytext--to-ipynb
 
 seed-metabase: ## seed the Metabase server
 	@echo "Running metabase service …"
