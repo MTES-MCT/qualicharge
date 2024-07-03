@@ -2,7 +2,7 @@ terraform {
   required_providers {
     metabase = {
       source = "bnjns/metabase"
-      version = "0.9.0"
+      version = "0.9.1"
     }
   }
 }
