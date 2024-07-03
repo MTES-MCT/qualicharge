@@ -12,7 +12,6 @@ COMPOSE_RUN_CLIENT     = $(COMPOSE_RUN) client
 CURL = $(COMPOSE_RUN) curl
 
 # -- Ressources
-IRVE_STATIC_DATASET_URL = https://www.data.gouv.fr/fr/datasets/r/eb76d20a-8501-400e-b336-d85724de5435
 AFIREV_CHARGING_DATASET_URL = https://afirev.fr/en/liste-des-identifiants-attribues/
 
 # ==============================================================================
@@ -22,10 +21,7 @@ default: help
 
 # -- Files
 data:
-	mkdir data
-
-data/irve-statique.csv: data
-	$(CURL) -L -o /work/data/irve-statique.csv $(IRVE_STATIC_DATASET_URL)
+	mkdir -p data
 
 data/afirev-charging.csv: data
 	@echo "You should download CSV file from $(AFIREV_CHARGING_DATASET_URL)"
@@ -33,7 +29,6 @@ data/afirev-charging.csv: data
 # -- Docker/compose
 bootstrap: ## bootstrap the project for development
 bootstrap: \
-  data/irve-statique.csv \
   build \
   migrate-api \
   create-api-test-db \
@@ -41,7 +36,8 @@ bootstrap: \
   seed-metabase \
   seed-oidc \
   create-superuser \
-  jupytext--to-ipynb
+  jupytext--to-ipynb \
+  seed-api
 .PHONY: bootstrap
 
 build: ## build services image
@@ -164,6 +160,21 @@ jupytext--to-md: ## convert local ipynb files into md
 jupytext--to-ipynb: ## convert remote md files into ipynb
 	bin/jupytext --to ipynb work/src/notebook/**/*.md
 .PHONY: jupytext--to-ipynb
+
+reset-db: ## Reset the PostgreSQL database
+	$(COMPOSE) stop postgresql
+	$(COMPOSE) down postgresql
+	$(COMPOSE) up -d --force-recreate postgresql
+	$(MAKE) migrate-api
+	$(COMPOSE) up -d --force-recreate api
+	$(MAKE) create-superuser
+.PHONY: reset-db
+
+seed-api: ## seed the API database (static data)
+seed-api: run
+	zcat data/irve-statique.json.gz | \
+		bin/qcc static bulk --chunk-size 100
+.PHONY: seed-api
 
 seed-metabase: ## seed the Metabase server
 	@echo "Running metabase service …"

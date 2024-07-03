@@ -12,4 +12,5 @@ RUN mamba install --yes \
       matplotlib \
       pandas \
       psycopg[binary,pool] \
+      pyarrow \
       seaborn
