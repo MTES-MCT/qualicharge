@@ -2,4 +2,6 @@
 
 set -eo pipefail
 
-docker compose run --rm --no-deps -u "pipenv:pipenv" api pipenv "$@"
+declare service="${SERVICE:-api}"
+
+docker compose run --rm --no-deps -u "pipenv:pipenv" "${service}" pipenv "$@"
