@@ -87,6 +87,23 @@ services:
     depends_on:
       - postgresql
 
+  opendata:
+    build:
+      context: ./src/opendata
+      args:
+        DOCKER_UID: ${DOCKER_UID:-1000}
+        DOCKER_GID: ${DOCKER_GID:-1000}
+    user: ${DOCKER_USER:-1000}
+    image: "qualicharge:opendata"
+    ports:
+      - "8020:8000"
+    env_file:
+      - env.d/opendata
+    volumes:
+      - ./src/opendata:/app
+    depends_on:
+      - postgresql
+
   # -- tools
   curl:
     image: curlimages/curl:8.8.0

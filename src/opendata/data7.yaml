@@ -1,0 +1,71 @@
+#
+# Data7 datasets definition.
+#
+
+# ---- DEFAULT ---------------------------------
+default:
+  datasets:
+    - basename: statuses
+      query: >-
+        SELECT
+          PointDeCharge.id_pdc_itinerance,
+          Status.etat_pdc,
+          Status.occupation_pdc,
+          Status.horodatage,
+          Status.etat_prise_type_2,
+          Status.etat_prise_type_combo_ccs,
+          Status.etat_prise_type_chademo,
+          Status.etat_prise_type_ef
+        FROM
+          Status
+          INNER JOIN PointDeCharge ON Status.point_de_charge_id = PointDeCharge.id
+    - basename: statiques
+      query: >-
+        SELECT
+          Amenageur.nom_amenageur,
+          Amenageur.siren_amenageur,
+          Amenageur.contact_amenageur,
+          Operateur.nom_operateur,
+          Operateur.contact_operateur,
+          Operateur.telephone_operateur,
+          Enseigne.nom_enseigne,
+          Station.id_station_itinerance,
+          Station.id_station_local,
+          Station.nom_station,
+          Station.implantation_station,
+          Localisation.adresse_station,
+          Localisation.code_insee_commune,
+          ST_AsGeoJSON(Localisation."coordonneesXY") :: json -> 'coordinates'  as coordonneesXY,
+          Station.nbre_pdc,
+          PointDeCharge.id_pdc_itinerance,
+          PointDeCharge.id_pdc_local,
+          PointDeCharge.puissance_nominale,
+          PointDeCharge.prise_type_ef,
+          PointDeCharge.prise_type_2,
+          PointDeCharge.prise_type_combo_ccs,
+          PointDeCharge.prise_type_chademo,
+          PointDeCharge.prise_type_autre,
+          PointDeCharge.gratuit,
+          PointDeCharge.paiement_acte,
+          PointDeCharge.paiement_cb,
+          PointDeCharge.paiement_autre,
+          PointDeCharge.tarification,
+          Station.condition_acces,
+          PointDeCharge.reservation,
+          Station.horaires,
+          PointDeCharge.accessibilite_pmr,
+          PointDeCharge.restriction_gabarit,
+          Station.station_deux_roues,
+          Station.raccordement,
+          Station.num_pdl,
+          Station.date_mise_en_service,
+          PointDeCharge.observations,
+          Station.date_maj,
+          PointDeCharge.cable_t2_attache
+        FROM
+          PointDeCharge
+          INNER JOIN Station ON PointDeCharge.station_id = Station.id
+          INNER JOIN Amenageur ON Station.amenageur_id = Amenageur.id
+          INNER JOIN Operateur ON Station.operateur_id = Operateur.id
+          INNER JOIN Enseigne ON Station.enseigne_id = Enseigne.id
+          INNER JOIN Localisation ON Station.localisation_id = Localisation.id

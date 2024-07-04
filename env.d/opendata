@@ -1,0 +1,4 @@
+ENV_FOR_DYNACONF=development
+DATA7_DATABASE_URL=postgresql+asyncpg://qualicharge:pass@postgresql:5432/qualicharge-api
+DATA7_HOST=0.0.0.0
+DATA7_PORT=8000

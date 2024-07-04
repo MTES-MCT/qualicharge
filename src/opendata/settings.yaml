@@ -1,0 +1,43 @@
+#
+# Data7 application general settings
+#
+
+# ---- GLOBAL ----------------------------------
+global:
+  # The base url path for dataset urls
+  datasets_root_url: "/d"
+
+  # Parquet
+  parquet_batch_size: 100
+
+# ---- DEFAULT ---------------------------------
+default:
+  debug: false
+
+  # Sentry
+  sentry_dsn: null
+  sentry_traces_sample_rate: 1.0
+
+# ---- PRODUCTION ------------------------------
+production:
+  execution_environment: production
+  debug: false
+
+  # The following variables will be set via environment variables
+  #
+  # Server
+  # host: data7.example.com
+  # port: 8080
+
+  # Sentry
+  # sentry_dsn:
+  # sentry_traces_sample_rate: 1.0
+
+# ---- DEVELOPMENT -----------------------------
+development:
+  execution_environment: development
+  debug: true
+
+  # Server
+  host: "0.0.0.0"
+  port: 8000

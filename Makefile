@@ -60,6 +60,10 @@ build-notebook: ## build custom jupyter notebook image
 	@$(COMPOSE) build notebook
 .PHONY: build-notebook
 
+build-opendata: ## build opendata image
+	@$(COMPOSE) build opendata
+.PHONY: build-opendata
+
 down: ## stop and remove all containers
 	@$(COMPOSE) down
 .PHONY: down
@@ -76,17 +80,25 @@ logs-notebook: ## display notebook logs (follow mode)
 	@$(COMPOSE) logs -f notebook
 .PHONY: logs-notebook
 
+logs-opendata: ## display opendata logs (follow mode)
+	@$(COMPOSE) logs -f opendata
+.PHONY: logs-opendata
+
 run: ## run the api server (and dependencies)
 	$(COMPOSE) up -d api
 .PHONY: run
 
 run-all: ## run the whole stack
-	$(COMPOSE) up -d api keycloak metabase notebook
+	$(COMPOSE) up -d api keycloak metabase notebook opendata
 .PHONY: run-all
 
 run-notebook: ## run the notebook service
 	$(COMPOSE) up -d notebook
 .PHONY: run-notebook
+
+run-opendata: ## run the opendata service
+	$(COMPOSE) up -d opendata
+.PHONY: run-opendata
 
 status: ## an alias for "docker compose ps"
 	@$(COMPOSE) ps
