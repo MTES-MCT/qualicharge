@@ -8,6 +8,12 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Changed
+
+- Upgrade fastapi to `0.111.1`
+- Upgrade geoalchemy2 to `0.15.2`
+- Upgrade sentry-sdk to `2.10.0`
+
 ## [0.10.0] - 2024-07-01
 
 ### Changed

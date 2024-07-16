@@ -9,7 +9,7 @@ databases = {extras = ["asyncpg"], version = "==0.9.0"}
 
 [dev-packages]
 honcho = "==1.1.0"
-setuptools = "==70.1.1"
+setuptools = "==70.3.0"
 
 [requires]
 python_version = "3.12"
