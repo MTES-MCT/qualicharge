@@ -7,24 +7,38 @@ global:
   # The base url path for dataset urls
   datasets_root_url: "/d"
 
-  # Parquet
-  parquet_batch_size: 100
+  # Pandas chunks
+  chunk_size: 5000
+  schema_sniffer_size: 1000
+  default_dtype_backend: pyarrow
+
+  # Pyinstrument
+  profiler_interval: 0.001
+  profiler_async_mode: enabled
 
 # ---- DEFAULT ---------------------------------
 default:
+  # Set debug to true for development, never for production!
   debug: false
+
+  # Server
+  # host:
+  # port:
 
   # Sentry
   sentry_dsn: null
   sentry_traces_sample_rate: 1.0
 
+  # Pyinstrument
+  profiling: false
+
 # ---- PRODUCTION ------------------------------
 production:
   execution_environment: production
+
+  # Set debug to true for development, never for production!
   debug: false
 
-  # The following variables will be set via environment variables
-  #
   # Server
   # host: data7.example.com
   # port: 8080
@@ -33,6 +47,12 @@ production:
   # sentry_dsn:
   # sentry_traces_sample_rate: 1.0
 
+  # Pyinstrument
+  profiling: false
+
+#
+# /!\ FEEL FREE TO REMOVE ENVIRONMENTS BELOW /!\
+#
 # ---- DEVELOPMENT -----------------------------
 development:
   execution_environment: development
@@ -41,3 +61,10 @@ development:
   # Server
   host: "0.0.0.0"
   port: 8000
+
+  # Pyinstrument
+  profiling: true
+
+# ---- TESTING ---------------------------------
+testing:
+  execution_environment: testing
