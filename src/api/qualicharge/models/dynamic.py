@@ -49,7 +49,10 @@ class StatusCreate(StatusBase):
     """Point of charge status create."""
 
     id_pdc_itinerance: str = Field(
-        regex="(?:(?:^|,)(^[A-Z]{2}[A-Z0-9]{4,33}$|Non concerné))+$"
+        regex="(?:(?:^|,)(^[A-Z]{2}[A-Z0-9]{4,33}$|Non concerné))+$",
+        schema_extra={
+            "examples": ["FR0NXEVSEXB9YG", "FRFASE3300405", "FR073012308585"]
+        },
     )
 
 
@@ -69,5 +72,8 @@ class SessionCreate(SessionBase):
     """Point of charge sessions create."""
 
     id_pdc_itinerance: str = Field(
-        regex="(?:(?:^|,)(^[A-Z]{2}[A-Z0-9]{4,33}$|Non concerné))+$"
+        regex="(?:(?:^|,)(^[A-Z]{2}[A-Z0-9]{4,33}$|Non concerné))+$",
+        schema_extra={
+            "examples": ["FR0NXEVSEXB9YG", "FRFASE3300405", "FR073012308585"]
+        },
     )
