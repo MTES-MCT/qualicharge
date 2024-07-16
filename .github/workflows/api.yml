@@ -85,6 +85,7 @@ jobs:
       - name: Run migrations
         run: pipenv run alembic -c qualicharge/alembic.ini upgrade head
         env:
+          QUALICHARGE_DB_ENGINE: postgresql+psycopg
           QUALICHARGE_DB_HOST: localhost
           QUALICHARGE_DB_NAME: test-qualicharge-api
           QUALICHARGE_TEST_DB_NAME: test-qualicharge-api
@@ -128,6 +129,7 @@ jobs:
       - name: Test with pytest
         run: pipenv run pytest
         env:
+          QUALICHARGE_DB_ENGINE: postgresql+psycopg
           QUALICHARGE_DB_HOST: localhost
           QUALICHARGE_DB_NAME: test-qualicharge-api
           QUALICHARGE_TEST_DB_NAME: test-qualicharge-api
