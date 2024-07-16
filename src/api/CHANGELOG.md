@@ -14,6 +14,10 @@ and this project adheres to
 - Upgrade geoalchemy2 to `0.15.2`
 - Upgrade sentry-sdk to `2.10.0`
 
+### Fixed
+
+- Add relevant data examples for Swagger
+
 ## [0.10.0] - 2024-07-01
 
 ### Changed
