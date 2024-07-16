@@ -13,6 +13,7 @@ and this project adheres to
 - Upgrade fastapi to `0.111.1`
 - Upgrade geoalchemy2 to `0.15.2`
 - Upgrade sentry-sdk to `2.10.0`
+- Switched to Psycopg 3.x
 
 ### Fixed
 
