@@ -80,6 +80,8 @@ services:
       NB_GID: ${DOCKER_GID:-1000}
       CHOWN_HOME: 'yes'
       CHOWN_HOME_OPTS: -R
+    env_file:
+      - env.d/notebook
     ports:
       - 8888:8888
     volumes:
