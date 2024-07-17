@@ -51,6 +51,9 @@ venv.bak/
 # Jupytext: we version converted md files not ipynb sources
 *.ipynb
 
+# Jupyter
+.ipynb_checkpoints/
+
 # -- Provisioning
 provisioning/.terraform*
 provisioning/terraform.tfstate*
