@@ -18,6 +18,7 @@ and this project adheres to
 ### Fixed
 
 - Add relevant data examples for Swagger
+- Improve database session management
 
 ## [0.10.0] - 2024-07-01
 
