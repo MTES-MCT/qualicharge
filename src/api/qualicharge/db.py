@@ -41,20 +41,6 @@ class Engine(metaclass=Singleton):
         return self._engine
 
 
-class Session(metaclass=Singleton):
-    """Database session singleton."""
-
-    _session: Optional[SMSession] = None
-
-    def get_session(self, engine: SAEngine) -> SMSession:
-        """Get active session or create a new one."""
-        if self._session is None:
-            logger.debug("Create new session")
-            self._session = SMSession(bind=engine)
-        logger.debug("Getting database session %s", self._session)
-        return self._session
-
-
 class SAQueryCounter:
     """Context manager to count SQLALchemy queries.
 
@@ -88,12 +74,9 @@ def get_engine() -> SAEngine:
 
 def get_session() -> Generator[SMSession, None, None]:
     """Get database session."""
-    session = Session().get_session(get_engine())
-    logger.debug("Getting session %s", session)
-    try:
+    with SMSession(bind=get_engine()) as session:
+        logger.debug("Getting session %s", session)
         yield session
-    finally:
-        session.close()
 
 
 def is_alive() -> bool:
