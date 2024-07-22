@@ -27,6 +27,17 @@ services:
       - "8010:8000"
     env_file:
       - env.d/api
+    healthcheck:
+      test:
+        - "CMD"
+        - "pipenv"
+        - "run"
+        - "httpx"
+        - "http://localhost:8000/api/v1/docs"
+      interval: 3s
+      timeout: 2s
+      retries: 5
+    restart: always
     volumes:
       - ./src/api:/app
     depends_on:
@@ -63,7 +74,12 @@ services:
     env_file:
       - env.d/metabase
     healthcheck:
-      test: curl --fail -I http://localhost:3000/api/health || exit 1
+      test:
+        - "CMD"
+        - "curl"
+        - "--fail"
+        - "-I"
+        - "http://localhost:3000/api/health"
       interval: 15s
       timeout: 5s
       retries: 5
