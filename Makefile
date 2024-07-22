@@ -81,7 +81,7 @@ logs-opendata: ## display opendata logs (follow mode)
 .PHONY: logs-opendata
 
 run: ## run the api server (and dependencies)
-	$(COMPOSE) up -d api
+	$(COMPOSE) up -d --wait api
 .PHONY: run
 
 run-all: ## run the whole stack

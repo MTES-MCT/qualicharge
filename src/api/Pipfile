@@ -9,8 +9,9 @@ annotated-types = "==0.7.0"
 email-validator = "==2.2.0"
 fastapi = "==0.111.1"
 geoalchemy2 = {extras = ["shapely"], version = "==0.15.2"}
-httpx = "==0.27.0"
+httpx = {extras = ["cli"], version = "==0.27.0"}
 passlib = {extras = ["bcrypt"], version = "==1.7.4"}
+psycopg = {extras = ["pool", "binary"], version = "==3.2.1"}
 pydantic-extra-types = {extras = ["all"], version = "==2.9.0"}
 pydantic-settings = "==2.3.4"
 pyjwt = "==2.8.0"
@@ -21,7 +22,6 @@ sqlalchemy-timescaledb = "==0.4.1"
 sqlmodel = "==0.0.19"
 typer = "==0.12.3"
 uvicorn = {extras = ["standard"] }
-psycopg = {extras = ["pool", "binary"], version = "==3.2.1"}
 
 [dev-packages]
 black = "==24.4.2"
