@@ -8,6 +8,11 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Added
+
+- Allow to configure `API_STATIQUE_PAGE_MAX_SIZE` and `API_STATIQUE_PAGE_SIZE`
+  independently from `API_STATIQUE_BULK_CREATE_MAX_SIZE`
+
 ### Changed
 
 - Upgrade fastapi to `0.111.1`

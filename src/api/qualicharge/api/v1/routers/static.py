@@ -84,8 +84,8 @@ async def list(
     request: Request,
     offset: int = 0,
     limit: int = Query(
-        default=settings.API_STATIQUE_BULK_CREATE_MAX_SIZE,
-        le=settings.API_STATIQUE_BULK_CREATE_MAX_SIZE,
+        default=settings.API_STATIQUE_PAGE_SIZE,
+        le=settings.API_STATIQUE_PAGE_MAX_SIZE,
     ),
     session: Session = Depends(get_session),
 ) -> PaginatedStatiqueListResponse:
