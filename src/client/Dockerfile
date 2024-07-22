@@ -1,5 +1,5 @@
 # The builder image, used to build the virtual environment
-FROM python:3.12-slim as base
+FROM python:3.12-slim AS base
 
 ARG DOCKER_UID 1000
 ARG DOCKER_GID 1000
@@ -48,7 +48,7 @@ WORKDIR /app
 USER ${POETRY_USER_NAME}:${POETRY_GROUP_NAME}
 
 # -- builder --
-FROM base as builder
+FROM base AS builder
 
 COPY pyproject.toml poetry.lock README.md ./
 
@@ -56,7 +56,7 @@ RUN --mount=type=cache,uid=${POETRY_USER_UID},gid=${POETRY_USER_GID},target=${PO
       poetry install --with=dev --no-root
 
 # -- development --
-FROM base as development
+FROM base AS development
 
 COPY --from=builder ${POETRY_VIRTUALENVS_PATH} ${POETRY_VIRTUALENVS_PATH}
 COPY . /app/
