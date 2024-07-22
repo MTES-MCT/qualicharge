@@ -15,12 +15,12 @@ RUN pip install --upgrade pip && \
     pip install pipenv==2024.0.1
 
 # Pipenv configuration
-ENV PIPENV_USER_UID ${DOCKER_UID}
-ENV PIPENV_USER_GID ${DOCKER_GID}
-ENV PIPENV_USER_NAME pipenv
-ENV PIPENV_GROUP_NAME pipenv
-ENV PIPENV_USER_HOME /opt/pipenv/
-ENV PIPENV_CUSTOM_VENV_NAME qualicharge
+ENV PIPENV_USER_UID=${DOCKER_UID}
+ENV PIPENV_USER_GID=${DOCKER_GID}
+ENV PIPENV_USER_NAME=pipenv
+ENV PIPENV_GROUP_NAME=pipenv
+ENV PIPENV_USER_HOME=/opt/pipenv/
+ENV PIPENV_CUSTOM_VENV_NAME=qualicharge
 
 # Create a pipenv user and group
 RUN groupadd \
