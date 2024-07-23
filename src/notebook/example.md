@@ -165,7 +165,6 @@ METABASE_PORT = 3000
 
 # doc API : http://localhost:3000/api/docs
 headers = {'x-api-key': API_ADMIN_KEY}
-headers_all = {'x-api-key': API_KEY}
 response = requests.get('http://c026403cc1d7:3000/api/permissions/group', headers=headers).json()
 response
 ```
