@@ -159,8 +159,9 @@ import pandas as pd
 API_KEY = 'mb_dQBXZ4oMgf0bRsHY0zqlg6SSZuzoCqhitxX35KQI3hc='
 API_ADMIN_KEY = 'mb_eC8U3KEYG2SOD37Mw69NT9vbwnh78b5G/IcePXqKvoU=' 
 
-# docker container
-LOCALHOST = 'c026403cc1d7' 
+# Metabase server
+METABASE_HOST = "metabase"
+METABASE_PORT = 3000
 
 # doc API : http://localhost:3000/api/docs
 headers = {'x-api-key': API_ADMIN_KEY}
