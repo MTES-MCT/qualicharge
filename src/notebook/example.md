@@ -148,7 +148,7 @@ paris
 ## Metabase API
 
 
-A large list of API endpoints are available ([doc](https://www.metabase.com/learn/administration/metabase-api)).
+A large list of API endpoints is available in the [documentation](https://www.metabase.com/learn/administration/metabase-api).
 See examples below.
 
 ```python
