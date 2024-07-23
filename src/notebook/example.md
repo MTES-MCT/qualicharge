@@ -172,7 +172,8 @@ response.json()
 Example : Search of Questions(card)
 
 ```python
-response = requests.get('http://c026403cc1d7:3000/api/card', headers=headers).json()
+response = requests.get(f"http://{METABASE_HOST}:{METABASE_PORT}/api/card", headers=headers)
+cards = response.json()
 
 # list of cards
 my_card = [card for card in response if card['description'] and card['description'][:4] == 'test']
