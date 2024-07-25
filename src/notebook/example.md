@@ -155,9 +155,8 @@ See examples below.
 import requests
 import pandas as pd
 
-# admin metabase
-API_KEY = 'mb_dQBXZ4oMgf0bRsHY0zqlg6SSZuzoCqhitxX35KQI3hc='
-API_ADMIN_KEY = 'mb_eC8U3KEYG2SOD37Mw69NT9vbwnh78b5G/IcePXqKvoU=' 
+# Get metabase key from the environment
+admin_key = os.getenv("ADMIN_KEY")
 
 # Metabase server
 METABASE_HOST = "metabase"
