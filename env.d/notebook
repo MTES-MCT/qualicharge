@@ -1,1 +1,2 @@
 DATABASE_URL=postgresql+psycopg://qualicharge:pass@postgresql:5432/qualicharge-api
+ADMIN_KEY="mb_44Wb2RiqYP226DCOuP6itQRqxQvxVBM+T2wW3ZlSEX8="

@@ -28,6 +28,7 @@ database_url = os.getenv("DATABASE_URL")
 
 # Create a database engine that will be used to generate connections
 engine = create_engine(database_url)
+database_url
 ```
 
 ## Fetch data from the database
@@ -142,4 +143,38 @@ indicator.to_sql("IDepartmentDynamic", engine, if_exists="append")
 query = 'SELECT * FROM "IDepartmentDynamic" WHERE department = 75'
 paris = pd.read_sql_query(query, engine)
 paris
+```
+
+## Metabase API
+
+
+A large list of API endpoints is available in the [documentation](https://www.metabase.com/learn/administration/metabase-api).
+See examples below.
+
+```python
+import requests
+import pandas as pd
+
+# Get metabase key from the environment
+admin_key = os.getenv("ADMIN_KEY")
+
+# Metabase server
+METABASE_HOST = "metabase"
+METABASE_PORT = 3000
+
+# doc API : http://localhost:3000/api/docs
+headers = {'x-api-key': API_ADMIN_KEY}
+response = requests.get(f"http://{METABASE_HOST}:{METABASE_PORT}/api/permissions/group", headers=headers)
+response.json()
+```
+
+Example : Search of Questions(card)
+
+```python
+response = requests.get(f"http://{METABASE_HOST}:{METABASE_PORT}/api/card", headers=headers)
+cards = response.json()
+
+# list of cards
+my_card = [card for card in response if card['description'] and card['description'][:4] == 'test']
+{card['id']: card['description'] for card in my_card}
 ```
