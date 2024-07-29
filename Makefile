@@ -3,6 +3,7 @@ SHELL := /bin/bash
 
 # -- Docker
 COMPOSE                = bin/compose
+COMPOSE_UP             = $(COMPOSE) up -d --force-recreate
 COMPOSE_RUN            = $(COMPOSE) run --rm --no-deps
 COMPOSE_RUN_API        = $(COMPOSE_RUN) api
 COMPOSE_RUN_API_PIPENV = $(COMPOSE_RUN_API) pipenv run
@@ -81,19 +82,23 @@ logs-opendata: ## display opendata logs (follow mode)
 .PHONY: logs-opendata
 
 run: ## run the api server (and dependencies)
-	$(COMPOSE) up -d --wait api
+	$(COMPOSE_UP) --wait api
 .PHONY: run
 
 run-all: ## run the whole stack
-	$(COMPOSE) up -d api keycloak metabase notebook opendata
+	$(COMPOSE_UP) api keycloak metabase notebook opendata
 .PHONY: run-all
 
+run-metabase: ## run the metabase service
+	$(COMPOSE_UP) metabase
+.PHONY: run-metabase
+
 run-notebook: ## run the notebook service
-	$(COMPOSE) up -d notebook
+	$(COMPOSE_UP) notebook
 .PHONY: run-notebook
 
 run-opendata: ## run the opendata service
-	$(COMPOSE) up -d opendata
+	$(COMPOSE_UP) opendata
 .PHONY: run-opendata
 
 status: ## an alias for "docker compose ps"
@@ -131,9 +136,20 @@ drop-metabase-db: ## drop Metabase database
 	@$(COMPOSE) exec postgresql bash -c 'psql "postgresql://$${POSTGRES_USER}:$${POSTGRES_PASSWORD}@$${QUALICHARGE_DB_HOST}:$${QUALICHARGE_DB_PORT}/postgres" -c "drop database \"$${MB_DB_DBNAME}\";"' || echo "Duly noted, skipping database deletion."
 .PHONY: drop-metabase-db
 
+dump-metabase:  ## dump metabase objects
+	bin/pg_dump -a --inserts \
+		-t Report_Card \
+		-t Report_Dashboard \
+		-t Report_DashboardCard \
+		-t Dashboard_Tab \
+		-t Setting \
+		-U qualicharge \
+		metabaseappdb > src/metabase/custom.sql
+.PHONY: dump-metabase
+
 migrate-api:  ## run alembic database migrations for the api service
 	@echo "Running api service database engine…"
-	@$(COMPOSE) up -d --wait postgresql
+	@$(COMPOSE_UP) --wait postgresql
 	@echo "Creating api service database…"
 	@$(COMPOSE) exec postgresql bash -c 'psql "postgresql://$${POSTGRES_USER}:$${POSTGRES_PASSWORD}@$${QUALICHARGE_DB_HOST}:$${QUALICHARGE_DB_PORT}/postgres" -c "create database \"$${QUALICHARGE_DB_NAME}\";"' || echo "Duly noted, skipping database creation."
 	@$(COMPOSE) exec postgresql bash -c 'psql "postgresql://$${POSTGRES_USER}:$${POSTGRES_PASSWORD}@$${QUALICHARGE_DB_HOST}:$${QUALICHARGE_DB_PORT}/$${QUALICHARGE_DB_NAME}" -c "create extension postgis;"' || echo "Duly noted, skipping extension creation."
@@ -164,9 +180,9 @@ jupytext--to-ipynb: ## convert remote md files into ipynb
 reset-db: ## Reset the PostgreSQL database
 	$(COMPOSE) stop postgresql
 	$(COMPOSE) down postgresql
-	$(COMPOSE) up -d --force-recreate postgresql
+	$(COMPOSE_UP) postgresql
 	$(MAKE) migrate-api
-	$(COMPOSE) up -d --force-recreate api
+	$(COMPOSE_UP) api
 	$(MAKE) create-superuser
 .PHONY: reset-db
 
@@ -178,17 +194,21 @@ seed-api: run
 
 seed-metabase: ## seed the Metabase server
 	@echo "Running metabase service …"
-	@$(COMPOSE) up -d --wait metabase
+	@$(COMPOSE_UP) --wait metabase
 	@echo "Create metabase initial admin user…"
 	bin/metabase-init
 	@echo "Create API data source…"
 	$(COMPOSE_RUN) terraform init
 	$(COMPOSE_RUN) terraform apply -auto-approve
+	cat src/metabase/custom.sql | \
+	  bin/psql \
+		  -U qualicharge \
+		  -d metabaseappdb
 .PHONY: seed-metabase
 
 seed-oidc: ## seed the OIDC provider
 	@echo 'Starting OIDC provider…'
-	@$(COMPOSE) up -d keycloak
+	@$(COMPOSE_UP) keycloak
 	@$(COMPOSE_RUN) dockerize -wait http://keycloak:8080 -timeout 60s
 	@echo 'Seeding OIDC client…'
 	@$(COMPOSE) exec keycloak /usr/local/bin/kc-init
