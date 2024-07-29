@@ -26,6 +26,7 @@ from qualicharge.schemas.core import (  # noqa: F401
     Station,
     Status,
 )
+from qualicharge.schemas.geo import Region, Department, EPCI, City  # noqa: F401
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

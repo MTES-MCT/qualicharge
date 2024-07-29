@@ -7,8 +7,10 @@ FROM quay.io/jupyter/base-notebook:notebook-7.2.1
 #        see: https://github.com/mwouts/jupytext/issues/1260
 RUN mamba install --yes \
       duckdb \
+      geoalchemy2 \
       geopandas \
       jupytext==1.16.2 \
+      libgdal-arrow-parquet \
       matplotlib \
       pandas \
       psycopg[binary,pool] \

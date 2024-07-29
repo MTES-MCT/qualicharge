@@ -94,6 +94,34 @@ import seaborn as sns
 sns.barplot(data=pdcs.value_counts("nom_operateur"))
 ```
 
+### Example 3: use the GIS
+
+```python
+import pandas as pd
+
+query = """
+SELECT
+  Region.code as code,
+  Region.name as name,
+  SUM(PointDeCharge.puissance_nominale) as puissance
+FROM
+  Region,
+  PointDeCharge
+INNER JOIN Station ON PointDeCharge.station_id = Station.id
+INNER JOIN Localisation ON Station.localisation_id = Localisation.id
+WHERE
+  ST_CONTAINS (Region.geometry, Localisation."coordonneesXY")
+GROUP BY code, name
+ORDER BY puissance DESC
+"""
+
+with engine.connect() as conn:
+    # Query a PostgreSQL database using the PostGIS extension
+    region_power = pd.read_sql_query(query, conn)
+
+region_power
+```
+
 ## Write data to the database
 
 ### Example 1: create a new table with calculated indicator

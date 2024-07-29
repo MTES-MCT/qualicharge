@@ -12,6 +12,7 @@ and this project adheres to
 
 - Allow to configure `API_STATIQUE_PAGE_MAX_SIZE` and `API_STATIQUE_PAGE_SIZE`
   independently from `API_STATIQUE_BULK_CREATE_MAX_SIZE`
+- Store french administrative levels and geographic boundaries (shapes)
 
 ### Changed
 
