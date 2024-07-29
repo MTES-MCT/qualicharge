@@ -151,7 +151,7 @@ localisation = add_timestamped_table_fields(localisation)
 
 # Convert to a GeoDataFrame
 localisation = gp.GeoDataFrame(localisation, crs="EPSG:4326", geometry="coordonneesXY")
-localisation
+localisation[localisation["code_insee_commune"] == "77018"]
 ```
 
 ```python
@@ -376,4 +376,88 @@ save(pdc, engine, "pointdecharge", truncate=True, dtype=dtype)
 
 saved = pd.read_sql("SELECT * FROM PointDeCharge", engine)
 saved
+```
+
+## Alternate version using raw SQLAlchemy
+
+```python
+amenageur_fields = ["nom_amenageur", "siren_amenageur", "contact_amenageur"]
+amenageur = static[amenageur_fields]
+
+# Remove duplicates
+amenageur = amenageur.drop_duplicates()
+
+# Add missing columns (to fit with the ORM)
+amenageur = add_timestamped_table_fields(amenageur)
+amenageur
+```
+
+```python
+%%time
+from sqlalchemy import Table
+from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.schema import MetaData
+
+def save_amenageur(df):
+    metadata_obj = MetaData()
+    t_amenageur = Table("amenageur", metadata_obj, autoload_with=engine)
+    
+    amenageur.drop("amenageur_id", axis=1, inplace=True, errors="ignore")
+    
+    stmt = insert(t_amenageur).values(amenageur.to_dict("records"))
+    stmt = stmt.on_conflict_do_update(
+        constraint="amenageur_nom_amenageur_siren_amenageur_contact_amenageur_key",
+        set_=dict(
+            nom_amenageur=stmt.excluded.nom_amenageur, 
+            siren_amenageur=stmt.excluded.siren_amenageur, 
+            contact_amenageur=stmt.excluded.contact_amenageur,
+            updated_at=stmt.excluded.updated_at
+        )
+    )
+    stmt = stmt.returning(t_amenageur.c.id)
+    
+    with engine.connect() as conn:
+        result = conn.execute(stmt)
+    
+    ids = pd.Series(data=(row.id for row in result.all()), index=amenageur.index)
+    
+    amenageur.insert(0, "amenageur_id", ids)
+    return amenageur
+    
+amenageur = save_amenageur(amenageur)
+amenageur
+```
+
+```python
+%%time
+
+def save_amenageur_by_chunks(df, n=10000):
+    metadata_obj = MetaData()
+    t_amenageur = Table("amenageur", metadata_obj, autoload_with=engine)
+    
+    df.drop("amenageur_id", axis=1, inplace=True, errors="ignore")
+
+    chunks = [df[i:i+n] for i in range(0,len(df),n)]
+    for chunk in chunks:
+        stmt = insert(t_amenageur).values(chunk.to_dict("records"))
+        stmt = stmt.on_conflict_do_update(
+            constraint="amenageur_nom_amenageur_siren_amenageur_contact_amenageur_key",
+            set_=dict(
+                nom_amenageur=stmt.excluded.nom_amenageur, 
+                siren_amenageur=stmt.excluded.siren_amenageur, 
+                contact_amenageur=stmt.excluded.contact_amenageur,
+                updated_at=stmt.excluded.updated_at
+            )
+        )
+        stmt = stmt.returning(t_amenageur.c.id)
+        
+        with engine.connect() as conn:
+            result = conn.execute(stmt)
+        
+        ids = pd.Series(data=(row.id for row in result.all()), index=chunk.index)
+        
+        chunk.insert(0, "amenageur_id", ids)
+    return amenageur
+    
+amenageur = save_amenageur_by_chunks(amenageur, n=2000)
 ```

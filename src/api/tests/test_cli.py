@@ -1,12 +1,24 @@
 """Tests for QualiCharge CLI."""
 
+from io import StringIO
+
+import pandas as pd
 from sqlalchemy import func
 from sqlmodel import select
 
 from qualicharge.auth.factories import GroupFactory, UserFactory
 from qualicharge.auth.schemas import Group, GroupOperationalUnit, User, UserGroup
 from qualicharge.cli import app
-from qualicharge.schemas.core import OperationalUnit
+from qualicharge.factories.static import StatiqueFactory
+from qualicharge.schemas.core import (
+    Amenageur,
+    Enseigne,
+    Localisation,
+    Operateur,
+    OperationalUnit,
+    PointDeCharge,
+    Station,
+)
 
 
 def test_list_groups(runner, db_session):
@@ -392,3 +404,75 @@ def test_delete_user(runner, db_session):
     # Check that user no longer exists
     assert db_session.exec(select(func.count(User.id))).one() == 0
     assert db_session.exec(select(func.count(UserGroup.group_id))).one() == 0
+
+
+def test_import_static(runner, db_session):
+    """Test the `import-static` command."""
+    # Create statique data to import
+    size = 5
+    statiques = StatiqueFactory.batch(size=size)
+    df = pd.read_json(
+        StringIO(f"{'\n'.join([s.model_dump_json() for s in statiques])}"),
+        lines=True,
+        dtype_backend="pyarrow",
+    )
+
+    # No database records exist yet
+    assert db_session.exec(select(func.count(Amenageur.id))).one() == 0
+    assert db_session.exec(select(func.count(Enseigne.id))).one() == 0
+    assert db_session.exec(select(func.count(Localisation.id))).one() == 0
+    assert db_session.exec(select(func.count(Operateur.id))).one() == 0
+    assert db_session.exec(select(func.count(PointDeCharge.id))).one() == 0
+    assert db_session.exec(select(func.count(Station.id))).one() == 0
+
+    # Write parquet file to import
+    file_path = "test.parquet"
+    with runner.isolated_filesystem():
+        df.to_parquet(file_path)
+        result = runner.invoke(app, ["import-static", file_path], obj=db_session)
+    assert result.exit_code == 0
+
+    # Assert we've created expected records
+    assert db_session.exec(select(func.count(Amenageur.id))).one() == size
+    assert db_session.exec(select(func.count(Enseigne.id))).one() == size
+    assert db_session.exec(select(func.count(Localisation.id))).one() == size
+    assert db_session.exec(select(func.count(Operateur.id))).one() == size
+    assert db_session.exec(select(func.count(PointDeCharge.id))).one() == size
+    assert db_session.exec(select(func.count(Station.id))).one() == size
+
+
+def test_import_static_with_integrity_exception(runner, db_session):
+    """Test the `import-static` command."""
+    # Create statique data to import
+    statiques = StatiqueFactory.batch(size=5)
+    statiques[1].id_pdc_itinerance = "FRS63E0001"
+    statiques[3].id_pdc_itinerance = "FRS63E0001"
+    df = pd.read_json(
+        StringIO(f"{'\n'.join([s.model_dump_json() for s in statiques])}"),
+        lines=True,
+        dtype_backend="pyarrow",
+    )
+
+    # No database records exist yet
+    assert db_session.exec(select(func.count(Amenageur.id))).one() == 0
+    assert db_session.exec(select(func.count(Enseigne.id))).one() == 0
+    assert db_session.exec(select(func.count(Localisation.id))).one() == 0
+    assert db_session.exec(select(func.count(Operateur.id))).one() == 0
+    assert db_session.exec(select(func.count(PointDeCharge.id))).one() == 0
+    assert db_session.exec(select(func.count(Station.id))).one() == 0
+
+    # Write parquet file to import
+    file_path = "test.parquet"
+    with runner.isolated_filesystem():
+        df.to_parquet(file_path)
+        result = runner.invoke(app, ["import-static", file_path], obj=db_session)
+    assert result.exit_code == 1
+    assert "Input file importation failed. Rolling back." in str(result.exception)
+
+    # Assert we've not created any record
+    assert db_session.exec(select(func.count(Amenageur.id))).one() == 0
+    assert db_session.exec(select(func.count(Enseigne.id))).one() == 0
+    assert db_session.exec(select(func.count(Localisation.id))).one() == 0
+    assert db_session.exec(select(func.count(Operateur.id))).one() == 0
+    assert db_session.exec(select(func.count(PointDeCharge.id))).one() == 0
+    assert db_session.exec(select(func.count(Station.id))).one() == 0

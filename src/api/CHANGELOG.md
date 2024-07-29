@@ -8,6 +8,11 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Added
+
+- Implement Pandas-based `StatiqueImporter`
+- CLI: add `import-statique` command
+
 ### Changed
 
 - Upgrade fastapi to `0.112.2`
