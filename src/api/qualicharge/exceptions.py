@@ -39,3 +39,7 @@ class IntegrityError(QualiChargeExceptionMixin, Exception):
 
 class ObjectDoesNotExist(QualiChargeExceptionMixin, Exception):
     """Raised when queried object does not exist."""
+
+
+class ProgrammingError(QualiChargeExceptionMixin, Exception):
+    """Raised when QC object API is badly used."""

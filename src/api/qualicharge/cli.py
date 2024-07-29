@@ -1,13 +1,19 @@
 """QualiCharge CLI."""
 
+import logging
+from pathlib import Path
 from typing import Optional, Sequence, cast
 
+import pandas as pd
 import questionary
 import typer
+from psycopg import Error as PGError
 from rich import print
 from rich.console import Console
+from rich.logging import RichHandler
 from rich.table import Table
 from sqlalchemy import Column as SAColumn
+from sqlalchemy.exc import IntegrityError, OperationalError, ProgrammingError
 from sqlmodel import Session as SMSession
 from sqlmodel import select
 
@@ -15,9 +21,14 @@ from .auth.models import UserCreate
 from .auth.schemas import Group, ScopesEnum, User
 from .conf import settings
 from .db import get_session
+from .exceptions import IntegrityError as QCIntegrityError
 from .fixtures.operational_units import prefixes
 from .schemas.core import OperationalUnit
+from .schemas.sql import StatiqueImporter
 
+logging.basicConfig(
+    level=logging.INFO, format="%(message)s", datefmt="[%X]", handlers=[RichHandler()]
+)
 app = typer.Typer(name="qualicharge", no_args_is_help=True)
 console = Console()
 
@@ -414,6 +425,27 @@ def delete_user(ctx: typer.Context, username: str, force: bool = False):
     session.commit()
 
     print(f"[bold yellow]User {username} deleted.[/bold yellow]")
+
+
+@app.command()
+def import_static(ctx: typer.Context, input_file: Path):
+    """Import Statique file (parquet format)."""
+    session: SMSession = ctx.obj
+
+    # Load dataset
+    console.log(f"Reading input file: {input_file}")
+    static = pd.read_parquet(input_file)
+    console.log(f"Read {len(static.index)} rows")
+    importer = StatiqueImporter(static, session.connection())
+
+    console.log("Save to configured database")
+    try:
+        importer.save()
+    except (ProgrammingError, IntegrityError, OperationalError, PGError) as err:
+        session.rollback()
+        raise QCIntegrityError("Input file importation failed. Rolling back.") from err
+    session.commit()
+    console.log("Saved (or updated) all entries successfully.")
 
 
 @app.callback()
