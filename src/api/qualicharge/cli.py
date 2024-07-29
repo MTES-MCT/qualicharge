@@ -1,7 +1,9 @@
 """QualiCharge CLI."""
 
+from pathlib import Path
 from typing import Optional, Sequence, cast
 
+import pandas as pd
 import questionary
 import typer
 from rich import print
@@ -17,6 +19,7 @@ from .conf import settings
 from .db import get_session
 from .fixtures.operational_units import prefixes
 from .schemas.core import OperationalUnit
+from .schemas.utils import save_statiques_from_dataframe
 
 app = typer.Typer(name="qualicharge", no_args_is_help=True)
 console = Console()
@@ -414,6 +417,21 @@ def delete_user(ctx: typer.Context, username: str, force: bool = False):
     session.commit()
 
     print(f"[bold yellow]User {username} deleted.[/bold yellow]")
+
+
+@app.command()
+def import_static(ctx: typer.Context, input_file: Path):
+    """Import Statique file (parquet format)."""
+    session: SMSession = ctx.obj
+
+    # Load dataset
+    console.log(f"Reading input file: {input_file}")
+    static = pd.read_parquet(input_file)
+    console.log(f"Read {len(static.index)} rows")
+
+    with console.status("Saving Statiques to database…"):
+        saved = save_statiques_from_dataframe(session, static)
+        console.log(f"Done. Saved {saved} entries.")
 
 
 @app.callback()
