@@ -1,13 +1,9 @@
 """QualiCharge schemas utilities."""
 
 import logging
-from time import sleep
-import uuid
 from enum import IntEnum
 from typing import Generator, List, NamedTuple, Optional, Set, Tuple, Type, cast
 
-import geopandas as gp
-import pandas as pd
 from sqlalchemy import func
 from sqlalchemy.exc import MultipleResultsFound
 from sqlalchemy.schema import Column as SAColumn
@@ -324,36 +320,6 @@ def save_statiques(
 
     for pdc in points_de_charge:
         yield pdc_to_statique(pdc)
-
-
-def save_statiques_from_dataframe(session: Session, statiques: pd.DataFrame) -> int:
-    """Save Statique entries to database using Pandas.
-
-    ⚠️ For now we cannot ensure that this utility is safe and not subject to SQL
-    injection. We expect your DataFrame to contain valid data (especially concerning
-    the id_pdc_itinerance and id_station_itinerance columns.)
-    """
-    # Look for existing stations
-    station_ids = statiques["id_station_itinerance"].drop_duplicates()
-    stations_exists_query = (
-        "SELECT id as station_id, id_station_itinerance "
-        "FROM station "
-        f"WHERE id_station_itinerance IN ('{"','".join(station_ids.to_list())}')"
-    )
-    existing_stations = pd.read_sql(stations_exists_query, session.connection())
-    statiques = statiques.merge(
-        existing_stations, how="left", on=("id_station_itinerance",)
-    )
-
-    # Look for existing points of charge
-    pdc_ids = statiques["id_pdc_itinerance"]
-    pdc_exists_query = (
-        "SELECT id as pointdecharge_id, id_pdc_itinerance "
-        "FROM pointdecharge "
-        f"WHERE id_pdc_itinerance IN ('{"','".join(pdc_ids.to_list())}')"
-    )
-    existing_pdcs = pd.read_sql(pdc_exists_query, session.connection())
-    statiques = statiques.merge(existing_pdcs, how="left", on=("id_pdc_itinerance",))
 
 
 def build_statique(session: Session, id_pdc_itinerance: str) -> Statique:

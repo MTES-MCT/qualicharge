@@ -19,7 +19,7 @@ from .conf import settings
 from .db import get_session
 from .fixtures.operational_units import prefixes
 from .schemas.core import OperationalUnit
-from .schemas.utils import save_statiques_from_dataframe
+from .schemas.sql import StatiqueImporter
 
 app = typer.Typer(name="qualicharge", no_args_is_help=True)
 console = Console()
@@ -428,10 +428,12 @@ def import_static(ctx: typer.Context, input_file: Path):
     console.log(f"Reading input file: {input_file}")
     static = pd.read_parquet(input_file)
     console.log(f"Read {len(static.index)} rows")
+    static = StatiqueImporter(static, session.connection())
 
     with console.status("Saving Statiques to database…"):
-        saved = save_statiques_from_dataframe(session, static)
-        console.log(f"Done. Saved {saved} entries.")
+        saved = static.save()
+        updated = static.update()
+        console.log(f"Saved/updated {saved}/{updated} entries.")
 
 
 @app.callback()
