@@ -288,7 +288,9 @@ class PointDeCharge(BaseTimestampedSQLModel, table=True):
 
     id: Optional[UUID] = Field(default_factory=lambda: uuid4().hex, primary_key=True)
     id_pdc_itinerance: str = Field(
-        regex="(?:(?:^|,)(^[A-Z]{2}[A-Z0-9]{4,33}$|Non concerné))+$", index=True
+        regex="(?:(?:^|,)(^[A-Z]{2}[A-Z0-9]{4,33}$|Non concerné))+$",
+        index=True,
+        unique=True,
     )
     id_pdc_local: Optional[str]
     puissance_nominale: PositiveFloat

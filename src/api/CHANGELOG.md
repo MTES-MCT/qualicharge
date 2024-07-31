@@ -25,6 +25,7 @@ and this project adheres to
 
 - Add relevant data examples for Swagger
 - Improve database session management
+- `PointDeCharge.id_pdc_itinerance` should be unique
 
 ## [0.10.0] - 2024-07-01
 
