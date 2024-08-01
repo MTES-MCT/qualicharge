@@ -36,7 +36,7 @@ Le quatrième niveau est dérivé du découpage communal en intégrant les regro
 
 Les régions sont découpées en départements. Les régions ultramarines (hors territoire européen) ne comportent qu'un seul département (code '97x' avec 'x' code région).
 Les départements sont découpés en communes.
-Les agglomérations sont des regroupements de communes
+Les agglomérations sont des regroupements de communes.
 
 
 
