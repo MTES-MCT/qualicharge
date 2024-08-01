@@ -98,19 +98,24 @@ query_reg = """SELECT region.code AS reg_code, region.name, ST_AsGeoJSON(region.
            FROM region""" 
 query_dep = """SELECT department.code, department.name, ST_AsGeoJSON(department.geometry) :: json -> 'coordinates'  AS polygon, region.code AS reg_code
            FROM department INNER JOIN region ON department.region_id = region.id""" 
-query_ecpi = """SELECT DISTINCT ON (epci.code) epci.code, epci.name, ST_AsGeoJSON(epci.geometry) :: json -> 'coordinates'  AS polygon, region.code AS reg_code
+query_epci = """SELECT epci.code, epci.name, ST_AsGeoJSON(epci.geometry) :: json -> 'coordinates'  AS polygon, region.code AS reg_code
            FROM epci INNER JOIN city ON city.epci_id = epci.id INNER JOIN department ON city.department_id = department.id INNER JOIN region ON department.region_id = region.id""" 
-query_city = """SELECT DISTINCT ON (city.code) city.code, city.name, ST_AsGeoJSON(city.geometry) :: json -> 'coordinates'  AS polygon, region.code AS reg_code
+query_city = """SELECT city.code, city.name, ST_AsGeoJSON(city.geometry) :: json -> 'coordinates'  AS polygon, region.code AS reg_code
            FROM city INNER JOIN department ON city.department_id = department.id INNER JOIN region ON department.region_id = region.id""" 
 
 maps_dir = '../../metabase/maps/'
 ```
 
-### Métropole
-
 ```python
-# df[df['reg_code'].isin(reg_metro)]
+'''query_epci2 = """SELECT epci.code, epci.name, ST_AsGeoJSON(epci.geometry) :: json -> 'coordinates'  AS polygon, region.code AS reg_code
+           FROM epci INNER JOIN city ON city.epci_id = epci.id INNER JOIN department ON city.department_id = department.id INNER JOIN region ON department.region_id = region.id""" 
+with engine.connect() as conn:
+    df = pd.read_sql_query(query_epci2, conn)
+reg = '52'
+df[df["reg_code"] == reg].drop_duplicates("code")'''
 ```
+
+### Métropole
 
 ```python
 import json
@@ -128,7 +133,6 @@ for query, ext, reg in zip(queries_metro, extension, code_reg):
                                      'properties': {'code': row[1], 'nom': row[2]}, 
                                      'geometry': {'type': ('MultiPolygon' if str(row[3])[:4] == '[[[[' else 'Polygon'), 'coordinates': row[3]}} 
                                     for row in df[df['reg_code'].isin(reg_metro)].itertuples()]}
-    #                                for row in list(df.itertuples()) if row[reg] in reg_metro]}
     print(ext)
     file_metro = 'metropole' + ext +'.geojson'
     with open(maps_dir + file_metro, 'w', encoding ='utf8') as map_file:
@@ -140,18 +144,11 @@ for query, ext, reg in zip(queries_metro, extension, code_reg):
 ### Régions
 
 ```python
-# df
-
-```
-
-```python
 import pandas as pd
 
-queries_reg = [query_dep, query_ecpi, query_city]
+queries_reg = [query_dep, query_epci, query_city]
 extension = ['_dep', '_epci', '_com']
 
-with engine.connect() as conn:
-    df = pd.read_sql_query(query_dep, conn)
 for query, ext in zip(queries_reg, extension):
     with engine.connect() as conn:
         df = pd.read_sql_query(query, conn)
@@ -161,7 +158,7 @@ for query, ext in zip(queries_reg, extension):
                    'features': [{'type': 'Feature', 
                                  'properties': {'code': row[1], 'nom': row[2]}, 
                                  'geometry': {'type': ('MultiPolygon' if str(row[3])[:4] == '[[[[' else 'Polygon'), 'coordinates': row[3]}} 
-                                for row in df[df["reg_code"] == reg].itertuples()]}
+                                for row in df[df["reg_code"] == reg].drop_duplicates("code").itertuples()]}
         print(reg, ext)
         if len(map_geo['features']):
             with open(maps_dir + file_dep, 'w', encoding ='utf8') as map_file:
