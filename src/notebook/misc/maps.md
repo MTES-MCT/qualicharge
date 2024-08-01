@@ -19,7 +19,7 @@ jupyter:
 
 L'utilisation de cartes choroplèthes pour la restitution d'indicateurs QualiCharge nécessite le chargement préalable des contours des zones affichées regroupées par cartes.
 
-Pour des raisons de facilité de consultation, les cartes utilisées sont séparées par zone géographique:
+Pour des raisons de facilité de consultation, les cartes utilisées sont séparées par zone géographique :
 
 - Territoire européen (régions européennes : 11, 24, 27, 28, 32, 44, 52, 53, 75, 76, 84, 93, 94)
 - Territoire américain (régions Guadeloupe, Martinique, Guyane : 1, 2, 3)
