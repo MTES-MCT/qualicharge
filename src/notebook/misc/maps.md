@@ -149,7 +149,7 @@ for query, ext in zip(queries_reg, extension):
                    'features': [{'type': 'Feature', 
                                  'properties': {'code': row[1], 'nom': row[2]}, 
                                  'geometry': {'type': ('MultiPolygon' if str(row[3])[:4] == '[[[[' else 'Polygon'), 'coordinates': row[3]}} 
-                                for row in list(df.itertuples()) if row[4] == reg]}
+                                for row in df[df["code"] == reg].itertuples()}
         print(reg, ext)
         if len(map_geo['features']):
             with open(maps_dir + file_dep, 'w', encoding ='utf8') as map_file:
