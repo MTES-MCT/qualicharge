@@ -42,123 +42,131 @@ Les agglomérations sont des regroupements de communes
 
 ## Map utilisées
 
-Pour des raisons de lisibilité, les cartes associées à l'ensemble des territoires, au territoire américain et au territoire africain ne sont pas retenues.
-
 Les cartes utilisées pour restituer les indicateurs sont alors les suivantes (la métropole correspond au territoire européen):
 
 - Territoire:
     - métropole par régions
     - métropole par départements
-- 18 régions (pour chaque région):
+- 18 régions métropolitaines et ultramarines (pour chaque région):
     - région par départements
     - région par ECPI
     - région par commune
 
+A ces cartes sont ajoutées les cartes des collectivités d'outre-mer (codes : 975, 977, 978, 986, 987) et des territoires à statut particulier (codes : 984, 988, 989). Ces structures ne disposent pas d'EPCI.
+
+
+## Fichiers associés
+
+Les fichiers GeoJson pour chaque map sont extraits des [contours administratifs Etalab](https://etalab-datasets.geo.data.gouv.fr/contours-administratifs/2024/geojson/). 
+
+  - metropole_reg.geojson
+  - metropole_dep.geojson
+  - region_xx_dep.geojson
+  - region_xx_epci.geojson
+  - region_xx_com.geojson
+
+  avec xx : code région
+
+Chaque contour (type : Polygon ou MultiPolygon) est associé à deux propriétés:
+    - code : l'identifiant du contour,
+    - nom : le nom du contour
+    
+La précision retenue pour les polygones est de 100 m.
 
 
 ## Génération des fichiers
 
-Les fichiers GeoJson pour chaque map sont extraits des [contours administratifs Etalab](https://etalab-datasets.geo.data.gouv.fr/contours-administratifs/2024/geojson/). 
-Les régions sont identifiées par leur code [ISO 3166-2:FR](https://fr.wikipedia.org/wiki/ISO_3166-2:FR#R%C3%A9gions_m%C3%A9tropolitaines) :
 
-  - metropole_reg
-  - metropole_dep
-  - region_xx_dep
-  - region_xx_epci
-  - region_xx_com
+### Initialisation des données
 
-  avec xx : code région
-
-La précision retenue est de 100 m.
+Les données sont issues des tables préalablement chargées sur QualiCharge (`region`, `department`, `city`, `epci`).
 
 ```python
 import os
 from sqlalchemy import create_engine
+import pandas as pd
 
 engine = create_engine(os.getenv("DATABASE_URL"))
-```
 
-```python
 with engine.connect() as conn:
     df = pd.read_sql_query("SELECT * FROM region", conn)
 regions = list(df['code'])
-```
 
-```python
-import pandas as pd
-
+query_reg = """SELECT region.code, region.name, ST_AsGeoJSON(region.geometry) :: json -> 'coordinates'  AS polygon
+           FROM region""" 
 query_dep = """SELECT department.code, department.name, ST_AsGeoJSON(department.geometry) :: json -> 'coordinates'  AS polygon, region.code AS reg_code
            FROM department INNER JOIN region ON department.region_id = region.id""" 
-
 query_ecpi = """SELECT DISTINCT ON (epci.code) epci.code, epci.name, ST_AsGeoJSON(epci.geometry) :: json -> 'coordinates'  AS polygon, region.code AS reg_code
            FROM epci INNER JOIN city ON city.epci_id = epci.id INNER JOIN department ON city.department_id = department.id INNER JOIN region ON department.region_id = region.id""" 
 query_city = """SELECT DISTINCT ON (city.code) city.code, city.name, ST_AsGeoJSON(city.geometry) :: json -> 'coordinates'  AS polygon, region.code AS reg_code
            FROM city INNER JOIN department ON city.department_id = department.id INNER JOIN region ON department.region_id = region.id""" 
 
-queries = [query_dep, query_ecpi, query_city]
-extension = ['_dep', '_epci', '_com']
-maps_dir = './maps/'
+maps_dir = '../../metabase/maps/'
+```
 
-for query, ext in zip(queries, extension):
+### Métropole
+
+```python
+import json
+
+code_reg = [1, 4]
+queries_metro = [query_reg, query_dep]
+extension = ['_reg', '_dep']
+reg_metro = ['11', '24', '27', '28', '32', '44', '52', '53', '75', '76', '84', '93', '94']
+
+for query, ext, reg in zip(queries_metro, extension, code_reg):
+    with engine.connect() as conn:
+        df = pd.read_sql_query(query, conn)
+    map_geo = {'type': 'FeatureCollection', 
+                       'features': [{'type': 'Feature', 
+                                     'properties': {'code': row[1], 'nom': row[2]}, 
+                                     'geometry': {'type': ('MultiPolygon' if str(row[3])[:4] == '[[[[' else 'Polygon'), 'coordinates': row[3]}} 
+                                    for row in list(df.itertuples()) if row[reg] in reg_metro]}
+    print(ext)
+    file_metro = 'metropole' + ext +'.geojson'
+    with open(maps_dir + file_metro, 'w', encoding ='utf8') as map_file:
+        json.dump(map_geo, map_file)
+    
+    print(map_geo['features'][0]['properties'])
+```
+
+### Régions
+
+```python
+import pandas as pd
+
+queries_reg = [query_dep, query_ecpi, query_city]
+extension = ['_dep', '_epci', '_com']
+
+with engine.connect() as conn:
+    df = pd.read_sql_query(query_dep, conn)
+for query, ext in zip(queries_reg, extension):
     with engine.connect() as conn:
         df = pd.read_sql_query(query, conn)
     for reg in regions:
         file_dep = 'region_' + reg + ext +'.geojson'
-        contour = {'type': 'FeatureCollection', 
+        map_geo = {'type': 'FeatureCollection', 
                    'features': [{'type': 'Feature', 
                                  'properties': {'code': row[1], 'nom': row[2]}, 
                                  'geometry': {'type': ('MultiPolygon' if str(row[3])[:4] == '[[[[' else 'Polygon'), 'coordinates': row[3]}} 
                                 for row in list(df.itertuples()) if row[4] == reg]}
         print(reg, ext)
-        if len(contour['features']):
+        if len(map_geo['features']):
             with open(maps_dir + file_dep, 'w', encoding ='utf8') as map_file:
-                json.dump(contour, map_file)
-            print(contour['features'][0]['properties'])
-
-```
-
-```python
-data = requests.get(source_dir + 'epci-100m.geojson')
-jsn = json.loads(data.content)
-print([feature['properties'] for feature in jsn['features']])
-```
-
-```python
-import json 
-import requests
-
-reg_metro = ['11', '24', '27', '28', '32', '44', '52', '53', '75', '76', '84', '93', '94']
-dpt_metro = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '21', '22', '23', '24', '25', '26', '27', '28', '29',
-             '2A', '2B', '30', '31', '32', '33', '34', '35', '36', '37', '38', '39', '40', '41', '42', '43', '44', '45', '46', '47', '48', '49', '50', '51', '52', '53', '54', '55',
-             '56', '57', '58', '59', '60', '61', '62', '63', '64', '65', '66', '67', '68', '69', '70', '71', '72', '73', '74', '75', '76', '77', '78', '79', '80', '81', '82', '83', 
-             '84', '85', '86', '87', '88', '89', '90', '91', '92', '93', '94', '95']
-# ara_dep = 
-source_dir = 'https://etalab-datasets.geo.data.gouv.fr/contours-administratifs/2024/geojson/'
-maps_dir = './maps/'
-
-# une seule map pour l'instant -> à compléter
-maps = [ ['regions-100m.geojson', reg_metro, 'metropole_reg.json'],
-         ['departements-100m.geojson', dpt_metro, 'metropole_dep.json']
-       ]
-for map in maps[:1]:
-    data = requests.get(source_dir + map[0])
-    jsn = json.loads(data.content)
-    # print([feature['properties']['code'] for feature in jsn['features']])
-    print(jsn['features'][0])
-    contour = {'type': 'FeatureCollection', 'features': [feature for feature in jsn['features'] if feature['properties']['code'] in map[1]]}
-    #print([feature['properties']['code'] for feature in contour['features']])
-    with open(maps_dir + map[2], 'w', encoding ='utf8') as map_file:
-        json.dump(contour, map_file)
+                json.dump(map_geo, map_file)
+            print(map_geo['features'][0]['properties'])
 
 ```
 
 ## Utilisation des fichiers
 
-Dans le menu `Admin settings / Maps / add a map` de Metabase, les informations suivantes sont à documenter:
+Les fichiers sont chargés dans MetaBase via les menus d'administration (`Admin settings / Maps / add a map`).
 
-- name (nom de la map),
-- URL du fichier (geojson),
-- id (lien avec les données à représenter - property geojson),
-- name (nom affiché - property geojson)
+Les informations suivantes sont documentées:
 
-exemple : https://raw.githubusercontent.com/gregoiredavid/france-geojson/master/regions-version-simplifiee.geojson (property_id = code_region)
+- name (nom de la map équivalent au nom du fichier),
+- URL du fichier (URL du fichier geojson de QualiCharge),
+- id (lien avec les données à représenter - property geojson `code`),
+- name (nom affiché - property geojson `nom`)
+
+exemple d'URL: https://raw.githubusercontent.com/MTES-MCT/qualicharge/main/src/metabase/maps/region_03_epci.geojson
