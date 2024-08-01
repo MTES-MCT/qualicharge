@@ -93,7 +93,8 @@ with engine.connect() as conn:
     df = pd.read_sql_query("SELECT * FROM region", conn)
 regions = list(df['code'])
 
-query_reg = """SELECT region.code, region.name, ST_AsGeoJSON(region.geometry) :: json -> 'coordinates'  AS polygon
+# query_reg = """SELECT region.code, region.name, ST_AsGeoJSON(region.geometry) :: json -> 'coordinates'  AS polygon
+query_reg = """SELECT region.code AS reg_code, region.name, ST_AsGeoJSON(region.geometry) :: json -> 'coordinates'  AS polygon
            FROM region""" 
 query_dep = """SELECT department.code, department.name, ST_AsGeoJSON(department.geometry) :: json -> 'coordinates'  AS polygon, region.code AS reg_code
            FROM department INNER JOIN region ON department.region_id = region.id""" 
@@ -106,6 +107,10 @@ maps_dir = '../../metabase/maps/'
 ```
 
 ### Métropole
+
+```python
+# df[df['reg_code'].isin(reg_metro)]
+```
 
 ```python
 import json
@@ -122,7 +127,8 @@ for query, ext, reg in zip(queries_metro, extension, code_reg):
                        'features': [{'type': 'Feature', 
                                      'properties': {'code': row[1], 'nom': row[2]}, 
                                      'geometry': {'type': ('MultiPolygon' if str(row[3])[:4] == '[[[[' else 'Polygon'), 'coordinates': row[3]}} 
-                                    for row in list(df.itertuples()) if row[reg] in reg_metro]}
+                                    for row in df[df['reg_code'].isin(reg_metro)].itertuples()]}
+    #                                for row in list(df.itertuples()) if row[reg] in reg_metro]}
     print(ext)
     file_metro = 'metropole' + ext +'.geojson'
     with open(maps_dir + file_metro, 'w', encoding ='utf8') as map_file:
@@ -132,6 +138,11 @@ for query, ext, reg in zip(queries_metro, extension, code_reg):
 ```
 
 ### Régions
+
+```python
+# df
+
+```
 
 ```python
 import pandas as pd
@@ -150,7 +161,7 @@ for query, ext in zip(queries_reg, extension):
                    'features': [{'type': 'Feature', 
                                  'properties': {'code': row[1], 'nom': row[2]}, 
                                  'geometry': {'type': ('MultiPolygon' if str(row[3])[:4] == '[[[[' else 'Polygon'), 'coordinates': row[3]}} 
-                                for row in df[df["code"] == reg].itertuples()}
+                                for row in df[df["reg_code"] == reg].itertuples()]}
         print(reg, ext)
         if len(map_geo['features']):
             with open(maps_dir + file_dep, 'w', encoding ='utf8') as map_file:
