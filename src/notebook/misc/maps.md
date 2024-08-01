@@ -68,6 +68,7 @@ Les fichiers GeoJson pour chaque map sont extraits des [contours administratifs 
   avec xx : code région
 
 Chaque contour (type : Polygon ou MultiPolygon) est associé à deux propriétés:
+
     - code : l'identifiant du contour,
     - nom : le nom du contour
     
