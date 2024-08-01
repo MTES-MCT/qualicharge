@@ -17,7 +17,7 @@ jupyter:
 
 ## Introduction
 
-L'utilisation de cartes choroplèthe pour la restitution d'indicateurs QualiCharge nécessite le chargement préalable des contours des zones affichées regroupées par cartes.
+L'utilisation de cartes choroplèthes pour la restitution d'indicateurs QualiCharge nécessite le chargement préalable des contours des zones affichées regroupées par cartes.
 
 Pour des raisons de facilité de consultation, les cartes utilisées sont séparées par zone géographique:
 
