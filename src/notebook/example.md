@@ -146,7 +146,7 @@ with engine.connect() as conn:
     codes_insee = pd.read_sql_query(query, conn)
 
 # Add a department column
-codes_insee["department"] = codes_insee["code_insee_commune"].str.slice(stop=2)
+codes_insee["department"] = codes_insee["code_insee_commune"].map(lambda x: int(x[:2]) if x else None)
 
 # Calculate our indicator and add a timestamp to each department counts (row)
 indicator = codes_insee.value_counts("department").to_frame().reset_index()
@@ -205,83 +205,4 @@ cards = response.json()
 # list of cards
 my_card = [card for card in response if card['description'] and card['description'][:4] == 'test']
 {card['id']: card['description'] for card in my_card}
-```
-
-## Create indicator data
-
-```python
-query = """
-SELECT
-  Amenageur.nom_amenageur,
-  Amenageur.siren_amenageur,
-  Amenageur.contact_amenageur,
-  Operateur.nom_operateur,
-  Operateur.contact_operateur,
-  Operateur.telephone_operateur,
-  Enseigne.nom_enseigne,
-  Station.id_station_itinerance,
-  Station.id_station_local,
-  Station.nom_station,
-  Station.implantation_station,
-  Localisation.adresse_station,
-  Localisation.code_insee_commune,
-  ST_AsGeoJSON(Localisation."coordonneesXY") :: json -> 'coordinates'  as coordonneesXY,
-  Station.nbre_pdc,
-  PointDeCharge.id_pdc_itinerance,
-  PointDeCharge.id_pdc_local,
-  PointDeCharge.puissance_nominale,
-  PointDeCharge.prise_type_ef,
-  PointDeCharge.prise_type_2,
-  PointDeCharge.prise_type_combo_ccs,
-  PointDeCharge.prise_type_chademo,
-  PointDeCharge.prise_type_autre,
-  PointDeCharge.gratuit,
-  PointDeCharge.paiement_acte,
-  PointDeCharge.paiement_cb,
-  PointDeCharge.paiement_autre,
-  PointDeCharge.tarification,
-  Station.condition_acces,
-  PointDeCharge.reservation,
-  Station.horaires,
-  PointDeCharge.accessibilite_pmr,
-  PointDeCharge.restriction_gabarit,
-  Station.station_deux_roues,
-  Station.raccordement,
-  Station.num_pdl,
-  Station.date_mise_en_service,
-  PointDeCharge.observations,
-  Station.date_maj,
-  PointDeCharge.cable_t2_attache
-FROM
-  PointDeCharge
-  INNER JOIN Station ON PointDeCharge.station_id = Station.id
-  INNER JOIN Amenageur ON Station.amenageur_id = Amenageur.id
-  INNER JOIN Operateur ON Station.operateur_id = Operateur.id
-  INNER JOIN Enseigne ON Station.enseigne_id = Enseigne.id
-  INNER JOIN Localisation ON Station.localisation_id = Localisation.id
-"""
-
-with engine.connect() as conn:
-    # Query a PostgreSQL database using the PostGIS extension
-    static = pd.read_sql_query(query, conn)
-static["departement"] = static["code_insee_commune"].str.slice(stop=2)
-
-```
-
-```python
-indicator = static.loc[:, ["departement"]].reset_index().groupby("departement").count().reset_index().rename(columns={"index": "nombre_pdc"})
-indicator["uuid"] = indicator.apply(lambda _: uuid.uuid4(), axis=1)
-indicator
-```
-
-```python
-# Save the indicator to a (new) table
-indicator.to_sql("nb_pdc_departement", engine, if_exists="replace", index=False)
-```
-
-```python
-# Check inserted results
-query = 'SELECT * FROM "nb_pdc_departement"  WHERE departement::text = 92::text'
-paris = pd.read_sql_query(query, engine)
-paris
 ```
