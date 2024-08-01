@@ -25,7 +25,7 @@ Pour des raisons de facilité de consultation, les cartes utilisées sont sépar
 - Territoire américain (régions Guadeloupe, Martinique, Guyane : 1, 2, 3)
 - Territoire africain (régions La Réunion, Mayotte : 4, 6)
 
-Quatre niveaux de découpage sont proposés:
+Quatre niveaux de découpage sont proposés :
 
 - régions
 - départements
