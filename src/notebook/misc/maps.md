@@ -42,7 +42,7 @@ Les agglomérations sont des regroupements de communes.
 
 ## Map utilisées
 
-Les cartes utilisées pour restituer les indicateurs sont alors les suivantes (la métropole correspond au territoire européen):
+Les cartes utilisées pour restituer les indicateurs sont alors les suivantes (la métropole correspond au territoire européen) :
 
 - Territoire:
     - métropole par régions
