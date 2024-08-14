@@ -18,11 +18,12 @@ pyarrow = "==17.0.0"
 pydantic-extra-types = {extras = ["all"], version = "==2.9.0"}
 pydantic-settings = "==2.4.0"
 pyjwt = "==2.9.0"
+python-multipart = "==0.0.9"
 questionary = "==2.0.1"
 sentry-sdk = {extras = ["fastapi"], version = "==2.13.0"}
 setuptools = "==72.2.0"
 sqlalchemy-timescaledb = "==0.4.1"
-sqlmodel = "==0.0.21"
+sqlmodel = "==0.0.19"
 typer = "==0.12.3"
 uvicorn = {extras = ["standard"] }
 
