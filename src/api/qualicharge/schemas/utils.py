@@ -275,8 +275,8 @@ def save_statiques(
             (localisation, localisations),
         ):
             if entry not in entries:  # type: ignore[operator]
-                entries.append(entry)  # type: ignore[attr-defined]
-            indexes.append(entries.index(entry))  # type: ignore[attr-defined]
+                entries.append(entry)  # type: ignore[arg-type]
+            indexes.append(entries.index(entry))  # type: ignore[arg-type]
         statiques_db_refs.append(StatiqueSchemasEntryIndex(*indexes))
 
     # Create database entries for each schema
@@ -292,9 +292,9 @@ def save_statiques(
         (enseignes, None),
         (localisations, {"adresse_station"}),
     ):
-        for idx, entry in enumerate(entries):  # type: ignore[arg-type]
+        for idx, entry in enumerate(entries):  # type: ignore[assignment]
             _, db_entry = get_or_create(session, entry, fields, add=False)
-            entries[idx] = db_entry  # type: ignore[index]
+            entries[idx] = db_entry  # type: ignore[call-overload]
         session.add_all(entries)  # type: ignore[arg-type]
 
     # Handle relationships
