@@ -21,6 +21,7 @@ and this project adheres to
 - Upgrade pydantic-settings to `2.4.0`
 - Upgrade PyJWT to `2.9.0`
 - Upgrade sentry-sdk to `2.13.0`
+- Upgrade SQLModel to `0.0.21`
 - Switched to Psycopg 3.x
 
 ### Fixed

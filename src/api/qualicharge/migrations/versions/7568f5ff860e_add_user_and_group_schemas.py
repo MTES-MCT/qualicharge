@@ -26,7 +26,7 @@ def upgrade() -> None:
         "group",
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False),
-        sa.Column("id", sqlmodel.sql.sqltypes.GUID(), nullable=False),
+        sa.Column("id", sa.Uuid(), nullable=False),
         sa.Column("name", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
         sa.CheckConstraint("created_at <= updated_at", name="pre-creation-update"),
         sa.PrimaryKeyConstraint("id"),
@@ -36,7 +36,7 @@ def upgrade() -> None:
         "user",
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False),
-        sa.Column("id", sqlmodel.sql.sqltypes.GUID(), nullable=False),
+        sa.Column("id", sa.Uuid(), nullable=False),
         sa.Column("username", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
         sa.Column("email", sa.String(), nullable=False),
         sa.Column("first_name", sqlmodel.sql.sqltypes.AutoString(), nullable=True),
@@ -50,8 +50,8 @@ def upgrade() -> None:
     )
     op.create_table(
         "groupoperationalunit",
-        sa.Column("group_id", sqlmodel.sql.sqltypes.GUID(), nullable=False),
-        sa.Column("operational_unit_id", sqlmodel.sql.sqltypes.GUID(), nullable=False),
+        sa.Column("group_id", sa.Uuid(), nullable=False),
+        sa.Column("operational_unit_id", sa.Uuid(), nullable=False),
         sa.ForeignKeyConstraint(
             ["group_id"],
             ["group.id"],
@@ -64,8 +64,8 @@ def upgrade() -> None:
     )
     op.create_table(
         "usergroup",
-        sa.Column("user_id", sqlmodel.sql.sqltypes.GUID(), nullable=False),
-        sa.Column("group_id", sqlmodel.sql.sqltypes.GUID(), nullable=False),
+        sa.Column("user_id", sa.Uuid(), nullable=False),
+        sa.Column("group_id", sa.Uuid(), nullable=False),
         sa.ForeignKeyConstraint(
             ["group_id"],
             ["group.id"],

@@ -56,7 +56,7 @@ class ScopesEnum(StrEnum):
 class User(BaseTimestampedSQLModel, table=True):
     """QualiCharge User."""
 
-    id: Optional[UUID] = Field(default_factory=lambda: uuid4().hex, primary_key=True)
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
     username: str = Field(unique=True, max_length=150)
     email: EmailStr = Field(unique=True, sa_type=String)
     first_name: Optional[str] = Field(max_length=150)
@@ -106,7 +106,7 @@ class User(BaseTimestampedSQLModel, table=True):
 class Group(BaseTimestampedSQLModel, table=True):
     """QualiCharge Group."""
 
-    id: Optional[UUID] = Field(default_factory=lambda: uuid4().hex, primary_key=True)
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
     name: str = Field(unique=True, max_length=150)
 
     # Relationships

@@ -17,7 +17,7 @@ class BaseAdministrativeBoundaries(BaseTimestampedSQLModel):
         validate_assignment=True, arbitrary_types_allowed=True
     )
 
-    id: Optional[UUID] = Field(default_factory=lambda: uuid4().hex, primary_key=True)
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
     code: str = Field(index=True, unique=True)
     name: str
     geometry: Geometry = Field(
