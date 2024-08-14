@@ -59,7 +59,7 @@ class Amenageur(BaseTimestampedSQLModel, table=True):
 
     model_config = SQLModelConfig(validate_assignment=True)
 
-    id: Optional[UUID] = Field(default_factory=lambda: uuid4().hex, primary_key=True)
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
     nom_amenageur: Optional[str]
     siren_amenageur: Optional[str] = Field(regex=r"^\d{9}$")
     contact_amenageur: Optional[EmailStr] = Field(sa_type=String)
@@ -82,7 +82,7 @@ class Operateur(BaseTimestampedSQLModel, table=True):
 
     model_config = SQLModelConfig(validate_assignment=True)
 
-    id: Optional[UUID] = Field(default_factory=lambda: uuid4().hex, primary_key=True)
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
     nom_operateur: Optional[str]
     contact_operateur: EmailStr = Field(sa_type=String)
     telephone_operateur: Optional[FrenchPhoneNumber]
@@ -101,7 +101,7 @@ class Enseigne(BaseTimestampedSQLModel, table=True):
 
     model_config = SQLModelConfig(validate_assignment=True)
 
-    id: Optional[UUID] = Field(default_factory=lambda: uuid4().hex, primary_key=True)
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
     nom_enseigne: str = Field(unique=True)
 
     # Relationships
@@ -120,7 +120,7 @@ class Localisation(BaseTimestampedSQLModel, table=True):
         validate_assignment=True, arbitrary_types_allowed=True
     )
 
-    id: Optional[UUID] = Field(default_factory=lambda: uuid4().hex, primary_key=True)
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
     adresse_station: str = Field(unique=True)
     code_insee_commune: Optional[str] = Field(regex=r"^([013-9]\d|2[AB1-9])\d{3}$")
     coordonneesXY: DataGouvCoordinate = Field(
@@ -181,7 +181,7 @@ class Localisation(BaseTimestampedSQLModel, table=True):
 class OperationalUnit(BaseTimestampedSQLModel, table=True):
     """OperationalUnit table."""
 
-    id: Optional[UUID] = Field(default_factory=lambda: uuid4().hex, primary_key=True)
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
     code: str = Field(
         regex="^[A-Z]{2}[A-Z0-9]{3}$",
         index=True,
@@ -222,7 +222,7 @@ class Station(BaseTimestampedSQLModel, table=True):
 
     model_config = SQLModelConfig(validate_assignment=True)
 
-    id: Optional[UUID] = Field(default_factory=lambda: uuid4().hex, primary_key=True)
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
     id_station_itinerance: str = Field(
         regex="(?:(?:^|,)(^[A-Z]{2}[A-Z0-9]{4,33}$|Non concerné))+$",
         index=True,
@@ -286,7 +286,7 @@ class PointDeCharge(BaseTimestampedSQLModel, table=True):
 
     model_config = SQLModelConfig(validate_assignment=True)
 
-    id: Optional[UUID] = Field(default_factory=lambda: uuid4().hex, primary_key=True)
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
     id_pdc_itinerance: str = Field(
         regex="(?:(?:^|,)(^[A-Z]{2}[A-Z0-9]{4,33}$|Non concerné))+$",
         index=True,
@@ -329,7 +329,7 @@ class Session(BaseTimestampedSQLModel, SessionBase, table=True):
         {"timescaledb_hypertable": {"time_column_name": "start"}},
     )
 
-    id: Optional[UUID] = Field(default_factory=lambda: uuid4().hex, primary_key=True)
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
     start: PastDatetime = Field(
         sa_type=DateTime(timezone=True),
         description="The timestamp indicating when the session started.",
@@ -353,7 +353,7 @@ class Status(BaseTimestampedSQLModel, StatusBase, table=True):
         {"timescaledb_hypertable": {"time_column_name": "horodatage"}},
     )
 
-    id: Optional[UUID] = Field(default_factory=lambda: uuid4().hex, primary_key=True)
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
     horodatage: PastDatetime = Field(
         sa_type=DateTime(timezone=True),
         description="The timestamp indicating when the status changed.",

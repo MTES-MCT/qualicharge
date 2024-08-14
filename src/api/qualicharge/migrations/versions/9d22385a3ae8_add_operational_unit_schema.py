@@ -25,7 +25,7 @@ def upgrade() -> None:
         "operationalunit",
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False),
-        sa.Column("id", sqlmodel.sql.sqltypes.GUID(), nullable=False),
+        sa.Column("id", sa.Uuid(), nullable=False),
         sa.Column("code", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
         sa.Column("name", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
         sa.Column(
@@ -41,7 +41,7 @@ def upgrade() -> None:
     )
     op.add_column(
         "station",
-        sa.Column("operational_unit_id", sqlmodel.sql.sqltypes.GUID(), nullable=True),
+        sa.Column("operational_unit_id", sa.Uuid(), nullable=True),
     )
     op.create_foreign_key(
         None, "station", "operationalunit", ["operational_unit_id"], ["id"]

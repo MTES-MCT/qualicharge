@@ -26,7 +26,7 @@ def upgrade() -> None:
         "epci",
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False),
-        sa.Column("id", sqlmodel.sql.sqltypes.GUID(), nullable=False),
+        sa.Column("id", sa.Uuid(), nullable=False),
         sa.Column("name", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
         sa.Column(
             "geometry",
@@ -44,7 +44,7 @@ def upgrade() -> None:
         "region",
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False),
-        sa.Column("id", sqlmodel.sql.sqltypes.GUID(), nullable=False),
+        sa.Column("id", sa.Uuid(), nullable=False),
         sa.Column("name", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
         sa.Column(
             "geometry",
@@ -62,7 +62,7 @@ def upgrade() -> None:
         "department",
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False),
-        sa.Column("id", sqlmodel.sql.sqltypes.GUID(), nullable=False),
+        sa.Column("id", sa.Uuid(), nullable=False),
         sa.Column("name", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
         sa.Column(
             "geometry",
@@ -72,7 +72,7 @@ def upgrade() -> None:
             nullable=False,
         ),
         sa.Column("code", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
-        sa.Column("region_id", sqlmodel.sql.sqltypes.GUID(), nullable=True),
+        sa.Column("region_id", sa.Uuid(), nullable=True),
         sa.CheckConstraint("created_at <= updated_at", name="pre-creation-update"),
         sa.ForeignKeyConstraint(
             ["region_id"],
@@ -85,7 +85,7 @@ def upgrade() -> None:
         "city",
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False),
-        sa.Column("id", sqlmodel.sql.sqltypes.GUID(), nullable=False),
+        sa.Column("id", sa.Uuid(), nullable=False),
         sa.Column("name", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
         sa.Column(
             "geometry",
@@ -95,8 +95,8 @@ def upgrade() -> None:
             nullable=False,
         ),
         sa.Column("code", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
-        sa.Column("department_id", sqlmodel.sql.sqltypes.GUID(), nullable=True),
-        sa.Column("epci_id", sqlmodel.sql.sqltypes.GUID(), nullable=True),
+        sa.Column("department_id", sa.Uuid(), nullable=True),
+        sa.Column("epci_id", sa.Uuid(), nullable=True),
         sa.CheckConstraint("created_at <= updated_at", name="pre-creation-update"),
         sa.ForeignKeyConstraint(
             ["department_id"],

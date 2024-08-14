@@ -27,7 +27,7 @@ def upgrade() -> None:
         "amenageur",
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False),
-        sa.Column("id", sqlmodel.sql.sqltypes.GUID(), nullable=False),
+        sa.Column("id", sa.Uuid(), nullable=False),
         sa.Column("nom_amenageur", sqlmodel.sql.sqltypes.AutoString(), nullable=True),
         sa.Column("siren_amenageur", sqlmodel.sql.sqltypes.AutoString(), nullable=True),
         sa.Column("contact_amenageur", sa.String(), nullable=True),
@@ -39,7 +39,7 @@ def upgrade() -> None:
         "enseigne",
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False),
-        sa.Column("id", sqlmodel.sql.sqltypes.GUID(), nullable=False),
+        sa.Column("id", sa.Uuid(), nullable=False),
         sa.Column("nom_enseigne", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
         sa.CheckConstraint("created_at <= updated_at", name="pre-creation-update"),
         sa.PrimaryKeyConstraint("id"),
@@ -49,7 +49,7 @@ def upgrade() -> None:
         "localisation",
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False),
-        sa.Column("id", sqlmodel.sql.sqltypes.GUID(), nullable=False),
+        sa.Column("id", sa.Uuid(), nullable=False),
         sa.Column(
             "adresse_station", sqlmodel.sql.sqltypes.AutoString(), nullable=False
         ),
@@ -75,7 +75,7 @@ def upgrade() -> None:
         "operateur",
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False),
-        sa.Column("id", sqlmodel.sql.sqltypes.GUID(), nullable=False),
+        sa.Column("id", sa.Uuid(), nullable=False),
         sa.Column("nom_operateur", sqlmodel.sql.sqltypes.AutoString(), nullable=True),
         sa.Column("contact_operateur", sa.String(), nullable=False),
         sa.Column(
@@ -91,7 +91,7 @@ def upgrade() -> None:
         "station",
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False),
-        sa.Column("id", sqlmodel.sql.sqltypes.GUID(), nullable=False),
+        sa.Column("id", sa.Uuid(), nullable=False),
         sa.Column(
             "id_station_itinerance", sqlmodel.sql.sqltypes.AutoString(), nullable=False
         ),
@@ -127,10 +127,10 @@ def upgrade() -> None:
         sa.Column("num_pdl", sqlmodel.sql.sqltypes.AutoString(), nullable=True),
         sa.Column("date_maj", sa.DateTime(), nullable=False),
         sa.Column("date_mise_en_service", sa.DateTime(), nullable=True),
-        sa.Column("amenageur_id", sqlmodel.sql.sqltypes.GUID(), nullable=True),
-        sa.Column("operateur_id", sqlmodel.sql.sqltypes.GUID(), nullable=True),
-        sa.Column("enseigne_id", sqlmodel.sql.sqltypes.GUID(), nullable=True),
-        sa.Column("localisation_id", sqlmodel.sql.sqltypes.GUID(), nullable=True),
+        sa.Column("amenageur_id", sa.Uuid(), nullable=True),
+        sa.Column("operateur_id", sa.Uuid(), nullable=True),
+        sa.Column("enseigne_id", sa.Uuid(), nullable=True),
+        sa.Column("localisation_id", sa.Uuid(), nullable=True),
         sa.CheckConstraint("created_at <= updated_at", name="pre-creation-update"),
         sa.ForeignKeyConstraint(
             ["amenageur_id"],
@@ -160,7 +160,7 @@ def upgrade() -> None:
         "pointdecharge",
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False),
-        sa.Column("id", sqlmodel.sql.sqltypes.GUID(), nullable=False),
+        sa.Column("id", sa.Uuid(), nullable=False),
         sa.Column(
             "id_pdc_itinerance", sqlmodel.sql.sqltypes.AutoString(), nullable=False
         ),
@@ -193,7 +193,7 @@ def upgrade() -> None:
         ),
         sa.Column("observations", sqlmodel.sql.sqltypes.AutoString(), nullable=True),
         sa.Column("cable_t2_attache", sa.Boolean(), nullable=True),
-        sa.Column("station_id", sqlmodel.sql.sqltypes.GUID(), nullable=True),
+        sa.Column("station_id", sa.Uuid(), nullable=True),
         sa.CheckConstraint("created_at <= updated_at", name="pre-creation-update"),
         sa.ForeignKeyConstraint(
             ["station_id"],
