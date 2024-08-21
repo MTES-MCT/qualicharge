@@ -1,0 +1,16 @@
+{
+    "t1": {
+        "name": "Nombre de points de recharge par niveau de puissance",
+        "table": "t1_indicator",
+        "source": "static",
+        "query": "WITH puissance(p_range, p_cat) AS (VALUES (numrange(0, 15.0), 1), (numrange(15.0, 26.0), 2), (numrange(26, 65.0), 3), (numrange(65, 175.0), 4), (numrange(175, 360.0), 5), (numrange(360, NULL), 6)) SELECT count(id_pdc_itinerance) AS nb_pdc, p_cat, p_range FROM pointdecharge LEFT JOIN puissance ON puissance_nominale::numeric <@ p_range GROUP BY p_cat, p_range ORDER BY nb_pdc DESC;" ,
+        "param": 0
+    },
+    "t3": {
+        "name": "Nombre de stations par nombre de points de recharge",
+        "table": "t3_indicator",
+        "source": "static",
+        "query": "WITH stat AS (SELECT count(station_id) AS nb_pdc FROM pointdecharge LEFT JOIN station ON station.id = station_id GROUP BY station_id) SELECT nb_pdc, count(nb_pdc) AS nb_stations FROM stat GROUP BY nb_pdc ORDER BY nb_stations DESC;" ,
+        "param": 1
+    }
+}
