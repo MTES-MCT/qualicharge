@@ -2,17 +2,19 @@
 The `util` module includes functions and classes used for QualiCharge indicators.
 """
 import pandas as pd
+import create_query
 
-def init_data_pandas(indic, indic_dict, engine, *param):
+def indic_pandas(engine, indic):
     """create DataFrame for an indicator"""
-    query = indic_dict[indic]['query']
+
+    query = getattr(create_query, 'query_' + indic.split('-')[0])(*indic.split('-')[1:])
     with engine.connect() as conn:
         data_pd = pd.read_sql_query(query, conn)
     return data_pd
 
-def indic_to_table(indicator, table_name, engine, option="replace"):
+def indic_to_table(indic_pd, table_name, engine, option="replace"):
     """ Save the indicator to a table"""
-    indicator.to_sql(table_name, engine, if_exists=option, index=False)
+    indic_pd.to_sql(table_name, engine, if_exists=option, index=False)
     # test (à supprimer)
     query = 'SELECT COUNT(*) AS count FROM ' + table_name
     print(pd.read_sql_query(query, engine))
@@ -30,43 +32,4 @@ def init_data_sources(indics, indic_dict, sql_dict, engine):
     
     return data_dict
 
-def indic_to_table(indicator, table_name, engine, option="replace"):
-    """ Save the indicator to a table"""
-    indicator.to_sql(table_name, engine, if_exists=option, index=False)
-    # test (à supprimer)
-    query = 'SELECT COUNT(*) AS count FROM ' + table_name
-    print(pd.read_sql_query(query, engine))
-
-"""
-The `source` module includes QualiCharge indicator generation functions
-"""
-import uuid
-import pandas as pd
-
-def indic_i1(data):
-    """create result DataFrame of 'i1' indicator.
-    i1 indicator is the number of pdc for each department.
-    
-    Parameters
-    ----------
-    data : DataFrame
-        Data used to calculate the indicator.
-    
-    Returns
-    -------
-    DataFrame
-        Indicator as tabular data
-    """
-    indicator = pd.pivot_table(data, index=["departement"], values="id_pdc_itinerance", aggfunc="count")
-    # another method (à supprimer): 
-    # indicator = data.loc[:, ["departement"]].reset_index().groupby("departement").count()
-
-    indicator = indicator.reset_index().rename(columns={"id_pdc_itinerance": "nombre_pdc"})
-    indicator["uuid"] = indicator.apply(lambda _: uuid.uuid4(), axis=1)
-    
-    # test (à supprimer)
-    print(indicator)
-    return indicator
-
-# autres calculs d'indicateurs à ajouter
 '''
