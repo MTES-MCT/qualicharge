@@ -19,6 +19,8 @@ P_TAB = ("puissance(p_range, p_cat) AS ( VALUES " +
 P_JOIN = "LEFT JOIN puissance ON puissance_nominale::numeric <@ p_range "
 PDC_ALL = "pointdecharge LEFT JOIN station ON station.id = station_id LEFT JOIN localisation ON localisation_id = localisation.id "
 STAT_ALL = "station LEFT JOIN localisation ON localisation_id = localisation.id "
+ISIN_GEOM = 'ST_Within("coordonneesXY", geometry) '
+
 LEVEL = {'00': 'national', '01': 'region', '02': 'department', '03': 'epci', '04': 'city'}
 
 def query_t1(*param):
@@ -36,8 +38,16 @@ def query_t1(*param):
     return (" WITH " + P_TAB + 
             " SELECT count(id_pdc_itinerance) AS nb_pdc, p_cat, p_range, code, name " +
             " FROM " + PDC_ALL + P_JOIN + ", " + lvl +
-            " WHERE code = " + zon + ' AND ST_Within("coordonneesXY", geometry) ' +
+            " WHERE code = " + zon + " AND " + ISIN_GEOM +
             " GROUP BY p_cat, p_range, code, name ORDER BY nb_pdc DESC")
+
+def query_t2(*param):
+    
+    code_name = "" if param[0] == '00' else ", code, name "
+    return (" WITH res_nb_pdc AS (" + query_t1(*param) + ")" +
+        " SELECT nb_pdc / (SELECT sum(nb_pdc) FROM res_nb_pdc) * 100 AS pct_nb_pdc, p_cat, p_range" + code_name +
+        " FROM res_nb_pdc")
+
 
 def query_t3(*param):
     
@@ -54,7 +64,7 @@ def query_t3(*param):
     zon = "'" + zone + "'"
     return (" WITH stat AS (SELECT count(station_id) AS nb_pdc, code, name " + 
                 " FROM " + PDC_ALL + ", " + lvl + 
-                " WHERE code = " + zon + ' AND ST_Within("coordonneesXY", geometry) ' +
+                " WHERE code = " + zon + " AND " + ISIN_GEOM +
                 " GROUP BY station_id, code, name)" + 
             " SELECT nb_pdc, count(nb_pdc) AS nb_stations, code, name FROM stat " +
             " GROUP BY nb_pdc, code, name ORDER BY nb_stations DESC")
@@ -64,14 +74,15 @@ def query_t5(*param):
     level, zone = (param + (None, None))[:2]
     
     if level == '00':
-        return (" SELECT implantation_station, count(id_station_itinerance) AS nb_stations FROM station " +
+        return (" SELECT implantation_station, count(id_station_itinerance) AS nb_stations " +
+                " FROM station " +
                 " GROUP BY implantation_station ORDER BY nb_stations DESC")
     
     lvl = LEVEL[level]
     zon = "'" + zone + "'"
     return (" SELECT implantation_station, count(id_station_itinerance) AS nb_stations, code, name " +
             " FROM " + STAT_ALL + ", " + lvl +
-            " WHERE code = " + zon + ' AND ST_Within("coordonneesXY", geometry) ' +
+            " WHERE code = " + zon + " AND " + ISIN_GEOM +
             " GROUP BY implantation_station, code, name ORDER BY nb_stations DESC")
 
 def query_i1(*param):
@@ -81,14 +92,53 @@ def query_i1(*param):
 
     if level == '00':
         return (" SELECT count(id_pdc_itinerance) AS nb_pdc, code, name " +
-                " FROM " + PDC_ALL + " LEFT JOIN " + zon + ' on ST_Within("coordonneesXY", geometry)' +
+                " FROM " + PDC_ALL + " LEFT JOIN " + zon + " ON " + ISIN_GEOM +
                 " GROUP BY code, name ORDER BY nb_pdc DESC")
     
     val_lvl = "'" + val_level + "'"
     lvl = LEVEL[level]
     return (' WITH pdc_loc AS (SELECT id_pdc_itinerance, "coordonneesXY" ' +
                 " FROM " + PDC_ALL + "," + lvl +
-                " WHERE  code = " + val_lvl + ' AND ST_Within("coordonneesXY", geometry)) ' +
+                " WHERE  code = " + val_lvl + " AND " + ISIN_GEOM + ")" +
             " SELECT count(id_pdc_itinerance) AS nb_pdc, code, name " +
-            " FROM pdc_loc LEFT JOIN " + zon + ' on ST_Within("coordonneesXY", geometry)' +
+            " FROM pdc_loc LEFT JOIN " + zon + " ON " + ISIN_GEOM +
             " GROUP BY code, name ORDER BY nb_pdc DESC")
+
+def query_i4(*param):
+    
+    level, val_level, zone = (param + (None, None, None))[:3]
+    zon = LEVEL[zone]
+
+    if level == '00':
+        return (" SELECT count(id_station_itinerance) AS nb_stat, code, name " +
+                " FROM " + STAT_ALL + " LEFT JOIN " + zon + " ON " + ISIN_GEOM +
+                " GROUP BY code, name ORDER BY nb_stat DESC")
+    
+    val_lvl = "'" + val_level + "'"
+    lvl = LEVEL[level]
+    return (' WITH stat_loc AS (SELECT id_station_itinerance, "coordonneesXY" ' +
+                " FROM " + STAT_ALL + "," + lvl +
+                " WHERE  code = " + val_lvl + " AND " + ISIN_GEOM + ")" +
+            " SELECT count(id_station_itinerance) AS nb_stat, code, name " +
+            " FROM stat_loc LEFT JOIN " + zon + " ON " + ISIN_GEOM +
+            " GROUP BY code, name ORDER BY nb_stat DESC")
+
+def query_i7(*param):
+    
+    level, val_level, zone = (param + (None, None, None))[:3]
+    zon = LEVEL[zone]
+
+    if level == '00':
+        return (" SELECT sum(puissance_nominale) AS p_nom, code, name " +
+                " FROM " + PDC_ALL + " LEFT JOIN " + zon + " ON " + ISIN_GEOM +
+                " GROUP BY code, name ORDER BY p_nom DESC")
+    
+    val_lvl = "'" + val_level + "'"
+    lvl = LEVEL[level]
+    return (' WITH pnom_loc AS (SELECT puissance_nominale, "coordonneesXY" ' +
+                " FROM " + PDC_ALL + "," + lvl +
+                " WHERE  code = " + val_lvl + " AND " + ISIN_GEOM + ")" +
+            " SELECT sum(puissance_nominale) AS p_nom, code, name " +
+            " FROM pnom_loc LEFT JOIN " + zon + " ON " + ISIN_GEOM +
+            " GROUP BY code, name ORDER BY p_nom DESC")
+
