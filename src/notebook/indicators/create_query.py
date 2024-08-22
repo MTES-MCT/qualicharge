@@ -74,9 +74,21 @@ def query_t5(*param):
             " WHERE code = " + zon + ' AND ST_Within("coordonneesXY", geometry) ' +
             " GROUP BY implantation_station, code, name ORDER BY nb_stations DESC")
 
+def query_i1(*param):
+    
+    level, val_level, zone = (param + (None, None, None))[:3]
+    zon = LEVEL[zone]
 
-'''    return (" WITH " + P_TAB + 
-            " SELECT count(id_pdc_itinerance) AS nb_pdc, p_cat, p_range, code, name " +
-            " FROM " + PDC_ALL + P_JOIN + ", " + lvl +
-            " WHERE code = " + zon + ' AND ST_Within("coordonneesXY", geometry) ' +
-            " GROUP BY p_cat, p_range, code, name ORDER BY nb_pdc DESC")'''
+    if level == '00':
+        return (" SELECT count(id_pdc_itinerance) AS nb_pdc, code, name " +
+                " FROM " + PDC_ALL + " LEFT JOIN " + zon + ' on ST_Within("coordonneesXY", geometry)' +
+                " GROUP BY code, name ORDER BY nb_pdc DESC")
+    
+    val_lvl = "'" + val_level + "'"
+    lvl = LEVEL[level]
+    return (' WITH pdc_loc AS (SELECT id_pdc_itinerance, "coordonneesXY" ' +
+                " FROM " + PDC_ALL + "," + lvl +
+                " WHERE  code = " + val_lvl + ' AND ST_Within("coordonneesXY", geometry)) ' +
+            " SELECT count(id_pdc_itinerance) AS nb_pdc, code, name " +
+            " FROM pdc_loc LEFT JOIN " + zon + ' on ST_Within("coordonneesXY", geometry)' +
+            " GROUP BY code, name ORDER BY nb_pdc DESC")

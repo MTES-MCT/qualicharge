@@ -15,9 +15,7 @@ def indic_pandas(engine, indic):
 def indic_to_table(indic_pd, table_name, engine, option="replace"):
     """ Save the indicator to a table"""
     indic_pd.to_sql(table_name, engine, if_exists=option, index=False)
-    # test (à supprimer)
-    query = 'SELECT COUNT(*) AS count FROM ' + table_name
-    print(pd.read_sql_query(query, engine))
+    return pd.read_sql_query('SELECT COUNT(*) AS count FROM ' + table_name, engine)
 
 '''
 def init_data_sources(indics, indic_dict, sql_dict, engine):
