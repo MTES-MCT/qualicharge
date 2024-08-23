@@ -20,7 +20,7 @@ import os
 import json
 from sqlalchemy import create_engine
 import pandas as pd
-from util import to_indicator
+from util import to_indicator, indic_to_table
 
 # Get database URL from the environment
 database_url = os.getenv("DATABASE_URL")
@@ -28,6 +28,10 @@ database_url = os.getenv("DATABASE_URL")
 # Create a database engine that will be used to generate connections
 engine = create_engine(database_url)
 
+```
+
+```python
+'00'.rjust(2, '0')
 ```
 
 ## T1 : Nombre de points de recharge par niveau de puissance
@@ -39,7 +43,7 @@ t1_nat
 ```
 
 ```python
-to_indicator(engine, 't1')
+to_indicator(engine, 't1', simple=True)
 ```
 
 ```python
@@ -57,15 +61,13 @@ to_indicator(engine, 't2')
 ```
 
 ```python
-to_indicator(engine, 't2-02-75')
+to_indicator(engine, 't2-02-75', simple=True)
 ```
 
 ## T3 : Nombre de stations par nombre de points de recharge
 
 ```python
-t3_nat = to_indicator(engine, 't3-00')
-print(t3_nat.prod(axis=1).sum(), t3_nat['nb_stations'].sum())
-t3_nat[:10]
+to_indicator(engine, 't3-00')[:10]
 ```
 
 ```python
@@ -79,7 +81,7 @@ to_indicator(engine, 't4')[:10]
 ```
 
 ```python
-to_indicator(engine, 't4-04-74012')
+to_indicator(engine, 't4-04-74012', simple=True)
 ```
 
 ## T5 : Nombre de stations par type d’implantation
@@ -91,7 +93,15 @@ t5_nat[:10]
 ```
 
 ```python
+to_indicator(engine, 't5', simple=True)
+```
+
+```python
 to_indicator(engine, 't5-03-200023414')
+```
+
+```python
+to_indicator(engine, 't5-03-200023414', simple=True)
 ```
 
 ## T6 : Pourcentage de stations par type d’implantation
@@ -102,6 +112,10 @@ to_indicator(engine, 't6')
 
 ```python
 to_indicator(engine, 't6-03-200023414')
+```
+
+```python
+to_indicator(engine, 't6-03-200023414', simple=True)
 ```
 
 ## I1 : Nombre de points de recharge ouverts au public
