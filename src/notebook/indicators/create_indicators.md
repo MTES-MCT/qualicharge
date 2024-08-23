@@ -31,7 +31,11 @@ engine = create_engine(database_url)
 ```
 
 ```python
-'00'.rjust(2, '0')
+''.rjust(2, '0')
+```
+
+```python
+'0--0'.split('-')
 ```
 
 ## T1 : Nombre de points de recharge par niveau de puissance
@@ -125,7 +129,7 @@ to_indicator(engine, 'i1')
 ```
 
 ```python
-to_indicator(engine, 'i1-00-00-00')
+to_indicator(engine, 'i1-00-00-00', simple=True)
 ```
 
 ```python
@@ -148,7 +152,7 @@ to_indicator(engine, 'i1-01')
 
 ```python
 paca_epci = 'i1-01-93-03'
-i1_paca = to_indicator(engine, paca_epci)
+i1_paca = to_indicator(engine, paca_epci, simple=True)
 i1_paca[:10]
 ```
 
@@ -159,7 +163,7 @@ indic_to_table(i1_paca, 'i1_paca_epci', engine)
 ## I4 : Nombre de stations ouvertes au public
 
 ```python
-to_indicator(engine, 'i4-0')
+to_indicator(engine, 'i4-0', simple=True)
 ```
 
 ```python
@@ -179,7 +183,7 @@ to_indicator(engine, 'i4-01-93-03')[:10]
 ## I7 : Puissance installée
 
 ```python
-to_indicator(engine, 'i7')
+to_indicator(engine, 'i7', simple=True)
 ```
 
 ```python
@@ -189,7 +193,7 @@ i7_nat[:10]
 ```
 
 ```python
-i7_paca_city = to_indicator(engine, 'i7-01-93-04')
+i7_paca_city = to_indicator(engine, 'i7-01-93-04', simple=True)
 i7_paca_city[:10]
 ```
 
