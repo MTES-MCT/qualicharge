@@ -4,10 +4,10 @@ The `util` module includes functions and classes used for QualiCharge indicators
 import pandas as pd
 import create_query
 
-def to_indicator(engine, indicator, format='pandas', table_name=None, table_option="replace"):
+def to_indicator(engine, indicator, simple=False, format='pandas', table_name=None, table_option="replace"):
     """create DataFrame for an indicator"""
     indic = indicator + '-00'
-    query = getattr(create_query, 'query_' + indic.split('-')[0])(*indic.split('-')[1:])
+    query = getattr(create_query, 'query_' + indic.split('-')[0])(*indic.split('-')[1:], simple=simple)
     with engine.connect() as conn:
         data_pd = pd.read_sql_query(query, conn)
     if format == 'pandas':
