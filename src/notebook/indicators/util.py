@@ -4,21 +4,27 @@ The `util` module includes functions and classes used for QualiCharge indicators
 import pandas as pd
 import create_query
 
-def indic_pandas(engine, indic):
+def to_indicator(engine, indicator, format='pandas', table_name=None, table_option="replace"):
     """create DataFrame for an indicator"""
-
+    indic = indicator + '-00'
     query = getattr(create_query, 'query_' + indic.split('-')[0])(*indic.split('-')[1:])
     with engine.connect() as conn:
         data_pd = pd.read_sql_query(query, conn)
-    return data_pd
+    if format == 'pandas':
+        return data_pd
+    if format == 'json':
+        return {indicator: data_pd.to_json(index=False, orient='split')}
+    if format == 'table':
+        table_name = table_name if table_name else indicator
+        return indic_to_table(data_pd, table_name, engine, table_option=table_option)
 
-def indic_to_table(indic_pd, table_name, engine, option="replace"):
+def indic_to_table(indic_pd, table_name, engine, table_option="replace"):
     """ Save the indicator to a table"""
-    indic_pd.to_sql(table_name, engine, if_exists=option, index=False)
+    indic_pd.to_sql(table_name, engine, if_exists=table_option, index=False)
     return pd.read_sql_query('SELECT COUNT(*) AS count FROM ' + table_name, engine)
 
-'''
-def init_data_sources(indics, indic_dict, sql_dict, engine):
+
+'''def init_data_sources(indics, indic_dict, sql_dict, engine):
     """create source DataFrame for a list of indicators"""
     sources_list = set(indic_dict[indic]['source'] for indic in indics)
     with engine.connect() as conn:
