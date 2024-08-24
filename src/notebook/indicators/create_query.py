@@ -101,7 +101,7 @@ def query_t4(*param, simple=False):
     code_name = ", code " if simple else ", code, name " 
 
     return (" WITH t3 AS (" + query_t3(*param) + ")" +
-        " SELECT nb_stations / (SELECT sum(nb_stations) FROM t3) * 100 AS pct_nb_pdc, nb_pdc, level" + code_name +
+        " SELECT nb_stations / (SELECT sum(nb_stations) FROM t3) * 100 AS pct_nb_stations, nb_pdc, level" + code_name +
         " FROM t3")
 
 def query_t5(*param, simple=False):

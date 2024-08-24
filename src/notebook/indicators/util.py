@@ -4,7 +4,8 @@ The `util` module includes functions and classes used for QualiCharge indicators
 import pandas as pd
 import create_query
 
-def to_indicator(engine, indicator, simple=False, histo=False, format='pandas', histo_timest=None, table_name=None, table_option="replace"):
+def to_indicator(engine, indicator, simple=False, histo=False, format='pandas', histo_timest=None, json_orient='split',
+                 table_name=None, table_option="replace"):
     """create data for an indicator
     
     Parameters
@@ -23,6 +24,8 @@ def to_indicator(engine, indicator, simple=False, histo=False, format='pandas', 
         - 'query'-> postgreSQL query String
         - 'json'-> json query result string
         - 'table' -> Dataframe (table creation confirmation with the number of lines created)
+    json_orient: string, default 'split'
+        Json structure (see 'orient' option for 'DataFrame.to_json').
     histo_timest: string (used if histo=True), default None
         Value of timestamp. If None the timestamp is the execution query timestamp.
     table_name: string (used if format='table'), default None
@@ -47,7 +50,7 @@ def to_indicator(engine, indicator, simple=False, histo=False, format='pandas', 
     if format == 'pandas':
         return data_pd
     if format == 'json':
-        return '{"' + indicator + '": ' + data_pd.to_json(index=False, orient='split') + "}"
+        return '{"' + indicator + '": ' + data_pd.to_json(index=False, orient=json_orient) + "}"
     if format == 'table':
         table_name = table_name if table_name else indicator
         return indic_to_table(data_pd, table_name, engine, table_option=table_option)
