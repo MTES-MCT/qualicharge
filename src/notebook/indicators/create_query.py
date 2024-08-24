@@ -26,6 +26,15 @@ ISIN_GEOM = 'ST_Within("coordonneesXY", geometry) '
 
 TABLE = {'00': 'national', '01': 'region', '02': 'department', '03': 'epci', '04': 'city'}
 
+def query_histo(query, timestamp=None):
+
+    if timestamp:
+        datation = "datation(timest) AS (VALUES ('" + timestamp + "'::timestamp)) "
+    else:
+        datation = "datation(timest) AS (VALUES (CURRENT_TIMESTAMP)) "
+
+    return " WITH query AS (" + query + "), " + datation + " SELECT * FROM query, datation "
+
 def init_param_txx(simple, *param):
     '''parameters initialization for 'query_txx' functions
     '''

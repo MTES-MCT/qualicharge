@@ -4,7 +4,7 @@ The `util` module includes functions and classes used for QualiCharge indicators
 import pandas as pd
 import create_query
 
-def to_indicator(engine, indicator, simple=False, format='pandas', table_name=None, table_option="replace"):
+def to_indicator(engine, indicator, simple=False, histo=False, format='pandas', histo_timest=None, table_name=None, table_option="replace"):
     """create data for an indicator
     
     Parameters
@@ -14,12 +14,17 @@ def to_indicator(engine, indicator, simple=False, format='pandas', table_name=No
     indicator: str 
         Indicator name (see indicator codification)
     simple: boolean, default False
-        If False, additional columns are added in the result Table
-    format: enum ('pandas', 'json', 'table'), default 'pandas'
+        If False, additional columns are added
+    histo: boolean, default False
+        If True, timestamp additional column is added (without others additional columns)
+    format: enum ('pandas', 'query', 'histo', 'json', 'table'), default 'pandas'
         Define the return format:
-        - 'pandas'-> Dataframe
-        - 'json'-> json string
+        - 'pandas'-> query result Dataframe
+        - 'query'-> postgreSQL query String
+        - 'json'-> json query result string
         - 'table' -> Dataframe (table creation confirmation with the number of lines created)
+    histo_timest: string (used if histo=True), default None
+        Value of timestamp. If None the timestamp is the execution query timestamp.
     table_name: string (used if format='table'), default None
         Name of the table to create (format='table'). If None the name is the indicator name.
     table_option: string (used if format='table'), default 'replace'
@@ -31,7 +36,12 @@ def to_indicator(engine, indicator, simple=False, format='pandas', table_name=No
         see 'format' parameter
     """
     indic = indicator + '-00'
+    simple = True if histo else simple
     query = getattr(create_query, 'query_' + indic.split('-')[0])(*indic.split('-')[1:], simple=simple)
+    if histo:
+        query = create_query.query_histo(query, timestamp=histo_timest)
+    if format == 'query':
+        return query
     with engine.connect() as conn:
         data_pd = pd.read_sql_query(query, conn)
     if format == 'pandas':
@@ -62,4 +72,4 @@ def indic_to_table(pd_df, table_name, engine, table_option="replace"):
         Table creation confirmation with the number of lines created.
     """
     pd_df.to_sql(table_name, engine, if_exists=table_option, index=False)
-    return pd.read_sql_query('SELECT COUNT(*) AS count FROM ' + table_name, engine)
+    return pd.read_sql_query('SELECT COUNT(*) AS count FROM "' + table_name + '"', engine)

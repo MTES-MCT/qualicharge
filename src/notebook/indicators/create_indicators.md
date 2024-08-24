@@ -30,99 +30,53 @@ engine = create_engine(database_url)
 
 ```
 
+## Générateur d'indicateurs
+
+
+### Codification des indicateurs
+
 ```python
-''.rjust(2, '0')
+to_indicator(engine, 'i1')
 ```
 
 ```python
-'0--0'.split('-')
-```
-
-## T1 : Nombre de points de recharge par niveau de puissance
-
-```python
-t1_nat = to_indicator(engine, 't1-00')
-print(t1_nat['nb_pdc'].sum())
-t1_nat
+to_indicator(engine, 'i1---01')[:5]
 ```
 
 ```python
-to_indicator(engine, 't1', simple=True)
+to_indicator(engine, 'i1-01-93')
 ```
 
 ```python
-to_indicator(engine, 't1-02-75')
+to_indicator(engine, 'i1-01-93-02')
+```
+
+### Options de représentation
+
+```python
+to_indicator(engine, 'i1-01-93-02', simple=True)
 ```
 
 ```python
-to_indicator(engine, 't1-02')
-```
-
-## T2 : Pourcentage de points de recharge par niveau de puissance
-
-```python
-to_indicator(engine, 't2')
+to_indicator(engine, 'i1-01-93-02', histo=True)
 ```
 
 ```python
-to_indicator(engine, 't2-02-75', simple=True)
-```
-
-## T3 : Nombre de stations par nombre de points de recharge
-
-```python
-to_indicator(engine, 't3-00')[:10]
+to_indicator(engine, 'i1-01-93-02', simple=True, format='json')
 ```
 
 ```python
-to_indicator(engine, 't3-04-74012')
-```
-
-## T4 : Pourcentage de stations par nombre de points de recharge
-
-```python
-to_indicator(engine, 't4')[:10]
+to_indicator(engine, 'i1-01-93-02', format='table')
 ```
 
 ```python
-to_indicator(engine, 't4-04-74012', simple=True)
+to_indicator(engine, 'i1', format='query')
 ```
 
-## T5 : Nombre de stations par type d’implantation
+## Infrastructure - quantitatif
 
-```python
-t5_nat = to_indicator(engine, 't5-00')
-print(t5_nat['nb_stations'].sum())
-t5_nat[:10]
-```
 
-```python
-to_indicator(engine, 't5', simple=True)
-```
-
-```python
-to_indicator(engine, 't5-03-200023414')
-```
-
-```python
-to_indicator(engine, 't5-03-200023414', simple=True)
-```
-
-## T6 : Pourcentage de stations par type d’implantation
-
-```python
-to_indicator(engine, 't6')
-```
-
-```python
-to_indicator(engine, 't6-03-200023414')
-```
-
-```python
-to_indicator(engine, 't6-03-200023414', simple=True)
-```
-
-## I1 : Nombre de points de recharge ouverts au public
+### I1 : Nombre de points de recharge ouverts au public
 
 ```python
 to_indicator(engine, 'i1')
@@ -160,7 +114,7 @@ i1_paca[:10]
 indic_to_table(i1_paca, 'i1_paca_epci', engine)
 ```
 
-## I4 : Nombre de stations ouvertes au public
+### I4 : Nombre de stations ouvertes au public
 
 ```python
 to_indicator(engine, 'i4-0', simple=True)
@@ -180,7 +134,7 @@ to_indicator(engine, 'i4-01-93-0')
 to_indicator(engine, 'i4-01-93-03')[:10]
 ```
 
-## I7 : Puissance installée
+### I7 : Puissance installée
 
 ```python
 to_indicator(engine, 'i7', simple=True)
@@ -197,12 +151,89 @@ i7_paca_city = to_indicator(engine, 'i7-01-93-04', simple=True)
 i7_paca_city[:10]
 ```
 
+## Infrastructure - typologie
+
+
+### T1 : Nombre de points de recharge par niveau de puissance
+
 ```python
-indic_to_table(i7_paca_city, 'i7_paca_city', engine)
+t1_nat = to_indicator(engine, 't1-00')
+print(t1_nat['nb_pdc'].sum())
+t1_nat
 ```
 
 ```python
-with open('indics.json') as fp:
-    indics_dict = json.load(fp)
-indics_dict
+to_indicator(engine, 't1', simple=True)
+```
+
+```python
+to_indicator(engine, 't1-02-75')
+```
+
+```python
+to_indicator(engine, 't1-02')
+```
+
+### T2 : Pourcentage de points de recharge par niveau de puissance
+
+```python
+to_indicator(engine, 't2')
+```
+
+```python
+to_indicator(engine, 't2-02-75', simple=True)
+```
+
+### T3 : Nombre de stations par nombre de points de recharge
+
+```python
+to_indicator(engine, 't3-00')[:10]
+```
+
+```python
+to_indicator(engine, 't3-04-74012')
+```
+
+### T4 : Pourcentage de stations par nombre de points de recharge
+
+```python
+to_indicator(engine, 't4')[:10]
+```
+
+```python
+to_indicator(engine, 't4-04-74012', simple=True)
+```
+
+### T5 : Nombre de stations par type d’implantation
+
+```python
+t5_nat = to_indicator(engine, 't5-00')
+print(t5_nat['nb_stations'].sum())
+t5_nat[:10]
+```
+
+```python
+to_indicator(engine, 't5', simple=True)
+```
+
+```python
+to_indicator(engine, 't5-03-200023414')
+```
+
+```python
+to_indicator(engine, 't5-03-200023414', simple=True)
+```
+
+### T6 : Pourcentage de stations par type d’implantation
+
+```python
+to_indicator(engine, 't6')
+```
+
+```python
+to_indicator(engine, 't6-03-200023414')
+```
+
+```python
+to_indicator(engine, 't6-03-200023414', simple=True)
 ```
