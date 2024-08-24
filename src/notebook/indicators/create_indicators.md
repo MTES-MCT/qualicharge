@@ -18,6 +18,8 @@ Ce Notebook présente une proposition de structuration et de représentation des
 
 La liste des indicateurs est présentée sur [ce lien](https://loco-philippe.github.io/IRVE/files/indicateurs.html).
 
+*Nota : La représentation visuelle des indicateurs (ex. diagramme circulaire, diagramme à barre, carte choroplèthe, courbe...) n'est pas abordée.*
+
 ```python
 import os
 import json
@@ -56,7 +58,7 @@ Exemples de codification :
 
 <!-- #endregion -->
 
-### Exemples de mis en oeuvre
+### Exemples de mise en oeuvre
 
 
 'i1' est l'indicateur qui fournit le nombre de points de recharge.
@@ -77,7 +79,7 @@ to_indicator(engine, 'i1')
 
 ```python
 # calcul sur l'ensemble des données avec une répartition par région (01) ('i1---01' est équivalent à 'i1-00-00-01')
-# 'level' 01 indique un périmètre région, 'code' 84 indique le code de la région.
+# ex. ligne 1 : 'level' 01 indique un périmètre région, 'code' 84 indique le code de la région.
 to_indicator(engine, 'i1---01')[:5]
 ```
 
