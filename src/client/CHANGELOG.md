@@ -12,6 +12,7 @@ and this project adheres to
 
 - Upgrade Pydantic to `2.7.4`
 - Upgrade pydantic-settings to `2.4.0`
+- Upgrade typer to `0.12.5`
 
 ## [0.1.0] - 2024-06-14
 

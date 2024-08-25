@@ -8,6 +8,11 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Changed
+
+- Upgrade fastapi to `0.112.2`
+- Upgrade typer to `0.12.5`
+
 ## [0.11.0] - 2024-08-14
 
 ### Added
