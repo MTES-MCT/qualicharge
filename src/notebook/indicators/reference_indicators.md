@@ -22,7 +22,7 @@ La liste des indicateurs est présentée sur [ce lien](https://loco-philippe.git
 *Nota : La représentation visuelle des indicateurs (ex. diagramme circulaire, diagramme à barre, carte choroplèthe, courbe...) n'est pas abordée.*
 <!-- #endregion -->
 
-```python
+```python editable=true slideshow={"slide_type": ""}
 import os
 import json
 from sqlalchemy import create_engine
@@ -146,19 +146,19 @@ Les autres indicateurs sont dérivés ('i2', 'i5', 'i8' ramené à 100 000 habit
 
 'nb_pdc' est le nombre de points de recharge.
 
-```python
+```python editable=true slideshow={"slide_type": ""}
 # requête globale : 'i1-00-00' ou 'i1'
 
 perim = '00'
-value = '00'
+val   = '00'
 zone  = '00'
 
 query = f""" 
-    WITH national(code) AS (VALUES ({perim})), perimeter(level) AS (VALUES ({zone})) 
-    SELECT count(id_pdc_itinerance) AS nb_pdc, level, code
-    FROM perimeter, pointdecharge, national 
-    GROUP BY level, code"""
-
+    WITH  national(code) AS (VALUES ({perim})) , perim_zon(level) AS (VALUES ('{zone}')) 
+    SELECT count(id_pdc_itinerance) AS nb_pdc, level , code  
+    FROM perim_zon, pointdecharge, national
+    GROUP BY level , code"""
+  
 pd.read_sql_query(query, engine.connect())
 ```
 
@@ -167,34 +167,36 @@ pd.read_sql_query(query, engine.connect())
 
 # ex. globale avec une répartition par région (01) 'i1-00-00-01' ou 'i1---01'
 perim = '00'
-value = '00'
+val   = '00'
 zone  = '01'
 
 query = f""" 
-    WITH national(code) AS (VALUES ('{perim}')) , perim_zon(level) AS (VALUES ('{zone}'))  
-    SELECT count(id_pdc_itinerance) AS nb_pdc, level, code  
-    FROM perim_zon, pointdecharge LEFT JOIN station ON station.id = station_id LEFT JOIN localisation ON localisation_id = localisation.id  LEFT JOIN region ON ST_Within("coordonneesXY", geometry)  
-    GROUP BY level, code  ORDER BY nb_pdc DESC"""
+    WITH national(code) AS (VALUES ({perim})) , perim_zon(level) AS (VALUES ('{zone}')) 
+    SELECT count(id_pdc_itinerance) AS nb_pdc, level , code  
+    FROM perim_zon, pointdecharge LEFT JOIN station ON station.id = station_id LEFT JOIN localisation ON localisation_id = localisation.id  LEFT JOIN region ON ST_Within("coordonneesXY", geometry) 
+    GROUP BY level , code  ORDER BY nb_pdc DESC"""
 
 pd.read_sql_query(query, engine.connect())[:5]
 ```
 
-```python
+```python editable=true slideshow={"slide_type": ""}
 # requête locale : 
 
 # ex. sur la région (01) PACA (93) 'i1-01-93-00' ou 'i1-01-93'
 perim = '01'
-value = '93'
+val   = '93'
 zone  = '00'
 
 query = f""" 
-    WITH  pdc_loc AS (SELECT id_pdc_itinerance, "coordonneesXY"  
-                      FROM {TABLE[perim]}, pointdecharge LEFT JOIN station ON station.id = station_id LEFT JOIN localisation ON localisation_id = localisation.id 
-                      WHERE  code = '{value}' AND ST_Within("coordonneesXY", geometry) ), 
-          perimeter(level) AS (VALUES ('{perim}')) , perim_zon(code) AS (VALUES ('{value}'))  
-    SELECT count(id_pdc_itinerance) AS nb_pdc, level, code 
-    FROM perimeter, perim_zon, pdc_loc 
+    WITH pdc_loc AS (SELECT id_pdc_itinerance, "coordonneesXY"
+                     FROM {TABLE[perim]}, pointdecharge LEFT JOIN station ON station.id = station_id LEFT JOIN localisation ON localisation_id = localisation.id 
+                     WHERE  code = '{val}' AND ST_Within("coordonneesXY", geometry) ), perimeter(level) AS (VALUES ('{perim}')) , perim_zon(code) AS (VALUES ('{val}')) 
+    SELECT count(id_pdc_itinerance) AS nb_pdc, level, code
+    FROM perimeter, perim_zon, pdc_loc
     GROUP BY level, code ORDER BY nb_pdc DESC"""
+
+    
+
 
 pd.read_sql_query(query, engine.connect())
 ```
@@ -204,60 +206,170 @@ pd.read_sql_query(query, engine.connect())
 
 # ex. sur la région (01) PACA (93) par département (02) 'i1-01-93-02'
 perim = '01'
-value = '93'
+val   = '93'
 zone  = '02'
 
 query = f""" 
-    WITH  pdc_loc AS (SELECT id_pdc_itinerance, "coordonneesXY"  
-                      FROM {TABLE[perim]}, pointdecharge LEFT JOIN station ON station.id = station_id LEFT JOIN localisation ON localisation_id = localisation.id  
-                      WHERE  code = '{value}' AND ST_Within("coordonneesXY", geometry) ), 
-          perim_zon(level) AS (VALUES ('{zone}'))  
-    SELECT count(id_pdc_itinerance) AS nb_pdc, level, code  
-    FROM perim_zon, pdc_loc LEFT JOIN {TABLE[zone]} ON ST_Within("coordonneesXY", geometry)  
-    GROUP BY level, code  ORDER BY nb_pdc DESC"""
+    WITH pdc_loc AS (SELECT id_pdc_itinerance, "coordonneesXY"
+                            FROM {TABLE[perim]}, pointdecharge LEFT JOIN station ON station.id = station_id LEFT JOIN localisation ON localisation_id = localisation.id 
+                            WHERE  code = '{val}' AND ST_Within("coordonneesXY", geometry) ), perim_zon(level) AS (VALUES ('{zone}')) 
+    SELECT count(id_pdc_itinerance) AS nb_pdc, level , code 
+    FROM perim_zon, pdc_loc LEFT JOIN {TABLE[zone]} ON ST_Within("coordonneesXY", geometry) 
+    GROUP BY level , code  ORDER BY nb_pdc DESC"""
 
 pd.read_sql_query(query, engine.connect())
 ```
 
+<!-- #region editable=true slideshow={"slide_type": ""} -->
 ### I4 : Nombre de stations ouvertes au public
 
 'nb_stat' est le nombre de stations.
+<!-- #endregion -->
 
-```python
-to_indicator(engine, 'i4-0', simple=True)
+```python editable=true slideshow={"slide_type": ""}
+# requête globale : 'i4-00-00' ou 'i4'
+
+perim = '00'
+val   = '00'
+zone  = '00'
+
+query = f""" 
+    WITH  national(code) AS (VALUES ('{perim}')) , perim_zon(level) AS (VALUES ('{zone}')) 
+    SELECT count(id_station_itinerance) AS nb_stat, level , code  
+    FROM perim_zon, station, {TABLE[perim]}
+    GROUP BY level , code"""
+  
+pd.read_sql_query(query, engine.connect())
 ```
 
-```python
-i4_nat = to_indicator(engine, 'i4-0-xx-01')
-print(i4_nat['nb_stat'].sum())
-i4_nat[:10]
+```python editable=true slideshow={"slide_type": ""}
+# requête globale avec critère : 
+
+# ex. globale avec une répartition par région (01) 'i4-00-00-01' ou 'i4---01'
+perim = '00'
+val   = '00'
+zone  = '01'
+
+query = f""" 
+    WITH national(code) AS (VALUES ('{perim}')) , perim_zon(level) AS (VALUES ('{zone}')) 
+    SELECT count(id_station_itinerance) AS nb_stat, level , code  
+    FROM perim_zon, station LEFT JOIN localisation ON localisation_id = localisation.id  LEFT JOIN {TABLE[zone]} ON ST_Within("coordonneesXY", geometry) 
+    GROUP BY level , code  ORDER BY nb_stat DESC"""
+
+pd.read_sql_query(query, engine.connect())[:5]
 ```
 
-```python
-to_indicator(engine, 'i4-01-93-0')
+```python editable=true slideshow={"slide_type": ""}
+# requête locale : 
+
+# ex. sur la région (01) PACA (93) 'i4-01-93-00' ou 'i4-01-93'
+perim = '01'
+val   = '93'
+zone  = '00'
+
+query = f""" 
+    WITH stat_loc AS (SELECT id_station_itinerance, "coordonneesXY"
+                      FROM {TABLE[perim]}, station LEFT JOIN localisation ON localisation_id = localisation.id 
+                      WHERE  code = '{val}' AND ST_Within("coordonneesXY", geometry) ), perimeter(level) AS (VALUES ('{perim}')) , perim_zon(code) AS (VALUES ('{val}')) 
+    SELECT count(id_station_itinerance) AS nb_stat, level, code
+    FROM perimeter, perim_zon, stat_loc
+    GROUP BY level, code ORDER BY nb_stat DESC"""
+
+pd.read_sql_query(query, engine.connect())
 ```
 
-```python
-to_indicator(engine, 'i4-01-93-03')[:10]
+```python editable=true slideshow={"slide_type": ""}
+# requête locale avec critère : 
+
+# ex. sur la région (01) PACA (93) par EPCI (03) 'i4-01-93-03'
+perim = '01'
+val   = '93'
+zone  = '03'
+
+query = f""" 
+    WITH stat_loc AS (SELECT id_station_itinerance, "coordonneesXY"
+                      FROM {TABLE[perim]}, station LEFT JOIN localisation ON localisation_id = localisation.id 
+                      WHERE  code = '{val}' AND ST_Within("coordonneesXY", geometry) ), perim_zon(level) AS (VALUES ('{zone}')) 
+    SELECT count(id_station_itinerance) AS nb_stat, level , code 
+    FROM perim_zon, stat_loc LEFT JOIN {TABLE[zone]} ON ST_Within("coordonneesXY", geometry) 
+    GROUP BY level , code  ORDER BY nb_stat DESC"""
+
+pd.read_sql_query(query, engine.connect())[:5]
 ```
 
 ### I7 : Puissance installée
 
 'p_nom' est la puissance nominale cumulée
 
-```python
-to_indicator(engine, 'i7', simple=True)
+```python editable=true slideshow={"slide_type": ""}
+# requête globale : 'i7-00-00' ou 'i7'
+
+perim = '00'
+val   = '00'
+zone  = '00'
+
+query = f""" 
+    WITH  national(code) AS (VALUES ('{perim}')) , perim_zon(level) AS (VALUES ('{zone}')) 
+    SELECT count(id_station_itinerance) AS nb_stat, level , code  
+    FROM perim_zon, station, {TABLE[perim]}
+    GROUP BY level , code"""
+  
+pd.read_sql_query(query, engine.connect())
 ```
 
-```python
-i7_nat = to_indicator(engine, 'i7-0--01')
-print(i7_nat['p_nom'].sum())
-i7_nat[:10]
+```python editable=true slideshow={"slide_type": ""}
+# requête globale avec critère : 
+
+# ex. globale avec une répartition par région (01) 'i7-00-00-01' ou 'i7---01'
+perim = '00'
+val   = '00'
+zone  = '01'
+
+query = f""" 
+    WITH national(code) AS (VALUES ('{perim}')) , perim_zon(level) AS (VALUES ('{zone}')) 
+    SELECT sum(puissance_nominale) AS p_nom, level , code  
+    FROM perim_zon, pointdecharge LEFT JOIN station ON station.id = station_id LEFT JOIN localisation ON localisation_id = localisation.id  LEFT JOIN {TABLE[zone]} ON ST_Within("coordonneesXY", geometry) 
+    GROUP BY level , code  ORDER BY p_nom DESC """
+
+pd.read_sql_query(query, engine.connect())[:5]
 ```
 
-```python
-i7_paca_city = to_indicator(engine, 'i7-01-93-04', simple=True)
-i7_paca_city[:10]
+```python editable=true slideshow={"slide_type": ""}
+# requête locale : 
+
+# ex. sur la région (01) PACA (93) 'i7-01-93-00' ou 'i7-01-93'
+perim = '01'
+val   = '93'
+zone  = '00'
+
+query = f""" 
+    WITH pnom_loc AS (SELECT puissance_nominale, "coordonneesXY"
+                   FROM {TABLE[perim]}, pointdecharge LEFT JOIN station ON station.id = station_id LEFT JOIN localisation ON localisation_id = localisation.id 
+                   WHERE  code = '{val}' AND ST_Within("coordonneesXY", geometry) ), perimeter(level) AS (VALUES ('{perim}')) , perim_zon(code) AS (VALUES ('{val}')) 
+    SELECT sum(puissance_nominale) AS p_nom, level, code
+    FROM perimeter, perim_zon, pnom_loc
+    GROUP BY level, code ORDER BY p_nom DESC"""
+
+pd.read_sql_query(query, engine.connect())
+```
+
+```python editable=true slideshow={"slide_type": ""}
+# requête locale avec critère : 
+
+# ex. sur la région (01) PACA (93) par department (04) 'i7-01-93-04'
+perim = '01'
+val   = '93'
+zone  = '04'
+
+query = f""" 
+        WITH pnom_loc AS (SELECT puissance_nominale, "coordonneesXY"
+                   FROM {TABLE[perim]}, pointdecharge LEFT JOIN station ON station.id = station_id LEFT JOIN localisation ON localisation_id = localisation.id 
+                   WHERE  code = '{val}' AND ST_Within("coordonneesXY", geometry) ), perim_zon(level) AS (VALUES ('{zone}')) 
+    SELECT sum(puissance_nominale) AS p_nom, level , code 
+    FROM perim_zon, pnom_loc LEFT JOIN {TABLE[zone]} ON ST_Within("coordonneesXY", geometry) 
+    GROUP BY level , code  ORDER BY p_nom DESC"""
+
+pd.read_sql_query(query, engine.connect())[:5]
 ```
 
 ## Infrastructure - typologie

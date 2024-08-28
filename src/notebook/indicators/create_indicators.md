@@ -29,6 +29,7 @@ from util import to_indicator
 
 # Connecteur à la base Qualicharge
 engine = create_engine(os.getenv("DATABASE_URL"))
+TABLE = {'00': 'national', '01': 'region', '02': 'department', '03': 'epci', '04': 'city'}
 ```
 
 ## Structure des indicateurs
@@ -127,7 +128,7 @@ to_indicator(engine, 'i1-01-93-02', format='table')
 
 ```python
 # représentation sous forme de requète PostgreSQL
-to_indicator(engine, 'i1', format='query')
+print(to_indicator(engine, 'i1', format='query'))
 ```
 
 ## Infrastructure - quantitatif
@@ -138,10 +139,11 @@ Les autres indicateurs sont dérivés ('i2', 'i5', 'i8' ramené à 100 000 habit
 
 *à préciser : Quelle population retenir (date fixe ?) ? Est-ce qu'on stocke en base la surface (à partir des polygones) ?*
 
-
+<!-- #region editable=true slideshow={"slide_type": ""} -->
 ### I1 : Nombre de points de recharge ouverts au public
 
 'nb_pdc' est le nombre de points de recharge.
+<!-- #endregion -->
 
 ```python
 to_indicator(engine, 'i1')
@@ -151,10 +153,48 @@ to_indicator(engine, 'i1')
 to_indicator(engine, 'i1-00-00-00', simple=True)
 ```
 
+```python editable=true slideshow={"slide_type": ""}
+query_gen = to_indicator(engine, 'i1', simple=True, format='query', gen=True)
+print(query_gen)
+```
+
+```python
+perim = '00'
+val   = '00'
+zone  = '00'
+
+query = f"""
+    WITH  national(code) AS (VALUES ('{perim}')) , perim_zon(level) AS (VALUES ('{zone}')) 
+    SELECT count(id_pdc_itinerance) AS nb_pdc, level , code  
+    FROM perim_zon, pointdecharge, {TABLE[perim]}
+    GROUP BY level , code
+"""
+pd.read_sql_query(query, engine.connect())[:5]
+```
+
 ```python
 i1_nat = to_indicator(engine, 'i1-00-00-01')
 print(i1_nat['nb_pdc'].sum())
-i1_nat[:10]
+i1_nat[:5]
+```
+
+```python editable=true slideshow={"slide_type": ""}
+query_gen = to_indicator(engine, 'i1---01', simple=True, format='query', gen=True)
+print(query_gen)
+```
+
+```python
+perim = '00'
+val   = '00'
+zone  = '01'
+
+query = f"""
+    WITH national(code) AS (VALUES ('{perim}')) , perim_zon(level) AS (VALUES ('{zone}')) 
+    SELECT count(id_pdc_itinerance) AS nb_pdc, level , code  
+    FROM perim_zon, pointdecharge LEFT JOIN station ON station.id = station_id LEFT JOIN localisation ON localisation_id = localisation.id  LEFT JOIN {TABLE[zone]} ON ST_Within("coordonneesXY", geometry) 
+    GROUP BY level , code  ORDER BY nb_pdc DESC
+"""
+pd.read_sql_query(query, engine.connect())[:5]
 ```
 
 ```python
@@ -165,8 +205,25 @@ to_indicator(engine, 'i1-01-93-00')
 to_indicator(engine, 'i1-01-93')
 ```
 
-```python
-to_indicator(engine, 'i1-01')
+```python editable=true slideshow={"slide_type": ""}
+query_gen = to_indicator(engine, 'i1-01-93', simple=True, format='query', gen=True)
+print(query_gen)
+```
+
+```python editable=true slideshow={"slide_type": ""}
+perim = '01'
+val   = '93'
+zone  = '00'
+
+query = f"""
+    WITH pdc_loc AS (SELECT id_pdc_itinerance, "coordonneesXY"
+                     FROM {TABLE[perim]}, pointdecharge LEFT JOIN station ON station.id = station_id LEFT JOIN localisation ON localisation_id = localisation.id 
+                     WHERE  code = '{val}' AND ST_Within("coordonneesXY", geometry) ), perimeter(level) AS (VALUES ('{perim}')) , perim_zon(code) AS (VALUES ('{val}')) 
+    SELECT count(id_pdc_itinerance) AS nb_pdc, level, code
+    FROM perimeter, perim_zon, pdc_loc
+    GROUP BY level, code ORDER BY nb_pdc DESC
+"""
+pd.read_sql_query(query, engine.connect())[:5]
 ```
 
 ```python editable=true slideshow={"slide_type": ""}
@@ -175,11 +232,24 @@ i1_paca = to_indicator(engine, paca_epci, simple=True)
 i1_paca[:10]
 ```
 
-```python
-to_indicator(engine, paca_epci, simple=True, format='query')
+```python editable=true slideshow={"slide_type": ""}
+query_gen = to_indicator(engine, 'i1-01-93-02', simple=True, format='query', gen=True)
+print(query_gen)
 ```
 
 ```python editable=true slideshow={"slide_type": ""}
+perim = '01'
+val   = '93'
+zone  = '02'
+
+query = f"""
+    WITH pdc_loc AS (SELECT id_pdc_itinerance, "coordonneesXY"
+                     FROM {TABLE[perim]}, pointdecharge LEFT JOIN station ON station.id = station_id LEFT JOIN localisation ON localisation_id = localisation.id 
+                     WHERE  code = '{val}' AND ST_Within("coordonneesXY", geometry) ), perim_zon(level) AS (VALUES ('{zone}')) 
+    SELECT count(id_pdc_itinerance) AS nb_pdc, level , code 
+    FROM perim_zon, pdc_loc LEFT JOIN {TABLE[zone]} ON ST_Within("coordonneesXY", geometry) 
+    GROUP BY level , code  ORDER BY nb_pdc DESC
+"""
 pd.read_sql_query(query, engine.connect())
 ```
 
@@ -191,37 +261,201 @@ pd.read_sql_query(query, engine.connect())
 to_indicator(engine, 'i4-0', simple=True)
 ```
 
+```python editable=true slideshow={"slide_type": ""}
+query_gen = to_indicator(engine, 'i4', simple=True, format='query', gen=True)
+print(query_gen)
+```
+
+```python editable=true slideshow={"slide_type": ""}
+perim = '00'
+val   = '00'
+zone  = '00'
+
+query = f"""
+    WITH  national(code) AS (VALUES ('{perim}')) , perim_zon(level) AS (VALUES ('{zone}')) 
+    SELECT count(id_station_itinerance) AS nb_stat, level , code  
+    FROM perim_zon, station, {TABLE[perim]}
+    GROUP BY level , code
+"""
+pd.read_sql_query(query, engine.connect())[:5]
+```
+
 ```python
-i4_nat = to_indicator(engine, 'i4-0-xx-01')
-print(i4_nat['nb_stat'].sum())
-i4_nat[:10]
+to_indicator(engine, 'i4-0-xx-01')[:5]
+```
+
+```python editable=true slideshow={"slide_type": ""}
+query_gen = to_indicator(engine, 'i4-0-xx-01', simple=True, format='query', gen=True)
+print(query_gen)
+```
+
+```python editable=true slideshow={"slide_type": ""}
+perim = '00'
+val   = '00'
+zone  = '01'
+
+query = f"""
+    WITH national(code) AS (VALUES ('{perim}')) , perim_zon(level) AS (VALUES ('{zone}')) 
+    SELECT count(id_station_itinerance) AS nb_stat, level , code  
+    FROM perim_zon, station LEFT JOIN localisation ON localisation_id = localisation.id  LEFT JOIN {TABLE[zone]} ON ST_Within("coordonneesXY", geometry) 
+    GROUP BY level , code  ORDER BY nb_stat DESC
+"""
+pd.read_sql_query(query, engine.connect())[:5]
 ```
 
 ```python
 to_indicator(engine, 'i4-01-93-0')
 ```
 
-```python
-to_indicator(engine, 'i4-01-93-03')[:10]
+```python editable=true slideshow={"slide_type": ""}
+query_gen = to_indicator(engine, 'i4-01-93-0', simple=True, format='query', gen=True)
+print(query_gen)
 ```
 
+```python editable=true slideshow={"slide_type": ""}
+perim = '01'
+val   = '93'
+zone  = '00'
+
+query = f"""
+    WITH stat_loc AS (SELECT id_station_itinerance, "coordonneesXY"
+                         FROM {TABLE[perim]}, station LEFT JOIN localisation ON localisation_id = localisation.id 
+                         WHERE  code = '{val}' AND ST_Within("coordonneesXY", geometry) ), perimeter(level) AS (VALUES ('{perim}')) , perim_zon(code) AS (VALUES ('{val}')) 
+    SELECT count(id_station_itinerance) AS nb_stat, level, code
+    FROM perimeter, perim_zon, stat_loc
+    GROUP BY level, code ORDER BY nb_stat DESC
+"""
+pd.read_sql_query(query, engine.connect())[:5]
+```
+
+```python
+to_indicator(engine, 'i4-01-93-03')[:5]
+```
+
+```python editable=true slideshow={"slide_type": ""}
+query_gen = to_indicator(engine, 'i4-01-93-03', simple=True, format='query', gen=True)
+print(query_gen)
+```
+
+```python editable=true slideshow={"slide_type": ""}
+perim = '01'
+val   = '93'
+zone  = '03'
+
+query = f"""
+    WITH stat_loc AS (SELECT id_station_itinerance, "coordonneesXY"
+                         FROM {TABLE[perim]}, station LEFT JOIN localisation ON localisation_id = localisation.id 
+                         WHERE  code = '{val}' AND ST_Within("coordonneesXY", geometry) ), perim_zon(level) AS (VALUES ('{zone}')) 
+    SELECT count(id_station_itinerance) AS nb_stat, level , code 
+    FROM perim_zon, stat_loc LEFT JOIN {TABLE[zone]} ON ST_Within("coordonneesXY", geometry) 
+    GROUP BY level , code  ORDER BY nb_stat DESC
+"""
+pd.read_sql_query(query, engine.connect())[:5]
+```
+
+<!-- #region editable=true slideshow={"slide_type": ""} -->
 ### I7 : Puissance installée
 
 'p_nom' est la puissance nominale cumulée
+<!-- #endregion -->
 
 ```python
 to_indicator(engine, 'i7', simple=True)
 ```
 
+```python editable=true slideshow={"slide_type": ""}
+query_gen = to_indicator(engine, 'i7', simple=True, format='query', gen=True)
+print(query_gen)
+```
+
+```python editable=true slideshow={"slide_type": ""}
+perim = '00'
+val   = '00'
+zone  = '00'
+
+query = f"""
+    WITH  national(code) AS (VALUES ('{perim}')) , perim_zon(level) AS (VALUES ('{zone}')) 
+    SELECT sum(puissance_nominale) AS p_nom, level , code  
+    FROM perim_zon, pointdecharge, {TABLE[perim]}
+    GROUP BY level , code  
+"""
+pd.read_sql_query(query, engine.connect())
+```
+
 ```python
 i7_nat = to_indicator(engine, 'i7-0--01')
 print(i7_nat['p_nom'].sum())
-i7_nat[:10]
+i7_nat[:5]
+```
+
+```python editable=true slideshow={"slide_type": ""}
+query_gen = to_indicator(engine, 'i7-0--01', simple=True, format='query', gen=True)
+print(query_gen)
+```
+
+```python editable=true slideshow={"slide_type": ""}
+perim = '00'
+val   = '00'
+zone  = '01'
+
+query = f"""
+    WITH national(code) AS (VALUES ('{perim}')) , perim_zon(level) AS (VALUES ('{zone}')) 
+    SELECT sum(puissance_nominale) AS p_nom, level , code  
+    FROM perim_zon, pointdecharge LEFT JOIN station ON station.id = station_id LEFT JOIN localisation ON localisation_id = localisation.id  LEFT JOIN {TABLE[zone]} ON ST_Within("coordonneesXY", geometry) 
+    GROUP BY level , code  ORDER BY p_nom DESC 
+"""
+pd.read_sql_query(query, engine.connect())[:5]
+```
+
+```python
+to_indicator(engine, 'i7-01-93-00', simple=True)
+```
+
+```python editable=true slideshow={"slide_type": ""}
+query_gen = to_indicator(engine, 'i7-01-93-00', simple=True, format='query', gen=True)
+print(query_gen)
+```
+
+```python editable=true slideshow={"slide_type": ""}
+perim = '01'
+val   = '93'
+zone  = '00'
+
+query = f"""
+    WITH pnom_loc AS (SELECT puissance_nominale, "coordonneesXY"
+                   FROM {TABLE[perim]}, pointdecharge LEFT JOIN station ON station.id = station_id LEFT JOIN localisation ON localisation_id = localisation.id 
+                   WHERE  code = '{val}' AND ST_Within("coordonneesXY", geometry) ), perimeter(level) AS (VALUES ('{perim}')) , perim_zon(code) AS (VALUES ('{val}')) 
+    SELECT sum(puissance_nominale) AS p_nom, level, code
+    FROM perimeter, perim_zon, pnom_loc
+    GROUP BY level, code ORDER BY p_nom DESC
+"""
+pd.read_sql_query(query, engine.connect())[:5]
 ```
 
 ```python
 i7_paca_city = to_indicator(engine, 'i7-01-93-04', simple=True)
-i7_paca_city[:10]
+i7_paca_city[:5]
+```
+
+```python editable=true slideshow={"slide_type": ""}
+query_gen = to_indicator(engine, 'i7-01-93-04', simple=True, format='query', gen=True)
+print(query_gen)
+```
+
+```python editable=true slideshow={"slide_type": ""}
+perim = '01'
+val   = '93'
+zone  = '04'
+
+query = f"""
+    WITH pnom_loc AS (SELECT puissance_nominale, "coordonneesXY"
+                   FROM {TABLE[perim]}, pointdecharge LEFT JOIN station ON station.id = station_id LEFT JOIN localisation ON localisation_id = localisation.id 
+                   WHERE  code = '{val}' AND ST_Within("coordonneesXY", geometry) ), perim_zon(level) AS (VALUES ('{zone}')) 
+    SELECT sum(puissance_nominale) AS p_nom, level , code 
+    FROM perim_zon, pnom_loc LEFT JOIN {TABLE[zone]} ON ST_Within("coordonneesXY", geometry) 
+    GROUP BY level , code  ORDER BY p_nom DESC
+"""
+pd.read_sql_query(query, engine.connect())[:5]
 ```
 
 ## Infrastructure - typologie

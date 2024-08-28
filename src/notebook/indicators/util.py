@@ -5,7 +5,7 @@ import pandas as pd
 import create_query
 
 def to_indicator(engine, indicator, simple=False, histo=False, format='pandas', histo_timest=None, json_orient='split',
-                 table_name=None, table_option="replace"):
+                 table_name=None, table_option="replace", gen=False):
     """create data for an indicator
     
     Parameters
@@ -40,7 +40,7 @@ def to_indicator(engine, indicator, simple=False, histo=False, format='pandas', 
     """
     indic = indicator + '-00'
     simple = True if histo else simple
-    query = getattr(create_query, 'query_' + indic.split('-')[0])(*indic.split('-')[1:], simple=simple)
+    query = getattr(create_query, 'query_' + indic.split('-')[0])(*indic.split('-')[1:], simple=simple, gen=gen)
     if histo:
         query = create_query.query_histo(query, timestamp=histo_timest)
     if format == 'query':

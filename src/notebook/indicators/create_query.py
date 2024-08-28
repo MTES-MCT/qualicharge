@@ -17,6 +17,7 @@ String
 """
 NATIONAL = "national(code, name) AS (VALUES ('00', 'national')) "
 NATIONAL_S = "national(code) AS (VALUES ('00')) "
+NATIONAL_G = "national(code) AS (VALUES ('{perim}')) "
 P_TAB = ("puissance(p_range, p_cat) AS ( VALUES " + 
              "(numrange(0, 15.0), 1), (numrange(15.0, 26.0), 2), (numrange(26, 65.0), 3), " + 
              "(numrange(65, 175.0), 4), (numrange(175, 360.0), 5), (numrange(360, NULL), 6)) ")
@@ -131,114 +132,154 @@ def query_t6(*param, simple=False):
         " SELECT nb_stations / (SELECT sum(nb_stations) FROM t5) * 100 AS pct_nb_stations, implantation, level" + code_name +
         " FROM t5")
 
-def init_param_ixx(simple, *param):
+def init_param_ixx(simple, gen, *param):
     '''parameters initialization for 'query_ixx' functions  '''
     
-    level, val, zone = (param + ('00', '00', '00'))[:3]
-    level = level.rjust(2, '0')
+    perim, val, zone = (param + ('00', '00', '00'))[:3]
+    perim = perim.rjust(2, '0')
     val = val.rjust(2, '0')
     zone = zone.rjust(2, '0')
 
     code_name = ", code " if simple else ", code, name "
-    perimeter = "perimeter(level) AS (VALUES ('" + level + "')) "
-    perim_zon = "perim_zon(level) AS (VALUES ('" + zone + "')) "
-    perim_val = "perim_zon(code) AS (VALUES ('" + val + "')) "
+    perimeter = f"perimeter(level) AS (VALUES ('{perim}')) "
+    perim_zon = f"perim_zon(level) AS (VALUES ('{zone}')) "
+    perim_val = f"perim_zon(code) AS (VALUES ('{val}')) "
 
-    return (level, val, zone, code_name, perimeter, perim_zon, perim_val)
+    national = NATIONAL_S if simple else NATIONAL
+    table_perim = f"{TABLE[perim]}"
+    table_zone = f"{TABLE[zone]}"
 
-def query_i1(*param, simple=False):
+    if gen:
+        national = NATIONAL_G
+        perimeter = f"perimeter(level) AS (VALUES ('{{perim}}')) "
+        perim_zon = f"perim_zon(level) AS (VALUES ('{{zone}}')) "
+        perim_val = f"perim_zon(code) AS (VALUES ('{{val}}')) "
+        table_perim = f"{{TABLE[perim]}}"
+        table_zone = f"{{TABLE[zone]}}"
+    
+    return (perim, val, zone, 
+            code_name, perimeter, perim_zon, perim_val,
+            national, table_perim, table_zone)
+
+def query_i1(*param, simple=False, gen=False):
     '''Create SQL query for 'i1' indicators (see parameters in module docstring)'''
 
-    level, val, zone, code_name, perimeter, perim_zon, perim_val = init_param_ixx(simple, *param)
-    national = NATIONAL_S if simple else NATIONAL
+    (perim, val, zone, code_name, perimeter, perim_zon, perim_val,
+     national, table_perim, table_zone) = init_param_ixx(simple, gen, *param)
 
-    pdc_loc = (' pdc_loc AS (SELECT id_pdc_itinerance, "coordonneesXY" ' +
-                        " FROM " + TABLE[level] + "," + PDC_ALL  +
-                        " WHERE  code = '" + val + "' AND " + ISIN_GEOM + ")" )
+    pdc_loc = f"""pdc_loc AS (SELECT id_pdc_itinerance, "coordonneesXY"
+                     FROM {TABLE[perim]}, {PDC_ALL}
+                     WHERE  code = '{val}' AND {ISIN_GEOM})"""
+    if gen:
+        pdc_loc = f"""pdc_loc AS (SELECT id_pdc_itinerance, "coordonneesXY"
+                         FROM {{TABLE[perim]}}, {PDC_ALL}
+                         WHERE  code = '{{val}}' AND {ISIN_GEOM})"""
     
-    if level == zone == '00':
-        return (" WITH " + national + ", " + perimeter +
-                " SELECT count(id_pdc_itinerance) AS nb_pdc, level" + code_name + 
-                " FROM perimeter, pointdecharge, " + TABLE[level] +
-                " GROUP BY level" + code_name )
+    if perim == zone == '00':
+        return f""" 
+    WITH  {national}, {perim_zon}
+    SELECT count(id_pdc_itinerance) AS nb_pdc, level {code_name} 
+    FROM perim_zon, pointdecharge, {table_perim}
+    GROUP BY level {code_name} """
     
-    if level == '00':
-        return (" WITH " + national + ", " + perim_zon +
-                " SELECT count(id_pdc_itinerance) AS nb_pdc, level" + code_name + 
-                " FROM perim_zon, " + PDC_ALL + " LEFT JOIN " + TABLE[zone] + " ON " + ISIN_GEOM +
-                " GROUP BY level" + code_name + " ORDER BY nb_pdc DESC")
-    
-    if int(zone) <= int(level):
-        return (" WITH " + pdc_loc + ", " + perimeter + ", " + perim_val +
-                " SELECT count(id_pdc_itinerance) AS nb_pdc, level, code" +
-                " FROM perimeter, perim_zon, pdc_loc" +
-                " GROUP BY level, code ORDER BY nb_pdc DESC")
+    if perim == '00':
+        return f"""
+    WITH {national}, {perim_zon}
+    SELECT count(id_pdc_itinerance) AS nb_pdc, level {code_name} 
+    FROM perim_zon, {PDC_ALL} LEFT JOIN {table_zone} ON {ISIN_GEOM}
+    GROUP BY level {code_name} ORDER BY nb_pdc DESC"""
 
-    return (" WITH " + pdc_loc + ", " + perim_zon +
-            " SELECT count(id_pdc_itinerance) AS nb_pdc, level" + code_name + 
-            " FROM perim_zon, pdc_loc LEFT JOIN " + TABLE[zone] + " ON " + ISIN_GEOM +
-            " GROUP BY level" + code_name + " ORDER BY nb_pdc DESC")
+    if int(zone) <= int(perim):
+        return f"""
+    WITH {pdc_loc}, {perimeter}, {perim_val}
+    SELECT count(id_pdc_itinerance) AS nb_pdc, level, code
+    FROM perimeter, perim_zon, pdc_loc
+    GROUP BY level, code ORDER BY nb_pdc DESC"""
 
-def query_i4(*param, simple=False):
+    return f"""
+    WITH {pdc_loc}, {perim_zon}
+    SELECT count(id_pdc_itinerance) AS nb_pdc, level {code_name}
+    FROM perim_zon, pdc_loc LEFT JOIN {table_zone} ON {ISIN_GEOM}
+    GROUP BY level {code_name} ORDER BY nb_pdc DESC"""
+
+def query_i4(*param, simple=False, gen=False):
     '''Create SQL query for 'i4' indicators (see parameters in module docstring)'''
     
-    level, val, zone, code_name, perimeter, perim_zon, perim_val = init_param_ixx(simple, *param)
+    (perim, val, zone, code_name, perimeter, perim_zon, perim_val,
+     national, table_perim, table_zone) = init_param_ixx(simple, gen, *param)
 
-    stat_loc = (' stat_loc AS (SELECT id_station_itinerance, "coordonneesXY" ' +
-                        " FROM " + STAT_ALL + "," + TABLE[level] +
-                        " WHERE  code = '" + val + "' AND " + ISIN_GEOM + ")")
-    
-    if level == zone == '00':
-        return (" WITH " + NATIONAL + ", " + perimeter +
-                " SELECT count(id_station_itinerance) AS nb_stat, level" + code_name + 
-                " FROM perimeter, station, " + TABLE[level] +
-                " GROUP BY level" + code_name)
+    stat_loc = f"""stat_loc AS (SELECT id_station_itinerance, "coordonneesXY"
+                     FROM {TABLE[perim]}, {STAT_ALL}
+                     WHERE  code = '{val}' AND {ISIN_GEOM})"""
+    if gen:
+        stat_loc = f"""stat_loc AS (SELECT id_station_itinerance, "coordonneesXY"
+                     FROM {{TABLE[perim]}}, {STAT_ALL}
+                     WHERE  code = '{{val}}' AND {ISIN_GEOM})"""
+        
+    if perim == zone == '00':
+        return f""" 
+    WITH  {national}, {perim_zon}
+    SELECT count(id_station_itinerance) AS nb_stat, level {code_name} 
+    FROM perim_zon, station, {table_perim}
+    GROUP BY level {code_name} """
 
-    if level == '00':
-        return (" WITH " + NATIONAL + ", " + perim_zon +
-                " SELECT count(id_station_itinerance) AS nb_stat, level" + code_name + 
-                " FROM perim_zon, " + STAT_ALL + " LEFT JOIN " + TABLE[zone] + " ON " + ISIN_GEOM +
-                " GROUP BY level" + code_name + " ORDER BY nb_stat DESC")    
+    if perim == '00':
+        return f"""
+    WITH {national}, {perim_zon}
+    SELECT count(id_station_itinerance) AS nb_stat, level {code_name} 
+    FROM perim_zon, {STAT_ALL} LEFT JOIN {table_zone} ON {ISIN_GEOM}
+    GROUP BY level {code_name} ORDER BY nb_stat DESC"""
 
-    if int(zone) <= int(level):
-        return (" WITH " + stat_loc + ", " + perimeter + ", " + perim_val +
-                " SELECT count(id_station_itinerance) AS nb_stat, level, code" +
-                " FROM perimeter, perim_zon, stat_loc" +
-                " GROUP BY level, code ORDER BY nb_stat DESC")
+    if int(zone) <= int(perim):
+        return f"""
+    WITH {stat_loc}, {perimeter}, {perim_val}
+    SELECT count(id_station_itinerance) AS nb_stat, level, code
+    FROM perimeter, perim_zon, stat_loc
+    GROUP BY level, code ORDER BY nb_stat DESC"""
 
-    return (" WITH " + stat_loc + ", " + perim_zon +
-            " SELECT count(id_station_itinerance) AS nb_stat, level" + code_name + 
-            " FROM perim_zon, stat_loc LEFT JOIN " + TABLE[zone] + " ON " + ISIN_GEOM +
-            " GROUP BY level" + code_name + " ORDER BY nb_stat DESC")
+    return f"""
+    WITH {stat_loc}, {perim_zon}
+    SELECT count(id_station_itinerance) AS nb_stat, level {code_name}
+    FROM perim_zon, stat_loc LEFT JOIN {table_zone} ON {ISIN_GEOM}
+    GROUP BY level {code_name} ORDER BY nb_stat DESC"""
 
-def query_i7(*param, simple=False):
+def query_i7(*param, simple=False, gen=False):
     '''Create SQL query for 'i7' indicators (see parameters in module docstring)'''
-    
-    level, val, zone, code_name, perimeter, perim_zon, perim_val = init_param_ixx(simple, *param)
 
-    pnom_loc = (' pnom_loc AS (SELECT puissance_nominale, "coordonneesXY" ' +
-                        " FROM " + PDC_ALL + "," + TABLE[level] +
-                        " WHERE  code = '" + val + "' AND " + ISIN_GEOM + ")")
-    
-    if level == zone == '00':
-        return (" WITH " + NATIONAL + ", " + perimeter +
-                " SELECT sum(puissance_nominale) AS p_nom, level" + code_name + 
-                " FROM perimeter, pointdecharge, " + TABLE[level] +
-                " GROUP BY level" + code_name)
-    
-    if level == '00':
-        return (" WITH " + NATIONAL + ", " + perim_zon +
-                " SELECT sum(puissance_nominale) AS p_nom, level" + code_name + 
-                " FROM perim_zon, " + PDC_ALL + " LEFT JOIN " + TABLE[zone] + " ON " + ISIN_GEOM +
-                " GROUP BY level" + code_name + " ORDER BY p_nom DESC")   
+    (perim, val, zone, code_name, perimeter, perim_zon, perim_val,
+     national, table_perim, table_zone) = init_param_ixx(simple, gen, *param)
 
-    if int(zone) <= int(level):
-        return (" WITH " + pnom_loc + ", " + perimeter + ", " + perim_val +
-                " SELECT sum(puissance_nominale) AS p_nom, level, code" +
-                " FROM perimeter, perim_zon, pnom_loc" +
-                " GROUP BY level, code ORDER BY p_nom DESC")
+    pnom_loc = f"""pnom_loc AS (SELECT puissance_nominale, "coordonneesXY"
+                   FROM {TABLE[perim]}, {PDC_ALL}
+                   WHERE  code = '{val}' AND {ISIN_GEOM})"""
+    if gen:
+            pnom_loc = f"""pnom_loc AS (SELECT puissance_nominale, "coordonneesXY"
+                   FROM {{TABLE[perim]}}, {PDC_ALL}
+                   WHERE  code = '{{val}}' AND {ISIN_GEOM})"""
 
-    return (" WITH " + pnom_loc + ", " + perim_zon +
-            " SELECT sum(puissance_nominale) AS p_nom, level" + code_name + 
-            " FROM perim_zon, pnom_loc LEFT JOIN " + TABLE[zone] + " ON " + ISIN_GEOM +
-            " GROUP BY level" + code_name + " ORDER BY p_nom DESC")
+    if perim == zone == '00':
+        return f""" 
+    WITH  {national}, {perim_zon}
+    SELECT sum(puissance_nominale) AS p_nom, level {code_name} 
+    FROM perim_zon, pointdecharge, {table_perim}
+    GROUP BY level {code_name} """
+
+    if perim == '00':
+        return f"""
+    WITH {national}, {perim_zon}
+    SELECT sum(puissance_nominale) AS p_nom, level {code_name} 
+    FROM perim_zon, {PDC_ALL} LEFT JOIN {table_zone} ON {ISIN_GEOM}
+    GROUP BY level {code_name} ORDER BY p_nom DESC"""
+
+    if int(zone) <= int(perim):
+        return f"""
+    WITH {pnom_loc}, {perimeter}, {perim_val}
+    SELECT sum(puissance_nominale) AS p_nom, level, code
+    FROM perimeter, perim_zon, pnom_loc
+    GROUP BY level, code ORDER BY p_nom DESC"""
+
+    return f"""
+    WITH {pnom_loc}, {perim_zon}
+    SELECT sum(puissance_nominale) AS p_nom, level {code_name}
+    FROM perim_zon, pnom_loc LEFT JOIN {table_zone} ON {ISIN_GEOM}
+    GROUP BY level {code_name} ORDER BY p_nom DESC"""
