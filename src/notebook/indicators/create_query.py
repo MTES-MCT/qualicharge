@@ -16,6 +16,7 @@ String
     SQL query to apply
 """
 NATIONAL = "national(code, name) AS (VALUES ('00', 'national')) "
+NATIONAL_S = "national(code) AS (VALUES ('00')) "
 P_TAB = ("puissance(p_range, p_cat) AS ( VALUES " + 
              "(numrange(0, 15.0), 1), (numrange(15.0, 26.0), 2), (numrange(26, 65.0), 3), " + 
              "(numrange(65, 175.0), 4), (numrange(175, 360.0), 5), (numrange(360, NULL), 6)) ")
@@ -149,19 +150,20 @@ def query_i1(*param, simple=False):
     '''Create SQL query for 'i1' indicators (see parameters in module docstring)'''
 
     level, val, zone, code_name, perimeter, perim_zon, perim_val = init_param_ixx(simple, *param)
-    
+    national = NATIONAL_S if simple else NATIONAL
+
     pdc_loc = (' pdc_loc AS (SELECT id_pdc_itinerance, "coordonneesXY" ' +
-                        " FROM " + PDC_ALL + "," + TABLE[level] +
+                        " FROM " + TABLE[level] + "," + PDC_ALL  +
                         " WHERE  code = '" + val + "' AND " + ISIN_GEOM + ")" )
     
     if level == zone == '00':
-        return (" WITH " + NATIONAL + ", " + perimeter +
+        return (" WITH " + national + ", " + perimeter +
                 " SELECT count(id_pdc_itinerance) AS nb_pdc, level" + code_name + 
                 " FROM perimeter, pointdecharge, " + TABLE[level] +
-                " GROUP BY level" + code_name)
+                " GROUP BY level" + code_name )
     
     if level == '00':
-        return (" WITH " + NATIONAL + ", " + perim_zon +
+        return (" WITH " + national + ", " + perim_zon +
                 " SELECT count(id_pdc_itinerance) AS nb_pdc, level" + code_name + 
                 " FROM perim_zon, " + PDC_ALL + " LEFT JOIN " + TABLE[zone] + " ON " + ISIN_GEOM +
                 " GROUP BY level" + code_name + " ORDER BY nb_pdc DESC")

@@ -12,6 +12,7 @@ jupyter:
     name: python3
 ---
 
+<!-- #region editable=true slideshow={"slide_type": ""} -->
 # Indicateurs QualiCharge : Structure
 
 Ce Notebook présente une proposition de structuration et de représentation des indicateurs Qualicharge.
@@ -19,6 +20,7 @@ Ce Notebook présente une proposition de structuration et de représentation des
 La liste des indicateurs est présentée sur [ce lien](https://loco-philippe.github.io/IRVE/files/indicateurs.html).
 
 *Nota : La représentation visuelle des indicateurs (ex. diagramme circulaire, diagramme à barre, carte choroplèthe, courbe...) n'est pas abordée.*
+<!-- #endregion -->
 
 ```python
 import os
@@ -29,6 +31,8 @@ from util import to_indicator
 
 # Connecteur à la base Qualicharge
 engine = create_engine(os.getenv("DATABASE_URL"))
+
+TABLE = {'00': 'national', '01': 'region', '02': 'department', '03': 'epci', '04': 'city'}
 ```
 
 ## Structure des indicateurs
@@ -72,63 +76,64 @@ Les colonnes de droites sont des données complémentaires:
 
 *Nota : L'appartenance à une zone géographique se fait par le test d'appartenance d'un point à un polygone (impact sur le temps de calcul de certains indicateurs).*
 
-```python editable=true slideshow={"slide_type": ""}
-# calcul sur l'ensemble des données ('i1' est équivalent à 'i1-00-00-00')
-to_indicator(engine, 'i1')
-```
 
-```python editable=true slideshow={"slide_type": ""}
-# calcul sur l'ensemble des données avec une répartition par région (01) ('i1---01' est équivalent à 'i1-00-00-01')
-# ex. ligne 1 : 'level' 01 indique un périmètre région, 'code' 84 indique le code de la région.
-to_indicator(engine, 'i1---01')[:5]
-```
+#### Ensemble des données
 
-```python editable=true slideshow={"slide_type": ""}
-# calcul sur l'ensemble de la région (01) PACA (93) sans répartition ('i1-01-93' est équivalent à 'i1-01-93-00')
-to_indicator(engine, 'i1-01-93')
-```
+La codification est 'i1-00-00' (ou bien 'i1')
 
-```python editable=true slideshow={"slide_type": ""}
-# calcul sur l'ensemble de la région (01) PACA (93) par département (02)
-to_indicator(engine, 'i1-01-93-02')
-```
+Le résultat est le suivant :
 
-### Options de représentation
+| nb_pdc | level |code|
+|--------|-------|----|
+| 13400	 | 00	 | 00 |
 
-La représentation par défaut est sous la forme d'un DataFrame pandas (voir exemples ci-dessus). 
 
-Les représentations complémentaires sont présentées ci-dessous.
 
-```python
-# Représentation sans les colonnes optionnelles (ici 'name')
-to_indicator(engine, 'i1-01-93-02', simple=True)
-```
+#### ensemble des données avec une répartition par région (01)
 
-Pour un indicateur donné (ex. 'i1'), la structure 'simple' est identique. L'historisation des données peut donc s'effectuer par indicateur (avec l'ajout d'un timestamp). 
+La codification est 'i1-00-00-01' (ou bien 'i1---01')
 
-Par exemple, on pourrait avoir une table 'i1-histo' et y stocker la valeur totale 'i1' quotidiennement et la valeur par région 'i1---01' mensuellement.
+Le résultat est le suivant :
 
-Pour avoir un historique sur le nombre de pdc en PACA, la table serait filtrée avec level=01 et code=93
+| nb_pdc | level | code |
+| :----- | :---- | :--- |
+| 3538   | 01    | 84   |
+| 2351   | 01    | 93   |
+| 1391   | 01    | 11   |
+| 1082   | 01    | 44   |
+| 1027   | 01    | 75   |
 
-```python
-# représentation avec un timestamp.
-to_indicator(engine, 'i1-01-93-02', histo=True)
-```
+*ex. ligne 1 : 'level' 01 indique un périmètre région, 'code' 84 indique le code de la région.*
 
-```python
-# représentation sous forme de JSON
-to_indicator(engine, 'i1-01-93-02', simple=True, format='json', json_orient='records')
-```
 
-```python
-# représentation sous forme de table
-to_indicator(engine, 'i1-01-93-02', format='table')
-```
+#### Ensemble de la région (01) PACA (93) sans répartition
 
-```python
-# représentation sous forme de requète PostgreSQL
-to_indicator(engine, 'i1', format='query')
-```
+La codification est 'i1-01-93' (équivalent à 'i1-01-93-00')
+
+Le résultat est le suivant :
+
+| nb_pdc | level |code|
+|--------|-------|----|
+| 2351	 | 01	 | 93 |
+
+
+
+#### ensemble de la région (1) PACA (93) par département (02)
+
+La codification est 'i1-01-93-02'
+
+Le résultat est le suivant :
+
+| nb_pdc | level | code |
+| :----- | :---- | :--- |
+| 782    | 02    | 83   |
+| 668    | 02    | 06   |
+| 268    | 02    | 13   |
+| 262    | 02    | 05   |
+| 214    | 02    | 84   |
+| 157    | 02    | 04   |
+
+
 
 ## Infrastructure - quantitatif
 
@@ -136,50 +141,81 @@ Indicateurs pris en compte : 'i1', 'i4', 'i7'
 
 Les autres indicateurs sont dérivés ('i2', 'i5', 'i8' ramené à 100 000 habitants et 'i3', 'i6', 'i9' ramené à 100 km2).
 
-*à préciser : Quelle population retenir (date fixe ?) ? Est-ce qu'on stocke en base la surface (à partir des polygones) ?*
-
 
 ### I1 : Nombre de points de recharge ouverts au public
 
 'nb_pdc' est le nombre de points de recharge.
 
 ```python
-to_indicator(engine, 'i1')
-```
+# requête globale : 'i1-00-00' ou 'i1'
 
-```python
-to_indicator(engine, 'i1-00-00-00', simple=True)
-```
+perim = '00'
+value = '00'
+zone  = '00'
 
-```python
-i1_nat = to_indicator(engine, 'i1-00-00-01')
-print(i1_nat['nb_pdc'].sum())
-i1_nat[:10]
-```
+query = f""" 
+    WITH national(code) AS (VALUES ({perim})), perimeter(level) AS (VALUES ({zone})) 
+    SELECT count(id_pdc_itinerance) AS nb_pdc, level, code
+    FROM perimeter, pointdecharge, national 
+    GROUP BY level, code"""
 
-```python
-to_indicator(engine, 'i1-01-93-00')
-```
-
-```python
-to_indicator(engine, 'i1-01-93')
-```
-
-```python
-to_indicator(engine, 'i1-01')
+pd.read_sql_query(query, engine.connect())
 ```
 
 ```python editable=true slideshow={"slide_type": ""}
-paca_epci = 'i1-01-93-02'
-i1_paca = to_indicator(engine, paca_epci, simple=True)
-i1_paca[:10]
+# requête globale avec critère : 
+
+# ex. globale avec une répartition par région (01) 'i1-00-00-01' ou 'i1---01'
+perim = '00'
+value = '00'
+zone  = '01'
+
+query = f""" 
+    WITH national(code) AS (VALUES ('{perim}')) , perim_zon(level) AS (VALUES ('{zone}'))  
+    SELECT count(id_pdc_itinerance) AS nb_pdc, level, code  
+    FROM perim_zon, pointdecharge LEFT JOIN station ON station.id = station_id LEFT JOIN localisation ON localisation_id = localisation.id  LEFT JOIN region ON ST_Within("coordonneesXY", geometry)  
+    GROUP BY level, code  ORDER BY nb_pdc DESC"""
+
+pd.read_sql_query(query, engine.connect())[:5]
 ```
 
 ```python
-to_indicator(engine, paca_epci, simple=True, format='query')
+# requête locale : 
+
+# ex. sur la région (01) PACA (93) 'i1-01-93-00' ou 'i1-01-93'
+perim = '01'
+value = '93'
+zone  = '00'
+
+query = f""" 
+    WITH  pdc_loc AS (SELECT id_pdc_itinerance, "coordonneesXY"  
+                      FROM {TABLE[perim]}, pointdecharge LEFT JOIN station ON station.id = station_id LEFT JOIN localisation ON localisation_id = localisation.id 
+                      WHERE  code = '{value}' AND ST_Within("coordonneesXY", geometry) ), 
+          perimeter(level) AS (VALUES ('{perim}')) , perim_zon(code) AS (VALUES ('{value}'))  
+    SELECT count(id_pdc_itinerance) AS nb_pdc, level, code 
+    FROM perimeter, perim_zon, pdc_loc 
+    GROUP BY level, code ORDER BY nb_pdc DESC"""
+
+pd.read_sql_query(query, engine.connect())
 ```
 
 ```python editable=true slideshow={"slide_type": ""}
+# requête locale avec critère : 
+
+# ex. sur la région (01) PACA (93) par département (02) 'i1-01-93-02'
+perim = '01'
+value = '93'
+zone  = '02'
+
+query = f""" 
+    WITH  pdc_loc AS (SELECT id_pdc_itinerance, "coordonneesXY"  
+                      FROM {TABLE[perim]}, pointdecharge LEFT JOIN station ON station.id = station_id LEFT JOIN localisation ON localisation_id = localisation.id  
+                      WHERE  code = '{value}' AND ST_Within("coordonneesXY", geometry) ), 
+          perim_zon(level) AS (VALUES ('{zone}'))  
+    SELECT count(id_pdc_itinerance) AS nb_pdc, level, code  
+    FROM perim_zon, pdc_loc LEFT JOIN {TABLE[zone]} ON ST_Within("coordonneesXY", geometry)  
+    GROUP BY level, code  ORDER BY nb_pdc DESC"""
+
 pd.read_sql_query(query, engine.connect())
 ```
 
