@@ -15,7 +15,7 @@ jupyter:
 <!-- #region editable=true slideshow={"slide_type": ""} -->
 # Indicateurs QualiCharge : Structure
 
-Ce Notebook présente une proposition de structuration et de représentation des indicateurs Qualicharge.
+Ce Notebook présente une proposition de structuration et de représentation des indicateurs Qualicharge sous forme de requêtes SQL construites à partir d'une codification des indicateurs.
 
 La liste des indicateurs est présentée sur [ce lien](https://loco-philippe.github.io/IRVE/files/indicateurs.html).
 
@@ -24,10 +24,8 @@ La liste des indicateurs est présentée sur [ce lien](https://loco-philippe.git
 
 ```python editable=true slideshow={"slide_type": ""}
 import os
-import json
-from sqlalchemy import create_engine
 import pandas as pd
-from util import to_indicator
+from sqlalchemy import create_engine
 
 # Connecteur à la base Qualicharge
 engine = create_engine(os.getenv("DATABASE_URL"))
@@ -89,7 +87,7 @@ Le résultat est le suivant :
 
 
 
-#### ensemble des données avec une répartition par région (01)
+#### Ensemble des données avec une répartition par région (01)
 
 La codification est 'i1-00-00-01' (ou bien 'i1---01')
 
@@ -106,7 +104,7 @@ Le résultat est le suivant :
 *ex. ligne 1 : 'level' 01 indique un périmètre région, 'code' 84 indique le code de la région.*
 
 
-#### Ensemble de la région (01) PACA (93) sans répartition
+#### Région (01) PACA (93)
 
 La codification est 'i1-01-93' (équivalent à 'i1-01-93-00')
 
@@ -118,7 +116,7 @@ Le résultat est le suivant :
 
 
 
-#### ensemble de la région (1) PACA (93) par département (02)
+#### Région (1) PACA (93) par département (02)
 
 La codification est 'i1-01-93-02'
 
@@ -134,6 +132,17 @@ Le résultat est le suivant :
 | 157    | 02    | 04   |
 
 
+<!-- #region editable=true slideshow={"slide_type": ""} -->
+## Présentation des indicateurs
+
+Les sections suivantes présentent pour chaque indicateur :
+- les valeurs numériques associées à l'indicateur,
+- la structure de la requête pour chacune des configurations accessibles,
+- le résultat de la requête pour chacune des configurations accessibles,
+- un exemple de requête
+
+Les requêtes sont issues d'un [générateur de requêtes](../misc/create_query.py). Les exemples de générations sont présentés dans un [notebook spécifique](../misc/create_indicators.md)
+<!-- #endregion -->
 
 ## Infrastructure - quantitatif
 
@@ -141,10 +150,11 @@ Indicateurs pris en compte : 'i1', 'i4', 'i7'
 
 Les autres indicateurs sont dérivés ('i2', 'i5', 'i8' ramené à 100 000 habitants et 'i3', 'i6', 'i9' ramené à 100 km2).
 
-
+<!-- #region editable=true slideshow={"slide_type": ""} -->
 ### I1 : Nombre de points de recharge ouverts au public
 
 'nb_pdc' est le nombre de points de recharge.
+<!-- #endregion -->
 
 ```python editable=true slideshow={"slide_type": ""}
 # requête globale : 'i1-00-00' ou 'i1'
@@ -154,7 +164,7 @@ val   = '00'
 zone  = '00'
 
 query = f""" 
-    WITH  national(code) AS (VALUES ({perim})) , perim_zon(level) AS (VALUES ('{zone}')) 
+    WITH  national(code) AS (VALUES ('{perim}')) , perim_zon(level) AS (VALUES ('{zone}')) 
     SELECT count(id_pdc_itinerance) AS nb_pdc, level , code  
     FROM perim_zon, pointdecharge, national
     GROUP BY level , code"""
@@ -171,7 +181,7 @@ val   = '00'
 zone  = '01'
 
 query = f""" 
-    WITH national(code) AS (VALUES ({perim})) , perim_zon(level) AS (VALUES ('{zone}')) 
+    WITH national(code) AS (VALUES ('{perim}')) , perim_zon(level) AS (VALUES ('{zone}')) 
     SELECT count(id_pdc_itinerance) AS nb_pdc, level , code  
     FROM perim_zon, pointdecharge LEFT JOIN station ON station.id = station_id LEFT JOIN localisation ON localisation_id = localisation.id  LEFT JOIN region ON ST_Within("coordonneesXY", geometry) 
     GROUP BY level , code  ORDER BY nb_pdc DESC"""
@@ -219,6 +229,44 @@ query = f"""
 
 pd.read_sql_query(query, engine.connect())
 ```
+
+<!-- #region editable=true slideshow={"slide_type": ""} -->
+Exemple requête : 'i1-01-93-02'
+
+```sql
+WITH
+  pdc_loc AS (
+    SELECT
+      id_pdc_itinerance,
+      "coordonneesXY"
+    FROM
+      region,
+      pointdecharge
+      LEFT JOIN station ON station.id = station_id
+      LEFT JOIN localisation ON localisation_id = localisation.id
+    WHERE
+      code = '93'
+      AND ST_Within ("coordonneesXY", geometry)
+  ),
+  perim_zon (LEVEL) AS (
+    VALUES
+      ('02')
+  )
+SELECT
+  count(id_pdc_itinerance) AS nb_pdc,
+  LEVEL,
+  code
+FROM
+  perim_zon,
+  pdc_loc
+  LEFT JOIN department ON ST_Within ("coordonneesXY", geometry)
+GROUP BY
+  LEVEL,
+  code
+ORDER BY
+  nb_pdc DESC
+```
+<!-- #endregion -->
 
 <!-- #region editable=true slideshow={"slide_type": ""} -->
 ### I4 : Nombre de stations ouvertes au public
@@ -297,6 +345,43 @@ query = f"""
 pd.read_sql_query(query, engine.connect())[:5]
 ```
 
+<!-- #region editable=true slideshow={"slide_type": ""} -->
+Exemple requête : 'i4-01-93-03'
+
+```sql
+WITH
+  stat_loc AS (
+    SELECT
+      id_station_itinerance,
+      "coordonneesXY"
+    FROM
+      region,
+      station
+      LEFT JOIN localisation ON localisation_id = localisation.id
+    WHERE
+      code = '93'
+      AND ST_Within ("coordonneesXY", geometry)
+  ),
+  perim_zon (LEVEL) AS (
+    VALUES
+      ('03')
+  )
+SELECT
+  count(id_station_itinerance) AS nb_stat,
+  LEVEL,
+  code
+FROM
+  perim_zon,
+  stat_loc
+  LEFT JOIN epci ON ST_Within ("coordonneesXY", geometry)
+GROUP BY
+  LEVEL,
+  code
+ORDER BY
+  nb_stat DESC
+```
+<!-- #endregion -->
+
 ### I7 : Puissance installée
 
 'p_nom' est la puissance nominale cumulée
@@ -372,6 +457,45 @@ query = f"""
 pd.read_sql_query(query, engine.connect())[:5]
 ```
 
+<!-- #region editable=true slideshow={"slide_type": ""} -->
+Exemple requête : 'i7-01-93-04'
+
+```sql
+WITH
+  pnom_loc AS (
+    SELECT
+      puissance_nominale,
+      "coordonneesXY"
+    FROM
+      region,
+      pointdecharge
+      LEFT JOIN station ON station.id = station_id
+      LEFT JOIN localisation ON localisation_id = localisation.id
+    WHERE
+      code = '93'
+      AND ST_Within ("coordonneesXY", geometry)
+  ),
+  perim_zon (LEVEL) AS (
+    VALUES
+      ('04')
+  )
+SELECT
+  sum(puissance_nominale) AS p_nom,
+  LEVEL,
+  code
+FROM
+  perim_zon,
+  pnom_loc
+  LEFT JOIN city ON ST_Within ("coordonneesXY", geometry)
+GROUP BY
+  LEVEL,
+  code
+ORDER BY
+  p_nom DESC
+```
+<!-- #endregion -->
+
+<!-- #region editable=true slideshow={"slide_type": ""} -->
 ## Infrastructure - typologie
 
 Les indicateurs 't1' à 't6' sont pris en compte.
@@ -379,8 +503,9 @@ Les indicateurs 't1' à 't6' sont pris en compte.
 L'indicateur 't7' reste à construire (non prioritaire).
 
 Les autres indicateurs sont à définir (
+<!-- #endregion -->
 
-
+<!-- #region editable=true slideshow={"slide_type": ""} -->
 ### T1 : Nombre de points de recharge par niveau de puissance
 
 'nb_pdc' est le nombre de points de recharge.
@@ -388,39 +513,197 @@ Les autres indicateurs sont à définir (
 'p-range' est la plage de puissance (ex. [65, 175) -> de 65 inclus à 175 exclus)
 
 'p-cat' est l'index de la catégorie (1 pour la catégorie la plus basse)
+<!-- #endregion -->
 
-```python
-t1_nat = to_indicator(engine, 't1-00')
-print(t1_nat['nb_pdc'].sum())
-t1_nat
+```python editable=true slideshow={"slide_type": ""}
+# requête globale : 't1-00-00' ou 't1'
+
+perim = '00'
+zone  = '00'
+
+query = f"""
+    WITH puissance(p_range, p_cat) AS ( VALUES (numrange(0, 15.0), 1), (numrange(15.0, 26.0), 2), (numrange(26, 65.0), 3), (numrange(65, 175.0), 4), (numrange(175, 360.0), 5), (numrange(360, NULL), 6)) , 
+         national(code) AS (VALUES ('{perim}')) , perimeter(level) AS (VALUES ('{perim}')) 
+    SELECT count(id_pdc_itinerance) AS nb_pdc, p_cat, p_range, level, code 
+    FROM perimeter, pointdecharge LEFT JOIN puissance ON puissance_nominale::numeric <@ p_range , {TABLE[perim]}
+    GROUP BY p_cat, p_range, level, code  ORDER BY nb_pdc DESC
+"""
+pd.read_sql_query(query, engine.connect())
 ```
 
-```python
-to_indicator(engine, 't1', simple=True)
+```python editable=true slideshow={"slide_type": ""}
+# requête locale : 
+
+# ex. sur la département (02) paris (75) 't1-02-75'
+perim = '02'
+zone  = '75'
+
+query = f""" 
+    WITH puissance(p_range, p_cat) AS ( VALUES (numrange(0, 15.0), 1), (numrange(15.0, 26.0), 2), (numrange(26, 65.0), 3), (numrange(65, 175.0), 4), (numrange(175, 360.0), 5), (numrange(360, NULL), 6)) , 
+         perimeter(level) AS (VALUES ('{perim}')) 
+    SELECT count(id_pdc_itinerance) AS nb_pdc, p_cat, p_range, level, code 
+    FROM perimeter, pointdecharge LEFT JOIN station ON station.id = station_id LEFT JOIN localisation ON localisation_id = localisation.id  LEFT JOIN puissance ON puissance_nominale::numeric <@ p_range , {TABLE[perim]}
+    WHERE code = '{zone}' AND ST_Within("coordonneesXY", geometry) 
+    GROUP BY p_cat, p_range, level, code  ORDER BY nb_pdc DESC
+    """
+
+pd.read_sql_query(query, engine.connect())[:5]
 ```
 
-```python
-to_indicator(engine, 't1-02-75')
-```
+<!-- #region -->
+Exemple requête : 't1-02-75'
 
-```python
-to_indicator(engine, 't1-02')
+```sql
+WITH
+  puissance (p_range, p_cat) AS (
+    VALUES
+      (numrange (0, 15.0), 1),
+      (numrange (15.0, 26.0), 2),
+      (numrange (26, 65.0), 3),
+      (numrange (65, 175.0), 4),
+      (numrange (175, 360.0), 5),
+      (numrange (360, NULL), 6)
+  ),
+  perimeter (LEVEL) AS (
+    VALUES
+      ('02')
+  )
+SELECT
+  count(id_pdc_itinerance) AS nb_pdc,
+  p_cat,
+  p_range,
+  LEVEL,
+  code
+FROM
+  perimeter,
+  pointdecharge
+  LEFT JOIN station ON station.id = station_id
+  LEFT JOIN localisation ON localisation_id = localisation.id
+  LEFT JOIN puissance ON puissance_nominale::numeric <@ p_range,
+  department
+WHERE
+  code = '75'
+  AND ST_Within ("coordonneesXY", geometry)
+GROUP BY
+  p_cat,
+  p_range,
+  LEVEL,
+  code
+ORDER BY
+  nb_pdc DESC
 ```
+<!-- #endregion -->
 
+<!-- #region editable=true slideshow={"slide_type": ""} -->
 ### T2 : Pourcentage de points de recharge par niveau de puissance
 
 Indicateur similaire à 't1' ( 'pct_nb_pdc' remplace 'nb_pdc').
 
 'pct_nb_pdc' est le pourcentage de pdc pour le niveau de puissance.
+<!-- #endregion -->
 
-```python
-to_indicator(engine, 't2')
+```python editable=true slideshow={"slide_type": ""}
+# requête globale : 't2-00-00' ou 't2'
+
+perim = '00'
+zone  = '00'
+
+query = f"""
+    WITH t1 AS (
+        WITH puissance(p_range, p_cat) AS ( VALUES (numrange(0, 15.0), 1), (numrange(15.0, 26.0), 2), (numrange(26, 65.0), 3), (numrange(65, 175.0), 4), (numrange(175, 360.0), 5), (numrange(360, NULL), 6)) , 
+             national(code) AS (VALUES ('{perim}')) , perimeter(level) AS (VALUES ('{perim}')) 
+        SELECT count(id_pdc_itinerance) AS nb_pdc, p_cat, p_range, level, code 
+        FROM perimeter, pointdecharge LEFT JOIN puissance ON puissance_nominale::numeric <@ p_range , {TABLE[perim]}
+        GROUP BY p_cat, p_range, level, code  ORDER BY nb_pdc DESC)
+    SELECT nb_pdc / (SELECT sum(nb_pdc) FROM t1) * 100 AS pct_nb_pdc, p_cat, p_range, level, code 
+    FROM t1
+"""
+pd.read_sql_query(query, engine.connect())
 ```
 
-```python
-to_indicator(engine, 't2-02-75', simple=True)
+```python editable=true slideshow={"slide_type": ""}
+# requête locale : 
+
+# ex. sur la département (02) paris (75) 't2-02-75'
+perim = '02'
+zone  = '75'
+
+query = f""" 
+    WITH t1 AS (
+        WITH puissance(p_range, p_cat) AS ( VALUES (numrange(0, 15.0), 1), (numrange(15.0, 26.0), 2), (numrange(26, 65.0), 3), (numrange(65, 175.0), 4), (numrange(175, 360.0), 5), (numrange(360, NULL), 6)) , 
+             perimeter(level) AS (VALUES ('{perim}')) 
+        SELECT count(id_pdc_itinerance) AS nb_pdc, p_cat, p_range, level, code 
+        FROM perimeter, pointdecharge LEFT JOIN station ON station.id = station_id LEFT JOIN localisation ON localisation_id = localisation.id  LEFT JOIN puissance ON puissance_nominale::numeric <@ p_range , {TABLE[perim]}
+        WHERE code = '{zone}' AND ST_Within("coordonneesXY", geometry) 
+        GROUP BY p_cat, p_range, level, code  ORDER BY nb_pdc DESC)
+    SELECT nb_pdc / (SELECT sum(nb_pdc) FROM t1) * 100 AS pct_nb_pdc, p_cat, p_range, level, code 
+    FROM t1
+    """
+
+pd.read_sql_query(query, engine.connect())[:5]
 ```
 
+<!-- #region editable=true slideshow={"slide_type": ""} -->
+Exemple requête 't2-02-75' :
+
+```sql
+WITH
+  t1 AS (
+    WITH
+      puissance (p_range, p_cat) AS (
+        VALUES
+          (numrange (0, 15.0), 1),
+          (numrange (15.0, 26.0), 2),
+          (numrange (26, 65.0), 3),
+          (numrange (65, 175.0), 4),
+          (numrange (175, 360.0), 5),
+          (numrange (360, NULL), 6)
+      ),
+      perimeter (LEVEL) AS (
+        VALUES
+          ('02')
+      )
+    SELECT
+      count(id_pdc_itinerance) AS nb_pdc,
+      p_cat,
+      p_range,
+      LEVEL,
+      code
+    FROM
+      perimeter,
+      pointdecharge
+      LEFT JOIN station ON station.id = station_id
+      LEFT JOIN localisation ON localisation_id = localisation.id
+      LEFT JOIN puissance ON puissance_nominale::numeric <@ p_range,
+      department
+    WHERE
+      code = '75'
+      AND ST_Within ("coordonneesXY", geometry)
+    GROUP BY
+      p_cat,
+      p_range,
+      LEVEL,
+      code
+    ORDER BY
+      nb_pdc DESC
+  )
+SELECT
+  nb_pdc / (
+    SELECT
+      sum(nb_pdc)
+    FROM
+      t1
+  ) * 100 AS pct_nb_pdc,
+  p_cat,
+  p_range,
+  LEVEL,
+  code
+FROM
+  t1
+```
+<!-- #endregion -->
+
+<!-- #region editable=true slideshow={"slide_type": ""} -->
 ### T3 : Nombre de stations par nombre de points de recharge
 
 'nb_stations' est le nombre de stations.
@@ -428,14 +711,86 @@ to_indicator(engine, 't2-02-75', simple=True)
 'nb_pdc' est le nombre de pdc.
 
 ex. il y a 2790 stations (nb_stations) avec un seul pdc (nb_pdc).
+<!-- #endregion -->
 
-```python
-to_indicator(engine, 't3-00')[:10]
+```python editable=true slideshow={"slide_type": ""}
+# requête globale : 't3-00-00' ou 't3'
+
+perim = '00'
+zone  = '00'
+
+query = f"""
+    WITH stat AS (SELECT count(station_id) AS nb_pdc
+            FROM pointdecharge LEFT JOIN station ON station.id = station_id 
+            GROUP BY station_id), national(code) AS (VALUES ('{perim}')) , perimeter(level) AS (VALUES ('{perim}')) 
+    SELECT count(nb_pdc) AS nb_stations, nb_pdc, level, code 
+    FROM perimeter, stat, {TABLE[perim]}
+    GROUP BY nb_pdc, level, code  ORDER BY nb_stations DESC
+"""
+pd.read_sql_query(query, engine.connect())[:5]
 ```
 
-```python
-to_indicator(engine, 't3-04-74012')
+```python editable=true slideshow={"slide_type": ""}
+# requête locale : 
+
+# ex. sur la commune (04) d'Annemasse (74012) 't3-04-74012'
+perim = '04'
+zone  = '74012'
+
+query = f""" 
+    WITH stat AS (SELECT count(station_id) AS nb_pdc, code 
+            FROM pointdecharge LEFT JOIN station ON station.id = station_id LEFT JOIN localisation ON localisation_id = localisation.id , {TABLE[perim]} 
+            WHERE code = '{zone}' AND ST_Within("coordonneesXY", geometry)  GROUP BY station_id, code ), 
+        perimeter(level) AS (VALUES ('{perim}')) 
+    SELECT count(nb_pdc) AS nb_stations, nb_pdc, level, code 
+    FROM perimeter, stat
+    GROUP BY nb_pdc, level, code  ORDER BY nb_stations DESC
+    """
+
+pd.read_sql_query(query, engine.connect())[:5]
 ```
+
+<!-- #region editable=true slideshow={"slide_type": ""} -->
+Exemple requête 't3-04-74012' :
+
+```sql
+WITH
+  stat AS (
+    SELECT
+      count(station_id) AS nb_pdc,
+      code
+    FROM
+      pointdecharge
+      LEFT JOIN station ON station.id = station_id
+      LEFT JOIN localisation ON localisation_id = localisation.id,
+      city
+    WHERE
+      code = '74012'
+      AND ST_Within ("coordonneesXY", geometry)
+    GROUP BY
+      station_id,
+      code
+  ),
+  perimeter (LEVEL) AS (
+    VALUES
+      ('04')
+  )
+SELECT
+  count(nb_pdc) AS nb_stations,
+  nb_pdc,
+  LEVEL,
+  code
+FROM
+  perimeter,
+  stat
+GROUP BY
+  nb_pdc,
+  LEVEL,
+  code
+ORDER BY
+  nb_stations DESC
+```
+<!-- #endregion -->
 
 ### T4 : Pourcentage de stations par nombre de points de recharge
 
@@ -443,13 +798,105 @@ Indicateur similaire à 't3' ( 'pct_nb_stations' remplace 'nb_stations').
 
 'pct_nb_stations' est le pourcentage de stations avec un nombre de pdc donné.
 
-```python
-to_indicator(engine, 't4')[:10]
+```python editable=true slideshow={"slide_type": ""}
+# requête globale : 't4-00-00' ou 't4'
+
+perim = '00'
+zone  = '00'
+
+query = f"""
+    WITH t3 AS ( 
+        WITH stat AS (SELECT count(station_id) AS nb_pdc
+                FROM pointdecharge LEFT JOIN station ON station.id = station_id 
+                GROUP BY station_id), national(code) AS (VALUES ('{perim}')) , perimeter(level) AS (VALUES ('{perim}')) 
+        SELECT count(nb_pdc) AS nb_stations, nb_pdc, level, code 
+        FROM perimeter, stat, {TABLE[perim]}
+        GROUP BY nb_pdc, level, code  ORDER BY nb_stations DESC)
+    SELECT nb_stations / (SELECT sum(nb_stations) FROM t3) * 100 AS pct_nb_stations, nb_pdc, level, code 
+    FROM t3
+"""
+pd.read_sql_query(query, engine.connect())[:5]
 ```
 
-```python
-to_indicator(engine, 't4-04-74012', simple=True)
+```python editable=true slideshow={"slide_type": ""}
+# requête locale : 
+
+# ex. sur la commune (04) annemasse (74012) 't4-04-74012'
+perim = '04'
+zone  = '74012'
+
+query = f""" 
+    WITH t3 AS (
+    WITH stat AS (SELECT count(station_id) AS nb_pdc, code 
+            FROM pointdecharge LEFT JOIN station ON station.id = station_id LEFT JOIN localisation ON localisation_id = localisation.id , {TABLE[perim]} 
+            WHERE code = '{zone}' AND ST_Within("coordonneesXY", geometry)  GROUP BY station_id, code ), 
+        perimeter(level) AS (VALUES ('{perim}')) 
+    SELECT count(nb_pdc) AS nb_stations, nb_pdc, level, code 
+    FROM perimeter, stat
+    GROUP BY nb_pdc, level, code  ORDER BY nb_stations DESC)
+    SELECT nb_stations / (SELECT sum(nb_stations) FROM t3) * 100 AS pct_nb_stations, nb_pdc, level, code 
+    FROM t3
+    """
+
+pd.read_sql_query(query, engine.connect())[:5]
 ```
+
+<!-- #region editable=true slideshow={"slide_type": ""} -->
+Exemple requête 't4-04-74012' :
+
+```sql
+WITH
+  t3 AS (
+    WITH
+      stat AS (
+        SELECT
+          count(station_id) AS nb_pdc,
+          code
+        FROM
+          pointdecharge
+          LEFT JOIN station ON station.id = station_id
+          LEFT JOIN localisation ON localisation_id = localisation.id,
+          city
+        WHERE
+          code = '74012'
+          AND ST_Within ("coordonneesXY", geometry)
+        GROUP BY
+          station_id,
+          code
+      ),
+      perimeter (LEVEL) AS (
+        VALUES
+          ('04')
+      )
+    SELECT
+      count(nb_pdc) AS nb_stations,
+      nb_pdc,
+      LEVEL,
+      code
+    FROM
+      perimeter,
+      stat
+    GROUP BY
+      nb_pdc,
+      LEVEL,
+      code
+    ORDER BY
+      nb_stations DESC
+  )
+SELECT
+  nb_stations / (
+    SELECT
+      sum(nb_stations)
+    FROM
+      t3
+  ) * 100 AS pct_nb_stations,
+  nb_pdc,
+  LEVEL,
+  code
+FROM
+  t3
+```
+<!-- #endregion -->
 
 ### T5 : Nombre de stations par type d’implantation
 
@@ -457,23 +904,69 @@ to_indicator(engine, 't4-04-74012', simple=True)
 
 'implantation' est le type d'implantation
 
-```python
-t5_nat = to_indicator(engine, 't5-00')
-print(t5_nat['nb_stations'].sum())
-t5_nat[:10]
+```python editable=true slideshow={"slide_type": ""}
+# requête globale : 't5-00-00' ou 't5'
+
+perim = '00'
+zone  = '00'
+
+query = f"""
+    WITH national(code) AS (VALUES ('{perim}')) , perimeter(level) AS (VALUES ('{perim}')) 
+    SELECT count(id_station_itinerance) AS nb_stations, implantation_station AS implantation, level, code  
+    FROM perimeter, station, {TABLE[perim]}
+    GROUP BY implantation, level, code  ORDER BY nb_stations DESC
+"""
+pd.read_sql_query(query, engine.connect())[:5]
 ```
 
-```python
-to_indicator(engine, 't5', simple=True)
+```python editable=true slideshow={"slide_type": ""}
+# requête locale : 
+
+# ex. sur l'EPCI (03) Métropole Rouen Normandie (200023414) 't5-03-200023414'
+perim = '03'
+zone  = '200023414'
+
+query = f""" 
+    WITH perimeter(level) AS (VALUES ('{perim}')) 
+    SELECT count(id_station_itinerance) AS nb_stations, implantation_station AS implantation, level, code 
+    FROM perimeter, station LEFT JOIN localisation ON localisation_id = localisation.id , {TABLE[perim]}
+    WHERE code = '{zone}' AND ST_Within("coordonneesXY", geometry) 
+    GROUP BY implantation, level, code  ORDER BY nb_stations DESC
+    """
+
+pd.read_sql_query(query, engine.connect())[:5]
 ```
 
-```python
-to_indicator(engine, 't5-03-200023414')
-```
+<!-- #region editable=true slideshow={"slide_type": ""} -->
+Exemple requête 't5-03-200023414' :
 
-```python
-to_indicator(engine, 't5-03-200023414', simple=True)
+```sql
+WITH
+  perimeter (LEVEL) AS (
+    VALUES
+      ('03')
+  )
+SELECT
+  count(id_station_itinerance) AS nb_stations,
+  implantation_station AS implantation,
+  LEVEL,
+  code
+FROM
+  perimeter,
+  station
+  LEFT JOIN localisation ON localisation_id = localisation.id,
+  epci
+WHERE
+  code = '200023414'
+  AND ST_Within ("coordonneesXY", geometry)
+GROUP BY
+  implantation,
+  LEVEL,
+  code
+ORDER BY
+  nb_stations DESC
 ```
+<!-- #endregion -->
 
 ### T6 : Pourcentage de stations par type d’implantation
 
@@ -481,25 +974,100 @@ Indicateur similaire à 't5' ( 'pct_nb_stations' remplace 'nb_stations').
 
 'pct_nb_stations' est le pourcentage de stations avec un type d'implantation donné.
 
-```python
-to_indicator(engine, 't6')
+```python editable=true slideshow={"slide_type": ""}
+# requête globale : 't6-00-00' ou 't6'
+
+perim = '00'
+zone  = '00'
+
+query = f"""
+    WITH t5 AS (
+    WITH national(code) AS (VALUES ('{perim}')) , perimeter(level) AS (VALUES ('{perim}')) 
+    SELECT count(id_station_itinerance) AS nb_stations, implantation_station AS implantation, level, code  
+    FROM perimeter, station, {TABLE[perim]}
+    GROUP BY implantation, level, code  ORDER BY nb_stations DESC)
+    SELECT nb_stations / (SELECT sum(nb_stations) FROM t5) * 100 AS pct_nb_stations, implantation, level, code 
+    FROM t5
+"""
+pd.read_sql_query(query, engine.connect())[:5]
 ```
 
-```python
-to_indicator(engine, 't6-03-200023414')
+```python editable=true slideshow={"slide_type": ""}
+# requête locale : 
+
+# ex. sur l'EPCI (03) Métropole Rouen Normandie (200023414) 't6-03-200023414'
+perim = '03'
+zone  = '200023414'
+
+query = f""" 
+    WITH t5 AS (
+    WITH perimeter(level) AS (VALUES ('{perim}')) 
+    SELECT count(id_station_itinerance) AS nb_stations, implantation_station AS implantation, level, code 
+    FROM perimeter, station LEFT JOIN localisation ON localisation_id = localisation.id , {TABLE[perim]}
+    WHERE code = '{zone}' AND ST_Within("coordonneesXY", geometry) 
+    GROUP BY implantation, level, code  ORDER BY nb_stations DESC)
+    SELECT nb_stations / (SELECT sum(nb_stations) FROM t5) * 100 AS pct_nb_stations, implantation, level, code 
+    FROM t5
+    """
+
+pd.read_sql_query(query, engine.connect())[:5]
 ```
 
-```python
-to_indicator(engine, 't6-03-200023414', simple=True)
-```
+<!-- #region editable=true slideshow={"slide_type": ""} -->
+Exemple requête 't6-03-200023414' :
 
+```sql
+WITH
+  t5 AS (
+    WITH
+      perimeter (LEVEL) AS (
+        VALUES
+          ('03')
+      )
+    SELECT
+      count(id_station_itinerance) AS nb_stations,
+      implantation_station AS implantation,
+      LEVEL,
+      code
+    FROM
+      perimeter,
+      station
+      LEFT JOIN localisation ON localisation_id = localisation.id,
+      epci
+    WHERE
+      code = '200023414'
+      AND ST_Within ("coordonneesXY", geometry)
+    GROUP BY
+      implantation,
+      LEVEL,
+      code
+    ORDER BY
+      nb_stations DESC
+  )
+SELECT
+  nb_stations / (
+    SELECT
+      sum(nb_stations)
+    FROM
+      t5
+  ) * 100 AS pct_nb_stations,
+  implantation,
+  LEVEL,
+  code
+FROM
+  t5
+```
+<!-- #endregion -->
+
+<!-- #region editable=true slideshow={"slide_type": ""} -->
 ### Autres indicateurs de typologie
 
 Les indicateurs liés à d'autres typologies (ex. opérateurs, accès deux roues, période d’ouverture, accès handicapés…) sont à définir.
 
 Ceux concernant les opérateurs sont prioritaires.
+<!-- #endregion -->
 
-
+<!-- #region editable=true slideshow={"slide_type": ""} -->
 ## Autres indicateurs à prendre en compte
 
 - Indicateurs d'historique (traitement des données historisées)
@@ -507,3 +1075,4 @@ Ceux concernant les opérateurs sont prioritaires.
 - Usage - quantitatif (traitement des données dynamiques) 
 - Usage - qualité de service (traitement des données dynamiques)
 - Indicateurs étendus (en lien avec des données externes - ex. trafic, immatriculation, consommation ENEDIS)
+<!-- #endregion -->
