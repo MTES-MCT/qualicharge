@@ -22,21 +22,9 @@ La liste des indicateurs est présentée sur [ce lien](https://loco-philippe.git
 La présentation des requêtes associée est présentée sur [ce notebook](../indicators/reference_indicators.md)
 <!-- #endregion -->
 
-```python
-import os
-import json
-from sqlalchemy import create_engine
-import pandas as pd
-from create_query import to_indicator
-
-# Connecteur à la base Qualicharge
-engine = create_engine(os.getenv("DATABASE_URL"))
-TABLE = {'00': 'national', '01': 'region', '02': 'department', '03': 'epci', '04': 'city'}
-```
-
 ## Structure des indicateurs
 
-<!-- #region -->
+<!-- #region jp-MarkdownHeadingCollapsed=true -->
 ### Codification des indicateurs
 
 Les indicateurs sont codifiés par une chaine de caractères *[type]-[périmètre]-[valeur de périmètre]-[critère]* avec :
@@ -150,10 +138,19 @@ Les autres indicateurs sont à définir (
 
 'p-cat' est l'index de la catégorie (1 pour la catégorie la plus basse)
 
+<!-- #region editable=true slideshow={"slide_type": ""} -->
+#### requête globale
+<!-- #endregion -->
+
 ```python
 t1_nat = to_indicator(engine, 't1-00')
 print(t1_nat['nb_pdc'].sum())
 t1_nat
+```
+
+```python editable=true slideshow={"slide_type": ""}
+query_gen = to_indicator(engine, 't1-00', simple=True, format='query')
+print(query_gen)
 ```
 
 ```python editable=true slideshow={"slide_type": ""}
@@ -174,6 +171,10 @@ query = f"""
 """
 pd.read_sql_query(query, engine.connect())
 ```
+
+<!-- #region editable=true slideshow={"slide_type": ""} -->
+#### requête locale
+<!-- #endregion -->
 
 ```python
 to_indicator(engine, 't1-02-75')
@@ -209,8 +210,17 @@ Indicateur similaire à 't1' ( 'pct_nb_pdc' remplace 'nb_pdc').
 
 'pct_nb_pdc' est le pourcentage de pdc pour le niveau de puissance.
 
+<!-- #region editable=true slideshow={"slide_type": ""} -->
+#### requête globale
+<!-- #endregion -->
+
 ```python
 to_indicator(engine, 't2')
+```
+
+```python editable=true slideshow={"slide_type": ""}
+query_gen = to_indicator(engine, 't2', simple=True, format='query')
+print(query_gen)
 ```
 
 ```python editable=true slideshow={"slide_type": ""}
@@ -234,6 +244,10 @@ query = f"""
 """
 pd.read_sql_query(query, engine.connect())
 ```
+
+<!-- #region editable=true slideshow={"slide_type": ""} -->
+#### requête locale
+<!-- #endregion -->
 
 ```python
 to_indicator(engine, 't2-02-75', simple=True)
@@ -274,8 +288,17 @@ pd.read_sql_query(query, engine.connect())
 
 ex. il y a 2790 stations (nb_stations) avec un seul pdc (nb_pdc).
 
+<!-- #region editable=true slideshow={"slide_type": ""} -->
+#### requête globale
+<!-- #endregion -->
+
 ```python
 to_indicator(engine, 't3-00')[:5]
+```
+
+```python editable=true slideshow={"slide_type": ""}
+query_gen = to_indicator(engine, 't3', simple=True, format='query')
+print(query_gen)
 ```
 
 ```python editable=true slideshow={"slide_type": ""}
@@ -297,6 +320,10 @@ query = f"""
 """
 pd.read_sql_query(query, engine.connect())[:5]
 ```
+
+<!-- #region editable=true slideshow={"slide_type": ""} -->
+#### requête locale
+<!-- #endregion -->
 
 ```python
 to_indicator(engine, 't3-04-74012')
@@ -333,8 +360,17 @@ Indicateur similaire à 't3' ( 'pct_nb_stations' remplace 'nb_stations').
 
 'pct_nb_stations' est le pourcentage de stations avec un nombre de pdc donné.
 
+<!-- #region editable=true slideshow={"slide_type": ""} -->
+#### requête globale
+<!-- #endregion -->
+
 ```python
 to_indicator(engine, 't4')[:5]
+```
+
+```python editable=true slideshow={"slide_type": ""}
+query_gen = to_indicator(engine, 't4', simple=True, format='query')
+print(query_gen)
 ```
 
 ```python editable=true slideshow={"slide_type": ""}
@@ -359,6 +395,10 @@ query = f"""
 """
 pd.read_sql_query(query, engine.connect())[:5]
 ```
+
+<!-- #region editable=true slideshow={"slide_type": ""} -->
+#### requête locale
+<!-- #endregion -->
 
 ```python
 to_indicator(engine, 't4-04-74012', simple=True)
@@ -398,10 +438,19 @@ pd.read_sql_query(query, engine.connect())[:5]
 
 'implantation' est le type d'implantation
 
+<!-- #region editable=true slideshow={"slide_type": ""} -->
+#### requête globale
+<!-- #endregion -->
+
 ```python
 t5_nat = to_indicator(engine, 't5-00')
 print(t5_nat['nb_stations'].sum())
 t5_nat[:10]
+```
+
+```python editable=true slideshow={"slide_type": ""}
+query_gen = to_indicator(engine, 't5', simple=True, format='query')
+print(query_gen)
 ```
 
 ```python editable=true slideshow={"slide_type": ""}
@@ -421,6 +470,10 @@ query = f"""
 """
 pd.read_sql_query(query, engine.connect())[:5]
 ```
+
+<!-- #region editable=true slideshow={"slide_type": ""} -->
+#### requête locale
+<!-- #endregion -->
 
 ```python
 to_indicator(engine, 't5-03-200023414')
@@ -455,8 +508,17 @@ Indicateur similaire à 't5' ( 'pct_nb_stations' remplace 'nb_stations').
 
 'pct_nb_stations' est le pourcentage de stations avec un type d'implantation donné.
 
+<!-- #region editable=true slideshow={"slide_type": ""} -->
+#### requête globale
+<!-- #endregion -->
+
 ```python
 to_indicator(engine, 't6')
+```
+
+```python editable=true slideshow={"slide_type": ""}
+query_gen = to_indicator(engine, 't6', simple=True, format='query')
+print(query_gen)
 ```
 
 ```python editable=true slideshow={"slide_type": ""}
@@ -479,6 +541,10 @@ query = f"""
 """
 pd.read_sql_query(query, engine.connect())[:5]
 ```
+
+<!-- #region editable=true slideshow={"slide_type": ""} -->
+#### requête locale
+<!-- #endregion -->
 
 ```python
 to_indicator(engine, 't6-03-200023414')
@@ -540,12 +606,20 @@ Les autres indicateurs sont dérivés ('i2', 'i5', 'i8' ramené à 100 000 habit
 'nb_pdc' est le nombre de points de recharge.
 <!-- #endregion -->
 
+<!-- #region editable=true slideshow={"slide_type": ""} -->
+#### requête globale
+<!-- #endregion -->
+
 ```python
 to_indicator(engine, 'i1')
 ```
 
 ```python
 to_indicator(engine, 'i1-00-00-00', simple=True)
+```
+
+```python editable=true slideshow={"slide_type": ""}
+print(to_indicator(engine, 'i1', simple=True, format='query'))
 ```
 
 ```python editable=true slideshow={"slide_type": ""}
@@ -567,10 +641,16 @@ query = f"""
 pd.read_sql_query(query, engine.connect())[:5]
 ```
 
+#### requête globale avec critère
+
 ```python
 i1_nat = to_indicator(engine, 'i1-00-00-01')
 print(i1_nat['nb_pdc'].sum())
 i1_nat[:5]
+```
+
+```python editable=true slideshow={"slide_type": ""}
+print(to_indicator(engine, 'i1-00-00-01', simple=True, format='query'))
 ```
 
 ```python editable=true slideshow={"slide_type": ""}
@@ -592,8 +672,16 @@ query = f"""
 pd.read_sql_query(query, engine.connect())[:5]
 ```
 
+<!-- #region editable=true slideshow={"slide_type": ""} -->
+#### requête locale
+<!-- #endregion -->
+
 ```python
 to_indicator(engine, 'i1-01-93-00')
+```
+
+```python editable=true slideshow={"slide_type": ""}
+print(to_indicator(engine, 'i1-01-93-00', simple=True, format='query'))
 ```
 
 ```python
@@ -621,10 +709,18 @@ query = f"""
 pd.read_sql_query(query, engine.connect())[:5]
 ```
 
+<!-- #region editable=true slideshow={"slide_type": ""} -->
+#### requête locale avec critère
+<!-- #endregion -->
+
 ```python editable=true slideshow={"slide_type": ""}
 paca_epci = 'i1-01-93-02'
 i1_paca = to_indicator(engine, paca_epci, simple=True)
 i1_paca[:10]
+```
+
+```python editable=true slideshow={"slide_type": ""}
+print(to_indicator(engine, 'i1-01-93-02', simple=True, format='query'))
 ```
 
 ```python editable=true slideshow={"slide_type": ""}
@@ -656,8 +752,17 @@ pd.read_sql_query(query, engine.connect())
 
 'nb_stat' est le nombre de stations.
 
+<!-- #region editable=true slideshow={"slide_type": ""} -->
+#### requête globale
+<!-- #endregion -->
+
 ```python
 to_indicator(engine, 'i4-0', simple=True)
+```
+
+```python editable=true slideshow={"slide_type": ""}
+query_gen = to_indicator(engine, 'i4', simple=True, format='query')
+print(query_gen)
 ```
 
 ```python editable=true slideshow={"slide_type": ""}
@@ -679,8 +784,17 @@ query = f"""
 pd.read_sql_query(query, engine.connect())[:5]
 ```
 
+<!-- #region editable=true slideshow={"slide_type": ""} -->
+#### requête globale avec critère
+<!-- #endregion -->
+
 ```python
 to_indicator(engine, 'i4-0-xx-01')[:5]
+```
+
+```python editable=true slideshow={"slide_type": ""}
+query_gen = to_indicator(engine, 'i4-0-xx-01', simple=True, format='query')
+print(query_gen)
 ```
 
 ```python editable=true slideshow={"slide_type": ""}
@@ -702,8 +816,17 @@ query = f"""
 pd.read_sql_query(query, engine.connect())[:5]
 ```
 
+<!-- #region editable=true slideshow={"slide_type": ""} -->
+#### requête locale
+<!-- #endregion -->
+
 ```python
 to_indicator(engine, 'i4-01-93-0')
+```
+
+```python editable=true slideshow={"slide_type": ""}
+query_gen = to_indicator(engine, 'i4-01-93-0', simple=True, format='query')
+print(query_gen)
 ```
 
 ```python editable=true slideshow={"slide_type": ""}
@@ -727,11 +850,15 @@ query = f"""
 pd.read_sql_query(query, engine.connect())[:5]
 ```
 
-```python
+<!-- #region editable=true slideshow={"slide_type": ""} -->
+#### requête locale avec critère
+<!-- #endregion -->
+
+```python editable=true slideshow={"slide_type": ""}
 to_indicator(engine, 'i4-01-93-03')[:5]
 ```
 
-```python editable=true slideshow={"slide_type": ""}
+```python editable=true jupyter={"source_hidden": true} slideshow={"slide_type": ""}
 print(to_indicator(engine, 'i4-01-93-03', simple=True, format='query'))
 ```
 
@@ -762,8 +889,17 @@ pd.read_sql_query(query, engine.connect())[:5]
 'p_nom' est la puissance nominale cumulée
 <!-- #endregion -->
 
+<!-- #region editable=true slideshow={"slide_type": ""} -->
+#### requête globale
+<!-- #endregion -->
+
 ```python
 to_indicator(engine, 'i7', simple=True)
+```
+
+```python editable=true slideshow={"slide_type": ""}
+query_gen = to_indicator(engine, 'i7', simple=True, format='query')
+print(query_gen)
 ```
 
 ```python editable=true slideshow={"slide_type": ""}
@@ -785,10 +921,19 @@ query = f"""
 pd.read_sql_query(query, engine.connect())
 ```
 
+<!-- #region editable=true slideshow={"slide_type": ""} -->
+#### requête globale avec critère
+<!-- #endregion -->
+
 ```python
 i7_nat = to_indicator(engine, 'i7-0--01')
 print(i7_nat['p_nom'].sum())
 i7_nat[:5]
+```
+
+```python editable=true slideshow={"slide_type": ""}
+query_gen = to_indicator(engine, 'i7-0--01', simple=True, format='query')
+print(query_gen)
 ```
 
 ```python editable=true slideshow={"slide_type": ""}
@@ -810,8 +955,17 @@ query = f"""
 pd.read_sql_query(query, engine.connect())[:5]
 ```
 
+<!-- #region editable=true slideshow={"slide_type": ""} -->
+#### requête locale
+<!-- #endregion -->
+
 ```python
 to_indicator(engine, 'i7-01-93-00', simple=True)
+```
+
+```python editable=true slideshow={"slide_type": ""}
+query_gen = to_indicator(engine, 'i7-01-93-00', simple=True, format='query')
+print(query_gen)
 ```
 
 ```python editable=true slideshow={"slide_type": ""}
@@ -834,6 +988,10 @@ query = f"""
 """
 pd.read_sql_query(query, engine.connect())[:5]
 ```
+
+<!-- #region editable=true slideshow={"slide_type": ""} -->
+#### requête locale avec critère
+<!-- #endregion -->
 
 ```python
 i7_paca_city = to_indicator(engine, 'i7-01-93-04', simple=True)

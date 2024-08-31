@@ -267,6 +267,37 @@ def init_param_ixx(simple, gen, *param):
             code_name, perimeter, perim_zon, perim_val,
             national, table_perim, table_zone)
 
+def query_i11(*param, simple=False, gen=False):
+
+    perim, val, zone = (param + ('00', '00', '00'))[:3]
+    perim = perim.rjust(2, '0')
+    val = val.rjust(2, '0')
+    zone = zone.rjust(2, '0')
+
+    pdc_cog = f"""
+        x_city AS (SELECT geometry, code AS c_code, department_id, epci_id  FROM city),
+        x_department AS (SELECT id as d_id, code AS d_code, region_id FROM department),
+        x_epci AS (SELECT id as e_id, code AS e_code FROM epci),
+        x_region AS (SELECT id as r_id, code AS r_code FROM region),
+        city_cog AS (SELECT geometry, c_code, d_code, e_code, r_code from x_city LEFT JOIN x_department ON x_department.d_id = department_id LEFT JOIN x_epci ON x_epci.e_id = epci_id LEFT JOIN x_region ON region_id = x_region.r_id),
+        pdc_all AS (SELECT * from pointdecharge LEFT JOIN station ON station.id = station_id LEFT JOIN localisation ON localisation_id = localisation.id),
+        pdc_cog AS (SELECT * from pdc_all LEFT JOIN city_cog ON ST_Within("coordonneesXY", geometry))"""
+
+    FIELD = {'00': 'all_data', '01': 'r_code', '02': 'd_code', '03': 'e_code', '04': 'c_code'}
+    zone = perim if zone == '00' else zone
+    code_val = FIELD[perim]
+    code_zone = FIELD[zone]
+    
+    # perimeter = f"perimeter(level, all_data) AS (VALUES ('{zone}', '00')) "
+
+    return f"""
+    WITH {pdc_cog}, 
+         perimeter(level, all_data) AS (VALUES ('{zone}', '00'))
+    SELECT count(id_pdc_itinerance) AS nb_pdc, level, {code_zone} AS x_code
+    FROM perimeter, pdc_cog
+    WHERE {code_val} = '{val}'
+    GROUP BY level, x_code ORDER BY nb_pdc DESC"""
+
 def query_i1(*param, simple=False, gen=False):
     '''Create SQL query for 'i1' indicators (see parameters in module docstring)'''
 
