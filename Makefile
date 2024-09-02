@@ -189,7 +189,7 @@ reset-db: ## Reset the PostgreSQL database
 seed-api: ## seed the API database (static data)
 seed-api: run
 	zcat data/irve-statique.json.gz | \
-		bin/qcc static bulk --chunk-size 100
+		bin/qcc static bulk --chunk-size 1000
 .PHONY: seed-api
 
 seed-metabase: ## seed the Metabase server

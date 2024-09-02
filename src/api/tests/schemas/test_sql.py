@@ -8,7 +8,7 @@ import pytest
 from sqlalchemy import func
 from sqlmodel import select
 
-from qualicharge.exceptions import ProgrammingError
+from qualicharge.exceptions import ObjectDoesNotExist, ProgrammingError
 from qualicharge.factories.static import StatiqueFactory
 from qualicharge.schemas.core import (
     Amenageur,
@@ -44,6 +44,25 @@ def test_statique_importer_properties(db_session):
 
     with pytest.raises(KeyError, match="not in index"):
         assert importer.pdc
+
+
+def test_statique_importer_unknown_operational_unit(db_session):
+    """Test the StatiqueImporter when dealing with an unknown operational unit."""
+    size = 5
+    statiques = StatiqueFactory.batch(size=size)
+    statiques[1].id_station_itinerance = f"DE{statiques[1].id_station_itinerance[2:]}"
+    statiques[3].id_station_itinerance = f"ES{statiques[3].id_station_itinerance[2:]}"
+    df = pd.read_json(
+        StringIO(f"{'\n'.join([s.model_dump_json() for s in statiques])}"),
+        lines=True,
+        dtype_backend="pyarrow",
+    )
+
+    importer = StatiqueImporter(df, db_session.connection())
+    with pytest.raises(
+        ObjectDoesNotExist, match="Operational units should be created first"
+    ):
+        importer.save()
 
 
 def test_statique_importer_save_or_update(db_session):

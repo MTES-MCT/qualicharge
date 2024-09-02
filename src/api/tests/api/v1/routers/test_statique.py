@@ -1,9 +1,11 @@
 """Tests for the QualiCharge API static router."""
 
 import json
+from io import StringIO
 from random import choice, sample
 from typing import cast
 
+import pandas as pd
 import pytest
 from fastapi import status
 from pydantic_extra_types.coordinate import Coordinate
@@ -20,6 +22,7 @@ from qualicharge.schemas.core import (
     PointDeCharge,
     Station,
 )
+from qualicharge.schemas.sql import StatiqueImporter
 from qualicharge.schemas.utils import pdc_to_statique, save_statique, save_statiques
 
 
@@ -377,7 +380,7 @@ def test_create_for_superuser(client_auth):
     json_response = response.json()
     assert json_response["message"] == "Statique items created"
     assert json_response["size"] == 1
-    assert json_response["items"][0]["id_pdc_itinerance"] == id_pdc_itinerance
+    assert json_response["items"][0] == id_pdc_itinerance
 
 
 @pytest.mark.parametrize(
@@ -420,7 +423,7 @@ def test_create_for_user(client_auth, db_session):
     json_response = response.json()
     assert json_response["message"] == "Statique items created"
     assert json_response["size"] == 1
-    assert json_response["items"][0]["id_pdc_itinerance"] == id_pdc_itinerance
+    assert json_response["items"][0] == id_pdc_itinerance
 
 
 def test_create_for_unknown_operational_unit(client_auth, db_session):
@@ -628,8 +631,8 @@ def test_bulk_for_superuser(client_auth):
     json_response = response.json()
     assert json_response["message"] == "Statique items created"
     assert json_response["size"] == len(payload)
-    assert json_response["items"][0]["id_pdc_itinerance"] == data[0].id_pdc_itinerance
-    assert json_response["items"][1]["id_pdc_itinerance"] == data[1].id_pdc_itinerance
+    assert json_response["items"][0] == data[0].id_pdc_itinerance
+    assert json_response["items"][1] == data[1].id_pdc_itinerance
 
 
 @pytest.mark.parametrize(
@@ -671,8 +674,8 @@ def test_bulk_for_user(client_auth, db_session):
     json_response = response.json()
     assert json_response["message"] == "Statique items created"
     assert json_response["size"] == len(payload)
-    assert json_response["items"][0]["id_pdc_itinerance"] == data[0].id_pdc_itinerance
-    assert json_response["items"][1]["id_pdc_itinerance"] == data[1].id_pdc_itinerance
+    assert json_response["items"][0] == data[0].id_pdc_itinerance
+    assert json_response["items"][1] == data[1].id_pdc_itinerance
 
 
 def test_bulk_for_unknown_operational_unit(client_auth, db_session):
@@ -695,10 +698,7 @@ def test_bulk_for_unknown_operational_unit(client_auth, db_session):
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
     json_response = response.json()
-    assert (
-        json_response["detail"]
-        == "OperationalUnit with code FRFOO should be created first"
-    )
+    assert json_response["detail"] == "Operational units should be created first"
 
     # Check created statiques (if any)
     n_stations = db_session.exec(select(func.count(Station.id))).one()
@@ -725,19 +725,92 @@ def test_bulk_with_outbound_sizes(client_auth):
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
 
-def test_bulk_does_not_create_duplicates(client_auth):
+def test_bulk_does_not_create_duplicates(client_auth, db_session):
     """Test that bulk endpoint does not create duplicates."""
     size = 2
     data = StatiqueFactory.batch(
         size=size,
     )
 
+    assert db_session.exec(select(func.count(PointDeCharge.id))).one() == 0
+    assert db_session.exec(select(func.count(Station.id))).one() == 0
+
     payload = [json.loads(d.model_dump_json()) for d in data]
     response = client_auth.post("/statique/bulk", json=payload)
     assert response.status_code == status.HTTP_201_CREATED
     assert len(response.json()["items"]) == size
+    assert db_session.exec(select(func.count(PointDeCharge.id))).one() == size
+    assert db_session.exec(select(func.count(Station.id))).one() == size
 
-    payload = [json.loads(d.model_dump_json()) for d in data]
     response = client_auth.post("/statique/bulk", json=payload)
-    assert response.status_code == status.HTTP_400_BAD_REQUEST
-    assert response.json() == {"detail": "All Statique entries already exist"}
+    assert response.status_code == status.HTTP_201_CREATED
+    assert len(response.json()["items"]) == size
+    assert db_session.exec(select(func.count(PointDeCharge.id))).one() == size
+    assert db_session.exec(select(func.count(Station.id))).one() == size
+
+
+def test_bulk_update(client_auth, db_session):
+    """Test that bulk endpoint updates submitted statiques."""
+    size = 20
+    statiques = StatiqueFactory.batch(
+        size=size,
+        paiement_cb=False,
+    )
+    df = pd.read_json(
+        StringIO(f"{'\n'.join([s.model_dump_json() for s in statiques])}"),
+        lines=True,
+        dtype_backend="pyarrow",
+    )
+    importer = StatiqueImporter(df, db_session.connection())
+    importer.save()
+
+    assert db_session.exec(select(func.count(PointDeCharge.id))).one() == size
+    assert db_session.exec(select(func.count(Station.id))).one() == size
+    assert (
+        db_session.exec(
+            select(PointDeCharge).where(
+                PointDeCharge.id_pdc_itinerance == statiques[3].id_pdc_itinerance
+            )
+        )
+        .one()
+        .paiement_cb
+        is False
+    )
+    assert (
+        db_session.exec(
+            select(PointDeCharge).where(
+                PointDeCharge.id_pdc_itinerance == statiques[7].id_pdc_itinerance
+            )
+        )
+        .one()
+        .paiement_cb
+        is False
+    )
+
+    # Update paiement_cb field
+    statiques[3].paiement_cb = statiques[7].paiement_cb = True
+
+    payload = [json.loads(s.model_dump_json()) for s in statiques]
+    response = client_auth.post("/statique/bulk", json=payload)
+    assert response.status_code == status.HTTP_201_CREATED
+    assert len(response.json()["items"]) == size
+    assert db_session.exec(select(func.count(PointDeCharge.id))).one() == size
+    assert db_session.exec(select(func.count(Station.id))).one() == size
+    assert (
+        db_session.exec(
+            select(PointDeCharge).where(
+                PointDeCharge.id_pdc_itinerance == statiques[3].id_pdc_itinerance
+            )
+        )
+        .one()
+        .paiement_cb
+    )
+    assert (
+        db_session.exec(
+            select(PointDeCharge).where(
+                PointDeCharge.id_pdc_itinerance == statiques[7].id_pdc_itinerance
+            )
+        )
+        .one()
+        .paiement_cb
+    )

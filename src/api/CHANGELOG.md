@@ -15,6 +15,8 @@ and this project adheres to
 
 ### Changed
 
+- Add create or update support for the `/statique/bulk` endpoints (with improved
+  performances)
 - Upgrade fastapi to `0.112.2`
 - Upgrade typer to `0.12.5`
 
