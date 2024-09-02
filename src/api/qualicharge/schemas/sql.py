@@ -17,7 +17,7 @@ from sqlalchemy.engine import Connection
 from sqlalchemy.schema import MetaData
 from typing_extensions import Optional
 
-from ..exceptions import ProgrammingError
+from ..exceptions import ObjectDoesNotExist, ProgrammingError
 from ..models.static import Statique
 from . import BaseTimestampedSQLModel
 from .core import (
@@ -147,13 +147,21 @@ class StatiqueImporter:
     def _add_operational_units_fk(self):
         """Add operational units fk in statique with fk dataframe."""
         logger.info("Merging operational unit foreign keys")
-        if self._operational_units is None:
-            self._load_operational_units()
+
+        if self._operational_units is not None:
+            logger.warning("Operational unit foreign keys have already been set")
+            return
+
+        self._load_operational_units()
+
         left = self._statique_with_fk
         left["code"] = left["id_station_itinerance"].str.slice(stop=5)
         left = left.merge(self._operational_units, how="left", on="code")
         left.drop(columns="code", inplace=True)
         left.rename(columns={"id": "operational_unit_id"}, inplace=True)
+
+        if pd.isnull(left["operational_unit_id"]).any():
+            raise ObjectDoesNotExist("Operational units should be created first")
         self._statique_with_fk = left
 
     @property

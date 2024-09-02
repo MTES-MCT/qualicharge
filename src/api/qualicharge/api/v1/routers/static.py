@@ -1,8 +1,10 @@
 """QualiCharge API v1 statique router."""
 
 import logging
+from io import StringIO
 from typing import Annotated, List, Optional, cast
 
+import pandas as pd
 from annotated_types import Len
 from fastapi import (
     APIRouter,
@@ -14,8 +16,10 @@ from fastapi import (
     Security,
     status,
 )
+from psycopg import Error as PGError
 from pydantic import AnyHttpUrl, BaseModel, computed_field
 from sqlalchemy import func
+from sqlalchemy.exc import IntegrityError, OperationalError, ProgrammingError
 from sqlalchemy.schema import Column as SAColumn
 from sqlmodel import Session, select
 
@@ -23,15 +27,21 @@ from qualicharge.auth.oidc import get_user
 from qualicharge.auth.schemas import ScopesEnum, User
 from qualicharge.conf import settings
 from qualicharge.db import get_session
-from qualicharge.exceptions import IntegrityError, ObjectDoesNotExist, PermissionDenied
+from qualicharge.exceptions import (
+    IntegrityError as QCIntegrityError,
+)
+from qualicharge.exceptions import (
+    ObjectDoesNotExist,
+    PermissionDenied,
+)
 from qualicharge.models.static import Statique
 from qualicharge.schemas.core import OperationalUnit, PointDeCharge, Station
+from qualicharge.schemas.sql import StatiqueImporter
 from qualicharge.schemas.utils import (
     build_statique,
     is_pdc_allowed_for_user,
     list_statique,
     save_statique,
-    save_statiques,
     update_statique,
 )
 
@@ -47,13 +57,25 @@ class StatiqueItemsCreatedResponse(BaseModel):
     """API response model used when Statique items are created."""
 
     message: str = "Statique items created"
-    items: List[Statique]
+    items: List[str]
 
     @computed_field  # type: ignore[misc]
     @property
     def size(self) -> int:
         """The number of items created."""
         return len(self.items)
+
+    model_config = {
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "message": "Statique items created",
+                    "items": ["FRFASE3300401", "FRFASE3300402", "FRFASE3300403"],
+                    "size": 3,
+                }
+            ]
+        }
+    }
 
 
 class PaginatedStatiqueListResponse(BaseModel):
@@ -186,7 +208,7 @@ async def update(
     transaction = session.begin_nested()
     try:
         update = update_statique(session, id_pdc_itinerance, statique)
-    except IntegrityError as err:
+    except QCIntegrityError as err:
         transaction.rollback()
         raise HTTPException(
             status_code=status.HTTP_406_NOT_ACCEPTABLE,
@@ -228,7 +250,7 @@ async def create(
     # Commit changes
     session.commit()
 
-    return StatiqueItemsCreatedResponse(items=[db_statique])
+    return StatiqueItemsCreatedResponse(items=[db_statique.id_pdc_itinerance])
 
 
 @router.post("/bulk", status_code=status.HTTP_201_CREATED)
@@ -244,22 +266,28 @@ async def bulk(
                 "You cannot submit data for an organization you are not assigned to"
             )
 
+    # Convert statiques to a Pandas DataFrame
+    df = pd.read_json(
+        StringIO(f"{'\n'.join([s.model_dump_json() for s in statiques])}"),
+        lines=True,
+        dtype_backend="pyarrow",
+    )
+
+    importer = StatiqueImporter(df, session.connection())
     transaction = session.begin_nested()
     try:
-        statiques = [statique for statique in save_statiques(session, statiques)]
-    except ObjectDoesNotExist as err:
+        importer.save()
+        transaction.commit()
+    except (
+        ProgrammingError,
+        IntegrityError,
+        OperationalError,
+        PGError,
+        ObjectDoesNotExist,
+    ) as err:
         transaction.rollback()
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=str(err)
         ) from err
 
-    if not len(statiques):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="All Statique entries already exist",
-        )
-
-    # Commit changes
-    session.commit()
-
-    return StatiqueItemsCreatedResponse(items=statiques)
+    return StatiqueItemsCreatedResponse(items=df["id_pdc_itinerance"])
