@@ -2,8 +2,10 @@
 
 import logging
 from enum import IntEnum
-from typing import Generator, List, NamedTuple, Optional, Set, Tuple, Type, cast
+from io import StringIO
+from typing import Generator, List, Optional, Set, Tuple, Type, cast
 
+import pandas as pd
 from sqlalchemy import func
 from sqlalchemy.exc import MultipleResultsFound
 from sqlalchemy.schema import Column as SAColumn
@@ -13,11 +15,11 @@ from qualicharge.auth.schemas import User
 
 from ..exceptions import (
     DatabaseQueryException,
-    DuplicateEntriesSubmitted,
     IntegrityError,
     ObjectDoesNotExist,
 )
 from ..models.static import Statique
+from ..schemas.sql import StatiqueImporter
 from .core import (
     Amenageur,
     Enseigne,
@@ -210,116 +212,15 @@ def update_statique(
     return save_statique(session, to_update, update=True)
 
 
-def save_statiques(
-    session: Session, statiques: List[Statique]
-) -> Generator[Statique, None, None]:
-    """Save Statique instances to database in an efficient way."""
-    # Look for duplicates (identical id_pdc_itinerance)
-    submitted_pdcs = {s.id_pdc_itinerance for s in statiques}
-    if len(submitted_pdcs) != len(statiques):
-        raise DuplicateEntriesSubmitted("Found duplicated entries in submitted data")
-
-    # Ignore already existing PDC
-    db_pdcs = session.exec(
-        select(PointDeCharge.id_pdc_itinerance).filter(
-            cast(SAColumn, PointDeCharge.id_pdc_itinerance).in_(submitted_pdcs)
-        )
-    ).all()
-    statiques = list(filter(lambda s: s.id_pdc_itinerance not in db_pdcs, statiques))
-    if not len(statiques):
-        return None
-
-    # Entries to get or create per schema
-    points_de_charge: List[PointDeCharge] = []
-    stations: List[Station] = []
-    amenageurs: List[Amenageur] = []
-    operateurs: List[Operateur] = []
-    enseignes: List[Enseigne] = []
-    localisations: List[Localisation] = []
-
-    class StatiqueSchemasEntryIndex(NamedTuple):
-        """Statique entry decoupled as suite of schema indexes.
-
-        We use this pivot representation to mimic foreign key relationships that
-        ensure the uniqueness of related entities.
-        """
-
-        pdc: int
-        station: int
-        amenageur: int
-        operateur: int
-        enseigne: int
-        localisation: int
-
-    # Collect unique entries list per model and add references to those for each
-    # Statique
-    statiques_db_refs: List[StatiqueSchemasEntryIndex] = []
-    for statique in statiques:
-        pdc = PointDeCharge(**statique.get_fields_for_schema(PointDeCharge))
-        station = Station(**statique.get_fields_for_schema(Station))
-        amenageur = Amenageur(**statique.get_fields_for_schema(Amenageur))
-        operateur = Operateur(**statique.get_fields_for_schema(Operateur))
-        enseigne = Enseigne(**statique.get_fields_for_schema(Enseigne))
-        localisation = Localisation(**statique.get_fields_for_schema(Localisation))
-
-        indexes = []
-        # FIXME
-        # Looks like mypy does not recognize types for tuple of tuples to unpack,
-        # ignored unrelevant typing errors.
-        for entry, entries in (
-            (pdc, points_de_charge),
-            (station, stations),
-            (amenageur, amenageurs),
-            (operateur, operateurs),
-            (enseigne, enseignes),
-            (localisation, localisations),
-        ):
-            if entry not in entries:  # type: ignore[operator]
-                entries.append(entry)  # type: ignore[arg-type]
-            indexes.append(entries.index(entry))  # type: ignore[arg-type]
-        statiques_db_refs.append(StatiqueSchemasEntryIndex(*indexes))
-
-    # Create database entries for each schema
-    #
-    # FIXME
-    # Looks like mypy does not recognize types for tuple of tuples to unpack,
-    # ignored unrelevant typing errors.
-    for entries, fields in (
-        (points_de_charge, {"id_pdc_itinerance"}),
-        (stations, {"id_station_itinerance"}),
-        (amenageurs, None),
-        (operateurs, None),
-        (enseignes, None),
-        (localisations, {"adresse_station"}),
-    ):
-        for idx, entry in enumerate(entries):  # type: ignore[assignment]
-            _, db_entry = get_or_create(session, entry, fields, add=False)
-            entries[idx] = db_entry  # type: ignore[call-overload]
-        session.add_all(entries)  # type: ignore[arg-type]
-
-    # Handle relationships
-    for (
-        pdc_idx,
-        station_idx,
-        amenageur_idx,
-        operateur_idx,
-        enseigne_idx,
-        localisation_idx,
-    ) in statiques_db_refs:
-        points_de_charge[pdc_idx].station_id = stations[station_idx].id  # type: ignore[attr-defined]
-        stations[station_idx].amenageur_id = amenageurs[amenageur_idx].id  # type: ignore[attr-defined]
-        stations[station_idx].operateur_id = operateurs[operateur_idx].id  # type: ignore[attr-defined]
-        stations[station_idx].enseigne_id = enseignes[enseigne_idx].id  # type: ignore[attr-defined]
-        stations[station_idx].localisation_id = localisations[localisation_idx].id  # type: ignore[attr-defined]
-        session.refresh(amenageurs[amenageur_idx])
-        session.refresh(operateurs[operateur_idx])
-        session.refresh(enseignes[enseigne_idx])
-        session.refresh(localisations[localisation_idx])
-        session.refresh(stations[station_idx])
-        session.refresh(points_de_charge[pdc_idx])
-
-    for pdc in points_de_charge:
-        yield pdc_to_statique(pdc)
+def save_statiques(db_session: Session, statiques: List[Statique]):
+    """Save input statiques to database."""
+    df = pd.read_json(
+        StringIO(f"{'\n'.join([s.model_dump_json() for s in statiques])}"),
+        lines=True,
+        dtype_backend="pyarrow",
+    )
+    importer = StatiqueImporter(df, db_session.connection())
+    importer.save()
 
 
 def build_statique(session: Session, id_pdc_itinerance: str) -> Statique:

@@ -1,11 +1,9 @@
 """Tests for the QualiCharge API static router."""
 
 import json
-from io import StringIO
 from random import choice, sample
 from typing import cast
 
-import pandas as pd
 import pytest
 from fastapi import status
 from pydantic_extra_types.coordinate import Coordinate
@@ -22,7 +20,6 @@ from qualicharge.schemas.core import (
     PointDeCharge,
     Station,
 )
-from qualicharge.schemas.sql import StatiqueImporter
 from qualicharge.schemas.utils import pdc_to_statique, save_statique, save_statiques
 
 
@@ -62,8 +59,10 @@ def test_list_for_superuser(client_auth, db_session):
 
     # Create statiques
     n_statiques = 3
+    statiques = StatiqueFactory.batch(n_statiques)
+    save_statiques(db_session, statiques)
     db_statiques = sorted(
-        save_statiques(db_session, StatiqueFactory.batch(n_statiques)),
+        statiques,
         key=lambda s: s.id_pdc_itinerance,
     )
     response = client_auth.get("/statique/")
@@ -111,7 +110,7 @@ def test_list_for_user(client_auth, db_session):
 
     # Create statiques
     n_statiques = 20
-    list(save_statiques(db_session, StatiqueFactory.batch(n_statiques)))
+    save_statiques(db_session, StatiqueFactory.batch(n_statiques))
 
     # Select operational units linked to stations
     operational_units = db_session.exec(
@@ -219,7 +218,7 @@ def test_list_for_user_with_no_operational_units(client_auth):
 def test_list_pagination(client_auth, db_session):
     """Test the /statique/ list endpoint results pagination."""
     n_statiques = 3
-    list(save_statiques(db_session, StatiqueFactory.batch(n_statiques)))
+    save_statiques(db_session, StatiqueFactory.batch(n_statiques))
 
     offset = 0
     limit = 2
@@ -708,7 +707,6 @@ def test_bulk_for_unknown_operational_unit(client_auth, db_session):
 def test_bulk_with_outbound_sizes(client_auth):
     """Test the /statique/bulk create endpoint with a single or too many entries."""
     id_pdc_itinerance = "FR911E1111ER1"
-
     data = StatiqueFactory.build(
         id_pdc_itinerance=id_pdc_itinerance,
     )
@@ -751,18 +749,12 @@ def test_bulk_does_not_create_duplicates(client_auth, db_session):
 
 def test_bulk_update(client_auth, db_session):
     """Test that bulk endpoint updates submitted statiques."""
-    size = 20
+    size = 10
     statiques = StatiqueFactory.batch(
         size=size,
         paiement_cb=False,
     )
-    df = pd.read_json(
-        StringIO(f"{'\n'.join([s.model_dump_json() for s in statiques])}"),
-        lines=True,
-        dtype_backend="pyarrow",
-    )
-    importer = StatiqueImporter(df, db_session.connection())
-    importer.save()
+    save_statiques(db_session, statiques)
 
     assert db_session.exec(select(func.count(PointDeCharge.id))).one() == size
     assert db_session.exec(select(func.count(Station.id))).one() == size

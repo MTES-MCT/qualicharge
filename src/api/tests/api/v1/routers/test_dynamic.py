@@ -65,7 +65,7 @@ def test_list_statuses_for_superuser(db_session, client_auth):
     # Create points of charge and statuses
     n_pdc = 2
     n_status_by_pdc = 10
-    list(save_statiques(db_session, StatiqueFactory.batch(n_pdc)))
+    save_statiques(db_session, StatiqueFactory.batch(n_pdc))
     pdcs = db_session.exec(select(PointDeCharge)).all()
     assert len(pdcs) == n_pdc
 
@@ -127,7 +127,7 @@ def test_list_statuses_for_user_with_no_operational_units(db_session, client_aut
     # Create points of charge and statuses
     n_pdc = 2
     n_status_by_pdc = 10
-    list(save_statiques(db_session, StatiqueFactory.batch(n_pdc)))
+    save_statiques(db_session, StatiqueFactory.batch(n_pdc))
     pdcs = db_session.exec(select(PointDeCharge)).all()
 
     StatusFactory.create_batch_sync(n_status_by_pdc, point_de_charge_id=pdcs[0].id)
@@ -163,7 +163,7 @@ def test_list_statuses_for_user(db_session, client_auth):
     # Create points of charge and statuses
     n_pdc = 10
     n_status_by_pdc = 10
-    list(save_statiques(db_session, StatiqueFactory.batch(n_pdc)))
+    save_statiques(db_session, StatiqueFactory.batch(n_pdc))
     pdcs = db_session.exec(select(PointDeCharge)).all()
     stations = db_session.exec(select(Station)).all()
     assert len(pdcs) == n_pdc
@@ -887,14 +887,12 @@ def test_create_status_bulk_for_superuser(db_session, client_auth):
     qc_statuses = StatusCreateFactory.batch(3)
 
     # Create points of charge
-    list(
-        save_statiques(
-            db_session,
-            [
-                StatiqueFactory.build(id_pdc_itinerance=s.id_pdc_itinerance)
-                for s in qc_statuses
-            ],
-        )
+    save_statiques(
+        db_session,
+        [
+            StatiqueFactory.build(id_pdc_itinerance=s.id_pdc_itinerance)
+            for s in qc_statuses
+        ],
     )
 
     # Assert no status exist
@@ -954,14 +952,12 @@ def test_create_status_bulk_for_user(db_session, client_auth):
     qc_statuses = StatusCreateFactory.batch(3)
 
     # Create points of charge
-    list(
-        save_statiques(
-            db_session,
-            [
-                StatiqueFactory.build(id_pdc_itinerance=s.id_pdc_itinerance)
-                for s in qc_statuses
-            ],
-        )
+    save_statiques(
+        db_session,
+        [
+            StatiqueFactory.build(id_pdc_itinerance=s.id_pdc_itinerance)
+            for s in qc_statuses
+        ],
     )
 
     # Assert no status exist
@@ -1261,14 +1257,12 @@ def test_create_session_bulk_for_superuser(db_session, client_auth):
     qc_sessions = SessionCreateFactory.batch(3)
 
     # Create points of charge
-    list(
-        save_statiques(
-            db_session,
-            [
-                StatiqueFactory.build(id_pdc_itinerance=s.id_pdc_itinerance)
-                for s in qc_sessions
-            ],
-        )
+    save_statiques(
+        db_session,
+        [
+            StatiqueFactory.build(id_pdc_itinerance=s.id_pdc_itinerance)
+            for s in qc_sessions
+        ],
     )
 
     # Assert no session exist
@@ -1322,14 +1316,12 @@ def test_create_session_bulk_for_user(db_session, client_auth):
     qc_sessions = SessionCreateFactory.batch(3)
 
     # Create points of charge
-    list(
-        save_statiques(
-            db_session,
-            [
-                StatiqueFactory.build(id_pdc_itinerance=s.id_pdc_itinerance)
-                for s in qc_sessions
-            ],
-        )
+    save_statiques(
+        db_session,
+        [
+            StatiqueFactory.build(id_pdc_itinerance=s.id_pdc_itinerance)
+            for s in qc_sessions
+        ],
     )
 
     # Assert no session exist

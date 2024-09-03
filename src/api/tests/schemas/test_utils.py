@@ -11,10 +11,8 @@ from sqlmodel import select
 
 from qualicharge.auth.factories import GroupFactory, UserFactory
 from qualicharge.auth.schemas import GroupOperationalUnit, UserGroup
-from qualicharge.db import SAQueryCounter
 from qualicharge.exceptions import (
     DatabaseQueryException,
-    DuplicateEntriesSubmitted,
     IntegrityError,
     ObjectDoesNotExist,
 )
@@ -278,23 +276,28 @@ def test_update_statique_when_statique_does_not_exist(db_session):
 
 def test_save_statiques(db_session):
     """Test save_statiques utility."""
-    statiques = StatiqueFactory.batch(2)
+    statiques = sorted(StatiqueFactory.batch(2), key=lambda s: s.id_pdc_itinerance)
+    save_statiques(db_session, statiques)
 
-    db_statiques = list(save_statiques(db_session, statiques))
+    db_statiques = list(list_statique(db_session))
     assert db_statiques[0] == statiques[0]
     assert db_statiques[1] == statiques[1]
 
 
 def test_save_statiques_with_same_amenageur(db_session):
     """Test save_statiques utility with the same amenageur."""
-    statiques = StatiqueFactory.batch(
-        2,
-        nom_amenageur="ACME Inc.",
-        siren_amenageur="123456789",
-        contact_amenageur="john.doe@acme.com",
+    statiques = sorted(
+        StatiqueFactory.batch(
+            2,
+            nom_amenageur="ACME Inc.",
+            siren_amenageur="123456789",
+            contact_amenageur="john.doe@acme.com",
+        ),
+        key=lambda s: s.id_pdc_itinerance,
     )
+    save_statiques(db_session, statiques)
 
-    db_statiques = list(save_statiques(db_session, statiques))
+    db_statiques = list(list_statique(db_session))
     assert db_statiques[0] == statiques[0]
     assert db_statiques[1] == statiques[1]
 
@@ -307,14 +310,18 @@ def test_save_statiques_with_same_amenageur(db_session):
 
 def test_save_statiques_with_same_localisation(db_session):
     """Test save_statiques utility with the same localisation."""
-    statiques = StatiqueFactory.batch(
-        2,
-        adresse_station="221B Baker street, London",
-        code_insee_commune="21231",
-        coordonneesXY="[-3.129447,45.700327]",
+    statiques = sorted(
+        StatiqueFactory.batch(
+            2,
+            adresse_station="221B Baker street, London",
+            code_insee_commune="21231",
+            coordonneesXY="[-3.129447,45.700327]",
+        ),
+        key=lambda s: s.id_pdc_itinerance,
     )
+    save_statiques(db_session, statiques)
 
-    db_statiques = list(save_statiques(db_session, statiques))
+    db_statiques = list(list_statique(db_session))
     assert db_statiques[0] == statiques[0]
     assert db_statiques[1] == statiques[1]
 
@@ -327,75 +334,26 @@ def test_save_statiques_with_same_localisation(db_session):
 
 def test_save_statiques_with_same_amenageur_twice(db_session):
     """Test save_statiques utility with the same amenageur, twice."""
-    statiques = StatiqueFactory.batch(
-        2,
-        nom_amenageur="ACME Inc.",
-        siren_amenageur="123456789",
-        contact_amenageur="john.doe@acme.com",
+    statiques = sorted(
+        StatiqueFactory.batch(
+            2,
+            nom_amenageur="ACME Inc.",
+            siren_amenageur="123456789",
+            contact_amenageur="john.doe@acme.com",
+        ),
+        key=lambda s: s.id_pdc_itinerance,
     )
+    save_statiques(db_session, statiques)
 
-    db_statiques = list(save_statiques(db_session, statiques))
+    db_statiques = list(list_statique(db_session))
     assert db_statiques[0] == statiques[0]
     assert db_statiques[1] == statiques[1]
-
-    assert list(save_statiques(db_session, statiques)) == []
 
     # We should only have created one Amenageur and two PointDeCharge
     assert db_session.exec(select(func.count(Amenageur.siren_amenageur))).one() == 1
     assert db_session.exec(
         select(func.count(PointDeCharge.id_pdc_itinerance))
     ).one() == len(statiques)
-
-
-def test_save_statiques_with_same_entries(db_session):
-    """Test save_statiques utility with the same PDC."""
-    statiques = StatiqueFactory.batch(2)
-    statiques.append(statiques[0])
-
-    with pytest.raises(
-        DuplicateEntriesSubmitted,
-        match="Found duplicated entries in submitted data",
-    ):
-        list(save_statiques(db_session, statiques))
-
-
-def test_save_statiques_with_existing_pdc(db_session):
-    """Test save_statiques utility with existing PointDeCharge."""
-    statiques_batch_one = StatiqueFactory.batch(2)
-    statiques_batch_two = StatiqueFactory.batch(3)
-
-    db_statiques_batch_one = list(save_statiques(db_session, statiques_batch_one))
-    assert len(db_statiques_batch_one) == len(statiques_batch_one)
-
-    db_statiques_batch_one_two = list(
-        save_statiques(db_session, statiques_batch_one + statiques_batch_two)
-    )
-    assert len(db_statiques_batch_one_two) == len(statiques_batch_two)
-
-
-def test_save_statiques_number_of_database_queries(db_session):
-    """Test save_statiques number of database queries."""
-    n_statiques = 3
-    statiques = StatiqueFactory.batch(n_statiques)
-
-    with SAQueryCounter(db_session.connection()) as first_counter:
-        list(save_statiques(db_session, statiques))
-    expected_queries = sum(
-        (
-            1,  # list already existing pdc
-            6 * n_statiques,  # look for existing PDC-related entries
-            6,  # create non existing PDC-related entries
-            6,  # update foreign keys
-            6 * n_statiques,  # PDC to statique
-            2 * n_statiques,  # get station's linked operational unit and link it
-        )
-    )
-    assert first_counter.count == expected_queries
-
-    with SAQueryCounter(db_session.connection()) as second_counter:
-        list(save_statiques(db_session, statiques))
-    assert second_counter.count < first_counter.count
-    assert second_counter.count == 1
 
 
 def test_build_statique(db_session):
@@ -451,7 +409,7 @@ def test_list_statique_operational_units_filtering(db_session):
     """Test list_statique utility filtering by operational units."""
     # Save random statiques
     n_statiques = 20
-    list(save_statiques(db_session, StatiqueFactory.batch(n_statiques)))
+    save_statiques(db_session, StatiqueFactory.batch(n_statiques))
 
     # Select operational units linked to stations
     operational_units = db_session.exec(
