@@ -5,7 +5,7 @@ from typing import Generator, Optional
 
 from pydantic import PostgresDsn
 from sqlalchemy import Engine as SAEngine
-from sqlalchemy import event, text
+from sqlalchemy import text
 from sqlalchemy.exc import OperationalError
 from sqlmodel import Session as SMSession
 from sqlmodel import create_engine
@@ -39,32 +39,6 @@ class Engine(metaclass=Singleton):
             self._engine = create_engine(str(url), echo=echo)
         logger.debug("Getting database engine %s", self._engine)
         return self._engine
-
-
-class SAQueryCounter:
-    """Context manager to count SQLALchemy queries.
-
-    Inspired by: https://stackoverflow.com/a/71337784
-    """
-
-    def __init__(self, connection):
-        """Initialize the counter for a given connection."""
-        self.connection = connection.engine
-        self.count = 0
-
-    def __enter__(self):
-        """Start listening `before_cursor_execute` event."""
-        event.listen(self.connection, "before_cursor_execute", self.callback)
-        return self
-
-    def __exit__(self, *args, **kwargs):
-        """Stop listening `before_cursor_execute` event."""
-        event.remove(self.connection, "before_cursor_execute", self.callback)
-
-    def callback(self, *args, **kwargs):
-        """Increment the counter every time the `before_cursor_execute` event occurs."""
-        self.count += 1
-        logger.debug(f"Database query [{self.count=}] >> {args=} {kwargs=}")
 
 
 def get_engine() -> SAEngine:
