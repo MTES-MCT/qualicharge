@@ -128,5 +128,8 @@ class Settings(BaseSettings):
         case_sensitive=True, env_nested_delimiter="__", env_prefix="QUALICHARGE_"
     )
 
+    PROFILING: bool = False
+    PROFILING_INTERVAL: float = 0.001
+
 
 settings = Settings()
