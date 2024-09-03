@@ -33,7 +33,9 @@ engine = create_engine(os.getenv("DATABASE_URL"))
 TABLE = {'00': 'national', '01': 'region', '02': 'department', '03': 'epci', '04': 'city'}
 ```
 
+<!-- #region editable=true slideshow={"slide_type": ""} -->
 ## Structure des indicateurs
+<!-- #endregion -->
 
 <!-- #region -->
 ### Codification des indicateurs
