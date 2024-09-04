@@ -17,6 +17,7 @@ psycopg = {extras = ["pool", "binary"], version = "==3.2.1"}
 pyarrow = "==17.0.0"
 pydantic-extra-types = {extras = ["all"], version = "==2.9.0"}
 pydantic-settings = "==2.4.0"
+pyinstrument = "==4.7.2"
 pyjwt = "==2.9.0"
 python-multipart = "==0.0.9"
 questionary = "==2.0.1"
