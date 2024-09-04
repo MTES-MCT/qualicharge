@@ -134,9 +134,7 @@ class Statique(ModelSchemaMixin, BaseModel):
     nom_station: str
     implantation_station: ImplantationStationEnum
     adresse_station: str
-    code_insee_commune: Optional[
-        Annotated[str, Field(pattern=r"^([013-9]\d|2[AB1-9])\d{3}$")]
-    ]
+    code_insee_commune: Annotated[str, Field(pattern=r"^([013-9]\d|2[AB1-9])\d{3}$")]
     coordonneesXY: DataGouvCoordinate
     nbre_pdc: PositiveInt
     id_pdc_itinerance: Annotated[
