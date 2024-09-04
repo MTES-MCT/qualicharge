@@ -16,6 +16,8 @@ and this project adheres to
 
 ### Changed
 
+- Require the `code_insee_commune` field in both the `Statique` model and the
+  `Localisation` schema
 - Allow to submit a single item in bulk endpoints
 - Add create or update support for the `/statique/bulk` endpoints (with improved
   performances)

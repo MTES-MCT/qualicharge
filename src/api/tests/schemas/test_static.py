@@ -46,6 +46,7 @@ def test_localisation_schema_set_geometry_point_validator(db_session):
     # Create and save a new location
     loc = Localisation(
         adresse_station="4 baker street 75000 Tatooine",
+        code_insee_commune="63455",
         coordonneesXY=Coordinate(longitude=3.129447, latitude=45.700327),
     )
     db_session.add(loc)
@@ -68,6 +69,7 @@ def test_localisation_schema_coordonneesXY_serializer(db_session):
     # Create and save a new location
     loc = Localisation(
         adresse_station="221B Baker street, London",
+        code_insee_commune="63455",
         coordonneesXY=Coordinate(longitude=-3.129447, latitude=45.700327),
     )
     assert loc.model_dump(include={"coordonneesXY"}) == {
