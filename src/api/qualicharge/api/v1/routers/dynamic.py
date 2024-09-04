@@ -11,6 +11,7 @@ from sqlalchemy import func
 from sqlalchemy.schema import Column as SAColumn
 from sqlmodel import Session, join, select
 
+from qualicharge.api.utils import GzipRoute
 from qualicharge.auth.oidc import get_user
 from qualicharge.auth.schemas import ScopesEnum, User
 from qualicharge.conf import settings
@@ -30,6 +31,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(
     prefix="/dynamique",
     tags=["IRVE Dynamique"],
+    route_class=GzipRoute,
 )
 
 BulkStatusCreateList = Annotated[

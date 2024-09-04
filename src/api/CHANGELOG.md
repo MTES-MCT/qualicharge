@@ -10,6 +10,7 @@ and this project adheres to
 
 ### Added
 
+- Implement GZip requests support (mostly for bulk endpoints)
 - Implement Pandas-based `StatiqueImporter`
 - CLI: add `import-statique` command
 

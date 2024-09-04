@@ -1,5 +1,6 @@
 """Tests for the QualiCharge API static router."""
 
+import gzip
 import json
 from random import choice, sample
 from typing import cast
@@ -675,6 +676,32 @@ def test_bulk_for_user(client_auth, db_session):
     assert json_response["size"] == len(payload)
     assert json_response["items"][0] == data[0].id_pdc_itinerance
     assert json_response["items"][1] == data[1].id_pdc_itinerance
+
+
+def test_bulk_gzipped_request(client_auth):
+    """Test the /statique/bulk endpoint with gzipped content."""
+    statiques = StatiqueFactory.batch(
+        size=2,
+    )
+
+    payload = gzip.compress(
+        f"[{','.join([s.model_dump_json() for s in statiques])}]".encode("utf-8")
+    )
+    response = client_auth.post(
+        "/statique/bulk",
+        content=payload,
+        headers={
+            "Content-Encoding": "gzip",
+            "Content-Type": "application/json",
+        },
+    )
+
+    assert response.status_code == status.HTTP_201_CREATED
+    json_response = response.json()
+    assert json_response["message"] == "Statique items created"
+    assert json_response["size"] == len(statiques)
+    assert json_response["items"][0] == statiques[0].id_pdc_itinerance
+    assert json_response["items"][1] == statiques[1].id_pdc_itinerance
 
 
 def test_bulk_for_unknown_operational_unit(client_auth, db_session):

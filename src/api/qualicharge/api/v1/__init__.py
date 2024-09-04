@@ -16,6 +16,7 @@ from .routers import auth, dynamic, static
 
 logger = logging.getLogger(__name__)
 
+
 app = FastAPI(title="QualiCharge API (v1)")
 
 
