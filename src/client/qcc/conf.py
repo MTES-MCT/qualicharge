@@ -20,6 +20,7 @@ class Settings(BaseSettings):
 
     # API usage
     API_BULK_CREATE_MAX_SIZE: int = 10
+    GZIP_COMPRESSION_LEVEL: int = 9
 
     model_config = SettingsConfigDict(
         case_sensitive=True,

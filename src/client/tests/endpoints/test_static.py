@@ -196,3 +196,20 @@ async def test_static_bulk(client, httpx_mock):
         await static.bulk(statiques, chunk_size=chunk_size, ignore_errors=True)
         == chunk_size
     )
+
+
+@pytest.mark.anyio
+async def test_static_bulk_gzip_compression(client, httpx_mock):
+    """Test the /statique/bulk endpoint request is compressed."""
+    static = Static(client)
+
+    total = 5
+    httpx_mock.add_response(
+        method="POST",
+        url="http://example.com/api/v1/statique/bulk",
+        match_headers={"Content-Encoding": "gzip"},
+        json={"size": total},
+    )
+
+    statiques = [{"id_pdc_itinerance": f"FRS63E00{x:02d}"} for x in range(total)]
+    assert await static.bulk(statiques, chunk_size=10) == total

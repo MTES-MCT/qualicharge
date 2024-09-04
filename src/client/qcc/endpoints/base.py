@@ -1,5 +1,7 @@
 """QualiCharge API client endpoints base."""
 
+import gzip
+import json
 import logging
 from abc import ABC, abstractmethod
 from typing import AsyncIterator, Sequence
@@ -48,7 +50,19 @@ class BaseCreateEndpoint:
 
         async def send_chunk(client, chunk: list[dict]) -> int:
             """Submit a chunk to the API."""
-            response = await client.post(f"{self.endpoint}/bulk", json=chunk)
+            # Zip chunk
+            content = gzip.compress(
+                json.dumps(chunk).encode("utf-8"),
+                compresslevel=settings.GZIP_COMPRESSION_LEVEL,
+            )
+            response = await client.post(
+                f"{self.endpoint}/bulk",
+                content=content,
+                headers={
+                    "Content-Encoding": "gzip",
+                    "Content-Type": "application/json",
+                },
+            )
             try:
                 response.raise_for_status()
             except httpx.HTTPStatusError as err:

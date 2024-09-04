@@ -237,6 +237,23 @@ async def test_dynamic_status_bulk(client, httpx_mock):
 
 
 @pytest.mark.anyio
+async def test_dynamic_status_bulk_gzip_compression(client, httpx_mock):
+    """Test the /dynamique/status/bulk endpoint request is compressed."""
+    status = Status(client)
+
+    total = 5
+    httpx_mock.add_response(
+        method="POST",
+        url="http://example.com/api/v1/dynamique/status/bulk",
+        match_headers={"Content-Encoding": "gzip"},
+        json={"size": total},
+    )
+
+    statuses = [{"id_pdc_itinerance": f"FRS63E00{x:02d}"} for x in range(total)]
+    assert await status.bulk(statuses, chunk_size=10) == total
+
+
+@pytest.mark.anyio
 async def test_dynamic_session_create(client, httpx_mock):
     """Test the /dynamique/session endpoint call."""
     session = Session(client)
@@ -324,3 +341,20 @@ async def test_dynamic_session_bulk(client, httpx_mock):
         await session.bulk(sessions, chunk_size=chunk_size, ignore_errors=True)
         == chunk_size
     )
+
+
+@pytest.mark.anyio
+async def test_dynamic_session_bulk_gzip_compression(client, httpx_mock):
+    """Test the /dynamique/session/bulk endpoint request is compressed."""
+    session = Session(client)
+
+    total = 5
+    httpx_mock.add_response(
+        method="POST",
+        url="http://example.com/api/v1/dynamique/session/bulk",
+        match_headers={"Content-Encoding": "gzip"},
+        json={"size": total},
+    )
+
+    sessions = [{"id_pdc_itinerance": f"FRS63E00{x:02d}"} for x in range(total)]
+    assert await session.bulk(sessions, chunk_size=10) == total
