@@ -1080,14 +1080,21 @@ def test_create_status_bulk_gzipped_request(db_session, client_auth):
     assert {s.point_de_charge_id for s in db_statuses} == {p.id for p in db_pdcs}
 
 
-def test_create_status_bulk_with_outbound_sizes(client_auth):
+def test_create_status_bulk_with_outbound_sizes(db_session, client_auth):
     """Test the /status/bulk create endpoint with a single or too many statuses."""
-    # We expert more than one status for this endpoint
+    status_ = StatusCreateFactory.build()
+
+    # Create point of charge
+    save_statique(
+        db_session, StatiqueFactory.build(id_pdc_itinerance=status_.id_pdc_itinerance)
+    )
+
+    # We expect at least one status for this endpoint
     response = client_auth.post(
         "/dynamique/status/bulk",
-        json=[json.loads(StatusCreateFactory.build().model_dump_json())],
+        json=[json.loads(status_.model_dump_json())],
     )
-    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert response.status_code == status.HTTP_201_CREATED
 
     # We expect at most settings.API_STATUS_BULK_CREATE_MAX_SIZE statuses for this
     # endpoint
@@ -1316,7 +1323,7 @@ def test_create_session_bulk_for_superuser(db_session, client_auth):
     assert response.status_code == status.HTTP_201_CREATED
     assert response.json() == {"size": 3}
 
-    # Check created statuses
+    # Check created sessions
     db_qc_sessions = db_session.exec(select(Session)).all()
     db_pdcs = db_session.exec(select(PointDeCharge)).all()
     assert len(db_qc_sessions) == len(qc_sessions)
@@ -1425,7 +1432,7 @@ def test_create_session_bulk_for_user(db_session, client_auth):
     assert response.status_code == status.HTTP_201_CREATED
     assert response.json() == {"size": 3}
 
-    # Check created statuses
+    # Check created sessions
     db_qc_sessions = db_session.exec(select(Session)).all()
     db_pdcs = db_session.exec(select(PointDeCharge)).all()
     assert len(db_qc_sessions) == len(qc_sessions)
@@ -1477,21 +1484,28 @@ def test_create_session_bulk_gzipped_request(db_session, client_auth):
     assert response.status_code == status.HTTP_201_CREATED
     assert response.json() == {"size": 3}
 
-    # Check created statuses
+    # Check created sessions
     db_qc_sessions = db_session.exec(select(Session)).all()
     db_pdcs = db_session.exec(select(PointDeCharge)).all()
     assert len(db_qc_sessions) == len(qc_sessions)
     assert {s.point_de_charge_id for s in db_qc_sessions} == {p.id for p in db_pdcs}
 
 
-def test_create_session_bulk_with_outbound_sizes(client_auth):
+def test_create_session_bulk_with_outbound_sizes(db_session, client_auth):
     """Test the /session/bulk create endpoint with a single or too many statuses."""
-    # We expert more than one status for this endpoint
+    session = SessionCreateFactory.build()
+
+    # Create point of charge
+    save_statique(
+        db_session, StatiqueFactory.build(id_pdc_itinerance=session.id_pdc_itinerance)
+    )
+
+    # We expect at least one session for this endpoint
     response = client_auth.post(
         "/dynamique/session/bulk",
-        json=[json.loads(SessionCreateFactory.build().model_dump_json())],
+        json=[json.loads(session.model_dump_json())],
     )
-    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert response.status_code == status.HTTP_201_CREATED
 
     # We expect at most settings.API_STATUS_BULK_CREATE_MAX_SIZE statuses for this
     # endpoint

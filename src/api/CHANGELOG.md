@@ -16,6 +16,7 @@ and this project adheres to
 
 ### Changed
 
+- Allow to submit a single item in bulk endpoints
 - Add create or update support for the `/statique/bulk` endpoints (with improved
   performances)
 - Upgrade fastapi to `0.112.2`

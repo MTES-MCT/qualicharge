@@ -35,10 +35,10 @@ router = APIRouter(
 )
 
 BulkStatusCreateList = Annotated[
-    List[StatusCreate], Len(2, settings.API_STATUS_BULK_CREATE_MAX_SIZE)
+    List[StatusCreate], Len(1, settings.API_STATUS_BULK_CREATE_MAX_SIZE)
 ]
 BulkSessionCreateList = Annotated[
-    List[SessionCreate], Len(2, settings.API_SESSION_BULK_CREATE_MAX_SIZE)
+    List[SessionCreate], Len(1, settings.API_SESSION_BULK_CREATE_MAX_SIZE)
 ]
 IdItinerance = Annotated[
     str,
