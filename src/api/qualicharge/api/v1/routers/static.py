@@ -99,7 +99,7 @@ class PaginatedStatiqueListResponse(BaseModel):
 
 
 BulkStatiqueList = Annotated[
-    List[Statique], Len(2, settings.API_STATIQUE_BULK_CREATE_MAX_SIZE)
+    List[Statique], Len(1, settings.API_STATIQUE_BULK_CREATE_MAX_SIZE)
 ]
 
 

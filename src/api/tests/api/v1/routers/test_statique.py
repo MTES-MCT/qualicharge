@@ -740,7 +740,7 @@ def test_bulk_with_outbound_sizes(client_auth):
     response = client_auth.post(
         "/statique/bulk", json=[json.loads(data.model_dump_json())]
     )
-    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert response.status_code == status.HTTP_201_CREATED
 
     data = StatiqueFactory.batch(
         size=settings.API_STATIQUE_BULK_CREATE_MAX_SIZE + 1,
