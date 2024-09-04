@@ -20,20 +20,20 @@ Ce Notebook présente la fonction permettant de générer les indicateurs Qualic
 La liste des indicateurs est présentée sur [ce lien](https://loco-philippe.github.io/IRVE/files/indicateurs.html).
 
 La présentation des requêtes associée est présentée sur [ce notebook](../indicators/reference_indicators.md)
+
+*Nota : La dimension temporelle des indicateurs n'est pas prise en compte, elle sera ajoutée dans une version ultérieure*
 <!-- #endregion -->
 
 ```python editable=true slideshow={"slide_type": ""}
 import os
 import pandas as pd
 from sqlalchemy import create_engine
-from create_query import to_indicator, create_table_pop
+from create_query import to_indicator #, create_table_pop
 
 # Connecteur à la base Qualicharge
 engine = create_engine(os.getenv("DATABASE_URL"))
 
-TABLE = {'00': 'national', '01': 'region', '02': 'department', '03': 'epci', '04': 'city'}
-
-create_table_pop(engine)
+# create_table_pop(engine)
 ```
 
 <!-- #region editable=true slideshow={"slide_type": ""} -->
@@ -136,285 +136,6 @@ to_indicator(engine, 'i1-01-93-02', format='table')
 # représentation sous forme de requète PostgreSQL
 print(to_indicator(engine, 'i1', format='query'))
 ```
-
-## Infrastructure - typologie
-
-Les indicateurs 't1' à 't6' sont pris en compte.
-
-L'indicateur 't7' reste à construire (non prioritaire).
-
-Les autres indicateurs sont à définir (
-
-
-### T1 : Nombre de points de recharge par niveau de puissance
-
-'nb_pdc' est le nombre de points de recharge.
-
-'p-range' est la plage de puissance (ex. [65, 175) -> de 65 inclus à 175 exclus)
-
-'p-cat' est l'index de la catégorie (1 pour la catégorie la plus basse)
-
-<!-- #region editable=true slideshow={"slide_type": ""} -->
-#### requête globale
-<!-- #endregion -->
-
-```python
-t1_nat = to_indicator(engine, 't1-00')
-print(t1_nat['nb_pdc'].sum())
-t1_nat
-```
-
-```python editable=true slideshow={"slide_type": ""}
-query_gen = to_indicator(engine, 't1-00', simple=True, format='query')
-print(query_gen)
-```
-
-```python editable=true slideshow={"slide_type": ""}
-query_gen = to_indicator(engine, 't1-00', simple=True, format='query', query_gen=True)
-print(query_gen)
-```
-
-<!-- #region editable=true slideshow={"slide_type": ""} -->
-#### requête locale
-<!-- #endregion -->
-
-```python
-to_indicator(engine, 't1-02-75')
-```
-
-```python editable=true slideshow={"slide_type": ""}
-print(to_indicator(engine, 't1-02-75', simple=True, format='query'))
-```
-
-```python editable=true slideshow={"slide_type": ""}
-query_gen = to_indicator(engine, 't1-02-75', simple=True, format='query', query_gen=True)
-print(query_gen)
-```
-
-### T2 : Pourcentage de points de recharge par niveau de puissance
-
-Indicateur similaire à 't1' ( 'pct_nb_pdc' remplace 'nb_pdc').
-
-'pct_nb_pdc' est le pourcentage de pdc pour le niveau de puissance.
-
-<!-- #region editable=true slideshow={"slide_type": ""} -->
-#### requête globale
-<!-- #endregion -->
-
-```python
-to_indicator(engine, 't2')
-```
-
-```python editable=true slideshow={"slide_type": ""}
-query_gen = to_indicator(engine, 't2', simple=True, format='query')
-print(query_gen)
-```
-
-```python editable=true slideshow={"slide_type": ""}
-query_gen = to_indicator(engine, 't2', simple=True, format='query', query_gen=True)
-print(query_gen)
-```
-
-<!-- #region editable=true slideshow={"slide_type": ""} -->
-#### requête locale
-<!-- #endregion -->
-
-```python
-to_indicator(engine, 't2-02-75', simple=True)
-```
-
-```python editable=true slideshow={"slide_type": ""}
-print(to_indicator(engine, 't2-02-75', simple=True, format='query'))
-```
-
-```python editable=true slideshow={"slide_type": ""}
-query_gen = to_indicator(engine, 't2-02-75', simple=True, format='query', query_gen=True)
-print(query_gen)
-```
-
-### T3 : Nombre de stations par nombre de points de recharge
-
-'nb_stations' est le nombre de stations.
-
-'nb_pdc' est le nombre de pdc.
-
-ex. il y a 2790 stations (nb_stations) avec un seul pdc (nb_pdc).
-
-<!-- #region editable=true slideshow={"slide_type": ""} -->
-#### requête globale
-<!-- #endregion -->
-
-```python editable=true slideshow={"slide_type": ""}
-to_indicator(engine, 't3-00', simple=False)[:5]
-```
-
-```python editable=true slideshow={"slide_type": ""}
-query_gen = to_indicator(engine, 't3', simple=True, format='query')
-print(query_gen)
-```
-
-```python editable=true slideshow={"slide_type": ""}
-query_gen = to_indicator(engine, 't3', simple=True, format='query', query_gen=True)
-print(query_gen)
-```
-
-<!-- #region editable=true slideshow={"slide_type": ""} -->
-#### requête locale
-<!-- #endregion -->
-
-```python
-to_indicator(engine, 't3-04-74012', simple=False)
-```
-
-```python editable=true slideshow={"slide_type": ""}
-print(to_indicator(engine, 't3-04-74012', simple=True, format='query'))
-```
-
-```python editable=true slideshow={"slide_type": ""}
-query_gen = to_indicator(engine, 't3-04-74012', simple=True, format='query', query_gen=True)
-print(query_gen)
-```
-
-### T4 : Pourcentage de stations par nombre de points de recharge
-
-Indicateur similaire à 't3' ( 'pct_nb_stations' remplace 'nb_stations').
-
-'pct_nb_stations' est le pourcentage de stations avec un nombre de pdc donné.
-
-<!-- #region editable=true slideshow={"slide_type": ""} -->
-#### requête globale
-<!-- #endregion -->
-
-```python
-to_indicator(engine, 't4', simple=False)[:5]
-```
-
-```python editable=true slideshow={"slide_type": ""}
-query_gen = to_indicator(engine, 't4', simple=True, format='query')
-print(query_gen)
-```
-
-```python editable=true slideshow={"slide_type": ""}
-query_gen = to_indicator(engine, 't4', simple=True, format='query', query_gen=True)
-print(query_gen)
-```
-
-<!-- #region editable=true slideshow={"slide_type": ""} -->
-#### requête locale
-<!-- #endregion -->
-
-```python
-to_indicator(engine, 't4-04-74012', simple=False)
-```
-
-```python editable=true slideshow={"slide_type": ""}
-print(to_indicator(engine, 't4-04-74012', simple=True, format='query'))
-```
-
-```python editable=true slideshow={"slide_type": ""}
-query_gen = to_indicator(engine, 't4-04-74012', simple=True, format='query', query_gen=True)
-print(query_gen)
-```
-
-### T5 : Nombre de stations par type d’implantation
-
-'nb_stations' est le nombre de stations.
-
-'implantation' est le type d'implantation
-
-<!-- #region editable=true slideshow={"slide_type": ""} -->
-#### requête globale
-<!-- #endregion -->
-
-```python
-t5_nat = to_indicator(engine, 't5-00')
-print(t5_nat['nb_stations'].sum())
-t5_nat[:10]
-```
-
-```python editable=true slideshow={"slide_type": ""}
-query_gen = to_indicator(engine, 't5', simple=True, format='query')
-print(query_gen)
-```
-
-```python editable=true slideshow={"slide_type": ""}
-query_gen = to_indicator(engine, 't5', simple=True, format='query', query_gen=True)
-print(query_gen)
-```
-
-<!-- #region editable=true slideshow={"slide_type": ""} -->
-#### requête locale
-<!-- #endregion -->
-
-```python
-to_indicator(engine, 't5-03-200023414', simple=False)
-```
-
-```python editable=true slideshow={"slide_type": ""}
-print(to_indicator(engine, 't5-03-200023414', simple=True, format='query'))
-```
-
-```python editable=true slideshow={"slide_type": ""}
-query_gen = to_indicator(engine, 't5-03-200023414', simple=True, format='query', query_gen=True)
-print(query_gen)
-```
-
-### T6 : Pourcentage de stations par type d’implantation
-
-Indicateur similaire à 't5' ( 'pct_nb_stations' remplace 'nb_stations').
-
-'pct_nb_stations' est le pourcentage de stations avec un type d'implantation donné.
-
-<!-- #region editable=true slideshow={"slide_type": ""} -->
-#### requête globale
-<!-- #endregion -->
-
-```python
-to_indicator(engine, 't6')
-```
-
-```python editable=true slideshow={"slide_type": ""}
-query_gen = to_indicator(engine, 't6', simple=True, format='query')
-print(query_gen)
-```
-
-```python editable=true slideshow={"slide_type": ""}
-query_gen = to_indicator(engine, 't6', simple=True, format='query', query_gen=True)
-print(query_gen)
-```
-
-<!-- #region editable=true slideshow={"slide_type": ""} -->
-#### requête locale
-<!-- #endregion -->
-
-```python
-to_indicator(engine, 't6-03-200023414')
-```
-
-```python editable=true slideshow={"slide_type": ""}
-print(to_indicator(engine, 't6-03-200023414', simple=True, format='query'))
-```
-
-```python editable=true slideshow={"slide_type": ""}
-query_gen = to_indicator(engine, 't6-03-200023414', simple=True, format='query', query_gen=True)
-print(query_gen)
-```
-
-### Autres indicateurs de typologie
-
-Les indicateurs liés à d'autres typologies (ex. opérateurs, accès deux roues, période d’ouverture, accès handicapés…) sont à définir.
-
-Ceux concernant les opérateurs sont prioritaires.
-
-
-## Autres indicateurs à prendre en compte
-
-- Indicateurs d'historique (traitement des données historisées)
-- Infrastructure - réseau autoroute (nécessite l'identification des stations de ce réseau)
-- Usage - quantitatif (traitement des données dynamiques) 
-- Usage - qualité de service (traitement des données dynamiques)
-- Indicateurs étendus (en lien avec des données externes - ex. trafic, immatriculation, consommation ENEDIS)
-
 
 ## Infrastructure - quantitatif
 
@@ -521,8 +242,7 @@ to_indicator(engine, 'i4-0', simple=True)
 ```
 
 ```python editable=true slideshow={"slide_type": ""}
-query_gen = to_indicator(engine, 'i4', simple=True, format='query')
-print(query_gen)
+print(to_indicator(engine, 'i4', simple=True, format='query'))
 ```
 
 ```python editable=true slideshow={"slide_type": ""}
@@ -539,8 +259,7 @@ to_indicator(engine, 'i4-0-xx-01')[:5]
 ```
 
 ```python editable=true slideshow={"slide_type": ""}
-query_gen = to_indicator(engine, 'i4-0-xx-01', simple=True, format='query')
-print(query_gen)
+print(to_indicator(engine, 'i4-0-xx-01', simple=True, format='query'))
 ```
 
 ```python editable=true slideshow={"slide_type": ""}
@@ -557,8 +276,7 @@ to_indicator(engine, 'i4-01-93-0')
 ```
 
 ```python editable=true slideshow={"slide_type": ""}
-query_gen = to_indicator(engine, 'i4-01-93-0', simple=True, format='query')
-print(query_gen)
+print(to_indicator(engine, 'i4-01-93-0', simple=True, format='query'))
 ```
 
 ```python editable=true slideshow={"slide_type": ""}
@@ -574,7 +292,7 @@ print(query_gen)
 to_indicator(engine, 'i4-01-93-03')[:5]
 ```
 
-```python editable=true jupyter={"source_hidden": true} slideshow={"slide_type": ""}
+```python editable=true slideshow={"slide_type": ""}
 print(to_indicator(engine, 'i4-01-93-03', simple=True, format='query'))
 ```
 
@@ -598,8 +316,7 @@ to_indicator(engine, 'i7', simple=True)
 ```
 
 ```python editable=true slideshow={"slide_type": ""}
-query_gen = to_indicator(engine, 'i7', simple=True, format='query')
-print(query_gen)
+print(to_indicator(engine, 'i7', simple=True, format='query'))
 ```
 
 ```python editable=true slideshow={"slide_type": ""}
@@ -618,8 +335,7 @@ i7_nat[:5]
 ```
 
 ```python editable=true slideshow={"slide_type": ""}
-query_gen = to_indicator(engine, 'i7-0--01', simple=True, format='query')
-print(query_gen)
+print(to_indicator(engine, 'i7-0--01', simple=True, format='query'))
 ```
 
 ```python editable=true slideshow={"slide_type": ""}
@@ -636,8 +352,7 @@ to_indicator(engine, 'i7-01-93-00', simple=True)
 ```
 
 ```python editable=true slideshow={"slide_type": ""}
-query_gen = to_indicator(engine, 'i7-01-93-00', simple=True, format='query')
-print(query_gen)
+print(to_indicator(engine, 'i7-01-93-00', simple=True, format='query'))
 ```
 
 ```python editable=true slideshow={"slide_type": ""}
@@ -662,3 +377,276 @@ print(to_indicator(engine, 'i7-01-93-04', simple=True, format='query'))
 query_gen = to_indicator(engine, 'i7-01-93-04', simple=True, format='query', query_gen=True)
 print(query_gen)
 ```
+
+## Infrastructure - typologie
+
+Les indicateurs 't1' à 't6' sont pris en compte.
+
+L'indicateur 't7' reste à construire (non prioritaire).
+
+Les autres indicateurs sont à définir (
+
+
+### T1 : Nombre de points de recharge par niveau de puissance
+
+'nb_pdc' est le nombre de points de recharge.
+
+'p-range' est la plage de puissance (ex. [65, 175) -> de 65 inclus à 175 exclus)
+
+'p-cat' est l'index de la catégorie (1 pour la catégorie la plus basse)
+
+<!-- #region editable=true slideshow={"slide_type": ""} -->
+#### requête globale
+<!-- #endregion -->
+
+```python
+t1_nat = to_indicator(engine, 't1-00')
+print(t1_nat['nb_pdc'].sum())
+t1_nat
+```
+
+```python editable=true slideshow={"slide_type": ""}
+print(to_indicator(engine, 't1-00', simple=True, format='query'))
+```
+
+```python editable=true slideshow={"slide_type": ""}
+query_gen = to_indicator(engine, 't1-00', simple=True, format='query', query_gen=True)
+print(query_gen)
+```
+
+<!-- #region editable=true slideshow={"slide_type": ""} -->
+#### requête locale
+<!-- #endregion -->
+
+```python
+to_indicator(engine, 't1-02-75')
+```
+
+```python editable=true slideshow={"slide_type": ""}
+print(to_indicator(engine, 't1-02-75', simple=True, format='query'))
+```
+
+```python editable=true slideshow={"slide_type": ""}
+query_gen = to_indicator(engine, 't1-02-75', simple=True, format='query', query_gen=True)
+print(query_gen)
+```
+
+### T2 : Pourcentage de points de recharge par niveau de puissance
+
+Indicateur similaire à 't1' ( 'pct_nb_pdc' remplace 'nb_pdc').
+
+'pct_nb_pdc' est le pourcentage de pdc pour le niveau de puissance.
+
+<!-- #region editable=true slideshow={"slide_type": ""} -->
+#### requête globale
+<!-- #endregion -->
+
+```python
+to_indicator(engine, 't2')
+```
+
+```python editable=true slideshow={"slide_type": ""}
+print(to_indicator(engine, 't2', simple=True, format='query'))
+```
+
+```python editable=true slideshow={"slide_type": ""}
+query_gen = to_indicator(engine, 't2', simple=True, format='query', query_gen=True)
+print(query_gen)
+```
+
+<!-- #region editable=true slideshow={"slide_type": ""} -->
+#### requête locale
+<!-- #endregion -->
+
+```python
+to_indicator(engine, 't2-02-75', simple=True)
+```
+
+```python editable=true slideshow={"slide_type": ""}
+print(to_indicator(engine, 't2-02-75', simple=True, format='query'))
+```
+
+```python editable=true slideshow={"slide_type": ""}
+query_gen = to_indicator(engine, 't2-02-75', simple=True, format='query', query_gen=True)
+print(query_gen)
+```
+
+### T3 : Nombre de stations par nombre de points de recharge
+
+'nb_stations' est le nombre de stations.
+
+'nb_pdc' est le nombre de pdc.
+
+ex. il y a 2790 stations (nb_stations) avec un seul pdc (nb_pdc).
+
+<!-- #region editable=true slideshow={"slide_type": ""} -->
+#### requête globale
+<!-- #endregion -->
+
+```python editable=true slideshow={"slide_type": ""}
+to_indicator(engine, 't3-00', simple=False)[:5]
+```
+
+```python editable=true slideshow={"slide_type": ""}
+print(to_indicator(engine, 't3', simple=True, format='query'))
+```
+
+```python editable=true slideshow={"slide_type": ""}
+query_gen = to_indicator(engine, 't3', simple=True, format='query', query_gen=True)
+print(query_gen)
+```
+
+<!-- #region editable=true slideshow={"slide_type": ""} -->
+#### requête locale
+<!-- #endregion -->
+
+```python
+to_indicator(engine, 't3-04-74012', simple=False)
+```
+
+```python editable=true slideshow={"slide_type": ""}
+print(to_indicator(engine, 't3-04-74012', simple=True, format='query'))
+```
+
+```python editable=true slideshow={"slide_type": ""}
+query_gen = to_indicator(engine, 't3-04-74012', simple=True, format='query', query_gen=True)
+print(query_gen)
+```
+
+### T4 : Pourcentage de stations par nombre de points de recharge
+
+Indicateur similaire à 't3' ( 'pct_nb_stations' remplace 'nb_stations').
+
+'pct_nb_stations' est le pourcentage de stations avec un nombre de pdc donné.
+
+<!-- #region editable=true slideshow={"slide_type": ""} -->
+#### requête globale
+<!-- #endregion -->
+
+```python
+to_indicator(engine, 't4', simple=False)[:5]
+```
+
+```python editable=true slideshow={"slide_type": ""}
+print(to_indicator(engine, 't4', simple=True, format='query'))
+```
+
+```python editable=true slideshow={"slide_type": ""}
+query_gen = to_indicator(engine, 't4', simple=True, format='query', query_gen=True)
+print(query_gen)
+```
+
+<!-- #region editable=true slideshow={"slide_type": ""} -->
+#### requête locale
+<!-- #endregion -->
+
+```python editable=true slideshow={"slide_type": ""}
+to_indicator(engine, 't4-04-74012', simple=False)
+```
+
+```python editable=true slideshow={"slide_type": ""}
+print(to_indicator(engine, 't4-04-74012', simple=True, format='query'))
+```
+
+```python editable=true slideshow={"slide_type": ""}
+query_gen = to_indicator(engine, 't4-04-74012', simple=True, format='query', query_gen=True)
+print(query_gen)
+```
+
+### T5 : Nombre de stations par type d’implantation
+
+'nb_stations' est le nombre de stations.
+
+'implantation' est le type d'implantation
+
+<!-- #region editable=true slideshow={"slide_type": ""} -->
+#### requête globale
+<!-- #endregion -->
+
+```python
+t5_nat = to_indicator(engine, 't5-00')
+print(t5_nat['nb_stations'].sum())
+t5_nat[:10]
+```
+
+```python editable=true slideshow={"slide_type": ""}
+print(to_indicator(engine, 't5', simple=True, format='query'))
+```
+
+```python editable=true slideshow={"slide_type": ""}
+query_gen = to_indicator(engine, 't5', simple=True, format='query', query_gen=True)
+print(query_gen)
+```
+
+<!-- #region editable=true slideshow={"slide_type": ""} -->
+#### requête locale
+<!-- #endregion -->
+
+```python
+to_indicator(engine, 't5-03-200023414', simple=False)
+```
+
+```python editable=true slideshow={"slide_type": ""}
+print(to_indicator(engine, 't5-03-200023414', simple=True, format='query'))
+```
+
+```python editable=true slideshow={"slide_type": ""}
+query_gen = to_indicator(engine, 't5-03-200023414', simple=True, format='query', query_gen=True)
+print(query_gen)
+```
+
+### T6 : Pourcentage de stations par type d’implantation
+
+Indicateur similaire à 't5' ( 'pct_nb_stations' remplace 'nb_stations').
+
+'pct_nb_stations' est le pourcentage de stations avec un type d'implantation donné.
+
+<!-- #region editable=true slideshow={"slide_type": ""} -->
+#### requête globale
+<!-- #endregion -->
+
+```python
+to_indicator(engine, 't6')
+```
+
+```python editable=true slideshow={"slide_type": ""}
+print(to_indicator(engine, 't6', simple=True, format='query'))
+```
+
+```python editable=true slideshow={"slide_type": ""}
+query_gen = to_indicator(engine, 't6', simple=True, format='query', query_gen=True)
+print(query_gen)
+```
+
+<!-- #region editable=true slideshow={"slide_type": ""} -->
+#### requête locale
+<!-- #endregion -->
+
+```python
+to_indicator(engine, 't6-03-200023414')
+```
+
+```python editable=true slideshow={"slide_type": ""}
+print(to_indicator(engine, 't6-03-200023414', simple=True, format='query'))
+```
+
+```python editable=true slideshow={"slide_type": ""}
+query_gen = to_indicator(engine, 't6-03-200023414', simple=True, format='query', query_gen=True)
+print(query_gen)
+```
+
+### Autres indicateurs de typologie
+
+Les indicateurs liés à d'autres typologies (ex. opérateurs, accès deux roues, période d’ouverture, accès handicapés…) sont à définir.
+
+Ceux concernant les opérateurs sont prioritaires.
+
+<!-- #region editable=true slideshow={"slide_type": ""} -->
+## Autres indicateurs à prendre en compte
+
+- Indicateurs d'historique (traitement des données historisées)
+- Infrastructure - réseau autoroute (nécessite l'identification des stations de ce réseau)
+- Usage - quantitatif (traitement des données dynamiques) 
+- Usage - qualité de service (traitement des données dynamiques)
+- Indicateurs étendus (en lien avec des données externes - ex. trafic, immatriculation, consommation ENEDIS)
+<!-- #endregion -->

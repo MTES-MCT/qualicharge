@@ -23,9 +23,6 @@ import sys
 
 create_query = sys.modules[__name__]
 
-NATIONAL = "national(code, name) AS (VALUES ('00', 'national')) "
-NATIONAL_S = "national(code) AS (VALUES ('00')) "
-NATIONAL_G = "national(code) AS (VALUES ('{perim}')) "
 P_TAB = """puissance(p_range, p_cat) AS (
         VALUES 
             (numrange(0, 15.0), 1), 
@@ -47,7 +44,6 @@ CITY_COG = f"""
     x_epci AS (SELECT id as e_id, code AS e_code FROM epci),
     x_region AS (SELECT id as r_id, code AS r_code FROM region),
     city_cog AS (SELECT geometry, c_code, d_code, e_code, r_code from x_city LEFT JOIN x_department ON x_department.d_id = department_id LEFT JOIN x_epci ON x_epci.e_id = epci_id LEFT JOIN x_region ON region_id = x_region.r_id)"""
-TABLE_DIC = "table_dic(code_d, table_d) AS (VALUES ('00', 'national'), ('01', 'region'), ('02', 'department'), ('03', 'epci'), ('04', 'city'))"
 TABLE = {'00': 'national', '01': 'region', '02': 'department', '03': 'epci', '04': 'city'}
 G_OVERHEAD = f"""QUERY,
     VAL,
@@ -65,8 +61,8 @@ STAT_NB_PDC = f"""stat_nb_pdc AS (
       localisation_id
 )
 """
-URL_POP = 'https://unpkg.com/@etalab/decoupage-administratif@4.0.0/data/communes.json'
-POP = None 
+# URL_POP = 'https://unpkg.com/@etalab/decoupage-administratif@4.0.0/data/communes.json'
+# POP = None 
 
 def to_indicator(engine, indicator, simple=True, histo=False, format='pandas', histo_timest=None, json_orient='split',
                  table_name=None, table_option="replace", query_gen=False):
@@ -152,7 +148,7 @@ def query_histo(query, timestamp=None):
 
     return " WITH query AS (" + query + "), " + datation + " SELECT * FROM query, datation "
 
-def init_param_xxt(simple, gen, indic,  *param):
+def init_param_txx(simple, gen, indic,  *param):
     '''parameters initialization for 'query_ixx' functions  '''
     
     perim, val, zone = (param + ('00', '00', '00'))[:3]
@@ -183,14 +179,14 @@ def init_param_xxt(simple, gen, indic,  *param):
     {table_perim_code} = '{{val}}'
     AND ST_Within ("coordonneesXY", {{TABLE[perim]}}.geometry)"""
         
-    return (perim, val, zone, table_perim_code, g_overhead, s_overhead, where_isin_perim, table_perim)
+    return (perim, table_perim_code, g_overhead, s_overhead, where_isin_perim, table_perim)
 
 def query_t1(*param, simple=True, gen=False):
     '''Create SQL query for 't1' indicators (see parameters in module docstring)'''
 
     indic = 't1'
-    (perim, val, zone, table_perim_code, g_overhead, s_overhead, where_isin_perim, table_perim
-     ) = init_param_xxt(simple, gen, indic, *param)
+    (perim, table_perim_code, g_overhead, s_overhead, where_isin_perim, table_perim
+     ) = init_param_txx(simple, gen, indic, *param)
 
     coma1 = "" if f"{table_perim_code}{s_overhead}" == "" else ","
     coma2 = "" if f"{table_perim_code}" == "" else ","
@@ -220,8 +216,8 @@ def query_t2(*param, simple=True, gen=False):
     '''Create SQL query for 't2' indicators (see parameters in module docstring)'''
     
     indic = 't2'
-    (perim, val, zone, table_perim_code, g_overhead, s_overhead, where_isin_perim, table_perim
-     ) = init_param_xxt(simple, gen, indic, *param)
+    (perim, table_perim_code, g_overhead, s_overhead, where_isin_perim, table_perim
+     ) = init_param_txx(simple, gen, indic, *param)
 
     code = "" if perim == '00' else "code"
     coma1 = "" if f"{code}{s_overhead}" == "" else ","
@@ -249,8 +245,8 @@ def query_t3(*param, simple=True, gen=False):
     '''Create SQL query for 't3' indicators (see parameters in module docstring)'''
 
     indic = 't3'
-    (perim, val, zone, table_perim_code, g_overhead, s_overhead, where_isin_perim, table_perim
-     ) = init_param_xxt(simple, gen, indic, *param)
+    (perim, table_perim_code, g_overhead, s_overhead, where_isin_perim, table_perim
+     ) = init_param_txx(simple, gen, indic, *param)
 
     coma1 = "" if f"{table_perim_code}{s_overhead}" == "" else ","
     coma2 = "" if f"{table_perim_code}" == "" else ","
@@ -280,8 +276,8 @@ def query_t4(*param, simple=True, gen=False):
     '''Create SQL query for 't4' indicators (see parameters in module docstring)'''
     
     indic = 't4'
-    (perim, val, zone, table_perim_code, g_overhead, s_overhead, where_isin_perim, table_perim
-     ) = init_param_xxt(simple, gen, indic, *param)
+    (perim, table_perim_code, g_overhead, s_overhead, where_isin_perim, table_perim
+     ) = init_param_txx(simple, gen, indic, *param)
     code = "" if perim == '00' else "code"
     coma1 = "" if f"{code}{s_overhead}" == "" else ","
     coma3 = "" if f"{s_overhead}" == "" or f"{code}" == "" else ","
@@ -307,8 +303,8 @@ def query_t5(*param, simple=True, gen=False):
     '''Create SQL query for 't5' indicators (see parameters in module docstring)'''
     
     indic = 't5'
-    (perim, val, zone, table_perim_code, g_overhead, s_overhead, where_isin_perim, table_perim
-     ) = init_param_xxt(simple, gen, indic, *param)
+    (perim, table_perim_code, g_overhead, s_overhead, where_isin_perim, table_perim
+     ) = init_param_txx(simple, gen, indic, *param)
 
     coma1 = "" if f"{table_perim_code}{s_overhead}" == "" else ","
     coma2 = "" if f"{table_perim_code}" == "" else ","
@@ -335,8 +331,8 @@ def query_t6(*param, simple=True, gen=False):
     '''Create SQL query for 't6' indicators (see parameters in module docstring)'''
 
     indic = 't6'
-    (perim, val, zone, table_perim_code, g_overhead, s_overhead, where_isin_perim, table_perim
-     ) = init_param_xxt(simple, gen, indic, *param)
+    (perim, table_perim_code, g_overhead, s_overhead, where_isin_perim, table_perim
+     ) = init_param_txx(simple, gen, indic, *param)
     code = "" if perim == '00' else "code"
     coma1 = "" if f"{code}{s_overhead}" == "" else ","
     coma3 = "" if f"{s_overhead}" == "" or f"{code}" == "" else ","
@@ -486,7 +482,7 @@ GROUP BY
 ORDER BY
     p_nom DESC"""
 
-def create_table_pop(engine):
+"""def create_table_pop(engine):
     '''create temporay table with population'''
     pop = pd.read_json(URL_POP).loc[:,['code', 'population']]
     pop.rename(columns={'code': 'p_code'}, inplace=True)
@@ -499,7 +495,8 @@ def query_i2(*param, simple=True, gen=False):
     perim = perim.rjust(2, '0')
     val = val.rjust(2, '0')
     zone = zone.rjust(2, '0')
-
+"""
+'''
     pdc_cog_pop = f"""
         {CITY_COG},
         pdc_all AS (SELECT * from {PDC_ALL}),
@@ -519,3 +516,4 @@ def query_i2(*param, simple=True, gen=False):
             GROUP BY level, x_code ORDER BY nb_pdc DESC)
     SELECT nb_pdc / nb_pop * 100000 AS ratio_nb_pdc_per_pop, p_cat, p_range, level, code
     FROM tot_pop"""
+'''
