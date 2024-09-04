@@ -36,31 +36,17 @@ JOIN_P = "LEFT JOIN puissance ON puissance_nominale::numeric <@ p_range "
 PDC_ALL = f"""pointdecharge 
     LEFT JOIN station ON station.id = station_id 
     LEFT JOIN localisation ON localisation_id = localisation.id"""
-STAT_ALL = "station LEFT JOIN localisation ON localisation_id = localisation.id "
-ISIN_GEOM = 'ST_Within("coordonneesXY", geometry) '
-CITY_COG = f"""
-    x_city AS (SELECT geometry, code AS c_code, department_id, epci_id  FROM city),
-    x_department AS (SELECT id as d_id, code AS d_code, region_id FROM department),
-    x_epci AS (SELECT id as e_id, code AS e_code FROM epci),
-    x_region AS (SELECT id as r_id, code AS r_code FROM region),
-    city_cog AS (SELECT geometry, c_code, d_code, e_code, r_code from x_city LEFT JOIN x_department ON x_department.d_id = department_id LEFT JOIN x_epci ON x_epci.e_id = epci_id LEFT JOIN x_region ON region_id = x_region.r_id)"""
+COG_ALL = f"""LEFT JOIN city on city.code = code_insee_commune
+    LEFT JOIN epci on city.epci_id = epci.id
+    LEFT JOIN department on city.department_id = department.id
+    LEFT JOIN region on department.region_id = region.id"""
+STAT_ALL = f"""station 
+    LEFT JOIN localisation ON localisation_id = localisation.id"""
 TABLE = {'00': 'national', '01': 'region', '02': 'department', '03': 'epci', '04': 'city'}
 G_OVERHEAD = f"""QUERY,
     VAL,
     LEVEL,
     AREA"""
-STAT_NB_PDC = f"""stat_nb_pdc AS (
-    SELECT
-      count(station_id) AS nb_pdc,
-      localisation_id
-    FROM
-      pointdecharge
-      LEFT JOIN station ON station.id = station_id
-    GROUP BY
-      station_id,
-      localisation_id
-)
-"""
 # URL_POP = 'https://unpkg.com/@etalab/decoupage-administratif@4.0.0/data/communes.json'
 # POP = None 
 
@@ -162,30 +148,26 @@ def init_param_txx(simple, gen, indic,  *param):
     '{perim}' AS LEVEL,
     '{val}' AS VAL,
     '{zone}' AS AREA"""
-    table_perim = "" if perim == '00' else f"{TABLE[perim]},"
     table_perim_code = "" if perim == '00' else f"{TABLE[perim]}.code"
     where_isin_perim = "" if perim == '00' else f"""WHERE
-    {table_perim_code} = '{val}'
-    AND ST_Within ("coordonneesXY", {TABLE[perim]}.geometry)"""
+    {table_perim_code} = '{val}'"""
     
     if gen:
         s_overhead = "" if simple else f"""'{{indic}}' AS QUERY,
     '{{perim}}' AS LEVEL,
     '{{val}}' AS VAL,
     '{{zone}}' AS AREA"""
-        table_perim = "" if perim == '00' else f"{{TABLE[perim]}},"
         table_perim_code = "" if perim == '00' else f"{{TABLE[perim]}}.code"
         where_isin_perim = "" if perim == '00' else f"""WHERE
-    {table_perim_code} = '{{val}}'
-    AND ST_Within ("coordonneesXY", {{TABLE[perim]}}.geometry)"""
+    {table_perim_code} = '{{val}}'"""
         
-    return (perim, table_perim_code, g_overhead, s_overhead, where_isin_perim, table_perim)
+    return (perim, table_perim_code, g_overhead, s_overhead, where_isin_perim)
 
 def query_t1(*param, simple=True, gen=False):
     '''Create SQL query for 't1' indicators (see parameters in module docstring)'''
 
     indic = 't1'
-    (perim, table_perim_code, g_overhead, s_overhead, where_isin_perim, table_perim
+    (perim, table_perim_code, g_overhead, s_overhead, where_isin_perim
      ) = init_param_txx(simple, gen, indic, *param)
 
     coma1 = "" if f"{table_perim_code}{s_overhead}" == "" else ","
@@ -201,8 +183,8 @@ SELECT
     {table_perim_code}{coma3}
     {s_overhead}
 FROM
-    {table_perim}
     {PDC_ALL}
+    {COG_ALL}
     {JOIN_P}
 {where_isin_perim}
 GROUP BY
@@ -216,7 +198,7 @@ def query_t2(*param, simple=True, gen=False):
     '''Create SQL query for 't2' indicators (see parameters in module docstring)'''
     
     indic = 't2'
-    (perim, table_perim_code, g_overhead, s_overhead, where_isin_perim, table_perim
+    (perim, table_perim_code, g_overhead, s_overhead, where_isin_perim
      ) = init_param_txx(simple, gen, indic, *param)
 
     code = "" if perim == '00' else "code"
@@ -245,7 +227,7 @@ def query_t3(*param, simple=True, gen=False):
     '''Create SQL query for 't3' indicators (see parameters in module docstring)'''
 
     indic = 't3'
-    (perim, table_perim_code, g_overhead, s_overhead, where_isin_perim, table_perim
+    (perim, table_perim_code, g_overhead, s_overhead, where_isin_perim
      ) = init_param_txx(simple, gen, indic, *param)
 
     coma1 = "" if f"{table_perim_code}{s_overhead}" == "" else ","
@@ -253,21 +235,18 @@ def query_t3(*param, simple=True, gen=False):
     coma3 = "" if f"{s_overhead}" == "" or f"{table_perim_code}" == "" else ","
 
     return f"""
-WITH 
-    {STAT_NB_PDC}
 SELECT
-    count(nb_pdc) AS nb_stations,
-    nb_pdc{coma1}
+    count(nbre_pdc) AS nb_stations,
+    nbre_pdc{coma1}
     {table_perim_code}{coma3}
     {s_overhead}
 FROM
-    {table_perim}
-    stat_nb_pdc
-    LEFT JOIN localisation ON localisation_id = localisation.id
+    {STAT_ALL}
+    {COG_ALL}
 {where_isin_perim}
 GROUP BY
     {g_overhead}
-    nb_pdc{coma2}
+    nbre_pdc{coma2}
     {table_perim_code}
 ORDER BY
     nb_stations DESC"""
@@ -276,7 +255,7 @@ def query_t4(*param, simple=True, gen=False):
     '''Create SQL query for 't4' indicators (see parameters in module docstring)'''
     
     indic = 't4'
-    (perim, table_perim_code, g_overhead, s_overhead, where_isin_perim, table_perim
+    (perim, table_perim_code, g_overhead, s_overhead, where_isin_perim
      ) = init_param_txx(simple, gen, indic, *param)
     code = "" if perim == '00' else "code"
     coma1 = "" if f"{code}{s_overhead}" == "" else ","
@@ -293,7 +272,7 @@ SELECT
         FROM 
             t3
     ) * 100 AS pct_nb_stations,
-    nb_pdc{coma1}
+    nbre_pdc{coma1}
     {code}{coma3}
     {s_overhead}
 FROM 
@@ -303,7 +282,7 @@ def query_t5(*param, simple=True, gen=False):
     '''Create SQL query for 't5' indicators (see parameters in module docstring)'''
     
     indic = 't5'
-    (perim, table_perim_code, g_overhead, s_overhead, where_isin_perim, table_perim
+    (perim, table_perim_code, g_overhead, s_overhead, where_isin_perim
      ) = init_param_txx(simple, gen, indic, *param)
 
     coma1 = "" if f"{table_perim_code}{s_overhead}" == "" else ","
@@ -317,8 +296,8 @@ SELECT
     {table_perim_code}{coma3}
     {s_overhead}
 FROM
-    {table_perim}
     {STAT_ALL}
+    {COG_ALL}
 {where_isin_perim}
 GROUP BY
     {g_overhead}
@@ -331,7 +310,7 @@ def query_t6(*param, simple=True, gen=False):
     '''Create SQL query for 't6' indicators (see parameters in module docstring)'''
 
     indic = 't6'
-    (perim, table_perim_code, g_overhead, s_overhead, where_isin_perim, table_perim
+    (perim, table_perim_code, g_overhead, s_overhead, where_isin_perim
      ) = init_param_txx(simple, gen, indic, *param)
     code = "" if perim == '00' else "code"
     coma1 = "" if f"{code}{s_overhead}" == "" else ","
@@ -370,10 +349,8 @@ def init_param_ixx(simple, gen, indic,  *param):
     '{perim}' AS LEVEL,
     '{val}' AS VAL,
     '{zone}' AS AREA"""
-    table_perim = "" if perim == zone or perim == '00' else f"{TABLE[perim]},"
     where_isin_perim = "" if perim == '00' else f"""WHERE
-    {TABLE[perim]}.code = '{val}'
-    AND ST_Within ("coordonneesXY", {TABLE[perim]}.geometry)"""
+    {TABLE[perim]}.code = '{val}'"""
     table_zone = f"{TABLE[zone]}"
     
     if gen:
@@ -381,19 +358,17 @@ def init_param_ixx(simple, gen, indic,  *param):
     '{{perim}}' AS LEVEL,
     '{{val}}' AS VAL,
     '{{zone}}' AS AREA"""
-        table_perim = "" if perim == zone or perim == '00' else f"{{TABLE[perim]}},"
         where_isin_perim = "" if perim == '00' else f"""WHERE
-    {{TABLE[perim]}}.code = '{{val}}'
-    AND ST_Within ("coordonneesXY", {{TABLE[perim]}}.geometry)"""
+    {{TABLE[perim]}}.code = '{{val}}'"""
         table_zone = f"{{TABLE[zone]}}"
 
-    return (perim, val, zone, coma, g_overhead, s_overhead, where_isin_perim, table_perim, table_zone)
+    return (perim, zone, coma, g_overhead, s_overhead, where_isin_perim, table_zone)
 
 def query_i1(*param, simple=True, gen=False):
     '''Create SQL query for 'i1' indicators (see parameters in module docstring)'''
 
     indic = 'i1'
-    (perim, val, zone, coma, g_overhead, s_overhead, where_isin_perim, table_perim, table_zone
+    (perim, zone, coma, g_overhead, s_overhead, where_isin_perim, table_zone
      ) = init_param_ixx(simple, gen, indic, *param)
 
     if perim == zone == '00':
@@ -410,9 +385,8 @@ SELECT
     {table_zone}.code{coma}
     {s_overhead}
 FROM
-    {table_perim}
     {PDC_ALL}
-    LEFT JOIN {table_zone} ON ST_Within ("coordonneesXY", {table_zone}.geometry)
+    {COG_ALL}
 {where_isin_perim}
 GROUP BY
     {g_overhead}
@@ -424,7 +398,7 @@ def query_i4(*param, simple=True, gen=False):
     '''Create SQL query for 'i4' indicators (see parameters in module docstring)'''
 
     indic = 'i4'
-    (perim, val, zone, coma, g_overhead, s_overhead, where_isin_perim, table_perim, table_zone
+    (perim, zone, coma, g_overhead, s_overhead, where_isin_perim, table_zone
      ) = init_param_ixx(simple, gen, indic, *param)
 
     if perim == zone == '00':
@@ -441,9 +415,8 @@ SELECT
     {table_zone}.code{coma}
     {s_overhead}
 FROM
-    {table_perim}
     {STAT_ALL}
-    LEFT JOIN {table_zone} ON ST_Within ("coordonneesXY", {table_zone}.geometry)
+    {COG_ALL}
 {where_isin_perim}
 GROUP BY
     {g_overhead}
@@ -455,7 +428,7 @@ def query_i7(*param, simple=True, gen=False):
     '''Create SQL query for 'i7' indicators (see parameters in module docstring)'''
 
     indic = 'i7'
-    (perim, val, zone, coma, g_overhead, s_overhead, where_isin_perim, table_perim, table_zone
+    (perim, zone, coma, g_overhead, s_overhead, where_isin_perim, table_zone
      ) = init_param_ixx(simple, gen, indic, *param)
 
     if perim == zone == '00':
@@ -472,9 +445,8 @@ SELECT
     {table_zone}.code{coma}
     {s_overhead}
 FROM
-    {table_perim}
     {PDC_ALL}
-    LEFT JOIN {table_zone} ON ST_Within ("coordonneesXY", {table_zone}.geometry)
+    {COG_ALL}
 {where_isin_perim}
 GROUP BY
     {g_overhead}

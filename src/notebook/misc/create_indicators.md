@@ -160,7 +160,7 @@ to_indicator(engine, 'i1')
 ```
 
 ```python
-to_indicator(engine, 'i1-00-00-00', simple=True)
+to_indicator(engine, 'i1-00-00-00', simple=False)
 ```
 
 ```python editable=true slideshow={"slide_type": ""}
@@ -442,7 +442,7 @@ Indicateur similaire à 't1' ( 'pct_nb_pdc' remplace 'nb_pdc').
 <!-- #endregion -->
 
 ```python
-to_indicator(engine, 't2')
+to_indicator(engine, 't2', simple=False)
 ```
 
 ```python editable=true slideshow={"slide_type": ""}
@@ -500,16 +500,20 @@ print(query_gen)
 #### requête locale
 <!-- #endregion -->
 
-```python
-to_indicator(engine, 't3-04-74012', simple=False)
+```python editable=true slideshow={"slide_type": ""}
+to_indicator(engine, 't3-04-13001', simple=False)
 ```
 
 ```python editable=true slideshow={"slide_type": ""}
-print(to_indicator(engine, 't3-04-74012', simple=True, format='query'))
+print(to_indicator(engine, 't3-04-13001', simple=True, format='query'))
 ```
 
 ```python editable=true slideshow={"slide_type": ""}
-query_gen = to_indicator(engine, 't3-04-74012', simple=True, format='query', query_gen=True)
+print(to_indicator(engine, 't3-04-13001', simple=True, format='query'))
+```
+
+```python editable=true slideshow={"slide_type": ""}
+query_gen = to_indicator(engine, 't3-04-13001', simple=True, format='query', query_gen=True)
 print(query_gen)
 ```
 
@@ -541,15 +545,15 @@ print(query_gen)
 <!-- #endregion -->
 
 ```python editable=true slideshow={"slide_type": ""}
-to_indicator(engine, 't4-04-74012', simple=False)
+to_indicator(engine, 't4-04-13001', simple=False)
 ```
 
 ```python editable=true slideshow={"slide_type": ""}
-print(to_indicator(engine, 't4-04-74012', simple=True, format='query'))
+print(to_indicator(engine, 't4-04-13001', simple=True, format='query'))
 ```
 
 ```python editable=true slideshow={"slide_type": ""}
-query_gen = to_indicator(engine, 't4-04-74012', simple=True, format='query', query_gen=True)
+query_gen = to_indicator(engine, 't4-04-13001', simple=True, format='query', query_gen=True)
 print(query_gen)
 ```
 

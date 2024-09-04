@@ -28,7 +28,7 @@ La liste des indicateurs est présentée sur [ce lien](https://loco-philippe.git
 ## Structure des indicateurs
 <!-- #endregion -->
 
-<!-- #region -->
+<!-- #region editable=true slideshow={"slide_type": ""} -->
 ### Codification des indicateurs
 
 Les indicateurs sont codifiés par une chaine de caractères *[type]-[périmètre]-[valeur de périmètre]-[critère]* avec :
@@ -130,10 +130,8 @@ Les requêtes sont issues d'un [générateur de requêtes](../misc/create_query.
 
 Les résultats de ces requêtes ou la structure paramétrée peuvent être consultés dans le [notebook associé](../misc/create_indicators.md).
 
-Des solutions provisoires sont utilisées sur les points suivants :
+Une solution provisoire est utilisée pour le point suivant :
 
-- l'association d'un point de recharge à une zone s'effectue par les coordonnées géographiques du point de charge. La solution définitive utilise le 'code_insee_commune',
-- le nombre de points de recharge est calculé par une requête spécifique. La solution définitive s'appuie sur un attribut calculé,
 - les catégories de regroupement des puissances nominales des point de recharge sont définies dans la requête. Une structure externe est utilisée dans la version définitive. 
 <!-- #endregion -->
 
@@ -179,7 +177,9 @@ FROM
     pointdecharge 
     LEFT JOIN station ON station.id = station_id 
     LEFT JOIN localisation ON localisation_id = localisation.id
-    LEFT JOIN region ON ST_Within ("coordonneesXY", region.geometry)
+    LEFT JOIN city on city.code = code_insee_commune
+    LEFT JOIN department on city.department_id = department.id
+    LEFT JOIN region on department.region_id = region.id
 GROUP BY   
     region.code
 ORDER BY
@@ -202,10 +202,11 @@ FROM
     pointdecharge 
     LEFT JOIN station ON station.id = station_id 
     LEFT JOIN localisation ON localisation_id = localisation.id
-    LEFT JOIN region ON ST_Within ("coordonneesXY", region.geometry)
+    LEFT JOIN city on city.code = code_insee_commune
+    LEFT JOIN department on city.department_id = department.id
+    LEFT JOIN region on department.region_id = region.id
 WHERE
     region.code = '93'
-    AND ST_Within ("coordonneesXY", region.geometry)
 GROUP BY   
     region.code
 ORDER BY
@@ -225,14 +226,14 @@ SELECT
     count(id_pdc_itinerance) AS nb_pdc,
     department.code
 FROM
-    region,
     pointdecharge 
     LEFT JOIN station ON station.id = station_id 
     LEFT JOIN localisation ON localisation_id = localisation.id
-    LEFT JOIN department ON ST_Within ("coordonneesXY", department.geometry)
+    LEFT JOIN city on city.code = code_insee_commune
+    LEFT JOIN department on city.department_id = department.id
+    LEFT JOIN region on department.region_id = region.id
 WHERE
     region.code = '93'
-    AND ST_Within ("coordonneesXY", region.geometry)
 GROUP BY
     department.code
 ORDER BY
@@ -273,8 +274,11 @@ SELECT
     count(id_station_itinerance) AS nb_stat,
     region.code
 FROM
-    station LEFT JOIN localisation ON localisation_id = localisation.id 
-    LEFT JOIN region ON ST_Within ("coordonneesXY", region.geometry)
+    station 
+    LEFT JOIN localisation ON localisation_id = localisation.id 
+    LEFT JOIN city on city.code = code_insee_commune
+    LEFT JOIN department on city.department_id = department.id
+    LEFT JOIN region on department.region_id = region.id
 GROUP BY
     region.code
 ORDER BY
@@ -294,11 +298,13 @@ SELECT
     count(id_station_itinerance) AS nb_stat,
     region.code
 FROM
-    station LEFT JOIN localisation ON localisation_id = localisation.id 
-    LEFT JOIN region ON ST_Within ("coordonneesXY", region.geometry)
+    station 
+    LEFT JOIN localisation ON localisation_id = localisation.id 
+    LEFT JOIN city on city.code = code_insee_commune
+    LEFT JOIN department on city.department_id = department.id
+    LEFT JOIN region on department.region_id = region.id
 WHERE
     region.code = '93'
-    AND ST_Within ("coordonneesXY", region.geometry)
 GROUP BY
     region.code
 ORDER BY
@@ -318,12 +324,13 @@ SELECT
     count(id_station_itinerance) AS nb_stat,
     epci.code
 FROM
-    region,
-    station LEFT JOIN localisation ON localisation_id = localisation.id 
-    LEFT JOIN epci ON ST_Within ("coordonneesXY", epci.geometry)
+    station 
+    LEFT JOIN localisation ON localisation_id = localisation.id 
+    LEFT JOIN city on city.code = code_insee_commune
+    LEFT JOIN department on city.department_id = department.id
+    LEFT JOIN region on department.region_id = region.id
 WHERE
     region.code = '93'
-    AND ST_Within ("coordonneesXY", region.geometry)
 GROUP BY
     epci.code
 ORDER BY
@@ -365,7 +372,9 @@ FROM
     pointdecharge 
     LEFT JOIN station ON station.id = station_id 
     LEFT JOIN localisation ON localisation_id = localisation.id
-    LEFT JOIN region ON ST_Within ("coordonneesXY", region.geometry)
+    LEFT JOIN city on city.code = code_insee_commune
+    LEFT JOIN department on city.department_id = department.id
+    LEFT JOIN region on department.region_id = region.id
 GROUP BY
     region.code
 ORDER BY
@@ -388,10 +397,11 @@ FROM
     pointdecharge 
     LEFT JOIN station ON station.id = station_id 
     LEFT JOIN localisation ON localisation_id = localisation.id
-    LEFT JOIN region ON ST_Within ("coordonneesXY", region.geometry)
+    LEFT JOIN city on city.code = code_insee_commune
+    LEFT JOIN department on city.department_id = department.id
+    LEFT JOIN region on department.region_id = region.id
 WHERE
     region.code = '93'
-    AND ST_Within ("coordonneesXY", region.geometry)
 GROUP BY
     region.code
 ORDER BY
@@ -411,14 +421,14 @@ SELECT
     sum(puissance_nominale) AS p_nom,
     city.code
 FROM
-    region,
     pointdecharge 
     LEFT JOIN station ON station.id = station_id 
     LEFT JOIN localisation ON localisation_id = localisation.id
-    LEFT JOIN city ON ST_Within ("coordonneesXY", city.geometry)
+    LEFT JOIN city on city.code = code_insee_commune
+    LEFT JOIN department on city.department_id = department.id
+    LEFT JOIN region on department.region_id = region.id
 WHERE
     region.code = '93'
-    AND ST_Within ("coordonneesXY", region.geometry)
 GROUP BY
     city.code
 ORDER BY
@@ -465,8 +475,6 @@ SELECT
     p_range
 FROM
     pointdecharge 
-    LEFT JOIN station ON station.id = station_id 
-    LEFT JOIN localisation ON localisation_id = localisation.id
     LEFT JOIN puissance ON puissance_nominale::numeric <@ p_range 
 GROUP BY
     p_range
@@ -498,14 +506,14 @@ SELECT
     p_range,
     department.code
 FROM
-    department,
     pointdecharge 
     LEFT JOIN station ON station.id = station_id 
     LEFT JOIN localisation ON localisation_id = localisation.id
+    LEFT JOIN city on city.code = code_insee_commune
+    LEFT JOIN department on city.department_id = department.id
     LEFT JOIN puissance ON puissance_nominale::numeric <@ p_range 
 WHERE
     department.code = '75'
-    AND ST_Within ("coordonneesXY", department.geometry)
 GROUP BY
     p_range,
     department.code
@@ -532,29 +540,27 @@ Exemple requête globale : 't2-00-00' ou 't2'
 ```sql
 WITH 
     t1 AS (        
-    WITH 
-        puissance(p_range, p_cat) AS (
-            VALUES 
-                (numrange(0, 15.0), 1), 
-                (numrange(15.0, 26.0), 2), 
-                (numrange(26, 65.0), 3),
-                (numrange(65, 175.0), 4),
-                (numrange(175, 360.0), 5),
-                (numrange(360, NULL), 6)
-        )
-    SELECT
-        count(id_pdc_itinerance) AS nb_pdc,
-        p_range    
-    FROM
-        pointdecharge 
-        LEFT JOIN station ON station.id = station_id 
-        LEFT JOIN localisation ON localisation_id = localisation.id
-        LEFT JOIN puissance ON puissance_nominale::numeric <@ p_range 
-    GROUP BY
-        p_range
-    ORDER BY
-        nb_pdc DESC
-        )
+        WITH 
+            puissance(p_range, p_cat) AS (
+                VALUES 
+                    (numrange(0, 15.0), 1), 
+                    (numrange(15.0, 26.0), 2), 
+                    (numrange(26, 65.0), 3),
+                    (numrange(65, 175.0), 4),
+                    (numrange(175, 360.0), 5),
+                    (numrange(360, NULL), 6)
+            )
+        SELECT
+            count(id_pdc_itinerance) AS nb_pdc,
+            p_range    
+        FROM
+            pointdecharge 
+            LEFT JOIN puissance ON puissance_nominale::numeric <@ p_range 
+        GROUP BY
+            p_range
+        ORDER BY
+            nb_pdc DESC
+    )
 SELECT
     nb_pdc / (
         SELECT 
@@ -578,35 +584,36 @@ Exemple requête sur la département (02) paris (75) 't2-02-75'
 ```sql
 WITH 
     t1 AS (
-    WITH 
-        puissance(p_range, p_cat) AS (
-            VALUES 
-                (numrange(0, 15.0), 1), 
-                (numrange(15.0, 26.0), 2), 
-                (numrange(26, 65.0), 3),
-                (numrange(65, 175.0), 4),
-                (numrange(175, 360.0), 5),
-                (numrange(360, NULL), 6)
-        )
-    SELECT
-        count(id_pdc_itinerance) AS nb_pdc,
-        p_range,
-        department.code
-    FROM
-        department,
-        pointdecharge 
-        LEFT JOIN station ON station.id = station_id 
-        LEFT JOIN localisation ON localisation_id = localisation.id
-        LEFT JOIN puissance ON puissance_nominale::numeric <@ p_range 
-    WHERE
-        department.code = '75'
-        AND ST_Within ("coordonneesXY", department.geometry)
-    GROUP BY
-        p_range,
-        department.code
-    ORDER BY
-        nb_pdc DESC
-        )
+        WITH 
+            puissance(p_range, p_cat) AS (
+                VALUES 
+                    (numrange(0, 15.0), 1), 
+                    (numrange(15.0, 26.0), 2), 
+                    (numrange(26, 65.0), 3),
+                    (numrange(65, 175.0), 4),
+                    (numrange(175, 360.0), 5),
+                    (numrange(360, NULL), 6)
+            )
+        SELECT
+            count(id_pdc_itinerance) AS nb_pdc,
+            p_range,
+            department.code
+        FROM
+            department,
+            pointdecharge 
+            LEFT JOIN station ON station.id = station_id 
+            LEFT JOIN localisation ON localisation_id = localisation.id
+            LEFT JOIN city on city.code = code_insee_commune
+            LEFT JOIN department on city.department_id = department.id
+            LEFT JOIN puissance ON puissance_nominale::numeric <@ p_range 
+        WHERE
+            department.code = '75'
+        GROUP BY
+            p_range,
+            department.code
+        ORDER BY
+            nb_pdc DESC
+    )
 SELECT
     nb_pdc / (
         SELECT 
@@ -639,26 +646,13 @@ ex. il y a 2790 stations (nb_stations) avec un seul pdc (nb_pdc).
 Exemple requête globale : 't3-00-00' ou 't3'
 
 ```sql
-WITH 
-    stat_nb_pdc AS (
-    SELECT
-      count(station_id) AS nb_pdc,
-      localisation_id
-    FROM
-      pointdecharge
-      LEFT JOIN station ON station.id = station_id
-    GROUP BY
-      station_id,
-      localisation_id
-)
 SELECT
-    count(nb_pdc) AS nb_stations,
-    nb_pdc
+    count(nbre_pdc) AS nb_stations,
+    nbre_pdc 
 FROM
-    stat_nb_pdc
-    LEFT JOIN localisation ON localisation_id = localisation.id
+    station 
 GROUP BY
-    nb_pdc
+    nbre_pdc
 ORDER BY
     nb_stations DESC
 ```
@@ -669,34 +663,21 @@ ORDER BY
 <!-- #endregion -->
 
 <!-- #region editable=true slideshow={"slide_type": ""} -->
-Exemple requête sur la commune (04) d'Annemasse (74012) 't3-04-74012'
+Exemple requête sur la commune (04) de Marseille 01 (13001) 't3-04-13001'
 
 ```sql
-WITH 
-    stat_nb_pdc AS (
-    SELECT
-      count(station_id) AS nb_pdc,
-      localisation_id
-    FROM
-      pointdecharge
-      LEFT JOIN station ON station.id = station_id
-    GROUP BY
-      station_id,
-      localisation_id
-)
 SELECT
-    count(nb_pdc) AS nb_stations,
-    nb_pdc,
+    count(nbre_pdc) AS nb_stations,
+    nbre_pdc,
     city.code
 FROM
-    city,
-    stat_nb_pdc
+    station 
     LEFT JOIN localisation ON localisation_id = localisation.id
+    LEFT JOIN city on city.code = code_insee_commune
 WHERE
-    city.code = '74012'
-    AND ST_Within ("coordonneesXY", city.geometry)
-GROUP BY
-    nb_pdc,
+    city.code = '13001'
+GROUP BY  
+    nbre_pdc,
     city.code
 ORDER BY
     nb_stations DESC
@@ -719,29 +700,16 @@ Exemple requête globale : 't4-00-00' ou 't4'
 ```sql
 WITH 
     t3 AS (  
-    WITH 
-        stat_nb_pdc AS (
         SELECT
-          count(station_id) AS nb_pdc,
-          localisation_id
+            count(nbre_pdc) AS nb_stations,
+            nbre_pdc 
         FROM
-          pointdecharge
-          LEFT JOIN station ON station.id = station_id
+            station 
         GROUP BY
-          station_id,
-          localisation_id
+            nbre_pdc
+        ORDER BY
+            nb_stations DESC
     )
-    SELECT
-        count(nb_pdc) AS nb_stations,
-        nb_pdc
-    FROM
-        stat_nb_pdc
-        LEFT JOIN localisation ON localisation_id = localisation.id
-    GROUP BY
-        nb_pdc
-    ORDER BY
-        nb_stations DESC
-        )
 SELECT
     nb_stations / (
         SELECT 
@@ -749,7 +717,7 @@ SELECT
         FROM 
             t3
     ) * 100 AS pct_nb_stations,
-    nb_pdc
+    nbre_pdc
 FROM 
     t3
 ```
@@ -765,35 +733,22 @@ Exemple requête  sur la commune (04) annemasse (74012) 't4-04-74012'
 ```sql
 WITH 
     t3 AS ( 
-    WITH 
-        stat_nb_pdc AS (
         SELECT
-          count(station_id) AS nb_pdc,
-          localisation_id
+            count(nbre_pdc) AS nb_stations,
+            nbre_pdc,
+            city.code
         FROM
-          pointdecharge
-          LEFT JOIN station ON station.id = station_id
-        GROUP BY
-          station_id,
-          localisation_id
+            station 
+            LEFT JOIN localisation ON localisation_id = localisation.id
+            LEFT JOIN city on city.code = code_insee_commune
+        WHERE
+            city.code = '13001'
+        GROUP BY  
+            nbre_pdc,
+            city.code
+        ORDER BY
+            nb_stations DESC    
     )
-    SELECT
-        count(nb_pdc) AS nb_stations,
-        nb_pdc,
-        city.code
-    FROM
-        city,
-        stat_nb_pdc
-        LEFT JOIN localisation ON localisation_id = localisation.id
-    WHERE
-        city.code = '74012'
-        AND ST_Within ("coordonneesXY", city.geometry)
-    GROUP BY
-        nb_pdc,
-        city.code
-    ORDER BY
-        nb_stations DESC
-        )
 SELECT
     nb_stations / (
         SELECT 
@@ -801,7 +756,7 @@ SELECT
         FROM 
             t3
     ) * 100 AS pct_nb_stations,
-    nb_pdc,
+    nbre_pdc,
     code
 FROM 
     t3
@@ -826,7 +781,7 @@ SELECT
     count(id_station_itinerance) AS nb_stations,
     implantation_station
 FROM
-    station LEFT JOIN localisation ON localisation_id = localisation.id 
+    station 
 GROUP BY
     implantation_station
 ORDER BY
@@ -846,11 +801,12 @@ SELECT
     implantation_station,
     epci.code
 FROM
-    epci,
-    station LEFT JOIN localisation ON localisation_id = localisation.id 
+    station 
+    LEFT JOIN localisation ON localisation_id = localisation.id
+    LEFT JOIN city on city.code = code_insee_commune
+    LEFT JOIN epci on city.epci_id = epci.id
 WHERE
     epci.code = '200023414'
-    AND ST_Within ("coordonneesXY", epci.geometry)
 GROUP BY
     implantation_station,
     epci.code
@@ -875,15 +831,15 @@ Exemple requête globale : 't6-00-00' ou 't6'
 ```sql
 WITH 
     t5 AS (
-    SELECT
-        count(id_station_itinerance) AS nb_stations,
-        implantation_station
-    FROM
-        station LEFT JOIN localisation ON localisation_id = localisation.id 
-    GROUP BY
-        implantation_station
-    ORDER BY
-        nb_stations DESC
+        SELECT
+            count(id_station_itinerance) AS nb_stations,
+            implantation_station
+        FROM
+            station 
+        GROUP BY
+            implantation_station
+        ORDER BY
+            nb_stations DESC
     )
 SELECT
     nb_stations / (
@@ -908,21 +864,22 @@ Exemple requête sur l'EPCI (03) Métropole Rouen Normandie (200023414) 't6-03-2
 ```sql
 WITH 
     t5 AS (
-    SELECT
-        count(id_station_itinerance) AS nb_stations,
-        implantation_station,
-        epci.code
-    FROM
-        epci,
-        station LEFT JOIN localisation ON localisation_id = localisation.id 
-    WHERE
-        epci.code = '200023414'
-        AND ST_Within ("coordonneesXY", epci.geometry)
-    GROUP BY
-        implantation_station,
-        epci.code
-    ORDER BY
-        nb_stations DESC
+        SELECT
+            count(id_station_itinerance) AS nb_stations,
+            implantation_station,
+            epci.code
+        FROM
+            station 
+            LEFT JOIN localisation ON localisation_id = localisation.id
+            LEFT JOIN city on city.code = code_insee_commune
+            LEFT JOIN epci on city.epci_id = epci.id
+        WHERE
+            epci.code = '200023414'
+        GROUP BY
+            implantation_station,
+            epci.code
+        ORDER BY
+            nb_stations DESC    
     )
 SELECT
     nb_stations / (
