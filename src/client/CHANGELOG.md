@@ -10,6 +10,7 @@ and this project adheres to
 
 ### Changed
 
+- Compress requests for bulk endpoints
 - Upgrade Pydantic to `2.7.4`
 - Upgrade pydantic-settings to `2.4.0`
 - Upgrade typer to `0.12.5`
