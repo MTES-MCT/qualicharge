@@ -10,7 +10,7 @@ email-validator = "==2.2.0"
 fastapi = "==0.112.2"
 geoalchemy2 = {extras = ["shapely"], version = "==0.15.2"}
 geopandas = "==1.0.1"
-httpx = {extras = ["cli"], version = "==0.27.0"}
+httpx = {extras = ["cli"], version = "==0.27.2"}
 pandas = "==2.2.2"
 passlib = {extras = ["bcrypt"], version = "==1.7.4"}
 psycopg = {extras = ["pool", "binary"], version = "==3.2.1"}
@@ -22,9 +22,9 @@ pyjwt = "==2.9.0"
 python-multipart = "==0.0.9"
 questionary = "==2.0.1"
 sentry-sdk = {extras = ["fastapi"], version = "==2.13.0"}
-setuptools = "==73.0.1"
+setuptools = "==74.1.1"
 sqlalchemy-timescaledb = "==0.4.1"
-sqlmodel = "==0.0.21"
+sqlmodel = "==0.0.22"
 typer = "==0.12.5"
 uvicorn = {extras = ["standard"] }
 
@@ -39,7 +39,7 @@ pyinstrument = "==4.7.2"
 pytest = "==8.3.2"
 pytest-cov = "==5.0.0"
 pytest-httpx = "==0.30.0"
-ruff = "==0.6.2"
+ruff = "==0.6.3"
 types-passlib = "==1.7.7.20240819"
 types-python-jose = "==3.3.4.20240106"
 
