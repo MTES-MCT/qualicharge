@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 import sentry_sdk
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import HTMLResponse
 from pyinstrument import Profiler
 from sentry_sdk.integrations.fastapi import FastApiIntegration
@@ -65,6 +66,11 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["GET"],
     allow_headers=["*"],
+)
+app.add_middleware(
+    GZipMiddleware,
+    minimum_size=settings.GZIP_MIDDLEWARE_MINIMUM_SIZE,
+    compresslevel=settings.GZIP_MIDDLEWARE_COMPRESSION_LEVEL,
 )
 
 # Mount v1 API

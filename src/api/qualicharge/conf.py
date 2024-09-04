@@ -22,6 +22,10 @@ class Settings(BaseSettings):
         "http://localhost:8010",
     ]
 
+    # Middlewares
+    GZIP_MIDDLEWARE_MINIMUM_SIZE: int = 1000
+    GZIP_MIDDLEWARE_COMPRESSION_LEVEL: int = 5
+
     # API Core Root path
     # (used at least by everything that is alembic-configuration-related)
     ROOT_PATH: Path = Path(__file__).parent

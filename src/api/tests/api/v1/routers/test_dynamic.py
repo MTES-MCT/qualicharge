@@ -1,5 +1,6 @@
 """Tests for the QualiCharge API dynamic router."""
 
+import gzip
 import json
 from random import sample
 from typing import cast
@@ -1040,6 +1041,45 @@ def test_create_status_bulk_for_user(db_session, client_auth):
         assert db_status.horodatage == qc_status.horodatage.astimezone()
 
 
+def test_create_status_bulk_gzipped_request(db_session, client_auth):
+    """Test the /status/bulk endpoint with gzipped content."""
+    qc_statuses = StatusCreateFactory.batch(3)
+
+    # Create points of charge
+    save_statiques(
+        db_session,
+        [
+            StatiqueFactory.build(id_pdc_itinerance=s.id_pdc_itinerance)
+            for s in qc_statuses
+        ],
+    )
+
+    # Assert no status exist
+    assert db_session.exec(select(func.count(Status.id))).one() == 0
+
+    payload = gzip.compress(
+        f"[{','.join([s.model_dump_json() for s in qc_statuses])}]".encode("utf-8")
+    )
+
+    # We expect the same answer as one point of charge does not exist
+    response = client_auth.post(
+        "/dynamique/status/bulk",
+        content=payload,
+        headers={
+            "Content-Encoding": "gzip",
+            "Content-Type": "application/json",
+        },
+    )
+    assert response.status_code == status.HTTP_201_CREATED
+    assert response.json() == {"size": 3}
+
+    # Check created statuses
+    db_statuses = db_session.exec(select(Status)).all()
+    db_pdcs = db_session.exec(select(PointDeCharge)).all()
+    assert len(db_statuses) == len(qc_statuses)
+    assert {s.point_de_charge_id for s in db_statuses} == {p.id for p in db_pdcs}
+
+
 def test_create_status_bulk_with_outbound_sizes(client_auth):
     """Test the /status/bulk create endpoint with a single or too many statuses."""
     # We expert more than one status for this endpoint
@@ -1404,6 +1444,44 @@ def test_create_session_bulk_for_user(db_session, client_auth):
         assert db_qc_session.start == qc_session.start.astimezone()
         assert db_qc_session.end == qc_session.end.astimezone()
         assert db_qc_session.energy == qc_session.energy
+
+
+def test_create_session_bulk_gzipped_request(db_session, client_auth):
+    """Test the /session/bulk endpoint with gzipped content."""
+    qc_sessions = SessionCreateFactory.batch(3)
+
+    # Create points of charge
+    save_statiques(
+        db_session,
+        [
+            StatiqueFactory.build(id_pdc_itinerance=s.id_pdc_itinerance)
+            for s in qc_sessions
+        ],
+    )
+
+    # Assert no session exist
+    assert db_session.exec(select(func.count(Session.id))).one() == 0
+
+    payload = gzip.compress(
+        f"[{','.join([s.model_dump_json() for s in qc_sessions])}]".encode("utf-8")
+    )
+    # We expect the same answer as one point of charge does not exist
+    response = client_auth.post(
+        "/dynamique/session/bulk",
+        content=payload,
+        headers={
+            "Content-Encoding": "gzip",
+            "Content-Type": "application/json",
+        },
+    )
+    assert response.status_code == status.HTTP_201_CREATED
+    assert response.json() == {"size": 3}
+
+    # Check created statuses
+    db_qc_sessions = db_session.exec(select(Session)).all()
+    db_pdcs = db_session.exec(select(PointDeCharge)).all()
+    assert len(db_qc_sessions) == len(qc_sessions)
+    assert {s.point_de_charge_id for s in db_qc_sessions} == {p.id for p in db_pdcs}
 
 
 def test_create_session_bulk_with_outbound_sizes(client_auth):

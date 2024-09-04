@@ -23,6 +23,7 @@ from sqlalchemy.exc import IntegrityError, OperationalError, ProgrammingError
 from sqlalchemy.schema import Column as SAColumn
 from sqlmodel import Session, select
 
+from qualicharge.api.utils import GzipRoute
 from qualicharge.auth.oidc import get_user
 from qualicharge.auth.schemas import ScopesEnum, User
 from qualicharge.conf import settings
@@ -47,9 +48,11 @@ from qualicharge.schemas.utils import (
 
 logger = logging.getLogger(__name__)
 
+
 router = APIRouter(
     prefix="/statique",
     tags=["IRVE Statique"],
+    route_class=GzipRoute,
 )
 
 
