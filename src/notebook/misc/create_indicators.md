@@ -40,30 +40,14 @@ engine = create_engine(os.getenv("DATABASE_URL"))
 ## Structure des indicateurs
 <!-- #endregion -->
 
-<!-- #region jp-MarkdownHeadingCollapsed=true -->
 ### Codification des indicateurs
 
-Les indicateurs sont codifiés par une chaine de caractères *[type]-[périmètre]-[valeur de périmètre]-[critère]* avec :
-
-- *type* : identifiant du type d'indicateur (ex. 'i1' : nombre de points de recharge)
-- *périmètre et valeur de périmètre*: sous ensemble des données sur lequel appliquer l'indicateur. Les périmètres actuellement définis sont les suivants :
-  - 00: national (sans valeur)
-  - 01: région (valeur : code de la région)
-  - 02: département (valeur : code du département)
-  - 03: EPCI (valeur : code de l'EPCI)
-  - 04: commune (valeur : code de la commune)
-- *critère* : paramètre spécifique du type d'indicateur
-
-Le périmètre par défaut est l'ensemble des données.
+Voir le no
 
 
-Exemples de codification :
-- **t4-04-74012** : Pourcentage de stations par nombre de points de recharge (t4) pour la ville (04) d'Annemasse (74012)
-- **i1-01-93** : Nombre de points de recharge (i1) pour la région (01) PACA (93)
-- **i1-01-93-03** : Nombre de points de recharge (i1) pour la région (01) PACA (93) par EPCI (03)
-- **t1** : Nombre de points de recharge par niveau de puissance (t1) pour l'ensemble des données (pas de périmètre choisi)
-
-<!-- #endregion -->
+```python editable=true slideshow={"slide_type": ""}
+print(to_indicator(engine, 't3-04-13001', simple=True, format='query'))
+```
 
 ### Exemples de mise en oeuvre
 
@@ -502,10 +486,6 @@ print(query_gen)
 
 ```python editable=true slideshow={"slide_type": ""}
 to_indicator(engine, 't3-04-13001', simple=False)
-```
-
-```python editable=true slideshow={"slide_type": ""}
-print(to_indicator(engine, 't3-04-13001', simple=True, format='query'))
 ```
 
 ```python editable=true slideshow={"slide_type": ""}

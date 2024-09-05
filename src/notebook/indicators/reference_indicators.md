@@ -636,6 +636,10 @@ FROM
 'nb_pdc' est le nombre de pdc.
 
 ex. il y a 2790 stations (nb_stations) avec un seul pdc (nb_pdc).
+
+NOTA : 
+
+- Le nombre de points de recharge par station (nb_pdc) est calculé en fonction des points de recharge présents dans la base 
 <!-- #endregion -->
 
 <!-- #region editable=true slideshow={"slide_type": ""} -->
@@ -646,13 +650,25 @@ ex. il y a 2790 stations (nb_stations) avec un seul pdc (nb_pdc).
 Exemple requête globale : 't3-00-00' ou 't3'
 
 ```sql
+WITH 
+    stat_nb_pdc AS (
+        SELECT
+          count(station_id) AS nb_pdc,
+          localisation_id
+        FROM
+          pointdecharge
+          LEFT JOIN station ON station.id = station_id
+        GROUP BY
+          station_id,
+          localisation_id
+    )
 SELECT
-    count(nbre_pdc) AS nb_stations,
-    nbre_pdc 
+    count(nb_pdc) AS nb_stations,
+    nb_pdc  
 FROM
-    station 
-GROUP BY
-    nbre_pdc
+    stat_nb_pdc
+GROUP BY   
+    nb_pdc
 ORDER BY
     nb_stations DESC
 ```
@@ -666,18 +682,30 @@ ORDER BY
 Exemple requête sur la commune (04) de Marseille 01 (13001) 't3-04-13001'
 
 ```sql
+WITH 
+    stat_nb_pdc AS (
+        SELECT
+          count(station_id) AS nb_pdc,
+          localisation_id
+        FROM
+          pointdecharge
+          LEFT JOIN station ON station.id = station_id
+        GROUP BY
+          station_id,
+          localisation_id
+    )
 SELECT
-    count(nbre_pdc) AS nb_stations,
-    nbre_pdc,
+    count(nb_pdc) AS nb_stations,
+    nb_pdc,
     city.code
 FROM
-    station 
+    stat_nb_pdc
     LEFT JOIN localisation ON localisation_id = localisation.id
     LEFT JOIN city on city.code = code_insee_commune
 WHERE
     city.code = '13001'
-GROUP BY  
-    nbre_pdc,
+GROUP BY
+    nb_pdc,
     city.code
 ORDER BY
     nb_stations DESC
@@ -700,15 +728,27 @@ Exemple requête globale : 't4-00-00' ou 't4'
 ```sql
 WITH 
     t3 AS (  
+        WITH 
+            stat_nb_pdc AS (
+                SELECT
+                  count(station_id) AS nb_pdc,
+                  localisation_id
+                FROM
+                  pointdecharge
+                  LEFT JOIN station ON station.id = station_id
+                GROUP BY
+                  station_id,
+                  localisation_id
+            )
         SELECT
-            count(nbre_pdc) AS nb_stations,
-            nbre_pdc 
+            count(nb_pdc) AS nb_stations,
+            nb_pdc  
         FROM
-            station 
-        GROUP BY
-            nbre_pdc
+            stat_nb_pdc
+        GROUP BY   
+            nb_pdc
         ORDER BY
-            nb_stations DESC
+            nb_stations DESC        
     )
 SELECT
     nb_stations / (
@@ -717,7 +757,7 @@ SELECT
         FROM 
             t3
     ) * 100 AS pct_nb_stations,
-    nbre_pdc
+    nb_pdc
 FROM 
     t3
 ```
@@ -728,26 +768,38 @@ FROM
 <!-- #endregion -->
 
 <!-- #region editable=true slideshow={"slide_type": ""} -->
-Exemple requête  sur la commune (04) annemasse (74012) 't4-04-74012'
+Exemple requête  sur la commune (04) marseille 01 (13001) 't4-04-13001'
 
 ```sql
 WITH 
     t3 AS ( 
+        WITH 
+            stat_nb_pdc AS (
+                SELECT
+                  count(station_id) AS nb_pdc,
+                  localisation_id
+                FROM
+                  pointdecharge
+                  LEFT JOIN station ON station.id = station_id
+                GROUP BY
+                  station_id,
+                  localisation_id
+            )
         SELECT
-            count(nbre_pdc) AS nb_stations,
-            nbre_pdc,
+            count(nb_pdc) AS nb_stations,
+            nb_pdc,
             city.code
         FROM
-            station 
+            stat_nb_pdc
             LEFT JOIN localisation ON localisation_id = localisation.id
             LEFT JOIN city on city.code = code_insee_commune
         WHERE
             city.code = '13001'
-        GROUP BY  
-            nbre_pdc,
+        GROUP BY
+            nb_pdc,
             city.code
         ORDER BY
-            nb_stations DESC    
+            nb_stations DESC        
     )
 SELECT
     nb_stations / (
@@ -756,7 +808,7 @@ SELECT
         FROM 
             t3
     ) * 100 AS pct_nb_stations,
-    nbre_pdc,
+    nb_pdc,
     code
 FROM 
     t3

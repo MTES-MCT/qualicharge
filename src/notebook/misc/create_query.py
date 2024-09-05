@@ -47,6 +47,18 @@ G_OVERHEAD = f"""QUERY,
     VAL,
     LEVEL,
     AREA"""
+STAT_NB_PDC = f"""stat_nb_pdc AS (
+    SELECT
+      count(station_id) AS nb_pdc,
+      localisation_id
+    FROM
+      pointdecharge
+      LEFT JOIN station ON station.id = station_id
+    GROUP BY
+      station_id,
+      localisation_id
+)
+"""
 # URL_POP = 'https://unpkg.com/@etalab/decoupage-administratif@4.0.0/data/communes.json'
 # POP = None 
 
@@ -235,18 +247,21 @@ def query_t3(*param, simple=True, gen=False):
     coma3 = "" if f"{s_overhead}" == "" or f"{table_perim_code}" == "" else ","
 
     return f"""
+WITH 
+    {STAT_NB_PDC}
 SELECT
-    count(nbre_pdc) AS nb_stations,
-    nbre_pdc{coma1}
+    count(nb_pdc) AS nb_stations,
+    nb_pdc{coma1}
     {table_perim_code}{coma3}
     {s_overhead}
 FROM
-    {STAT_ALL}
+    stat_nb_pdc
+    LEFT JOIN localisation ON localisation_id = localisation.id
     {COG_ALL}
 {where_isin_perim}
 GROUP BY
     {g_overhead}
-    nbre_pdc{coma2}
+    nb_pdc{coma2}
     {table_perim_code}
 ORDER BY
     nb_stations DESC"""
@@ -272,7 +287,7 @@ SELECT
         FROM 
             t3
     ) * 100 AS pct_nb_stations,
-    nbre_pdc{coma1}
+    nb_pdc{coma1}
     {code}{coma3}
     {s_overhead}
 FROM 
