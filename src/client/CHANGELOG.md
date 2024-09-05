@@ -8,6 +8,8 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.2.0] - 2024-09-05
+
 ### Changed
 
 - Compress requests for bulk endpoints
@@ -23,5 +25,6 @@ and this project adheres to
 - Add `QCC` QualiCharge API client
 - Add `qcc` CLI
 
-[unreleased]: https://github.com/MTES-MCT/qualicharge/compare/v0.1.0-cli...main
+[unreleased]: https://github.com/MTES-MCT/qualicharge/compare/v0.2.0-cli...main
+[0.2.0]: https://github.com/MTES-MCT/qualicharge/releases/tag/v0.1.0-cli...v0.2.0-cli
 [0.1.0]: https://github.com/MTES-MCT/qualicharge/releases/tag/v0.1.0-cli
