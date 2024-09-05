@@ -103,6 +103,7 @@ def to_indicator(engine, indicator, simple=True, histo=False, format='pandas', h
     query = getattr(create_query, 'query_' + indic.split('-')[0])(*indic.split('-')[1:], simple=simple, gen=query_gen)
     if histo:
         query = create_query.query_histo(query, timestamp=histo_timest)
+    
     if format == 'query':
         return query
     with engine.connect() as conn:
@@ -113,9 +114,9 @@ def to_indicator(engine, indicator, simple=True, histo=False, format='pandas', h
         return '{"' + indicator + '": ' + data_pd.to_json(index=False, orient=json_orient) + "}"
     if format == 'table':
         table_name = table_name if table_name else indicator
-        return indic_to_table(data_pd, table_name, engine, table_option=table_option)
+        return indic_to_table(data_pd, table_name, engine, table_option=table_option, histo=histo)
 
-def indic_to_table(pd_df, table_name, engine, table_option="replace"):
+def indic_to_table(pd_df, table_name, engine, table_option="replace", histo=None):
     """ Load a DataFrame in a Table
     
     Parameters
@@ -134,6 +135,16 @@ def indic_to_table(pd_df, table_name, engine, table_option="replace"):
     Dataframe
         Table creation confirmation with the number of lines created.
     """
+    from datetime import datetime
+    if histo:
+        if len(pd_df.columns) == 7:
+            pd_df.insert(2, 'newcol', [""]*len(pd_df))
+        cols = pd_df.columns
+        pd_df.rename(columns={cols[0]: 'val0', cols[1]: 'val1', cols[2]: 'val2'}, inplace = True)
+        if table_option=="replace":
+            pd_df = pd.concat([pd.DataFrame([["null"]*(len(cols)-1) + [datetime.now()]], columns=pd_df.columns), pd_df])
+        #for col in pd_df.columns[:3]:
+        #    pd_df[col] = pd_df[col].astype('object')
     pd_df.to_sql(table_name, engine, if_exists=table_option, index=False)
     return pd.read_sql_query('SELECT COUNT(*) AS count FROM "' + table_name + '"', engine)
 
@@ -143,7 +154,6 @@ def query_histo(query, timestamp=None):
         datation = "datation(timest) AS (VALUES ('" + timestamp + "'::timestamp)) "
     else:
         datation = "datation(timest) AS (VALUES (CURRENT_TIMESTAMP)) "
-
     return " WITH query AS (" + query + "), " + datation + " SELECT * FROM query, datation "
 
 def init_param_txx(simple, gen, indic,  *param):
