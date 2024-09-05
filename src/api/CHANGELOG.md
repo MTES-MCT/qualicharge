@@ -10,6 +10,7 @@ and this project adheres to
 
 ### Changed
 
+- Add geo-boundaries population and area fields
 - Upgrade fastapi to `0.114.0`
 - Upgrade Pydantic to `2.9.1`
 - Upgrade pyinstrument to `4.7.3`

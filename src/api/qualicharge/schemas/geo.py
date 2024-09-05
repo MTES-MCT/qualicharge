@@ -26,6 +26,8 @@ class BaseAdministrativeBoundaries(BaseTimestampedSQLModel):
             spatial_index=True,
         )
     )  # type: ignore[call-overload]
+    population: Optional[int]
+    area: Optional[float]
 
 
 class Region(BaseAdministrativeBoundaries, table=True):
