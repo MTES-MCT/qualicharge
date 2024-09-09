@@ -8,6 +8,10 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Fixed
+
+- Commit `/statique/bulk` database transaction
+
 ## [0.12.0] - 2024-09-05
 
 ### Added
