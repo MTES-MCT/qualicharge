@@ -21,6 +21,41 @@ default:
           INNER JOIN PointDeCharge ON Status.point_de_charge_id = PointDeCharge.id
     - basename: statiques
       query: >-
+        WITH
+        ImplantationStation (reference, output) AS (
+          VALUES
+            ('VOIRIE', 'Voirie'),
+            ('PARKING_PUBLIC', 'Parking public'),
+            (
+              'PARKING_PRIVE_USAGE_PUBLIC',
+              'Parking privé à usage public'
+            ),
+            (
+              'PARKING_PRIVE_CLIENTELE',
+              'Parking privé réservé à la clientèle'
+            ),
+            (
+              'STATION_RECHARGE_RAPIDE',
+              'Station dédiée à la recharge rapide'
+            )
+        ),
+        ConditionAccess (reference, output) AS (
+          VALUES
+            ('ACCESS_LIBRE', 'Accès libre'),
+            ('ACCESS_RESERVE', 'Accès réservé')
+        ),
+        AccessibilitePMR (reference, output) AS (
+          VALUES
+            ('RESERVE_PMR', 'Réservé PMR'),
+            ('NON_RESERVE', 'Accessible mais non réservé PMR'),
+            ('NON_ACCESSIBLE', 'Non accessible'),
+            ('INCONNUE', 'Accessibilité inconnue')
+        ),
+          Raccordement (reference, output) AS (
+            VALUES
+              ('DIRECT', 'Direct'),
+              ('INDIRECT', 'Indirect')
+          )
         SELECT
           Amenageur.nom_amenageur,
           Amenageur.siren_amenageur,
@@ -32,10 +67,10 @@ default:
           Station.id_station_itinerance,
           Station.id_station_local,
           Station.nom_station,
-          Station.implantation_station,
+          ImplantationStation.output AS implantation_station,
           Localisation.adresse_station,
           Localisation.code_insee_commune,
-          ST_AsGeoJSON(Localisation."coordonneesXY") :: json -> 'coordinates'  as coordonneesXY,
+          ST_AsGeoJSON (Localisation."coordonneesXY")::json -> 'coordinates' AS coordonneesXY,
           Station.nbre_pdc,
           PointDeCharge.id_pdc_itinerance,
           PointDeCharge.id_pdc_local,
@@ -50,13 +85,13 @@ default:
           PointDeCharge.paiement_cb,
           PointDeCharge.paiement_autre,
           PointDeCharge.tarification,
-          Station.condition_acces,
+          ConditionAccess.output AS condition_acces,
           PointDeCharge.reservation,
           Station.horaires,
-          PointDeCharge.accessibilite_pmr,
+          AccessibilitePMR.output AS accessibilite_pmr,
           PointDeCharge.restriction_gabarit,
           Station.station_deux_roues,
-          Station.raccordement,
+          Raccordement.output AS raccordement,
           Station.num_pdl,
           Station.date_mise_en_service,
           PointDeCharge.observations,
@@ -69,3 +104,7 @@ default:
           INNER JOIN Operateur ON Station.operateur_id = Operateur.id
           INNER JOIN Enseigne ON Station.enseigne_id = Enseigne.id
           INNER JOIN Localisation ON Station.localisation_id = Localisation.id
+          INNER JOIN ImplantationStation ON Station.implantation_station::TEXT = ImplantationStation.reference
+          INNER JOIN ConditionAccess ON Station.condition_acces::TEXT = ConditionAccess.reference
+          INNER JOIN AccessibilitePMR ON PointDeCharge.accessibilite_pmr::TEXT = AccessibilitePMR.reference
+          INNER JOIN Raccordement ON Station.raccordement::TEXT = Raccordement.reference

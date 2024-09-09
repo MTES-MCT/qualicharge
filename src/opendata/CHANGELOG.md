@@ -8,6 +8,10 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Fixed
+
+- Improve Enum representation to fit with the statique schema
+
 ### Added
 
 - Configured Data7 0.7.0
