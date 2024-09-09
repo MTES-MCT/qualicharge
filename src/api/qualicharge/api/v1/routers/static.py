@@ -280,7 +280,6 @@ async def bulk(
     transaction = session.begin_nested()
     try:
         importer.save()
-        transaction.commit()
     except (
         ProgrammingError,
         IntegrityError,
@@ -292,5 +291,8 @@ async def bulk(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=str(err)
         ) from err
+
+    # Commit changes
+    session.commit()
 
     return StatiqueItemsCreatedResponse(items=df["id_pdc_itinerance"])
