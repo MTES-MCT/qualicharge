@@ -11,6 +11,7 @@ and this project adheres to
 ### Fixed
 
 - Improve Enum representation to fit with the statique schema
+- Force `coordonneesXY` case in export
 
 ### Added
 
