@@ -103,7 +103,6 @@ def to_indicator(engine, indicator, simple=True, histo=False, format='pandas', h
     query = getattr(create_query, 'query_' + indic.split('-')[0])(*indic.split('-')[1:], simple=simple, gen=query_gen)
     if histo:
         query = create_query.query_histo(query, timestamp=histo_timest)
-    
     if format == 'query':
         return query
     with engine.connect() as conn:
@@ -137,12 +136,15 @@ def indic_to_table(pd_df, table_name, engine, table_option="replace", histo=None
     """
     from datetime import datetime
     if histo:
-        if len(pd_df.columns) == 7:
-            pd_df.insert(2, 'newcol', [""]*len(pd_df))
+        if len(pd_df.columns) == 8:
+            del pd_df[pd_df.columns[2]]
+        if len(pd_df.columns) == 6:
+            pd_df.insert(1, 'crit_v', [""]*len(pd_df))
+        pd_df.insert(0, 'nombre', [1]*len(pd_df))
         cols = pd_df.columns
-        pd_df.rename(columns={cols[0]: 'val0', cols[1]: 'val1', cols[2]: 'val2'}, inplace = True)
+        pd_df.rename(columns={cols[1]: 'somme', cols[2]: 'crit_v'}, inplace = True)
         if table_option=="replace":
-            pd_df = pd.concat([pd.DataFrame([["null"]*(len(cols)-1) + [datetime.now()]], columns=pd_df.columns), pd_df])
+            pd_df = pd.concat([pd.DataFrame([[0, 0] + ["null"]*(len(cols)-3) + [datetime.now()]], columns=pd_df.columns), pd_df])
         #for col in pd_df.columns[:3]:
         #    pd_df[col] = pd_df[col].astype('object')
     pd_df.to_sql(table_name, engine, if_exists=table_option, index=False)

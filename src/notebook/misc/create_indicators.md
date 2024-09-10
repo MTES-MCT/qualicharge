@@ -21,33 +21,131 @@ La liste des indicateurs est présentée sur [ce lien](https://loco-philippe.git
 
 La présentation des requêtes associée est présentée sur [ce notebook](../indicators/reference_indicators.md)
 
-*Nota : La dimension temporelle des indicateurs sera ajoutée dans une version ultérieure*
+*Nota : La dimension temporelle des indicateurs n'est pas prise en compte, elle sera ajoutée dans une version ultérieure*
 <!-- #endregion -->
 
 ```python editable=true slideshow={"slide_type": ""}
 import os
 import pandas as pd
+import geopandas as gpd
 from sqlalchemy import create_engine
 from create_query import to_indicator #, create_table_pop
 
 # Connecteur à la base Qualicharge
 engine = create_engine(os.getenv("DATABASE_URL"))
 
-# create_table_pop(engine)
 ```
 
 ```python
-from datetime import datetime
-tst = pd.DataFrame({'nb_pdc' : [1,2], 'code': [3,4.558945], 'AREA':[7,8]})
-if len(tst.columns) == 3:
-    tst.insert(2, 'newcol', [""]*len(tst))
-cols = tst.columns
-tst.rename(columns={cols[0]: 'val0', cols[1]: 'val1', cols[2]: 'val2'}, inplace = True)
-tst = pd.concat([pd.DataFrame([["empty"]*(len(cols)-1) + [datetime.now()]], columns=tst.columns), tst])
-#for col in tst.columns[:3]:
-#    tst[col] = tst[col].astype('object')
-tst
+to_indicator(engine, 'i1', histo=True)
 ```
+
+```python
+to_indicator(engine, 'i1-01-93-02', histo=True)
+```
+
+```python
+to_indicator(engine, 'i1',          histo=True, format='table', table_name='quotidien', table_option='replace')
+to_indicator(engine, 'i1-01-93-02', histo=True, format='table', table_name='quotidien', table_option='append')
+to_indicator(engine, 't1-02-75',    histo=True, format='table', table_name='quotidien', table_option='append')
+to_indicator(engine, 't3-04-13001', histo=True, format='table', table_name='quotidien', table_option='append')
+to_indicator(engine, 'i1',          histo=True, format='table', table_name='quotidien', table_option='append')
+to_indicator(engine, 't1-02-75',    histo=True, format='table', table_name='quotidien', table_option='append')
+to_indicator(engine, 't3-04-13001', histo=True, format='table', table_name='quotidien', table_option='append')
+to_indicator(engine, 't1-02-75',    histo=True, format='table', table_name='quotidien', table_option='append')
+
+with engine.connect() as conn:
+    # Query a PostgreSQL database using the PostGIS extension
+    quotidien = pd.read_sql_table('quotidien', conn)
+quotidien
+```
+
+<!-- #region -->
+Query pour générer les valeurs à inclure dans la table des valeurs mensuelles:
+
+```sql
+SELECT
+  SUM(nombre) AS nombre,
+  SUM(somme) AS somme,
+  crit_v,
+  query,
+  level,
+  val,
+  area
+FROM
+  quotidien
+WHERE
+  (timest >= CAST(NOW() AS date))
+   AND 
+  (timest < CAST((NOW() + INTERVAL '1 day') AS date))
+GROUP BY
+  crit_v,
+  query,
+  level,
+  val,
+  area
+ORDER BY
+  query,
+  level,
+  val,
+  area
+```
+<!-- #endregion -->
+
+```python
+query = """
+SELECT
+  SUM(nombre) AS nombre,  SUM(somme) AS somme,  crit_v,  query,  level,  val,  area
+FROM
+  quotidien
+WHERE
+  (timest >= CAST(NOW() AS date))   AND   (timest < CAST((NOW() + INTERVAL '1 day') AS date))
+GROUP BY
+  crit_v,  query,  level,  val,  area
+ORDER BY
+  query,  level,  val,  area
+"""
+
+with engine.connect() as conn:
+    # Query a PostgreSQL database using the PostGIS extension
+    mensuel = pd.read_sql_query(query, conn)
+mensuel
+```
+
+```python
+to_indicator(engine, 't1-02-75', histo=True)
+```
+
+```python
+to_indicator(engine, 't1-02-75')
+```
+
+<!-- #region editable=true slideshow={"slide_type": ""} -->
+## Structure des indicateurs
+<!-- #endregion -->
+
+### Codification des indicateurs
+
+Voir le no
+
+
+```python editable=true slideshow={"slide_type": ""}
+print(to_indicator(engine, 't3-04-13001', simple=True, format='query'))
+```
+
+### Exemples de mise en oeuvre
+
+
+'i1' est l'indicateur qui fournit le nombre de points de recharge.
+
+Les colonnes de gauche sont les valeurs calculées liées à l'indicateur (ici 'nb_pdc').
+
+Les colonnes de droites sont des données complémentaires:
+
+- 'level' indique le type de périmètre et 'code' indique la valeur pour ce périmètre,
+- 'name' est une information optionnelle décrivant le 'code'
+
+*Nota : L'appartenance à une zone géographique se fait par le test d'appartenance d'un point à un polygone (impact sur le temps de calcul de certains indicateurs).*
 
 ```python editable=true slideshow={"slide_type": ""}
 # calcul sur l'ensemble des données ('i1' est équivalent à 'i1-00-00-00')
@@ -60,24 +158,9 @@ to_indicator(engine, 'i1')
 to_indicator(engine, 'i1---01')[:5]
 ```
 
-```python
-to_indicator(engine, 'i1---01', format='table', histo=True, table_name='histo', table_option='replace')
-```
-
-```python
-to_indicator(engine, 't1-02-75', format='table', histo=True, table_name='histo', table_option='append')
-```
-
 ```python editable=true slideshow={"slide_type": ""}
-to_indicator(engine, 't6-03-200023414', format='table', histo=True, table_name='histo', table_option='append')
-```
-
-```python editable=true slideshow={"slide_type": ""}
-to_indicator(engine, 't6', format='table', histo=True, table_name='histo', table_option='append')
-```
-
-```python editable=true slideshow={"slide_type": ""}
-to_indicator(engine, 't4-04-13001', format='table', histo=True, table_name='histo', table_option='append')
+# calcul sur l'ensemble de la région (01) PACA (93) sans répartition ('i1-01-93' est équivalent à 'i1-01-93-00')
+to_indicator(engine, 'i1-01-93')
 ```
 
 ```python editable=true slideshow={"slide_type": ""}
