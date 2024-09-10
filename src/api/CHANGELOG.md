@@ -8,6 +8,13 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Changed
+
+- Upgrade fastapi to `0.114.0`
+- Upgrade Pydantic to `2.9.1`
+- Upgrade pyinstrument to `4.7.3`
+- Upgrade sentry-sdk to `74.1.2`
+
 ## [0.12.1] - 2024-09-09
 
 ### Fixed
