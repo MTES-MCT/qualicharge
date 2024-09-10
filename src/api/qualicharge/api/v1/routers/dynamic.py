@@ -360,7 +360,7 @@ async def create_status_bulk(
 
     # Create all statuses
     db_statuses = []
-    for status, pdc_index in zip(statuses, pdc_indexes):
+    for status, pdc_index in zip(statuses, pdc_indexes, strict=True):
         db_status = Status(**status.model_dump(exclude={"id_pdc_itinerance"}))
         db_status.point_de_charge_id = db_pdcs[pdc_index].id
         db_statuses.append(db_status)
@@ -437,7 +437,7 @@ async def create_session_bulk(
 
     # Create all statuses
     db_qc_sessions = []
-    for session, pdc_index in zip(sessions, pdc_indexes):
+    for session, pdc_index in zip(sessions, pdc_indexes, strict=True):
         db_qc_session = QCSession(**session.model_dump(exclude={"id_pdc_itinerance"}))
         db_qc_session.point_de_charge_id = db_pdcs[pdc_index].id
         db_qc_sessions.append(db_qc_session)

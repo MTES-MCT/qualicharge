@@ -134,7 +134,7 @@ def test_list_for_user(client_auth, db_session):
         for operational_unit in operational_units
         if operational_unit not in selected_operational_units
     ]
-    for group, operational_unit in zip(groups, selected_operational_units):
+    for group, operational_unit in zip(groups, selected_operational_units, strict=True):
         db_session.add(
             GroupOperationalUnit(
                 group_id=group.id, operational_unit_id=operational_unit.id

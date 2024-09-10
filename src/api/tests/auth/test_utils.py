@@ -38,7 +38,7 @@ def test_user_get_operational_units(db_session):
     )
     db_session.add_all(
         GroupOperationalUnit(group_id=group.id, operational_unit_id=operational_unit.id)
-        for group, operational_unit in zip(groups, operational_units)
+        for group, operational_unit in zip(groups, operational_units, strict=True)
     )
 
     # Get operational unit codes

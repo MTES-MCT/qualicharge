@@ -55,7 +55,7 @@ def test_user_operational_units_property(db_session):
 
     # Link groups to operational units
     codes = ["FRS63", "FRA31", "FRAIR"]
-    for code, group in zip(codes, groups):
+    for code, group in zip(codes, groups, strict=True):
         operational_unit = db_session.exec(
             select(OperationalUnit).where(OperationalUnit.code == code)
         ).one()

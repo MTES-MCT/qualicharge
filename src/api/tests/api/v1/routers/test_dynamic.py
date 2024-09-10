@@ -561,7 +561,9 @@ def test_read_status_history_for_superuser(db_session, client_auth):
     response_statuses = [StatusRead(**s) for s in response.json()]
     assert len(response_statuses) == len(expected_statuses)
 
-    for expected_status, response_status in zip(expected_statuses, response_statuses):
+    for expected_status, response_status in zip(
+        expected_statuses, response_statuses, strict=True
+    ):
         assert expected_status.etat_pdc == response_status.etat_pdc
         assert expected_status.occupation_pdc == response_status.occupation_pdc
         assert expected_status.horodatage == response_status.horodatage.astimezone()
@@ -640,7 +642,9 @@ def test_read_status_history_for_user(db_session, client_auth):
     response_statuses = [StatusRead(**s) for s in response.json()]
     assert len(response_statuses) == len(expected_statuses)
 
-    for expected_status, response_status in zip(expected_statuses, response_statuses):
+    for expected_status, response_status in zip(
+        expected_statuses, response_statuses, strict=True
+    ):
         assert expected_status.horodatage == response_status.horodatage.astimezone()
 
 

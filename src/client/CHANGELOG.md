@@ -8,6 +8,10 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Changed
+
+- Upgrade Pydantic to `2.9.1`
+
 ## [0.2.0] - 2024-09-05
 
 ### Changed
