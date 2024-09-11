@@ -21,11 +21,18 @@ jupyter:
 import os
 import pandas as pd
 import geopandas as gpd
-from sqlalchemy import create_engine, types
+from sqlalchemy import create_engine, types, dialects
 from create_query import to_indicator
 
 engine = create_engine(os.getenv("DATABASE_URL"))
 ```
+
+Plusieurs solutions sont testées (pour chaque niveau d'historisation):
+
+- solution 1 : une table avec les résultats des indicateurs (plusieurs lignes par indicateur)
+- solution 1bis : une table avec un champ JSON pour les valeurs (plusieurs lignes par indicateur)
+- solution 2 : une table avec une valeur JSON par indicateur (une ligne par indicateur)
+
 
 ## Tests Solution 1
 
@@ -37,21 +44,21 @@ to_indicator(engine, 't1-02-75')
 ```python
 # ajout d'indicateurs dans la table 'quotidien'
 # on simule l'envoi quotidien des indicateurs (en répétant le même indicateur)
-to_indicator(engine, 'i1',          histo=True, format='table', table_name='quotidien', table_option='replace')
-to_indicator(engine, 'i1-01-93-02', histo=True, format='table', table_name='quotidien', table_option='append')
-to_indicator(engine, 't1-02-75',    histo=True, format='table', table_name='quotidien', table_option='append')
-to_indicator(engine, 't3-04-13001', histo=True, format='table', table_name='quotidien', table_option='append')
-to_indicator(engine, 'i1',          histo=True, format='table', table_name='quotidien', table_option='append')
-to_indicator(engine, 't1-02-75',    histo=True, format='table', table_name='quotidien', table_option='append')
-to_indicator(engine, 't3-04-13001', histo=True, format='table', table_name='quotidien', table_option='append')
-to_indicator(engine, 't1-02-75',    histo=True, format='table', table_name='quotidien', table_option='append')
+to_indicator(engine, 'i1',          histo=True, format='table', table_name='quotidien_1', table_option='replace')
+to_indicator(engine, 'i1-01-93-02', histo=True, format='table', table_name='quotidien_1', table_option='append')
+to_indicator(engine, 't1-02-75',    histo=True, format='table', table_name='quotidien_1', table_option='append')
+to_indicator(engine, 't3-04-13001', histo=True, format='table', table_name='quotidien_1', table_option='append')
+to_indicator(engine, 'i1',          histo=True, format='table', table_name='quotidien_1', table_option='append')
+to_indicator(engine, 't1-02-75',    histo=True, format='table', table_name='quotidien_1', table_option='append')
+to_indicator(engine, 't3-04-13001', histo=True, format='table', table_name='quotidien_1', table_option='append')
+to_indicator(engine, 't1-02-75',    histo=True, format='table', table_name='quotidien_1', table_option='append')
 ```
 
 ```python
 # tous les indicateurs ont le même format
 with engine.connect() as conn:
-    quotidien = pd.read_sql_table('quotidien', conn)
-quotidien
+    quotidien_1 = pd.read_sql_table('quotidien_1', conn)
+quotidien_1
 ```
 
 ```python
@@ -61,23 +68,24 @@ quotidien
 
 query = """
 SELECT
-  SUM(nombre) AS nombre,  SUM(somme) AS somme,  crit_v,  query,  level,  val,  area
+  SUM(nombre) AS nombre,  SUM(somme) AS somme,  crit_v,  code, query,  level,  val,  area
 FROM
-  quotidien
+  quotidien_1
 WHERE
   (timest >= CAST(NOW() AS date))   AND   (timest < CAST((NOW() + INTERVAL '1 month') AS date))
 GROUP BY
-  crit_v,  query,  level,  val,  area
+  crit_v,  code, query,  level,  val,  area
 ORDER BY
   query,  level,  val,  area
 """
 
 with engine.connect() as conn:
     mensuel = pd.read_sql_query(query, conn)
-
-mensuel.to_sql('mensuel', engine, if_exists='replace', index=False)
-
 mensuel
+```
+
+```python
+mensuel.to_sql('mensuel_1', engine, if_exists='replace', index=False)
 ```
 
 ```python
@@ -86,9 +94,9 @@ mensuel
 
 query = """
 SELECT
-  somme / nombre AS nb_pdc,  crit_v AS p_range
+  (somme / nombre)::int AS nb_pdc,  crit_v AS p_range
 FROM
-  mensuel
+  mensuel_1
 WHERE
   query = 't1' AND level = '02' AND val = '75'
 """
@@ -97,6 +105,57 @@ with engine.connect() as conn:
 
 # on retrouve l'indicateur du jour
 t1_m_02_75
+```
+
+## Tests solution 1 bis
+
+```python
+val_t8_01_93_02 = [{'quantite': 30, 'moyenne': 50}, {'quantite': 20, 'moyenne': 60}]
+                   
+quotidien_1_bis = pd.DataFrame({'value': val_t8_01_93_02*3, 'crit_v': ['']*6, 'code': ['01', '02']*3, 'query': ['t8']*6, 'level': [1]*6, 'val': [93]*6, 'area': [2]*6, 
+                            'timestamp': ['2024-09-09T15:05:28+00:00', '2024-09-09T15:05:28+00:00', '2024-09-10T15:05:28+00:00', 
+                                          '2024-09-10T15:05:28+00:00', '2024-09-11T15:05:28+00:00', '2024-09-11T15:05:28+00:00']})
+quotidien_1_bis
+```
+
+```python
+dtype_1_bis = {'value': dialects.postgresql.JSONB, 'crit_v': types.TEXT, 'code': types.TEXT, 'query': types.TEXT, 'level': types.SMALLINT, 'val': types.TEXT, 'area': types.SMALLINT, 
+        'timestamp': types.TIMESTAMP}
+quotidien_1_bis.to_sql("quotidien_1_bis", engine, if_exists="replace", dtype=dtype_1_bis)
+```
+
+```python
+# passage de la table 'quotidien' à la table 'mensuel'
+
+query = """
+SELECT
+  SUM((value->>'quantite')::float) AS quantite,  
+  SUM(((value->>'moyenne')::float) * (value->>'quantite')::float) / SUM((value->>'quantite')::float) AS moyenne,  
+  crit_v,  code, query,  level,  val,  area
+FROM
+  quotidien_1_bis
+GROUP BY
+  crit_v,  code, query,  level,  val,  area
+ORDER BY
+  query,  level,  val,  area
+"""
+
+with engine.connect() as conn:
+    mensuel = pd.read_sql_query(query, conn)
+
+mensuel.to_sql('mensuel_1_bis', engine, if_exists='replace', index=False)
+
+mensuel
+```
+
+```python
+mensuel['value'] = pd.Series([{'quantite': quantite, 'moyenne': moyenne} for quantite, moyenne in zip(mensuel['quantite'], mensuel['moyenne'])])
+mensuel_1_bis = mensuel.loc[:, ['value', 'crit_v', 'code', 'query', 'level',  'val',  'area']]
+mensuel_1_bis
+```
+
+```python
+mensuel_1_bis.to_sql('mensuel_1_bis', engine, if_exists='replace', index=False, dtype=dtype_1_bis)
 ```
 
 ## Tests solution 2
@@ -160,7 +219,7 @@ t8_01_93_02
 
 ```python
 dtype={'code': types.TEXT, 'level': types.SMALLINT, 'target': types.TEXT, 'sub_level': types.SMALLINT, 
-       'value': types.JSON, 'timestamp': types.TIMESTAMP}
+       'value': dialects.postgresql.JSONB, 'timestamp': types.TIMESTAMP}
 t8_01_93_02.to_sql("mensuel_3", engine, if_exists="replace", dtype=dtype)
 ```
 
@@ -169,16 +228,16 @@ query = """
 with dpt_ext as
     (select 
         target, level, code, sub_level, 
-        jsonb_path_query(to_jsonb(value), '$.department') as department, 
-        jsonb_path_query(to_jsonb(value), ' $.operators') as oper_json, 
+        jsonb_path_query(value, '$.department') as department, 
+        jsonb_path_query(value, '$.operators') as oper_json, 
         timestamp
     from 
         mensuel_3)
 select 
     target, level, code, sub_level, department, 
-    jsonb_path_query(to_jsonb(oper_json), ' $.name') as operator, 
-    jsonb_path_query(to_jsonb(oper_json), ' $.sum') as sum, 
-    jsonb_path_query(to_jsonb(oper_json), ' $.delta') as delta, 
+    jsonb_path_query(oper_json, '$.name') as operator, 
+    jsonb_path_query(oper_json, '$.sum') as sum, 
+    jsonb_path_query(oper_json, '$.delta') as delta, 
     timestamp
 from 
     dpt_ext
@@ -186,4 +245,40 @@ from
 with engine.connect() as conn:
     test_json = pd.read_sql_query(query, conn)
 test_json
+```
+
+```python
+val_t8_01_93_02 = [
+    {   "department": "01",
+        "operators": "Bouygues",
+        "value": {
+            'quantite': 5, 
+            "moyenne": 10}},
+    {   "department": "01",
+        "operators": "Electra",
+        "value": {
+            'quantite': 15, 
+            "moyenne": 20}},
+    {   "department": "01",
+        "operators": "Engie",
+        "value": {
+            'quantite': 25, 
+            "moyenne": 30}},
+    
+    {   "department": "02",
+        "operators": "Bouygues",
+        "value": {
+            'quantite': 5, 
+            "moyenne": 10}},
+    {   "department": "02",
+        "operators": "Electra",
+        "value": {
+            'quantite': 15, 
+            "moyenne": 20}},
+    {   "department": "02",
+        "operators": "Engie",
+        "value": {
+            'quantite': 25, 
+            "moyenne": 30}}
+]
 ```
