@@ -19,6 +19,7 @@ jupyter:
 
 ```python editable=true slideshow={"slide_type": ""}
 import os
+from datetime import datetime, timedelta
 import pandas as pd
 import geopandas as gpd
 from sqlalchemy import create_engine, types, dialects
@@ -34,12 +35,140 @@ Plusieurs solutions sont testées (pour chaque niveau d'historisation):
 - solution 2 : une table avec une valeur JSON par indicateur (une ligne par indicateur)
 
 
-## Tests Solution 1
+## Principes indicateurs
+
+- résultat instantané : valeur unique (ex. puissance, nombre de stations...)
+- résultat sur une période : ensemble de valeurs (ex. puissance quotidienne...)
+
+### Historisation : Pour ne pas stocker un ensemble des valeurs on stocke des données agrégées 'scalables'
+
+- quantité de valeurs (nécessaire pour les calculs)
+- valeur moyenne
+- dernière valeur de la période (optionnel ou obligatoire ?)
+- écart-type (optionnel)
+- valeur mini (optionnel)
+- valeur maxi (optionnel)
+
+ex. 'dernière valeur' utile quand on veut comparer une évolution entre deux dates (ex entre fin 2023 et fin 2024) ou avoir une courbe des valeurs mensuelles
+
+### Types d'indicateur
+
+- valeur unique (tableau avec une colonne et une valeur)
+- avec un paramètre -> liste de valeurs (tableau avec deux colonnes et n valeurs)
+- avec deux paramètres -> liste de valeurs (tableau avec trois colonnes et n x n valeurs)
+
+
+
+## Tests perf Solution 1
+
+```python
+dd = timedelta(days=1)
+```
+
+```python
+# %%timeit
+# fonction qui retourne l'indicateur sous différents formats (par défaut un DataFrame) à partir de la requête définie
+to_indicator(engine, 't8---02', histo=True, format='table', histo_timest= '2024-01-01')
+```
+
+```python
+ti = datetime.fromisoformat('2024-01-01')
+```
+
+```python
+%%timeit
+to_indicator(engine, 't8---02', histo=True, format='table', histo_timest= ti.isoformat(), table_name='quotidien_1', table_option='replace')
+```
+
+```python
+ti = datetime.fromisoformat('2024-01-01')
+to_indicator(engine, 't8---02', histo=True, format='table', histo_timest= ti.isoformat(), table_name='quotidien_1', table_option='replace')
+for i in range(365):
+    ti += dd
+    to_indicator(engine, 't8---02', histo=True, format='table', histo_timest= ti.isoformat(), table_name='quotidien_1', table_option='append')
+```
+
+```python
+%%timeit
+# passage de la table 'quotidien' à la table 'mensuel' (chaque mois on retrouve un seul enregistrement de chaque indicateur)
+# le traitement pourrait se faire directement en SQL sans passer par un DataFrame
+# la requête est la même pour passer de jour à mois que pour passer de mois à année
+
+query = """
+SELECT
+  SUM(quantity) AS quantity,  SUM(quantity * mean) AS somme,  last, crit_v,  code, query,  level,  val,  area
+FROM
+  quotidien_1
+WHERE
+  (timest >= to_timestamp('2024-01-01', 'YYYY-MM-DD')   AND   timest < to_timestamp('2025-01-01', 'YYYY-MM-DD'))
+GROUP BY
+  last, crit_v,  code, query,  level,  val,  area
+ORDER BY
+  query,  level,  val,  area
+"""
+
+with engine.connect() as conn:
+    mensuel = pd.read_sql_query(query, conn)
+mensuel
+```
+
+## tests perf sol 1 bis
 
 ```python
 # fonction qui retourne l'indicateur sous différents formats (par défaut un DataFrame) à partir de la requête définie
-to_indicator(engine, 't1-02-75')
+to_indicator(engine, 't8---02', histo=True, format='table', histo_timest= '2024-01-01', test='1bis')
 ```
+
+```python
+ti = datetime.fromisoformat('2024-01-01')
+dtype_1_bis = {'crit_v': types.TEXT, 'code': types.TEXT, 'query': types.TEXT, 'level': types.TEXT, 'val': types.TEXT, 'area': types.TEXT, 
+        'timestamp': types.TIMESTAMP, 'value': dialects.postgresql.JSONB}
+```
+
+```python
+%%timeit
+to_indicator(engine, 't8---02', histo=True, format='table', histo_timest= ti.isoformat(), table_name='quotidien_1_bis', table_option='replace', table_dtype=dtype_1_bis, test='1bis')
+```
+
+```python
+ti = datetime.fromisoformat('2024-01-01')
+to_indicator(engine, 't8---02', histo=True, format='table', histo_timest= ti.isoformat(), table_name='quotidien_1_bis', table_option='replace', table_dtype=dtype_1_bis, test='1bis')
+for i in range(365):
+    ti += dd
+    to_indicator(engine, 't8---02', histo=True, format='table', histo_timest= ti.isoformat(), table_name='quotidien_1_bis', table_option='append', table_dtype=dtype_1_bis, test='1bis')
+```
+
+```python
+%%timeit
+# passage de la table 'quotidien' à la table 'mensuel' (chaque mois on retrouve un seul enregistrement de chaque indicateur)
+# le traitement pourrait se faire directement en SQL sans passer par un DataFrame
+# la requête est la même pour passer de jour à mois que pour passer de mois à année
+
+query = """
+SELECT
+  SUM((value->>'quantity')::float) AS quantity,  SUM((value->>'quantity')::float * (value->>'mean')::float) AS somme,  (value->>'last')::float AS last, crit_v,  code, query,  level,  val,  area
+FROM
+  quotidien_1_bis
+WHERE
+  (timest >= to_timestamp('2024-01-01', 'YYYY-MM-DD')   AND   timest < to_timestamp('2025-01-01', 'YYYY-MM-DD'))
+GROUP BY
+  last, crit_v,  code, query,  level,  val,  area
+ORDER BY
+  query,  level,  val,  area
+"""
+
+with engine.connect() as conn:
+    mensuel = pd.read_sql_query(query, conn)
+mensuel
+```
+
+## tests perf sol 2 
+
+```python
+
+```
+
+## tests sol 1 autres
 
 ```python
 # ajout d'indicateurs dans la table 'quotidien'
