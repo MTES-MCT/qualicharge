@@ -165,7 +165,37 @@ mensuel
 ## tests perf sol 2 
 
 ```python
+with engine.connect() as conn:
+    mensuel_1_bis = pd.read_sql_query("SELECT * FROM quotidien_1_bis", conn)
+mensuel_1_bis
+```
 
+```python
+crit_code = mensuel_1_bis[['query', 'level', 'val', 'area', 'timest']].drop_duplicates()
+crit_code['timest'] = crit_code['timest'].astype('string')
+crit_code
+```
+
+```python
+for row_idx, row in crit_code.iterrows():
+    print(row.to_dict())
+```
+
+```python
+crit_code.iloc[1,:].to_dict()
+```
+
+```python
+def value_2(param):
+    #param = row.to_dict()
+    query = f"query == '{param['query']}' and level == '{param['level']}' and val == '{param['val']}' and area == '{param['area']}' and timest == '{param['timest']}'"
+    return mensuel_1_bis.query(query)[['code', 'crit_v', 'value']].to_json(orient='records')    
+```
+
+```python
+mensuel_1_bis['timest'] = mensuel_1_bis['timest'].astype('string')
+crit_code['value'] = pd.Series([value_2(row.to_dict()) for row_idx, row in crit_code.iterrows()])
+crit_code
 ```
 
 ## tests sol 1 autres
@@ -378,8 +408,8 @@ test_json
 
 ```python
 val_t8_01_93_02 = [
-    {   "department": "01",
-        "operators": "Bouygues",
+    {   "code": "01",
+        "crit_v": "Bouygues",
         "value": {
             'quantite': 5, 
             "moyenne": 10}},
