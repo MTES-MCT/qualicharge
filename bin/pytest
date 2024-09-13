@@ -9,10 +9,10 @@ DOCKER_UID="$(id -u)"
 DOCKER_GID="$(id -g)"
 DOCKER_USER="${DOCKER_UID}:${DOCKER_GID}"
 
-if [ "${service}" == "api" ]; then
-  cmd="pipenv run pytest";
-else
+if [ "${service}" == "client" ]; then
   cmd="pytest";
+else
+  cmd="pipenv run pytest";
 fi
 
 DOCKER_USER=${DOCKER_USER} \

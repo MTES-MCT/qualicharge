@@ -5,6 +5,7 @@ services:
       - env.d/postgresql
       - env.d/api
       - env.d/metabase
+      - env.d/prefect
     healthcheck:
       test:
         - "CMD-SHELL"
@@ -123,6 +124,46 @@ services:
     depends_on:
       - postgresql
 
+  prefect:
+    build:
+      context: ./src/prefect
+      args:
+        DOCKER_UID: ${DOCKER_UID:-1000}
+        DOCKER_GID: ${DOCKER_GID:-1000}
+    user: ${DOCKER_USER:-1000}
+    image: "qualicharge:prefect"
+    ports:
+      - 4200:4200
+    env_file:
+      - env.d/prefect
+      - env.d/prefect-qc
+    volumes:
+      - ./src/prefect:/app
+    depends_on:
+      - postgresql
+
+  prefect-worker:
+    image: "qualicharge:prefect"
+    command: ["pipenv", "run", "honcho", "start", "worker"]
+    user: ${DOCKER_USER:-1000}
+    env_file:
+      - env.d/prefect
+      - env.d/prefect-qc
+    volumes:
+      - ./src/prefect:/app
+    depends_on:
+      - prefect
+
+  prefect-test:
+    image: "qualicharge:prefect"
+    user: ${DOCKER_USER:-1000}
+    env_file:
+      - env.d/prefect-qc
+    volumes:
+      - ./src/prefect:/app
+    depends_on:
+      - postgresql
+
   # -- tools
   curl:
     image: curlimages/curl:8.10.1
@@ -134,6 +175,9 @@ services:
 
   dockerize:
     image: jwilder/dockerize
+
+  httpd:
+    image: httpd:alpine
 
   jq:
     # There is no other tags than latest

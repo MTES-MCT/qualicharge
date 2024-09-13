@@ -1,0 +1,91 @@
+# This workflow will install Python dependencies, run tests and lint with a single version of Python
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
+
+name: Prefect
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+permissions:
+  contents: read
+
+jobs:
+  build-prefect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Pipenv
+        run: pipx install pipenv
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pipenv"
+      - name: Install dependencies
+        run: |
+          cd src/prefect
+          pipenv install -de .
+
+  lint-prefect:
+    needs: build-prefect
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./src/prefect
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install pipenv
+        run: pipx install pipenv
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pipenv"
+      - name: Lint with Black
+        run: pipenv run black indicators tests
+      - name: Lint with Ruff
+        run: pipenv run ruff check indicators tests
+      - name: Lint with MyPy
+        run: pipenv run mypy indicators tests
+
+  test-prefect:
+    needs: build-prefect
+    runs-on: ubuntu-latest
+    services:
+      postgresql:
+        image: timescale/timescaledb-ha:pg14-ts2.14-oss
+        env:
+          POSTGRES_DB: qualicharge-api
+          POSTGRES_USER: qualicharge
+          POSTGRES_PASSWORD: pass
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    defaults:
+      run:
+        working-directory: ./src/prefect
+    env:
+      QUALICHARGE_DATABASE_URL: "postgresql+psycopg://qualicharge:pass@localhost:5432/qualicharge-api"
+      QUALICHARGE_DATABASE_URL_NO_DRIVER: "postgresql://qualicharge:pass@localhost:5432/qualicharge-api"
+    steps:
+      - uses: actions/checkout@v4
+      - name: Restore database dump
+        run: |
+          pg_restore -s -F c -d "${QUALICHARGE_DATABASE_URL_NO_DRIVER}" ../../data/qualicharge-api-schema.sql
+          pg_restore -a -F c -d "${QUALICHARGE_DATABASE_URL_NO_DRIVER}" ../../data/qualicharge-api-data.sql
+      - name: Install pipenv
+        run: pipx install pipenv
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pipenv"
+      - name: Test with pytest
+        run: pipenv run pytest

@@ -50,6 +50,9 @@ scripts/*.csv
 # -- Tools
 .coverage
 
+# Prefect
+src/prefect/.htpasswd
+
 # Jupytext: we version converted md files not ipynb sources
 *.ipynb
 

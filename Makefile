@@ -2,12 +2,13 @@
 SHELL := /bin/bash
 
 # -- Docker
-COMPOSE                = bin/compose
-COMPOSE_UP             = $(COMPOSE) up -d
-COMPOSE_RUN            = $(COMPOSE) run --rm --no-deps
-COMPOSE_RUN_API        = $(COMPOSE_RUN) api
-COMPOSE_RUN_API_PIPENV = $(COMPOSE_RUN_API) pipenv run
-COMPOSE_RUN_CLIENT     = $(COMPOSE_RUN) client
+COMPOSE                    = bin/compose
+COMPOSE_UP                 = $(COMPOSE) up -d
+COMPOSE_RUN                = $(COMPOSE) run --rm --no-deps
+COMPOSE_RUN_API            = $(COMPOSE_RUN) api
+COMPOSE_RUN_API_PIPENV     = $(COMPOSE_RUN_API) pipenv run
+COMPOSE_RUN_CLIENT         = $(COMPOSE_RUN) client
+COMPOSE_RUN_PREFECT_PIPENV = $(COMPOSE_RUN) prefect pipenv run
 
 # -- Tools
 CURL = $(COMPOSE_RUN) curl
@@ -34,6 +35,7 @@ bootstrap: \
   migrate-api \
   create-api-test-db \
   create-metabase-db \
+  create-prefect-db \
   seed-metabase \
   seed-oidc \
   create-superuser \
@@ -61,6 +63,10 @@ build-opendata: ## build opendata image
 	@$(COMPOSE) build opendata
 .PHONY: build-opendata
 
+build-prefect: ## build prefect image
+	@$(COMPOSE) build prefect
+.PHONY: build-prefect
+
 down: ## stop and remove all containers
 	@$(COMPOSE) down
 .PHONY: down
@@ -80,6 +86,10 @@ logs-notebook: ## display notebook logs (follow mode)
 logs-opendata: ## display opendata logs (follow mode)
 	@$(COMPOSE) logs -f opendata
 .PHONY: logs-opendata
+
+logs-prefect: ## display prefect logs (follow mode)
+	@$(COMPOSE) logs -f prefect prefect-worker
+.PHONY: logs-prefect
 
 run: ## run the api server (and dependencies)
 	$(COMPOSE_UP) --wait api
@@ -101,6 +111,11 @@ run-opendata: ## run the opendata service
 	$(COMPOSE_UP) opendata
 .PHONY: run-opendata
 
+run-prefect: ## run the prefect service
+	$(COMPOSE_UP) --wait prefect
+	$(COMPOSE_UP) prefect-worker
+.PHONY: run-prefect
+
 status: ## an alias for "docker compose ps"
 	@$(COMPOSE) ps
 .PHONY: status
@@ -110,6 +125,36 @@ stop: ## stop all servers
 .PHONY: stop
 
 # -- Provisioning
+data/qualicharge-api-schema.sql:
+	$(COMPOSE) exec postgresql pg_dump -s -Z 9 -U qualicharge -F c qualicharge-api > data/qualicharge-api-schema.sql
+
+data/qualicharge-api-data.sql:
+	$(COMPOSE) exec postgresql pg_dump -a -Z 9 -U qualicharge -F c qualicharge-api > data/qualicharge-api-data.sql
+
+backup-api-db: ## create API database backup
+backup-api-db: \
+	data/qualicharge-api-schema.sql \
+  data/qualicharge-api-data.sql
+.PHONY: backup-api-db
+
+restore-api-db-data: ## restore API database backup data
+restore-api-db-data: data/qualicharge-api-data.sql
+	cat data/qualicharge-api-data.sql | \
+		$(COMPOSE) exec -T postgresql pg_restore -a -U qualicharge -F c -d qualicharge-api
+.PHONY: restore-api-db-data
+
+restore-api-db-schema: ## restore API database backup schema
+restore-api-db-schema: data/qualicharge-api-schema.sql
+	cat data/qualicharge-api-schema.sql | \
+		$(COMPOSE) exec -T postgresql pg_restore -s -U qualicharge -F c -d qualicharge-api
+.PHONY: restore-api-db-schema
+
+restore-api-db: ## restore API database backup
+restore-api-db: \
+	restore-api-db-schema \
+	restore-api-db-data
+.PHONY: restore-api-db
+
 create-api-test-db: ## create API test database
 	@echo "Creating api service test database…"
 	@$(COMPOSE) exec postgresql bash -c 'psql "postgresql://$${POSTGRES_USER}:$${POSTGRES_PASSWORD}@$${QUALICHARGE_DB_HOST}:$${QUALICHARGE_DB_PORT}/postgres" -c "create database \"$${QUALICHARGE_TEST_DB_NAME}\";"' || echo "Duly noted, skipping database creation."
@@ -120,6 +165,11 @@ create-metabase-db: ## create metabase database
 	@echo "Creating metabase service database…"
 	@$(COMPOSE) exec postgresql bash -c 'psql "postgresql://$${POSTGRES_USER}:$${POSTGRES_PASSWORD}@$${QUALICHARGE_DB_HOST}:$${QUALICHARGE_DB_PORT}/postgres" -c "create database \"$${MB_DB_DBNAME}\";"' || echo "Duly noted, skipping database creation."
 .PHONY: create-metabase-db
+
+create-prefect-db: ## create prefect database
+	@echo "Creating prefect service database…"
+	@$(COMPOSE) exec postgresql bash -c 'psql "postgresql://$${POSTGRES_USER}:$${POSTGRES_PASSWORD}@$${QUALICHARGE_DB_HOST}:$${QUALICHARGE_DB_PORT}/postgres" -c "create database \"$${PREFECT_API_DATABASE_NAME}\";"' || echo "Duly noted, skipping database creation."
+.PHONY: create-prefect-db
 
 drop-api-test-db: ## drop API test database
 	@echo "Droping api service test database…"
@@ -180,12 +230,12 @@ jupytext--to-ipynb: ## convert remote md files into ipynb
 reset-db: ## Reset the PostgreSQL database
 	$(COMPOSE) stop
 	$(COMPOSE) down postgresql metabase
-	$(COMPOSE_UP) --force-recreate api
 	$(MAKE) migrate-api
 	$(MAKE) create-superuser
 	$(MAKE) create-api-test-db
 	$(MAKE) create-metabase-db
 	$(MAKE) seed-metabase
+	$(MAKE) create-prefect-db
 .PHONY: reset-db
 
 seed-api: ## seed the API database (static data)
@@ -220,7 +270,8 @@ seed-oidc: ## seed the OIDC provider
 lint: ## lint all sources
 lint: \
 	lint-api \
-	lint-client
+	lint-client \
+	lint-prefect
 .PHONY: lint
 
 lint-api: ## lint api python sources
@@ -236,6 +287,13 @@ lint-client: \
   lint-client-ruff \
   lint-client-mypy
 .PHONY: lint-client
+
+lint-prefect: ## lint api python sources
+lint-prefect: \
+  lint-prefect-black \
+  lint-prefect-ruff \
+  lint-prefect-mypy
+.PHONY: lint-prefect
 
 lint-api-black: ## lint api python sources with black
 	@echo 'lint:black started…'
@@ -277,11 +335,31 @@ lint-client-mypy: ## lint api python sources with mypy
 	@$(COMPOSE_RUN_CLIENT) mypy qcc tests
 .PHONY: lint-client-mypy
 
+lint-prefect-black: ## lint prefect python sources with black
+	@echo 'lint:black started…'
+	@$(COMPOSE_RUN_PREFECT_PIPENV) black indicators tests
+.PHONY: lint-prefect-black
+
+lint-prefect-ruff: ## lint prefect python sources with ruff
+	@echo 'lint:ruff started…'
+	@$(COMPOSE_RUN_PREFECT_PIPENV) ruff check indicators tests
+.PHONY: lint-prefect-ruff
+
+lint-prefect-ruff-fix: ## lint and fix prefect python sources with ruff
+	@echo 'lint:ruff-fix started…'
+	@$(COMPOSE_RUN_PREFECT_PIPENV) ruff check --fix indicators tests
+.PHONY: lint-prefect-ruff-fix
+
+lint-prefect-mypy: ## lint prefect python sources with mypy
+	@echo 'lint:mypy started…'
+	@$(COMPOSE_RUN_PREFECT_PIPENV) mypy indicators tests
+.PHONY: lint-prefect-mypy
 
 test: ## run all services tests
 test: \
 	test-api \
-	test-client
+	test-client \
+	test-prefect
 .PHONY: test
 
 test-api: ## run API tests
@@ -291,6 +369,10 @@ test-api: ## run API tests
 test-client: ## run client tests
 	SERVICE=client bin/pytest
 .PHONY: test-client
+
+test-prefect: ## run prefect tests
+	SERVICE=prefect-test bin/pytest
+.PHONY: test-prefect
 
 # -- Misc
 help:
