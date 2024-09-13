@@ -73,9 +73,9 @@ Comparaison des temps de réponse d'une query pour les trois solutions avec le s
 dd = timedelta(days=1)
 ti = datetime.fromisoformat('2024-01-01')
 test = 't8---01'
-test = 't8---02'
-test = 't8---03'
-test = 't8---04'
+#test = 't8---02'
+#test = 't8---03'
+#test = 't8---04'
 ```
 
 ```python
