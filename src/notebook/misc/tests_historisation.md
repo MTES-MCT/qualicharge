@@ -32,7 +32,7 @@ Plusieurs solutions sont testées (pour chaque niveau d'historisation):
 
 - solution 1 : une table avec les résultats des indicateurs (plusieurs lignes par indicateur)
 - solution 1bis : une table avec un champ JSON pour les valeurs (plusieurs lignes par indicateur)
-- solution 2 : une table avec une valeur JSON par indicateur (une ligne par indicateur)
+- solution 2 : une table avec un champ JSON pour l'ensemble des résultats (une ligne par indicateur)
 
 
 ## Principes indicateurs
@@ -59,37 +59,39 @@ ex. 'dernière valeur' utile quand on veut comparer une évolution entre deux da
 
 
 
-## Tests perf Solution 1
+## Tests de performance
+
+Comparaison des temps de réponse d'une query pour les trois solutions avec le scénario suivant :
+
+- requête t8 annuelle à partir des résultats des requêtes quotidiennes stockées sur un an dans une table.
+- avec t8 : nb station par opérateur et par région-01/département-02/EPCI-03/communes-04
+
+
+### Tests perf Solution 1
 
 ```python
 dd = timedelta(days=1)
-```
-
-```python
-# %%timeit
-# fonction qui retourne l'indicateur sous différents formats (par défaut un DataFrame) à partir de la requête définie
-to_indicator(engine, 't8---02', histo=True, format='table', histo_timest= '2024-01-01')
-```
-
-```python
 ti = datetime.fromisoformat('2024-01-01')
+test = 't8---01'
+test = 't8---02'
+test = 't8---03'
+test = 't8---04'
 ```
 
 ```python
-%%timeit
-to_indicator(engine, 't8---02', histo=True, format='table', histo_timest= ti.isoformat(), table_name='quotidien_1', table_option='replace')
+#%%timeit
+to_indicator(engine, test, histo=True, format='table', histo_timest= ti.isoformat(), table_name='quotidien_1', table_option='replace')
 ```
 
 ```python
-ti = datetime.fromisoformat('2024-01-01')
-to_indicator(engine, 't8---02', histo=True, format='table', histo_timest= ti.isoformat(), table_name='quotidien_1', table_option='replace')
+to_indicator(engine, test, histo=True, format='table', histo_timest= ti.isoformat(), table_name='quotidien_1', table_option='replace')
 for i in range(365):
     ti += dd
-    to_indicator(engine, 't8---02', histo=True, format='table', histo_timest= ti.isoformat(), table_name='quotidien_1', table_option='append')
+    count = to_indicator(engine, test, histo=True, format='table', histo_timest= ti.isoformat(), table_name='quotidien_1', table_option='append')
+count
 ```
 
 ```python
-%%timeit
 # passage de la table 'quotidien' à la table 'mensuel' (chaque mois on retrouve un seul enregistrement de chaque indicateur)
 # le traitement pourrait se faire directement en SQL sans passer par un DataFrame
 # la requête est la même pour passer de jour à mois que pour passer de mois à année
@@ -109,37 +111,41 @@ ORDER BY
 
 with engine.connect() as conn:
     mensuel = pd.read_sql_query(query, conn)
+```
+
+```python
+%%timeit
+with engine.connect() as conn:
+    mensuel = pd.read_sql_query(query, conn)
+```
+
+```python
+mensuel.to_sql('mensuel_1', engine, if_exists='replace', index=False)
 mensuel
 ```
 
-## tests perf sol 1 bis
+### tests perf sol 1 bis
 
 ```python
-# fonction qui retourne l'indicateur sous différents formats (par défaut un DataFrame) à partir de la requête définie
-to_indicator(engine, 't8---02', histo=True, format='table', histo_timest= '2024-01-01', test='1bis')
-```
-
-```python
-ti = datetime.fromisoformat('2024-01-01')
 dtype_1_bis = {'crit_v': types.TEXT, 'code': types.TEXT, 'query': types.TEXT, 'level': types.TEXT, 'val': types.TEXT, 'area': types.TEXT, 
         'timestamp': types.TIMESTAMP, 'value': dialects.postgresql.JSONB}
 ```
 
 ```python
-%%timeit
-to_indicator(engine, 't8---02', histo=True, format='table', histo_timest= ti.isoformat(), table_name='quotidien_1_bis', table_option='replace', table_dtype=dtype_1_bis, test='1bis')
+#%%timeit
+to_indicator(engine, test, histo=True, format='table', histo_timest= ti.isoformat(), table_name='quotidien_1_bis', table_option='replace', table_dtype=dtype_1_bis, test='1bis')
 ```
 
 ```python
 ti = datetime.fromisoformat('2024-01-01')
-to_indicator(engine, 't8---02', histo=True, format='table', histo_timest= ti.isoformat(), table_name='quotidien_1_bis', table_option='replace', table_dtype=dtype_1_bis, test='1bis')
+to_indicator(engine, test, histo=True, format='table', histo_timest= ti.isoformat(), table_name='quotidien_1_bis', table_option='replace', table_dtype=dtype_1_bis, test='1bis')
 for i in range(365):
     ti += dd
-    to_indicator(engine, 't8---02', histo=True, format='table', histo_timest= ti.isoformat(), table_name='quotidien_1_bis', table_option='append', table_dtype=dtype_1_bis, test='1bis')
+    count = to_indicator(engine, test, histo=True, format='table', histo_timest= ti.isoformat(), table_name='quotidien_1_bis', table_option='append', table_dtype=dtype_1_bis, test='1bis')
+count
 ```
 
 ```python
-%%timeit
 # passage de la table 'quotidien' à la table 'mensuel' (chaque mois on retrouve un seul enregistrement de chaque indicateur)
 # le traitement pourrait se faire directement en SQL sans passer par un DataFrame
 # la requête est la même pour passer de jour à mois que pour passer de mois à année
@@ -154,7 +160,7 @@ WHERE
 GROUP BY
   last, crit_v,  code, query,  level,  val,  area
 ORDER BY
-  query,  level,  val,  area
+  somme, query,  level,  val,  area
 """
 
 with engine.connect() as conn:
@@ -162,43 +168,114 @@ with engine.connect() as conn:
 mensuel
 ```
 
-## tests perf sol 2 
+```python
+%%timeit
+with engine.connect() as conn:
+    mensuel = pd.read_sql_query(query, conn)
+```
+
+```python
+mensuel.to_sql('mensuel_1_bis', engine, if_exists='replace', index=False)
+```
+
+### Tests perf sol 2 
 
 ```python
 with engine.connect() as conn:
-    mensuel_1_bis = pd.read_sql_query("SELECT * FROM quotidien_1_bis", conn)
-mensuel_1_bis
+    quotidien_1_bis = pd.read_sql_query("SELECT * FROM quotidien_1_bis", conn)
 ```
 
 ```python
-crit_code = mensuel_1_bis[['query', 'level', 'val', 'area', 'timest']].drop_duplicates()
-crit_code['timest'] = crit_code['timest'].astype('string')
-crit_code
+quotidien_2 = quotidien_1_bis[['query', 'level', 'val', 'area', 'timest']].drop_duplicates().reset_index(drop=True)
+quotidien_2['timest'] = quotidien_2['timest'].astype('string')
+len(quotidien_2)
 ```
 
 ```python
-for row_idx, row in crit_code.iterrows():
-    print(row.to_dict())
-```
-
-```python
-crit_code.iloc[1,:].to_dict()
-```
-
-```python
-def value_2(param):
-    #param = row.to_dict()
+def value_2(row, df):
+    param = row.to_dict()
     query = f"query == '{param['query']}' and level == '{param['level']}' and val == '{param['val']}' and area == '{param['area']}' and timest == '{param['timest']}'"
-    return mensuel_1_bis.query(query)[['code', 'crit_v', 'value']].to_json(orient='records')    
+    return df.query(query)[['code', 'crit_v', 'value']].to_dict(orient='records')    
 ```
 
 ```python
-mensuel_1_bis['timest'] = mensuel_1_bis['timest'].astype('string')
-crit_code['value'] = pd.Series([value_2(row.to_dict()) for row_idx, row in crit_code.iterrows()])
-crit_code
+quotidien_1_bis['timest'] = quotidien_1_bis['timest'].astype('string')
+quotidien_2['result'] = pd.Series([value_2(row, quotidien_1_bis) for row_idx, row in quotidien_2.iterrows()])
 ```
 
-## tests sol 1 autres
+```python
+dtype_2 = {'result': dialects.postgresql.JSONB, 'query': types.TEXT, 'level': types.TEXT, 'val': types.TEXT, 'area': types.TEXT, 'timestamp': types.TIMESTAMP}
+quotidien_2.to_sql("quotidien_2", engine, if_exists="replace", dtype=dtype_2)
+```
+
+```python
+quotidien_2
+```
+
+```python
+# passage de la table 'quotidien' à la table 'mensuel' (chaque mois on retrouve un seul enregistrement de chaque indicateur)
+# le traitement pourrait se faire directement en SQL sans passer par un DataFrame
+# la requête est la même pour passer de jour à mois que pour passer de mois à année
+
+query = """
+WITH quotidien_flat AS
+    (SELECT 
+        query, level, val, area, 
+        jsonb_path_query(result, '$.code') AS code, 
+        jsonb_path_query(result, '$.crit_v') AS crit_v, 
+        jsonb_path_query(result, '$.value') AS value, 
+        timest
+    FROM 
+        quotidien_2)
+SELECT
+  SUM((value->>'quantity')::float) AS quantity,  SUM((value->>'quantity')::float * (value->>'mean')::float) AS somme,  (value->>'last')::float AS last, crit_v,  code, query,  level,  val,  area
+FROM
+  quotidien_flat
+WHERE
+  (timest::TIMESTAMP >= to_timestamp('2024-01-01', 'YYYY-MM-DD')   AND   timest::TIMESTAMP < to_timestamp('2025-01-01', 'YYYY-MM-DD'))
+GROUP BY
+  last, crit_v,  code, query,  level,  val,  area
+ORDER BY
+  somme, query,  level,  val,  area
+"""
+
+with engine.connect() as conn:
+    mensuel = pd.read_sql_query(query, conn)
+mensuel
+```
+
+```python
+%%timeit
+with engine.connect() as conn:
+    mensuel = pd.read_sql_query(query, conn)
+```
+
+```python
+mensuel.to_sql('mensuel_2', engine, if_exists='replace', index=False)
+```
+
+<!-- #region jp-MarkdownHeadingCollapsed=true -->
+## Résultats des tests 
+
+Comparaison des temps de réponse d'une query pour les trois solutions avec le scénario suivant :
+
+- requête t8 de calcul des résultats annuels à partir des résultats des requêtes quotidiennes stockées sur un an dans une table.
+- avec t8 : nb station par opérateur et par région-01/département-02/EPCI-03/communes-04
+
+| requete | s1 durée | s1bis durée |  s1 rows  | s2 durée | s2 rows |s2/s1bis|
+| ------- | -------- | ----------- | --------- | -------- | ------- | ------ |
+| t8---01 | 251      | 207         | 121146    | 434      | 366     |  1.8   |
+| t8---02 | 286      | 440         | 389058    | 1390     | 366     |  3.2   |
+| t8---03 | 497      | 690         | 822036    | 3130     | 366     |  4.5   |
+| t8---04 | 861      | 1240        | 1445334   | 5980     | 366     |  4.8   |
+
+
+<!-- #endregion -->
+
+# Annexe : autres tests
+
+
+## Tests sol 1 autres
 
 ```python
 # ajout d'indicateurs dans la table 'quotidien'
@@ -301,9 +378,7 @@ ORDER BY
 
 with engine.connect() as conn:
     mensuel = pd.read_sql_query(query, conn)
-
 mensuel.to_sql('mensuel_1_bis', engine, if_exists='replace', index=False)
-
 mensuel
 ```
 
@@ -317,7 +392,7 @@ mensuel_1_bis
 mensuel_1_bis.to_sql('mensuel_1_bis', engine, if_exists='replace', index=False, dtype=dtype_1_bis)
 ```
 
-## Tests solution 2
+## Tests solution 2 bis
 
 ```python
 import json
