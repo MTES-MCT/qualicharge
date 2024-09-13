@@ -125,7 +125,7 @@ services:
 
   # -- tools
   curl:
-    image: curlimages/curl:8.9.1
+    image: curlimages/curl:8.10.0
     user: ${DOCKER_USER:-1000}
     env_file:
       - env.d/metabase
