@@ -3,7 +3,7 @@ SHELL := /bin/bash
 
 # -- Docker
 COMPOSE                = bin/compose
-COMPOSE_UP             = $(COMPOSE) up -d --force-recreate
+COMPOSE_UP             = $(COMPOSE) up -d
 COMPOSE_RUN            = $(COMPOSE) run --rm --no-deps
 COMPOSE_RUN_API        = $(COMPOSE_RUN) api
 COMPOSE_RUN_API_PIPENV = $(COMPOSE_RUN_API) pipenv run
@@ -178,12 +178,14 @@ jupytext--to-ipynb: ## convert remote md files into ipynb
 .PHONY: jupytext--to-ipynb
 
 reset-db: ## Reset the PostgreSQL database
-	$(COMPOSE) stop postgresql
-	$(COMPOSE) down postgresql
-	$(COMPOSE_UP) postgresql
+	$(COMPOSE) stop
+	$(COMPOSE) down postgresql metabase
+	$(COMPOSE_UP) --force-recreate api
 	$(MAKE) migrate-api
-	$(COMPOSE_UP) api
 	$(MAKE) create-superuser
+	$(MAKE) create-api-test-db
+	$(MAKE) create-metabase-db
+	$(MAKE) seed-metabase
 .PHONY: reset-db
 
 seed-api: ## seed the API database (static data)
