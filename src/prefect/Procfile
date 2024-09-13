@@ -1,0 +1,3 @@
+web: bash ./start.sh
+worker: prefect worker start --pool indicators
+postdeploy: bash ./post-deploy.sh
