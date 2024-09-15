@@ -66,39 +66,39 @@ Comparaison des temps de réponse d'une query pour les trois solutions avec le s
 - requête t8 annuelle à partir des résultats des requêtes quotidiennes stockées sur un an dans une table.
 - avec t8 : nb station par opérateur et par région-01/département-02/EPCI-03/communes-04
 
-
-### Tests perf Solution 1
-
 ```python
 dd = timedelta(days=1)
 ti = datetime.fromisoformat('2024-01-01')
 test = 't8---01'
-#test = 't8---02'
-#test = 't8---03'
-#test = 't8---04'
+test = 't8---02'
+test = 't8---03'
+test = 't8---04'
 ```
 
-```python
-#%%timeit
-to_indicator(engine, test, histo=True, format='table', histo_timest= ti.isoformat(), table_name='quotidien_1', table_option='replace')
-```
+### Tests perf Solution 1
 
 ```python
+# simulation de l'historisation quotidienne de l'indicateur 'test' sur un an
 to_indicator(engine, test, histo=True, format='table', histo_timest= ti.isoformat(), table_name='quotidien_1', table_option='replace')
 for i in range(365):
     ti += dd
-    count = to_indicator(engine, test, histo=True, format='table', histo_timest= ti.isoformat(), table_name='quotidien_1', table_option='append')
-count
+    to_indicator(engine, test, histo=True, format='table', histo_timest= ti.isoformat(), table_name='quotidien_1', table_option='append')
+```
+
+```python
+with engine.connect() as conn:
+    quotidien_1 = pd.read_sql_query("SELECT * FROM quotidien_1", conn)
+quotidien_1
 ```
 
 ```python
 # passage de la table 'quotidien' à la table 'mensuel' (chaque mois on retrouve un seul enregistrement de chaque indicateur)
-# le traitement pourrait se faire directement en SQL sans passer par un DataFrame
+# une requête unique donne à la fois le format d'historisation et le format de l'indicateur
 # la requête est la même pour passer de jour à mois que pour passer de mois à année
 
 query = """
 SELECT
-  SUM(quantity) AS quantity,  SUM(quantity * mean) AS somme,  last, crit_v,  code, query,  level,  val,  area
+  SUM(quantity) AS quantity,  SUM(quantity * mean)/SUM(quantity) AS mean,  last, crit_v,  code, query,  level,  val,  area
 FROM
   quotidien_1
 WHERE
@@ -111,6 +111,7 @@ ORDER BY
 
 with engine.connect() as conn:
     mensuel = pd.read_sql_query(query, conn)
+mensuel
 ```
 
 ```python
@@ -121,7 +122,6 @@ with engine.connect() as conn:
 
 ```python
 mensuel.to_sql('mensuel_1', engine, if_exists='replace', index=False)
-mensuel
 ```
 
 ### tests perf sol 1 bis
@@ -132,27 +132,32 @@ dtype_1_bis = {'crit_v': types.TEXT, 'code': types.TEXT, 'query': types.TEXT, 'l
 ```
 
 ```python
-#%%timeit
-to_indicator(engine, test, histo=True, format='table', histo_timest= ti.isoformat(), table_name='quotidien_1_bis', table_option='replace', table_dtype=dtype_1_bis, test='1bis')
-```
-
-```python
+# simulation de l'historisation quotidienne de l'indicateur 'test' sur un an
 ti = datetime.fromisoformat('2024-01-01')
 to_indicator(engine, test, histo=True, format='table', histo_timest= ti.isoformat(), table_name='quotidien_1_bis', table_option='replace', table_dtype=dtype_1_bis, test='1bis')
 for i in range(365):
     ti += dd
-    count = to_indicator(engine, test, histo=True, format='table', histo_timest= ti.isoformat(), table_name='quotidien_1_bis', table_option='append', table_dtype=dtype_1_bis, test='1bis')
-count
+    to_indicator(engine, test, histo=True, format='table', histo_timest= ti.isoformat(), table_name='quotidien_1_bis', table_option='append', table_dtype=dtype_1_bis, test='1bis')
+```
+
+```python
+with engine.connect() as conn:
+    quotidien_1_bis = pd.read_sql_query("SELECT * FROM quotidien_1_bis", conn)
+quotidien_1_bis
 ```
 
 ```python
 # passage de la table 'quotidien' à la table 'mensuel' (chaque mois on retrouve un seul enregistrement de chaque indicateur)
-# le traitement pourrait se faire directement en SQL sans passer par un DataFrame
-# la requête est la même pour passer de jour à mois que pour passer de mois à année
+# le traitement nécessite de reconstruire le JSON pour l'ensemble des lignes d'un même indicateur (à faire sous pandas ?)
+# le traitement est le même pour passer de jour à mois que pour passer de mois à année
 
+# requête pour générer un tableau "à plat" :
 query = """
 SELECT
-  SUM((value->>'quantity')::float) AS quantity,  SUM((value->>'quantity')::float * (value->>'mean')::float) AS somme,  (value->>'last')::float AS last, crit_v,  code, query,  level,  val,  area
+  SUM((value->>'quantity')::float) AS quantity,  
+  SUM((value->>'quantity')::float * (value->>'mean')::float) / SUM((value->>'quantity')::float) AS mean,  
+  (value->>'last')::float AS last, 
+  crit_v,  code, query,  level,  val,  area
 FROM
   quotidien_1_bis
 WHERE
@@ -160,7 +165,7 @@ WHERE
 GROUP BY
   last, crit_v,  code, query,  level,  val,  area
 ORDER BY
-  somme, query,  level,  val,  area
+  mean, query,  level,  val,  area
 """
 
 with engine.connect() as conn:
@@ -188,10 +193,10 @@ with engine.connect() as conn:
 ```python
 quotidien_2 = quotidien_1_bis[['query', 'level', 'val', 'area', 'timest']].drop_duplicates().reset_index(drop=True)
 quotidien_2['timest'] = quotidien_2['timest'].astype('string')
-len(quotidien_2)
 ```
 
 ```python
+# génération du json
 def value_2(row, df):
     param = row.to_dict()
     query = f"query == '{param['query']}' and level == '{param['level']}' and val == '{param['val']}' and area == '{param['area']}' and timest == '{param['timest']}'"
@@ -201,6 +206,11 @@ def value_2(row, df):
 ```python
 quotidien_1_bis['timest'] = quotidien_1_bis['timest'].astype('string')
 quotidien_2['result'] = pd.Series([value_2(row, quotidien_1_bis) for row_idx, row in quotidien_2.iterrows()])
+quotidien_2
+```
+
+```python
+quotidien_2['result'][0][:5]
 ```
 
 ```python
@@ -209,14 +219,11 @@ quotidien_2.to_sql("quotidien_2", engine, if_exists="replace", dtype=dtype_2)
 ```
 
 ```python
-quotidien_2
-```
-
-```python
 # passage de la table 'quotidien' à la table 'mensuel' (chaque mois on retrouve un seul enregistrement de chaque indicateur)
-# le traitement pourrait se faire directement en SQL sans passer par un DataFrame
-# la requête est la même pour passer de jour à mois que pour passer de mois à année
+# le traitement nécessite de reconstruire le JSON pour l'ensemble des lignes d'un même indicateur (à faire sous pandas ?)
+# le traitement est le même pour passer de jour à mois que pour passer de mois à année
 
+# requête pour générer un tableau "à plat" :
 query = """
 WITH quotidien_flat AS
     (SELECT 
@@ -228,7 +235,10 @@ WITH quotidien_flat AS
     FROM 
         quotidien_2)
 SELECT
-  SUM((value->>'quantity')::float) AS quantity,  SUM((value->>'quantity')::float * (value->>'mean')::float) AS somme,  (value->>'last')::float AS last, crit_v,  code, query,  level,  val,  area
+  SUM((value->>'quantity')::float) AS quantity,  
+  SUM((value->>'quantity')::float * (value->>'mean')::float) / SUM((value->>'quantity')::float) AS mean,  
+  (value->>'last')::float AS last, 
+  crit_v,  code, query,  level,  val,  area
 FROM
   quotidien_flat
 WHERE
@@ -236,9 +246,8 @@ WHERE
 GROUP BY
   last, crit_v,  code, query,  level,  val,  area
 ORDER BY
-  somme, query,  level,  val,  area
+  mean, query,  level,  val,  area
 """
-
 with engine.connect() as conn:
     mensuel = pd.read_sql_query(query, conn)
 mensuel
@@ -269,7 +278,11 @@ Comparaison des temps de réponse d'une query pour les trois solutions avec le s
 | t8---03 | 497      | 690         | 822036    | 3130     | 366     |  4.5   |
 | t8---04 | 861      | 1240        | 1445334   | 5980     | 366     |  4.8   |
 
+NOTA : 
 
+- pour les solutions 1bis et 2 la requête n'est pas suffisante pour générer le format d'historisation
+  - pour la solution 1 bis : génération du json des valeurs,
+  - pour la solution 2 : regroupement des lignes de chaque indicateur et génération du json complet des résultats)
 <!-- #endregion -->
 
 # Annexe : autres tests
@@ -304,13 +317,13 @@ quotidien_1
 
 query = """
 SELECT
-  SUM(nombre) AS nombre,  SUM(somme) AS somme,  crit_v,  code, query,  level,  val,  area
+  SUM(quantity) AS quantity,  SUM(quantity * mean) / SUM(quantity) AS mean,  last, crit_v,  code, query,  level,  val,  area
 FROM
   quotidien_1
 WHERE
   (timest >= CAST(NOW() AS date))   AND   (timest < CAST((NOW() + INTERVAL '1 month') AS date))
 GROUP BY
-  crit_v,  code, query,  level,  val,  area
+  last, crit_v,  code, query,  level,  val,  area
 ORDER BY
   query,  level,  val,  area
 """
@@ -330,7 +343,7 @@ mensuel.to_sql('mensuel_1', engine, if_exists='replace', index=False)
 
 query = """
 SELECT
-  (somme / nombre)::int AS nb_pdc,  crit_v AS p_range
+  mean::int AS nb_pdc,  crit_v AS p_range
 FROM
   mensuel_1
 WHERE
@@ -343,53 +356,8 @@ with engine.connect() as conn:
 t1_m_02_75
 ```
 
-## Tests solution 1 bis
-
 ```python
-val_t8_01_93_02 = [{'quantite': 30, 'moyenne': 50}, {'quantite': 20, 'moyenne': 60}]
-                   
-quotidien_1_bis = pd.DataFrame({'value': val_t8_01_93_02*3, 'crit_v': ['']*6, 'code': ['01', '02']*3, 'query': ['t8']*6, 'level': [1]*6, 'val': [93]*6, 'area': [2]*6, 
-                            'timestamp': ['2024-09-09T15:05:28+00:00', '2024-09-09T15:05:28+00:00', '2024-09-10T15:05:28+00:00', 
-                                          '2024-09-10T15:05:28+00:00', '2024-09-11T15:05:28+00:00', '2024-09-11T15:05:28+00:00']})
-quotidien_1_bis
-```
-
-```python
-dtype_1_bis = {'value': dialects.postgresql.JSONB, 'crit_v': types.TEXT, 'code': types.TEXT, 'query': types.TEXT, 'level': types.SMALLINT, 'val': types.TEXT, 'area': types.SMALLINT, 
-        'timestamp': types.TIMESTAMP}
-quotidien_1_bis.to_sql("quotidien_1_bis", engine, if_exists="replace", dtype=dtype_1_bis)
-```
-
-```python
-# passage de la table 'quotidien' à la table 'mensuel'
-
-query = """
-SELECT
-  SUM((value->>'quantite')::float) AS quantite,  
-  SUM(((value->>'moyenne')::float) * (value->>'quantite')::float) / SUM((value->>'quantite')::float) AS moyenne,  
-  crit_v,  code, query,  level,  val,  area
-FROM
-  quotidien_1_bis
-GROUP BY
-  crit_v,  code, query,  level,  val,  area
-ORDER BY
-  query,  level,  val,  area
-"""
-
-with engine.connect() as conn:
-    mensuel = pd.read_sql_query(query, conn)
-mensuel.to_sql('mensuel_1_bis', engine, if_exists='replace', index=False)
-mensuel
-```
-
-```python
-mensuel['value'] = pd.Series([{'quantite': quantite, 'moyenne': moyenne} for quantite, moyenne in zip(mensuel['quantite'], mensuel['moyenne'])])
-mensuel_1_bis = mensuel.loc[:, ['value', 'crit_v', 'code', 'query', 'level',  'val',  'area']]
-mensuel_1_bis
-```
-
-```python
-mensuel_1_bis.to_sql('mensuel_1_bis', engine, if_exists='replace', index=False, dtype=dtype_1_bis)
+to_indicator(engine, 't1-02-75')
 ```
 
 ## Tests solution 2 bis
