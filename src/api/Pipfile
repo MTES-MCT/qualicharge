@@ -7,22 +7,22 @@ name = "pypi"
 alembic = "==1.13.2"
 annotated-types = "==0.7.0"
 email-validator = "==2.2.0"
-fastapi = "==0.114.0"
+fastapi = "==0.114.2"
 geoalchemy2 = {extras = ["shapely"], version = "==0.15.2"}
 geopandas = "==1.0.1"
 httpx = {extras = ["cli"], version = "==0.27.2"}
 pandas = "==2.2.2"
 passlib = {extras = ["bcrypt"], version = "==1.7.4"}
-psycopg = {extras = ["pool", "binary"], version = "==3.2.1"}
+psycopg = {extras = ["pool", "binary"], version = "==3.2.2"}
 pyarrow = "==17.0.0"
 pydantic-extra-types = {extras = ["all"], version = "==2.9.0"}
-pydantic-settings = "==2.4.0"
+pydantic-settings = "==2.5.2"
 pyinstrument = "==4.7.3"
 pyjwt = "==2.9.0"
 python-multipart = "==0.0.9"
 questionary = "==2.0.1"
 sentry-sdk = {extras = ["fastapi"], version = "==2.14.0"}
-setuptools = "==74.1.2"
+setuptools = "==75.1.0"
 sqlalchemy-timescaledb = "==0.4.1"
 sqlmodel = "==0.0.22"
 typer = "==0.12.5"
@@ -36,10 +36,10 @@ mypy = "==1.11.2"
 pandas-stubs = "==2.2.2.240909"
 polyfactory = "==2.16.2"
 pyinstrument = "==4.7.3"
-pytest = "==8.3.2"
+pytest = "==8.3.3"
 pytest-cov = "==5.0.0"
 pytest-httpx = "==0.30.0"
-ruff = "==0.6.4"
+ruff = "==0.6.5"
 types-passlib = "==1.7.7.20240819"
 types-python-jose = "==3.3.4.20240106"
 

@@ -8,6 +8,10 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Changed
+
+- Upgrade Psycopg to `3.2.2`
+
 ### Fixed
 
 - Improve Enum representation to fit with the statique schema

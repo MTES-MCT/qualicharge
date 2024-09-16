@@ -11,6 +11,7 @@ and this project adheres to
 ### Changed
 
 - Upgrade Pydantic to `2.9.1`
+- Upgrade pydantic-settings to `2.5.2`
 
 ## [0.2.0] - 2024-09-05
 
