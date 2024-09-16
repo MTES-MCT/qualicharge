@@ -11,8 +11,10 @@ and this project adheres to
 ### Changed
 
 - Add geo-boundaries population and area fields
-- Upgrade fastapi to `0.114.0`
+- Upgrade fastapi to `0.114.2`
+- Upgrade Psycopg to `3.2.2`
 - Upgrade Pydantic to `2.9.1`
+- Upgrade pydantic-settings to `2.5.2`
 - Upgrade pyinstrument to `4.7.3`
 - Upgrade sentry-sdk to `74.1.2`
 
