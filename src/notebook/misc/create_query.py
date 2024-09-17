@@ -63,7 +63,7 @@ STAT_NB_PDC = f"""stat_nb_pdc AS (
 # POP = None 
 
 def to_indicator(engine, indicator, simple=True, histo=False, format='pandas', histo_timest=None, json_orient='split',
-                 table_name=None, table_option="replace", query_gen=False):
+                 table_name=None, table_option="replace", table_dtype=None, query_gen=False, test=None):
     """create data for an indicator
     
     Parameters
@@ -92,7 +92,8 @@ def to_indicator(engine, indicator, simple=True, histo=False, format='pandas', h
         Option if table exists ('replace' or 'append')
     query_gen: boolean (default False)
         If True, the query is generic (with variables) else the query is specific (with values)
-
+    test: string, default None
+        choice of historization solution
     Returns
     -------
     String or Dataframe
@@ -112,10 +113,10 @@ def to_indicator(engine, indicator, simple=True, histo=False, format='pandas', h
     if format == 'json':
         return '{"' + indicator + '": ' + data_pd.to_json(index=False, orient=json_orient) + "}"
     if format == 'table':
-        table_name = table_name if table_name else indicator
-        return indic_to_table(data_pd, table_name, engine, table_option=table_option)
+        # table_name = table_name if table_name else indicator
+        return indic_to_table(data_pd, table_name, engine, table_option=table_option, table_dtype=table_dtype, histo=histo, test=test)
 
-def indic_to_table(pd_df, table_name, engine, table_option="replace"):
+def indic_to_table(pd_df, table_name, engine, table_option="replace", table_dtype=None, histo=None, test=None):
     """ Load a DataFrame in a Table
     
     Parameters
@@ -134,8 +135,36 @@ def indic_to_table(pd_df, table_name, engine, table_option="replace"):
     Dataframe
         Table creation confirmation with the number of lines created.
     """
-    pd_df.to_sql(table_name, engine, if_exists=table_option, index=False)
-    return pd.read_sql_query('SELECT COUNT(*) AS count FROM "' + table_name + '"', engine)
+    from datetime import datetime
+    if histo:
+        if 'code' not in pd_df.columns:
+            pd_df.insert(len(pd_df.columns)-5, 'code', [""]*len(pd_df))
+        if len(pd_df.columns) == 7:
+            pd_df.insert(1, 'crit_v', [""]*len(pd_df))
+        pd_df.insert(0, 'quantity', [1]*len(pd_df))
+        pd_df.insert(2, 'last', pd_df[pd_df.columns[1]])
+        cols = pd_df.columns
+        pd_df.rename(columns={cols[1]: 'mean', cols[3]: 'crit_v'}, inplace = True)
+        pd_df = pd_df.astype({'quantity': 'int', 'last': 'float', 'mean': 'float', 
+                              'query': 'string', 'level': 'string', 'val': 'string', 'area': 'string'})
+    if not test:
+        pd_df.rename(columns={'mean': 'value', 'crit_v': 'category', 'level': 'perimeter', 'val': 'code_p', 'area': 'zoning', 'code': 'code_z'},
+                     inplace = True)
+        pd_df['add_value'] = pd.Series([{'quantity': quantity, 'last': last} 
+                                    for quantity, last in zip(pd_df['quantity'], pd_df['last'])])
+        del pd_df['last']
+        del pd_df['quantity']
+    elif test == '1bis':
+        pd_df['value'] = pd.Series([{'quantity': quantity, 'mean': mean, 'last': last} 
+                                    for quantity, mean, last in zip(pd_df['quantity'], pd_df['mean'], pd_df['last'])])
+        del pd_df['mean']
+        del pd_df['last']
+        del pd_df['quantity']
+    if table_name:
+        dtype = table_dtype if table_dtype else {}
+        pd_df.to_sql(table_name, engine, if_exists=table_option, index=False, dtype=dtype)
+        return pd.read_sql_query('SELECT COUNT(*) AS count FROM "' + table_name + '"', engine)
+    return pd_df
 
 def query_histo(query, timestamp=None):
 
@@ -143,66 +172,70 @@ def query_histo(query, timestamp=None):
         datation = "datation(timest) AS (VALUES ('" + timestamp + "'::timestamp)) "
     else:
         datation = "datation(timest) AS (VALUES (CURRENT_TIMESTAMP)) "
-
     return " WITH query AS (" + query + "), " + datation + " SELECT * FROM query, datation "
 
-def init_param_txx(simple, gen, indic,  *param):
-    '''parameters initialization for 'query_ixx' functions  '''
+def init_param_ixx(simple, gen, indic,  *param):
+    '''parameters initialization for 'query_ixx' and 'query_txx' functions  '''
     
     perim, val, zone = (param + ('00', '00', '00'))[:3]
     perim = perim.rjust(2, '0')
     val = val.rjust(2, '0')
     zone = zone.rjust(2, '0')
 
-
     g_overhead = "" if simple else f"{G_OVERHEAD},"
     s_overhead = "" if simple else f"""'{indic}' AS QUERY,
     '{perim}' AS LEVEL,
     '{val}' AS VAL,
     '{zone}' AS AREA"""
-    table_perim_code = "" if perim == '00' else f"{TABLE[perim]}.code"
     where_isin_perim = "" if perim == '00' else f"""WHERE
-    {table_perim_code} = '{val}'"""
-    
+    {TABLE[perim]}.code = '{val}'"""
+    table_zone_code = "" if zone == '00' else f"{TABLE[zone]}.code"
+    coma = "" if f"{s_overhead}" == "" else ","
+
     if gen:
         s_overhead = "" if simple else f"""'{{indic}}' AS QUERY,
     '{{perim}}' AS LEVEL,
     '{{val}}' AS VAL,
     '{{zone}}' AS AREA"""
-        table_perim_code = "" if perim == '00' else f"{{TABLE[perim]}}.code"
         where_isin_perim = "" if perim == '00' else f"""WHERE
-    {table_perim_code} = '{{val}}'"""
-        
-    return (perim, table_perim_code, g_overhead, s_overhead, where_isin_perim)
+    {{TABLE[perim]}}.code = '{{val}}'"""
+        table_zone_code = f"{{TABLE[zone]}}.code"
+
+    coma1 = "" if f"{table_zone_code}{s_overhead}" == "" else ","
+    coma2 = "" if f"{table_zone_code}" == "" else ","
+    coma3 = "" if f"{s_overhead}" == "" or f"{table_zone_code}" == "" else ","
+    group_by = "" if f"{table_zone_code}{g_overhead}" == "" else f"""GROUP BY
+    {g_overhead}
+    {table_zone_code}"""
+    code = "" if zone == '00' else "code"
+
+    return {'perim': perim, 'zone': zone, 'coma': coma, 'coma1': coma1, 'coma2': coma2, 'coma3': coma3, 
+            'code': code, 'group_by': group_by, 'g_overhead': g_overhead, 's_overhead': s_overhead, 
+            'where_isin_perim': where_isin_perim, 'table_zone_code': table_zone_code}
 
 def query_t1(*param, simple=True, gen=False):
     '''Create SQL query for 't1' indicators (see parameters in module docstring)'''
 
     indic = 't1'
-    (perim, table_perim_code, g_overhead, s_overhead, where_isin_perim
-     ) = init_param_txx(simple, gen, indic, *param)
-
-    coma1 = "" if f"{table_perim_code}{s_overhead}" == "" else ","
-    coma2 = "" if f"{table_perim_code}" == "" else ","
-    coma3 = "" if f"{s_overhead}" == "" or f"{table_perim_code}" == "" else ","
+    prm = init_param_ixx(simple, gen, indic, *param)
 
     return f"""
 WITH 
     {P_TAB}
 SELECT
     count(id_pdc_itinerance) AS nb_pdc,
-    p_range{coma1}
-    {table_perim_code}{coma3}
-    {s_overhead}
+    p_range{prm['coma1']}
+    {prm['table_zone_code']}{prm['coma3']}
+    {prm['s_overhead']}
 FROM
     {PDC_ALL}
     {COG_ALL}
     {JOIN_P}
-{where_isin_perim}
+{prm['where_isin_perim']}
 GROUP BY
-    {g_overhead}
-    p_range{coma2}
-    {table_perim_code}
+    {prm['g_overhead']}
+    p_range{prm['coma2']}
+    {prm['table_zone_code']}
 ORDER BY
     nb_pdc DESC"""
 
@@ -210,13 +243,7 @@ def query_t2(*param, simple=True, gen=False):
     '''Create SQL query for 't2' indicators (see parameters in module docstring)'''
     
     indic = 't2'
-    (perim, table_perim_code, g_overhead, s_overhead, where_isin_perim
-     ) = init_param_txx(simple, gen, indic, *param)
-
-    code = "" if perim == '00' else "code"
-    coma1 = "" if f"{code}{s_overhead}" == "" else ","
-    # coma3 = "" if s_overhead == "" else ","
-    coma3 = "" if f"{s_overhead}" == "" or f"{code}" == "" else ","
+    prm = init_param_ixx(simple, gen, indic, *param)
 
     return f"""WITH 
     t1 AS (
@@ -229,9 +256,9 @@ SELECT
         FROM 
             t1
     ) * 100 AS pct_nb_pdc,
-    p_range{coma1}
-    {code}{coma3}
-    {s_overhead}
+    p_range{prm['coma1']}
+    {prm['code']}{prm['coma3']}
+    {prm['s_overhead']}
 FROM 
     t1"""
 
@@ -239,30 +266,25 @@ def query_t3(*param, simple=True, gen=False):
     '''Create SQL query for 't3' indicators (see parameters in module docstring)'''
 
     indic = 't3'
-    (perim, table_perim_code, g_overhead, s_overhead, where_isin_perim
-     ) = init_param_txx(simple, gen, indic, *param)
-
-    coma1 = "" if f"{table_perim_code}{s_overhead}" == "" else ","
-    coma2 = "" if f"{table_perim_code}" == "" else ","
-    coma3 = "" if f"{s_overhead}" == "" or f"{table_perim_code}" == "" else ","
+    prm = init_param_ixx(simple, gen, indic, *param)
 
     return f"""
 WITH 
     {STAT_NB_PDC}
 SELECT
     count(nb_pdc) AS nb_stations,
-    nb_pdc{coma1}
-    {table_perim_code}{coma3}
-    {s_overhead}
+    nb_pdc{prm['coma1']}
+    {prm['table_zone_code']}{prm['coma3']}
+    {prm['s_overhead']}
 FROM
     stat_nb_pdc
     LEFT JOIN localisation ON localisation_id = localisation.id
     {COG_ALL}
-{where_isin_perim}
+{prm['where_isin_perim']}
 GROUP BY
-    {g_overhead}
-    nb_pdc{coma2}
-    {table_perim_code}
+    {prm['g_overhead']}
+    nb_pdc{prm['coma2']}
+    {prm['table_zone_code']}
 ORDER BY
     nb_stations DESC"""
 
@@ -270,11 +292,7 @@ def query_t4(*param, simple=True, gen=False):
     '''Create SQL query for 't4' indicators (see parameters in module docstring)'''
     
     indic = 't4'
-    (perim, table_perim_code, g_overhead, s_overhead, where_isin_perim
-     ) = init_param_txx(simple, gen, indic, *param)
-    code = "" if perim == '00' else "code"
-    coma1 = "" if f"{code}{s_overhead}" == "" else ","
-    coma3 = "" if f"{s_overhead}" == "" or f"{code}" == "" else ","
+    prm = init_param_ixx(simple, gen, indic, *param)
 
     return f"""WITH 
     t3 AS (
@@ -287,9 +305,9 @@ SELECT
         FROM 
             t3
     ) * 100 AS pct_nb_stations,
-    nb_pdc{coma1}
-    {code}{coma3}
-    {s_overhead}
+    nb_pdc{prm['coma1']}
+    {prm['code']}{prm['coma3']}
+    {prm['s_overhead']}
 FROM 
     t3"""
 
@@ -297,27 +315,22 @@ def query_t5(*param, simple=True, gen=False):
     '''Create SQL query for 't5' indicators (see parameters in module docstring)'''
     
     indic = 't5'
-    (perim, table_perim_code, g_overhead, s_overhead, where_isin_perim
-     ) = init_param_txx(simple, gen, indic, *param)
-
-    coma1 = "" if f"{table_perim_code}{s_overhead}" == "" else ","
-    coma2 = "" if f"{table_perim_code}" == "" else ","
-    coma3 = "" if f"{s_overhead}" == "" or f"{table_perim_code}" == "" else ","
+    prm = init_param_ixx(simple, gen, indic, *param)
 
     return f"""
 SELECT
     count(id_station_itinerance) AS nb_stations,
-    implantation_station{coma1}
-    {table_perim_code}{coma3}
-    {s_overhead}
+    implantation_station{prm['coma1']}
+    {prm['table_zone_code']}{prm['coma3']}
+    {prm['s_overhead']}
 FROM
     {STAT_ALL}
     {COG_ALL}
-{where_isin_perim}
+{prm['where_isin_perim']}
 GROUP BY
-    {g_overhead}
-    implantation_station{coma2}
-    {table_perim_code}
+    {prm['g_overhead']}
+    implantation_station{prm['coma2']}
+    {prm['table_zone_code']}
 ORDER BY
     nb_stations DESC"""
 
@@ -325,11 +338,7 @@ def query_t6(*param, simple=True, gen=False):
     '''Create SQL query for 't6' indicators (see parameters in module docstring)'''
 
     indic = 't6'
-    (perim, table_perim_code, g_overhead, s_overhead, where_isin_perim
-     ) = init_param_txx(simple, gen, indic, *param)
-    code = "" if perim == '00' else "code"
-    coma1 = "" if f"{code}{s_overhead}" == "" else ","
-    coma3 = "" if f"{s_overhead}" == "" or f"{code}" == "" else ","
+    prm = init_param_ixx(simple, gen, indic, *param)
 
     return f"""WITH 
     t5 AS (
@@ -342,70 +351,83 @@ SELECT
         FROM 
             t5
     ) * 100 AS pct_nb_stations,
-    implantation_station{coma1}
-    {code}{coma3}
-    {s_overhead}
+    implantation_station{prm['coma1']}
+    {prm['code']}{prm['coma3']}
+    {prm['s_overhead']}
 FROM 
     t5"""
 
-def init_param_ixx(simple, gen, indic,  *param):
-    '''parameters initialization for 'query_ixx' functions  '''
+def query_t8(*param, simple=True, gen=False):
+    '''Create SQL query for 't8' indicators (see parameters in module docstring)'''
     
-    perim, val, zone = (param + ('00', '00', '00'))[:3]
-    perim = perim.rjust(2, '0')
-    val = val.rjust(2, '0')
-    zone = zone.rjust(2, '0')
+    indic = 't8'
+    prm = init_param_ixx(simple, gen, indic, *param)
 
-    zone = perim if zone == '00' else zone
+    return f"""
+SELECT
+    count(id_station_itinerance) AS nb_stations,
+    nom_operateur{prm['coma1']}
+    {prm['table_zone_code']}{prm['coma3']}
+    {prm['s_overhead']}
+FROM
+    {STAT_ALL}
+    {COG_ALL}
+    LEFT JOIN operateur ON operateur_id = operateur.id
+{prm['where_isin_perim']}
+GROUP BY
+    {prm['g_overhead']}
+    nom_operateur{prm['coma2']}
+    {prm['table_zone_code']}
+ORDER BY
+    nb_stations DESC"""
 
-    coma = "" if simple else ","
-    g_overhead = "" if simple else f"{G_OVERHEAD},"
-    s_overhead = "" if simple else f"""'{indic}' AS QUERY,
-    '{perim}' AS LEVEL,
-    '{val}' AS VAL,
-    '{zone}' AS AREA"""
-    where_isin_perim = "" if perim == '00' else f"""WHERE
-    {TABLE[perim]}.code = '{val}'"""
-    table_zone = f"{TABLE[zone]}"
-    
-    if gen:
-        s_overhead = "" if simple else f"""'{{indic}}' AS QUERY,
-    '{{perim}}' AS LEVEL,
-    '{{val}}' AS VAL,
-    '{{zone}}' AS AREA"""
-        where_isin_perim = "" if perim == '00' else f"""WHERE
-    {{TABLE[perim]}}.code = '{{val}}'"""
-        table_zone = f"{{TABLE[zone]}}"
+def query_t9(*param, simple=True, gen=False):
+    '''Create SQL query for 't9' indicators (see parameters in module docstring)'''
 
-    return (perim, zone, coma, g_overhead, s_overhead, where_isin_perim, table_zone)
+    indic = 't9'
+    prm = init_param_ixx(simple, gen, indic, *param)
+
+    return f"""WITH 
+    t8 AS (
+        {query_t8(*param, simple=simple, gen=gen)}
+    )
+SELECT
+    nb_stations / (
+        SELECT 
+            sum(nb_stations) 
+        FROM 
+            t8
+    ) * 100 AS pct_nb_stations,
+    nom_operateur{prm['coma1']}
+    {prm['code']}{prm['coma3']}
+    {prm['s_overhead']}
+FROM 
+    t8"""
 
 def query_i1(*param, simple=True, gen=False):
     '''Create SQL query for 'i1' indicators (see parameters in module docstring)'''
 
     indic = 'i1'
-    (perim, zone, coma, g_overhead, s_overhead, where_isin_perim, table_zone
-     ) = init_param_ixx(simple, gen, indic, *param)
+    param = init_param_ixx(simple, gen, indic, *param)
 
-    if perim == zone == '00':
+    if param['perim'] == param['zone'] == '00':
         return f"""
 SELECT
-    count(id_pdc_itinerance) AS nb_pdc{coma}
-    {s_overhead}
+    count(id_pdc_itinerance) AS nb_pdc{param['coma']}
+    {param['s_overhead']}
 FROM
     pointdecharge"""
 
     return f"""
 SELECT
-    count(id_pdc_itinerance) AS nb_pdc,
-    {table_zone}.code{coma}
-    {s_overhead}
+    count(id_pdc_itinerance) AS nb_pdc{param['coma1']}
+    {param['table_zone_code']}{param['coma3']}
+    {param['s_overhead']}
 FROM
     {PDC_ALL}
     {COG_ALL}
-{where_isin_perim}
-GROUP BY
-    {g_overhead}
-    {table_zone}.code
+{param['where_isin_perim']}
+{param['group_by']}
 ORDER BY
     nb_pdc DESC"""
 
@@ -413,29 +435,26 @@ def query_i4(*param, simple=True, gen=False):
     '''Create SQL query for 'i4' indicators (see parameters in module docstring)'''
 
     indic = 'i4'
-    (perim, zone, coma, g_overhead, s_overhead, where_isin_perim, table_zone
-     ) = init_param_ixx(simple, gen, indic, *param)
+    param = init_param_ixx(simple, gen, indic, *param)
 
-    if perim == zone == '00':
+    if param['perim'] == param['zone'] == '00':
         return f"""
 SELECT
-    count(id_station_itinerance) AS nb_stat{coma}
-    {s_overhead}
+    count(id_station_itinerance) AS nb_stat{param['coma']}
+    {param['s_overhead']}
 FROM
     station"""
 
     return f"""
 SELECT
-    count(id_station_itinerance) AS nb_stat,
-    {table_zone}.code{coma}
-    {s_overhead}
+    count(id_station_itinerance) AS nb_stat{param['coma1']}
+    {param['table_zone_code']}{param['coma3']}
+    {param['s_overhead']}
 FROM
     {STAT_ALL}
     {COG_ALL}
-{where_isin_perim}
-GROUP BY
-    {g_overhead}
-    {table_zone}.code
+{param['where_isin_perim']}
+{param['group_by']}
 ORDER BY
     nb_stat DESC"""
 
@@ -443,29 +462,26 @@ def query_i7(*param, simple=True, gen=False):
     '''Create SQL query for 'i7' indicators (see parameters in module docstring)'''
 
     indic = 'i7'
-    (perim, zone, coma, g_overhead, s_overhead, where_isin_perim, table_zone
-     ) = init_param_ixx(simple, gen, indic, *param)
+    param = init_param_ixx(simple, gen, indic, *param)
 
-    if perim == zone == '00':
+    if param['perim'] == param['zone'] == '00':
         return f"""
 SELECT
-    sum(puissance_nominale) AS p_nom{coma}
-    {s_overhead}
+    sum(puissance_nominale) AS p_nom{param['coma']}
+    {param['s_overhead']}
 FROM
     pointdecharge"""
 
     return f"""
 SELECT
-    sum(puissance_nominale) AS p_nom,
-    {table_zone}.code{coma}
-    {s_overhead}
+    sum(puissance_nominale) AS p_nom{param['coma1']}
+    {param['table_zone_code']}{param['coma3']}
+    {param['s_overhead']}
 FROM
     {PDC_ALL}
     {COG_ALL}
-{where_isin_perim}
-GROUP BY
-    {g_overhead}
-    {table_zone}.code
+{param['where_isin_perim']}
+{param['group_by']}
 ORDER BY
     p_nom DESC"""
 
