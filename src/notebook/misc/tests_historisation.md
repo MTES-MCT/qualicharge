@@ -30,8 +30,9 @@ engine = create_engine(os.getenv("DATABASE_URL"))
 
 Plusieurs solutions sont testées (pour chaque niveau d'historisation):
 
-- solution 1 : une table avec les résultats des indicateurs (plusieurs lignes par indicateur)
-- solution 1bis : une table avec un champ JSON pour les valeurs (plusieurs lignes par indicateur)
+- solution 0 : une table avec les résultats des indicateurs et un champ JSON pour les valeurs additionnelles (une ligne par valeur)
+- solution 1 : une table avec les résultats des indicateurs (une ligne par valeur)
+- solution 1bis : une table avec un champ JSON pour les valeurs (une ligne par valeur)
 - solution 2 : une table avec un champ JSON pour l'ensemble des résultats (une ligne par indicateur)
 
 
@@ -42,10 +43,10 @@ Plusieurs solutions sont testées (pour chaque niveau d'historisation):
 
 ### Historisation : Pour ne pas stocker un ensemble des valeurs on stocke des données agrégées 'scalables'
 
-- quantité de valeurs (nécessaire pour les calculs)
 - valeur moyenne
+- quantité de valeurs (nécessaire pour les calculs)
 - dernière valeur de la période (optionnel ou obligatoire ?)
-- écart-type (optionnel)
+- variance (optionnel)
 - valeur mini (optionnel)
 - valeur maxi (optionnel)
 
@@ -75,14 +76,73 @@ test = 't8---03'
 test = 't8---04'
 ```
 
-### Tests perf Solution 1
+### tests perf sol 0
+
+```python
+dtype_0 = {'value': types.FLOAT, 'category': types.TEXT, 'code_z': types.TEXT, 'query': types.TEXT, 'perimeter': types.TEXT, 'code_p': types.TEXT, 'zoning': types.TEXT, 
+        'timestamp': types.TIMESTAMP, 'add_value': dialects.postgresql.JSONB}
+```
 
 ```python
 # simulation de l'historisation quotidienne de l'indicateur 'test' sur un an
-to_indicator(engine, test, histo=True, format='table', histo_timest= ti.isoformat(), table_name='quotidien_1', table_option='replace')
+ti = datetime.fromisoformat('2024-01-01')
+to_indicator(engine, test, histo=True, format='table', histo_timest= ti.isoformat(), table_name='quotidien_0', table_option='replace', table_dtype=dtype_0)
 for i in range(365):
     ti += dd
-    to_indicator(engine, test, histo=True, format='table', histo_timest= ti.isoformat(), table_name='quotidien_1', table_option='append')
+    to_indicator(engine, test, histo=True, format='table', histo_timest= ti.isoformat(), table_name='quotidien_0', table_option='append', table_dtype=dtype_0)
+```
+
+```python
+with engine.connect() as conn:
+    quotidien_0 = pd.read_sql_query("SELECT * FROM quotidien_0", conn)
+quotidien_0
+```
+
+```python
+# passage de la table 'quotidien' à la table 'mensuel' (chaque mois on retrouve un seul enregistrement de chaque indicateur)
+# le traitement nécessite de reconstruire le JSON pour l'ensemble des lignes d'un même indicateur (à faire sous pandas ?)
+# le traitement est le même pour passer de jour à mois que pour passer de mois à année
+
+# requête pour générer un tableau "à plat" :
+query = """
+SELECT
+  SUM((add_value->>'quantity')::float) AS quantity,  
+  SUM((add_value->>'quantity')::float * value) / SUM((add_value->>'quantity')::float) AS value,  
+  (add_value->>'last')::float AS last, 
+  category, code_z, query,  perimeter,  code_p,  zoning
+FROM
+  quotidien_0
+WHERE
+  (timest >= to_timestamp('2024-01-01', 'YYYY-MM-DD')   AND   timest < to_timestamp('2025-01-01', 'YYYY-MM-DD'))
+GROUP BY
+  last, category,  code_z, query,  perimeter,  code_p,  zoning
+ORDER BY
+  value, query,  perimeter,  code_p,  zoning
+"""
+
+with engine.connect() as conn:
+    mensuel = pd.read_sql_query(query, conn)
+mensuel
+```
+
+```python
+%%timeit
+with engine.connect() as conn:
+    mensuel = pd.read_sql_query(query, conn)
+```
+
+```python
+mensuel.to_sql('mensuel_0', engine, if_exists='replace', index=False)
+```
+
+### Tests perf sol 1
+
+```python
+# simulation de l'historisation quotidienne de l'indicateur 'test' sur un an
+to_indicator(engine, test, histo=True, format='table', histo_timest= ti.isoformat(), table_name='quotidien_1', table_option='replace', test='1')
+for i in range(365):
+    ti += dd
+    to_indicator(engine, test, histo=True, format='table', histo_timest= ti.isoformat(), table_name='quotidien_1', table_option='append', test='1')
 ```
 
 ```python
@@ -271,12 +331,12 @@ Comparaison des temps de réponse d'une query pour les trois solutions avec le s
 - requête t8 de calcul des résultats annuels à partir des résultats des requêtes quotidiennes stockées sur un an dans une table.
 - avec t8 : nb station par opérateur et par région-01/département-02/EPCI-03/communes-04
 
-| requete | s1 durée | s1bis durée |  s1 rows  | s2 durée | s2 rows |s2/s1bis|
-| ------- | -------- | ----------- | --------- | -------- | ------- | ------ |
-| t8---01 | 251      | 207         | 121146    | 434      | 366     |  1.8   |
-| t8---02 | 286      | 440         | 389058    | 1390     | 366     |  3.2   |
-| t8---03 | 497      | 690         | 822036    | 3130     | 366     |  4.5   |
-| t8---04 | 861      | 1240        | 1445334   | 5980     | 366     |  4.8   |
+| requete | s0 durée | s1 durée | s1bis durée | s0-1 rows | s2 durée | s2 rows |s2/s1bis|
+| ------- | -------- | -------- | ----------- | --------- | -------- | ------- | ------ |
+| t8---01 | 212      | 161      | 208         | 121146    | 434      | 366     |  1.8   |
+| t8---02 | 422      | 187      | 438         | 389058    | 1420     | 366     |  3.2   |
+| t8---03 | 676      | 320      | 777         | 822036    | 3180     | 366     |  4.5   |
+| t8---04 |          | 861      | 1240        | 1445334   | 5980     | 366     |  4.8   |
 
 NOTA : 
 

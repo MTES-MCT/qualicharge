@@ -92,7 +92,8 @@ def to_indicator(engine, indicator, simple=True, histo=False, format='pandas', h
         Option if table exists ('replace' or 'append')
     query_gen: boolean (default False)
         If True, the query is generic (with variables) else the query is specific (with values)
-
+    test: string, default None
+        choice of historization solution
     Returns
     -------
     String or Dataframe
@@ -146,7 +147,14 @@ def indic_to_table(pd_df, table_name, engine, table_option="replace", table_dtyp
         pd_df.rename(columns={cols[1]: 'mean', cols[3]: 'crit_v'}, inplace = True)
         pd_df = pd_df.astype({'quantity': 'int', 'last': 'float', 'mean': 'float', 
                               'query': 'string', 'level': 'string', 'val': 'string', 'area': 'string'})
-    if test == '1bis':
+    if not test:
+        pd_df.rename(columns={'mean': 'value', 'crit_v': 'category', 'level': 'perimeter', 'val': 'code_p', 'area': 'zoning', 'code': 'code_z'},
+                     inplace = True)
+        pd_df['add_value'] = pd.Series([{'quantity': quantity, 'last': last} 
+                                    for quantity, last in zip(pd_df['quantity'], pd_df['last'])])
+        del pd_df['last']
+        del pd_df['quantity']
+    elif test == '1bis':
         pd_df['value'] = pd.Series([{'quantity': quantity, 'mean': mean, 'last': last} 
                                     for quantity, mean, last in zip(pd_df['quantity'], pd_df['mean'], pd_df['last'])])
         del pd_df['mean']
