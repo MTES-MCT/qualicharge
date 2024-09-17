@@ -27,13 +27,97 @@ La présentation des requêtes associée est présentée sur [ce notebook](../in
 ```python editable=true slideshow={"slide_type": ""}
 import os
 import pandas as pd
+import geopandas as gpd
 from sqlalchemy import create_engine
 from create_query import to_indicator #, create_table_pop
 
 # Connecteur à la base Qualicharge
 engine = create_engine(os.getenv("DATABASE_URL"))
 
-# create_table_pop(engine)
+```
+
+```python
+to_indicator(engine, 'i1', histo=True)
+```
+
+```python
+to_indicator(engine, 'i1-01-93-02', histo=True)
+```
+
+```python
+to_indicator(engine, 'i1',          histo=True, format='table', table_name='quotidien', table_option='replace')
+to_indicator(engine, 'i1-01-93-02', histo=True, format='table', table_name='quotidien', table_option='append')
+to_indicator(engine, 't1-02-75',    histo=True, format='table', table_name='quotidien', table_option='append')
+to_indicator(engine, 't3-04-13001', histo=True, format='table', table_name='quotidien', table_option='append')
+to_indicator(engine, 'i1',          histo=True, format='table', table_name='quotidien', table_option='append')
+to_indicator(engine, 't1-02-75',    histo=True, format='table', table_name='quotidien', table_option='append')
+to_indicator(engine, 't3-04-13001', histo=True, format='table', table_name='quotidien', table_option='append')
+to_indicator(engine, 't1-02-75',    histo=True, format='table', table_name='quotidien', table_option='append')
+
+with engine.connect() as conn:
+    # Query a PostgreSQL database using the PostGIS extension
+    quotidien = pd.read_sql_table('quotidien', conn)
+quotidien
+```
+
+<!-- #region -->
+Query pour générer les valeurs à inclure dans la table des valeurs mensuelles:
+
+```sql
+SELECT
+  SUM(nombre) AS nombre,
+  SUM(somme) AS somme,
+  crit_v,
+  query,
+  level,
+  val,
+  area
+FROM
+  quotidien
+WHERE
+  (timest >= CAST(NOW() AS date))
+   AND 
+  (timest < CAST((NOW() + INTERVAL '1 day') AS date))
+GROUP BY
+  crit_v,
+  query,
+  level,
+  val,
+  area
+ORDER BY
+  query,
+  level,
+  val,
+  area
+```
+<!-- #endregion -->
+
+```python
+query = """
+SELECT
+  SUM(nombre) AS nombre,  SUM(somme) AS somme,  crit_v,  query,  level,  val,  area
+FROM
+  quotidien
+WHERE
+  (timest >= CAST(NOW() AS date))   AND   (timest < CAST((NOW() + INTERVAL '1 day') AS date))
+GROUP BY
+  crit_v,  query,  level,  val,  area
+ORDER BY
+  query,  level,  val,  area
+"""
+
+with engine.connect() as conn:
+    # Query a PostgreSQL database using the PostGIS extension
+    mensuel = pd.read_sql_query(query, conn)
+mensuel
+```
+
+```python
+to_indicator(engine, 't1-02-75', histo=True)
+```
+
+```python
+to_indicator(engine, 't1-02-75')
 ```
 
 <!-- #region editable=true slideshow={"slide_type": ""} -->
@@ -399,11 +483,32 @@ print(query_gen)
 ```
 
 <!-- #region editable=true slideshow={"slide_type": ""} -->
+#### requête globale avec critère
+<!-- #endregion -->
+
+```python
+to_indicator(engine, 't1-0-xx-01')[:5]
+```
+
+```python editable=true slideshow={"slide_type": ""}
+print(to_indicator(engine, 't1-0-xx-01', simple=True, format='query'))
+```
+
+```python editable=true slideshow={"slide_type": ""}
+query_gen = to_indicator(engine, 't1-0-xx-01', simple=True, format='query', query_gen=True)
+print(query_gen)
+```
+
+<!-- #region editable=true slideshow={"slide_type": ""} -->
 #### requête locale
 <!-- #endregion -->
 
 ```python
 to_indicator(engine, 't1-02-75')
+```
+
+```python
+to_indicator(engine, 't1-02-75', histo=True)
 ```
 
 ```python editable=true slideshow={"slide_type": ""}
@@ -412,6 +517,23 @@ print(to_indicator(engine, 't1-02-75', simple=True, format='query'))
 
 ```python editable=true slideshow={"slide_type": ""}
 query_gen = to_indicator(engine, 't1-02-75', simple=True, format='query', query_gen=True)
+print(query_gen)
+```
+
+<!-- #region editable=true slideshow={"slide_type": ""} -->
+#### requête locale avec critère
+<!-- #endregion -->
+
+```python editable=true slideshow={"slide_type": ""}
+to_indicator(engine, 't1-02-93-04')[:10]
+```
+
+```python editable=true slideshow={"slide_type": ""}
+print(to_indicator(engine, 't1-02-93-04', simple=True, format='query'))
+```
+
+```python editable=true slideshow={"slide_type": ""}
+query_gen = to_indicator(engine, 't1-02-93-04', simple=True, format='query', query_gen=True)
 print(query_gen)
 ```
 
@@ -439,6 +561,23 @@ print(query_gen)
 ```
 
 <!-- #region editable=true slideshow={"slide_type": ""} -->
+#### requête globale avec critère
+<!-- #endregion -->
+
+```python
+to_indicator(engine, 't2-0-xx-01')[:5]
+```
+
+```python editable=true slideshow={"slide_type": ""}
+print(to_indicator(engine, 't2-0-xx-01', simple=True, format='query'))
+```
+
+```python editable=true slideshow={"slide_type": ""}
+query_gen = to_indicator(engine, 't2-0-xx-01', simple=True, format='query', query_gen=True)
+print(query_gen)
+```
+
+<!-- #region editable=true slideshow={"slide_type": ""} -->
 #### requête locale
 <!-- #endregion -->
 
@@ -452,6 +591,23 @@ print(to_indicator(engine, 't2-02-75', simple=True, format='query'))
 
 ```python editable=true slideshow={"slide_type": ""}
 query_gen = to_indicator(engine, 't2-02-75', simple=True, format='query', query_gen=True)
+print(query_gen)
+```
+
+<!-- #region editable=true slideshow={"slide_type": ""} -->
+#### requête locale avec critère
+<!-- #endregion -->
+
+```python editable=true slideshow={"slide_type": ""}
+to_indicator(engine, 't2-02-93-04')[:10]
+```
+
+```python editable=true slideshow={"slide_type": ""}
+print(to_indicator(engine, 't2-02-93-04', simple=True, format='query'))
+```
+
+```python editable=true slideshow={"slide_type": ""}
+query_gen = to_indicator(engine, 't2-02-93-04', simple=True, format='query', query_gen=True)
 print(query_gen)
 ```
 
@@ -481,6 +637,23 @@ print(query_gen)
 ```
 
 <!-- #region editable=true slideshow={"slide_type": ""} -->
+#### requête globale avec critère
+<!-- #endregion -->
+
+```python
+to_indicator(engine, 't3-0-xx-01')[:5]
+```
+
+```python editable=true slideshow={"slide_type": ""}
+print(to_indicator(engine, 't3-0-xx-01', simple=True, format='query'))
+```
+
+```python editable=true slideshow={"slide_type": ""}
+query_gen = to_indicator(engine, 't3-0-xx-01', simple=True, format='query', query_gen=True)
+print(query_gen)
+```
+
+<!-- #region editable=true slideshow={"slide_type": ""} -->
 #### requête locale
 <!-- #endregion -->
 
@@ -494,6 +667,23 @@ print(to_indicator(engine, 't3-04-13001', simple=True, format='query'))
 
 ```python editable=true slideshow={"slide_type": ""}
 query_gen = to_indicator(engine, 't3-04-13001', simple=True, format='query', query_gen=True)
+print(query_gen)
+```
+
+<!-- #region editable=true slideshow={"slide_type": ""} -->
+#### requête locale avec critère
+<!-- #endregion -->
+
+```python editable=true slideshow={"slide_type": ""}
+to_indicator(engine, 't3-02-93-04')[:10]
+```
+
+```python editable=true slideshow={"slide_type": ""}
+print(to_indicator(engine, 't3-02-93-04', simple=True, format='query'))
+```
+
+```python editable=true slideshow={"slide_type": ""}
+query_gen = to_indicator(engine, 't3-02-93-04', simple=True, format='query', query_gen=True)
 print(query_gen)
 ```
 
@@ -521,6 +711,23 @@ print(query_gen)
 ```
 
 <!-- #region editable=true slideshow={"slide_type": ""} -->
+#### requête globale avec critère
+<!-- #endregion -->
+
+```python
+to_indicator(engine, 't4-0-xx-01')[:5]
+```
+
+```python editable=true slideshow={"slide_type": ""}
+print(to_indicator(engine, 't4-0-xx-01', simple=True, format='query'))
+```
+
+```python editable=true slideshow={"slide_type": ""}
+query_gen = to_indicator(engine, 't4-0-xx-01', simple=True, format='query', query_gen=True)
+print(query_gen)
+```
+
+<!-- #region editable=true slideshow={"slide_type": ""} -->
 #### requête locale
 <!-- #endregion -->
 
@@ -534,6 +741,23 @@ print(to_indicator(engine, 't4-04-13001', simple=True, format='query'))
 
 ```python editable=true slideshow={"slide_type": ""}
 query_gen = to_indicator(engine, 't4-04-13001', simple=True, format='query', query_gen=True)
+print(query_gen)
+```
+
+<!-- #region editable=true slideshow={"slide_type": ""} -->
+#### requête locale avec critère
+<!-- #endregion -->
+
+```python editable=true slideshow={"slide_type": ""}
+to_indicator(engine, 't4-02-93-04')[:10]
+```
+
+```python editable=true slideshow={"slide_type": ""}
+print(to_indicator(engine, 't4-02-93-04', simple=True, format='query'))
+```
+
+```python editable=true slideshow={"slide_type": ""}
+query_gen = to_indicator(engine, 't4-02-93-04', simple=True, format='query', query_gen=True)
 print(query_gen)
 ```
 
@@ -563,6 +787,23 @@ print(query_gen)
 ```
 
 <!-- #region editable=true slideshow={"slide_type": ""} -->
+#### requête globale avec critère
+<!-- #endregion -->
+
+```python
+to_indicator(engine, 't5-0-xx-01')[:5]
+```
+
+```python editable=true slideshow={"slide_type": ""}
+print(to_indicator(engine, 't5-0-xx-01', simple=True, format='query'))
+```
+
+```python editable=true slideshow={"slide_type": ""}
+query_gen = to_indicator(engine, 't5-0-xx-01', simple=True, format='query', query_gen=True)
+print(query_gen)
+```
+
+<!-- #region editable=true slideshow={"slide_type": ""} -->
 #### requête locale
 <!-- #endregion -->
 
@@ -576,6 +817,23 @@ print(to_indicator(engine, 't5-03-200023414', simple=True, format='query'))
 
 ```python editable=true slideshow={"slide_type": ""}
 query_gen = to_indicator(engine, 't5-03-200023414', simple=True, format='query', query_gen=True)
+print(query_gen)
+```
+
+<!-- #region editable=true slideshow={"slide_type": ""} -->
+#### requête locale avec critère
+<!-- #endregion -->
+
+```python editable=true slideshow={"slide_type": ""}
+to_indicator(engine, 't5-03-200023414-04')[:10]
+```
+
+```python editable=true slideshow={"slide_type": ""}
+print(to_indicator(engine, 't5-03-200023414-04', simple=True, format='query'))
+```
+
+```python editable=true slideshow={"slide_type": ""}
+query_gen = to_indicator(engine, 't5-03-200023414-04', simple=True, format='query', query_gen=True)
 print(query_gen)
 ```
 
@@ -603,6 +861,23 @@ print(query_gen)
 ```
 
 <!-- #region editable=true slideshow={"slide_type": ""} -->
+#### requête globale avec critère
+<!-- #endregion -->
+
+```python
+to_indicator(engine, 't6-0-xx-01')[:5]
+```
+
+```python editable=true slideshow={"slide_type": ""}
+print(to_indicator(engine, 't6-0-xx-01', simple=True, format='query'))
+```
+
+```python editable=true slideshow={"slide_type": ""}
+query_gen = to_indicator(engine, 't6-0-xx-01', simple=True, format='query', query_gen=True)
+print(query_gen)
+```
+
+<!-- #region editable=true slideshow={"slide_type": ""} -->
 #### requête locale
 <!-- #endregion -->
 
@@ -616,6 +891,179 @@ print(to_indicator(engine, 't6-03-200023414', simple=True, format='query'))
 
 ```python editable=true slideshow={"slide_type": ""}
 query_gen = to_indicator(engine, 't6-03-200023414', simple=True, format='query', query_gen=True)
+print(query_gen)
+```
+
+<!-- #region editable=true slideshow={"slide_type": ""} -->
+#### requête locale avec critère
+<!-- #endregion -->
+
+```python editable=true slideshow={"slide_type": ""}
+to_indicator(engine, 't6-03-200023414-04')[:10]
+```
+
+```python editable=true slideshow={"slide_type": ""}
+print(to_indicator(engine, 't6-03-200023414-04', simple=True, format='query'))
+```
+
+```python editable=true slideshow={"slide_type": ""}
+query_gen = to_indicator(engine, 't6-03-200023414-04', simple=True, format='query', query_gen=True)
+print(query_gen)
+```
+
+### T8 : Nombre de stations par opérateur
+
+'nb_stations' est le nombre de stations.
+
+'nom_operateur' est le nom de l'opérateur.
+
+ex. il y a 3010 stations (nb_stations) IZIVIA (nom-operateur).
+
+<!-- #region editable=true slideshow={"slide_type": ""} -->
+#### requête globale
+<!-- #endregion -->
+
+```python
+to_indicator(engine, 't8')
+```
+
+```python editable=true slideshow={"slide_type": ""}
+print(to_indicator(engine, 't8', simple=True, format='query'))
+```
+
+```python editable=true slideshow={"slide_type": ""}
+print(to_indicator(engine, 't8', simple=True, format='query', query_gen=True))
+```
+
+<!-- #region editable=true slideshow={"slide_type": ""} -->
+#### requête globale avec critère
+<!-- #endregion -->
+
+```python
+to_indicator(engine, 't8-0-xx-01')[:5]
+```
+
+```python editable=true slideshow={"slide_type": ""}
+print(to_indicator(engine, 't8-0-xx-01', simple=True, format='query'))
+```
+
+```python editable=true slideshow={"slide_type": ""}
+query_gen = to_indicator(engine, 't8-0-xx-01', simple=True, format='query', query_gen=True)
+print(query_gen)
+```
+
+<!-- #region editable=true slideshow={"slide_type": ""} -->
+#### requête locale
+<!-- #endregion -->
+
+```python
+to_indicator(engine, 't8-03-200023414')
+```
+
+```python editable=true slideshow={"slide_type": ""}
+print(to_indicator(engine, 't8-03-200023414', simple=True, format='query'))
+```
+
+```python
+print(to_indicator(engine, 't8-01-93', simple=True, format='query'))
+```
+
+```python editable=true slideshow={"slide_type": ""}
+print(to_indicator(engine, 't8-01-93', simple=True, format='query'))
+```
+
+<!-- #region editable=true slideshow={"slide_type": ""} -->
+#### requête locale avec critère
+<!-- #endregion -->
+
+```python editable=true slideshow={"slide_type": ""}
+to_indicator(engine, 't8-01-93-02')[:10]
+```
+
+```python editable=true slideshow={"slide_type": ""}
+print(to_indicator(engine, 't8-01-93-03', simple=True, format='query'))
+```
+
+```python editable=true slideshow={"slide_type": ""}
+query_gen = to_indicator(engine, 't8-01-93-03', simple=True, format='query', query_gen=True)
+print(query_gen)
+```
+
+### T9 : Pourcentage de stations par opérateur
+
+'pct_nb_stations' est le nombre de stations.
+
+'nom_operateur' est le nom de l'opérateur.
+
+ex. il y a 3010 stations (nb_stations) IZIVIA (nom-operateur).
+
+<!-- #region editable=true slideshow={"slide_type": ""} -->
+#### requête globale
+<!-- #endregion -->
+
+```python
+to_indicator(engine, 't9')
+```
+
+```python editable=true slideshow={"slide_type": ""}
+print(to_indicator(engine, 't9', simple=True, format='query'))
+```
+
+```python editable=true slideshow={"slide_type": ""}
+print(to_indicator(engine, 't9', simple=True, format='query', query_gen=True))
+```
+
+<!-- #region editable=true slideshow={"slide_type": ""} -->
+#### requête globale avec critère
+<!-- #endregion -->
+
+```python
+to_indicator(engine, 't9-0-xx-01')[:5]
+```
+
+```python editable=true slideshow={"slide_type": ""}
+print(to_indicator(engine, 't9-0-xx-01', simple=True, format='query'))
+```
+
+```python editable=true slideshow={"slide_type": ""}
+query_gen = to_indicator(engine, 't9-0-xx-01', simple=True, format='query', query_gen=True)
+print(query_gen)
+```
+
+<!-- #region editable=true slideshow={"slide_type": ""} -->
+#### requête locale
+<!-- #endregion -->
+
+```python
+to_indicator(engine, 't9-03-200023414')
+```
+
+```python editable=true slideshow={"slide_type": ""}
+print(to_indicator(engine, 't9-03-200023414', simple=True, format='query'))
+```
+
+```python
+print(to_indicator(engine, 't9-01-93', simple=True, format='query'))
+```
+
+```python editable=true slideshow={"slide_type": ""}
+print(to_indicator(engine, 't8-01-93', simple=True, format='query'))
+```
+
+<!-- #region editable=true slideshow={"slide_type": ""} -->
+#### requête locale avec critère
+<!-- #endregion -->
+
+```python editable=true slideshow={"slide_type": ""}
+to_indicator(engine, 't9-01-93-02')[:10]
+```
+
+```python editable=true slideshow={"slide_type": ""}
+print(to_indicator(engine, 't9-01-93-03', simple=True, format='query'))
+```
+
+```python editable=true slideshow={"slide_type": ""}
+query_gen = to_indicator(engine, 't9-01-93-03', simple=True, format='query', query_gen=True)
 print(query_gen)
 ```
 
