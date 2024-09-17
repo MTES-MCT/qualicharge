@@ -36,90 +36,6 @@ engine = create_engine(os.getenv("DATABASE_URL"))
 
 ```
 
-```python
-to_indicator(engine, 'i1', histo=True)
-```
-
-```python
-to_indicator(engine, 'i1-01-93-02', histo=True)
-```
-
-```python
-to_indicator(engine, 'i1',          histo=True, format='table', table_name='quotidien', table_option='replace')
-to_indicator(engine, 'i1-01-93-02', histo=True, format='table', table_name='quotidien', table_option='append')
-to_indicator(engine, 't1-02-75',    histo=True, format='table', table_name='quotidien', table_option='append')
-to_indicator(engine, 't3-04-13001', histo=True, format='table', table_name='quotidien', table_option='append')
-to_indicator(engine, 'i1',          histo=True, format='table', table_name='quotidien', table_option='append')
-to_indicator(engine, 't1-02-75',    histo=True, format='table', table_name='quotidien', table_option='append')
-to_indicator(engine, 't3-04-13001', histo=True, format='table', table_name='quotidien', table_option='append')
-to_indicator(engine, 't1-02-75',    histo=True, format='table', table_name='quotidien', table_option='append')
-
-with engine.connect() as conn:
-    # Query a PostgreSQL database using the PostGIS extension
-    quotidien = pd.read_sql_table('quotidien', conn)
-quotidien
-```
-
-<!-- #region -->
-Query pour générer les valeurs à inclure dans la table des valeurs mensuelles:
-
-```sql
-SELECT
-  SUM(nombre) AS nombre,
-  SUM(somme) AS somme,
-  crit_v,
-  query,
-  level,
-  val,
-  area
-FROM
-  quotidien
-WHERE
-  (timest >= CAST(NOW() AS date))
-   AND 
-  (timest < CAST((NOW() + INTERVAL '1 day') AS date))
-GROUP BY
-  crit_v,
-  query,
-  level,
-  val,
-  area
-ORDER BY
-  query,
-  level,
-  val,
-  area
-```
-<!-- #endregion -->
-
-```python
-query = """
-SELECT
-  SUM(nombre) AS nombre,  SUM(somme) AS somme,  crit_v,  query,  level,  val,  area
-FROM
-  quotidien
-WHERE
-  (timest >= CAST(NOW() AS date))   AND   (timest < CAST((NOW() + INTERVAL '1 day') AS date))
-GROUP BY
-  crit_v,  query,  level,  val,  area
-ORDER BY
-  query,  level,  val,  area
-"""
-
-with engine.connect() as conn:
-    # Query a PostgreSQL database using the PostGIS extension
-    mensuel = pd.read_sql_query(query, conn)
-mensuel
-```
-
-```python
-to_indicator(engine, 't1-02-75', histo=True)
-```
-
-```python
-to_indicator(engine, 't1-02-75')
-```
-
 <!-- #region editable=true slideshow={"slide_type": ""} -->
 ## Structure des indicateurs
 <!-- #endregion -->
@@ -294,6 +210,90 @@ print(to_indicator(engine, 'i1-01-93-02', simple=True, format='query'))
 
 ```python editable=true slideshow={"slide_type": ""}
 query_gen = to_indicator(engine, 'i1-01-93-02', simple=True, format='query', query_gen=True)
+print(query_gen)
+```
+
+<!-- #region editable=true slideshow={"slide_type": ""} -->
+### I2 : Nombre de points de recharge ouverts au public pour 100 000 habitants
+
+'nb_pdc_pop' est le nombre de points de recharge pour 100 000 habitants.
+<!-- #endregion -->
+
+<!-- #region editable=true slideshow={"slide_type": ""} -->
+#### requête globale
+<!-- #endregion -->
+
+```python
+to_indicator(engine, 'i2')
+```
+
+```python
+to_indicator(engine, 'i2-00-00-00', simple=False)
+```
+
+```python editable=true slideshow={"slide_type": ""}
+print(to_indicator(engine, 'i2', simple=True, format='query'))
+```
+
+```python editable=true slideshow={"slide_type": ""}
+query_gen = to_indicator(engine, 'i2', simple=True, format='query', query_gen=True)
+print(query_gen)
+```
+
+#### requête globale avec critère
+
+```python
+i1_nat = to_indicator(engine, 'i2-00-00-01')
+print(i1_nat['nb_pdc_pop'].sum())
+i1_nat[:5]
+```
+
+```python editable=true slideshow={"slide_type": ""}
+print(to_indicator(engine, 'i2-00-00-01', simple=True, format='query'))
+```
+
+```python editable=true slideshow={"slide_type": ""}
+query_gen = to_indicator(engine, 'i2---01', simple=True, format='query', query_gen=True)
+print(query_gen)
+```
+
+<!-- #region editable=true slideshow={"slide_type": ""} -->
+#### requête locale
+<!-- #endregion -->
+
+```python
+to_indicator(engine, 'i2-01-93-00')
+```
+
+```python editable=true slideshow={"slide_type": ""}
+print(to_indicator(engine, 'i2-01-93-00', simple=True, format='query'))
+```
+
+```python
+to_indicator(engine, 'i2-01-93')
+```
+
+```python editable=true slideshow={"slide_type": ""}
+query_gen = to_indicator(engine, 'i2-01-93', simple=True, format='query', query_gen=True)
+print(query_gen)
+```
+
+<!-- #region editable=true slideshow={"slide_type": ""} -->
+#### requête locale avec critère
+<!-- #endregion -->
+
+```python editable=true slideshow={"slide_type": ""}
+paca_epci = 'i2-01-93-02'
+i1_paca = to_indicator(engine, paca_epci, simple=True)
+i1_paca[:10]
+```
+
+```python editable=true slideshow={"slide_type": ""}
+print(to_indicator(engine, 'i2-01-93-02', simple=True, format='query'))
+```
+
+```python editable=true slideshow={"slide_type": ""}
+query_gen = to_indicator(engine, 'i2-01-93-02', simple=True, format='query', query_gen=True)
 print(query_gen)
 ```
 
