@@ -17,11 +17,7 @@ jupyter:
 
 Ce Notebook présente la fonction permettant de générer les indicateurs Qualicharge et les requêtes associées.
 
-La liste des indicateurs est présentée sur [ce lien](https://loco-philippe.github.io/IRVE/files/indicateurs.html).
-
-La présentation des requêtes associée est présentée sur [ce notebook](../indicators/reference_indicators.md)
-
-*Nota : La dimension temporelle des indicateurs n'est pas prise en compte, elle sera ajoutée dans une version ultérieure*
+La liste des indicateurs est présentée dans le [notebook de présentation des indicateurs](../indicators/reference_indicators.md).
 <!-- #endregion -->
 
 ```python editable=true slideshow={"slide_type": ""}
@@ -42,12 +38,8 @@ engine = create_engine(os.getenv("DATABASE_URL"))
 
 ### Codification des indicateurs
 
-Voir le no
+Voir le notebook de présentation des indicateurs.
 
-
-```python editable=true slideshow={"slide_type": ""}
-print(to_indicator(engine, 't3-04-13001', simple=True, format='query'))
-```
 
 ### Exemples de mise en oeuvre
 
@@ -123,11 +115,7 @@ print(to_indicator(engine, 'i1', format='query'))
 
 ## Infrastructure - quantitatif
 
-Indicateurs pris en compte : 'i1', 'i4', 'i7'
-
-Les autres indicateurs sont dérivés ('i2', 'i5', 'i8' ramené à 100 000 habitants et 'i3', 'i6', 'i9' ramené à 100 km2).
-
-*à préciser : Quelle population retenir (date fixe ?) ? Est-ce qu'on stocke en base la surface (à partir des polygones) ?*
+Indicateurs pris en compte : 'i1' à 'i9'
 
 <!-- #region editable=true slideshow={"slide_type": ""} -->
 ### I1 : Nombre de points de recharge ouverts au public
@@ -1438,6 +1426,64 @@ print(to_indicator(engine, 't9-01-93-03', simple=True, format='query'))
 query_gen = to_indicator(engine, 't9-01-93-03', simple=True, format='query', query_gen=True)
 print(query_gen)
 ```
+
+## Historisation
+
+Concerne les indicateurs précédents pour un niveau d'historisation donné
+
+
+### Indicateurs sans catégorie
+
+```python
+# 'i1-d-2-27-2 entre le 1/1/2024 et le 3/1/2024
+interval_start = '2024-01-01'
+interval_end = '2024-01-03'
+
+#indic = temporal_indicator('i1', '27', 'd', interval_start, interval_end, perim=2, val=27)
+```
+
+<!-- #region -->
+```sql
+SELECT
+  value AS nb_pdc, 
+  target AS department, 
+  timestamp
+FROM
+  histo
+  INNER JOIN Department on target = Department.code
+WHERE
+  histo.code = 'i1' AND level::int = '2' AND period = 'd' AND
+  timestamp >= '2024-01-01' AND timestamp < '2024-01-03'
+  AND department.code = '27'
+```
+<!-- #endregion -->
+
+### Indicateurs avec catégorie
+
+```python
+# 't8-d-2-27-2' entre le 1/1/2024 et le 3/1/2024
+interval_start = '2024-01-01'
+interval_end = '2024-01-03'
+
+#indic = temporal_indicator('t8',Level.DEPARTMENT, IndicatorPeriod.DAY, interval_start, interval_end, perim=2, val=27)
+```
+
+<!-- #region -->
+```sql
+SELECT
+  value AS nb_stations, 
+  category AS nom_operateur,
+  target AS department, 
+  timestamp
+FROM
+  histo
+  INNER JOIN Department on target = Department.code
+WHERE
+  histo.code = 't8' AND level::int = '2' AND period = 'd' AND
+  timestamp >= '2024-01-01' AND timestamp < '2024-01-03'
+  AND department.code = '27'
+```
+<!-- #endregion -->
 
 ### Autres indicateurs de typologie
 
