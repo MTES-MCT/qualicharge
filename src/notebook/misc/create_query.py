@@ -20,6 +20,7 @@ String
 
 import pandas as pd
 import sys
+from sqlalchemy import types, dialects
 
 create_query = sys.modules[__name__]
 
@@ -46,7 +47,7 @@ TABLE = {'00': 'national', '01': 'region', '02': 'department', '03': 'epci', '04
 G_OVERHEAD = f"""QUERY,
     VAL,
     LEVEL,
-    AREA"""
+    TARGET"""
 STAT_NB_PDC = f"""stat_nb_pdc AS (
     SELECT
       count(station_id) AS nb_pdc,
@@ -102,6 +103,8 @@ def to_indicator(engine, indicator, simple=True, histo=False, format='pandas', h
     indic = indicator + '-00'
     simple = False if histo else simple
     query = getattr(create_query, 'query_' + indic.split('-')[0])(*indic.split('-')[1:], simple=simple, gen=query_gen)
+    table_dtype = table_dtype if table_dtype else {'value': types.FLOAT, 'category': types.TEXT, 'code_z': types.TEXT, 'query': types.TEXT, 'perimeter': types.TEXT, 'code_p': types.TEXT, 'zoning': types.TEXT, 
+        'timestamp': types.TIMESTAMP, 'add_value': dialects.postgresql.JSONB}
     if histo:
         query = create_query.query_histo(query, timestamp=histo_timest)
     if format == 'query':
@@ -113,7 +116,6 @@ def to_indicator(engine, indicator, simple=True, histo=False, format='pandas', h
     if format == 'json':
         return '{"' + indicator + '": ' + data_pd.to_json(index=False, orient=json_orient) + "}"
     if format == 'table':
-        # table_name = table_name if table_name else indicator
         return indic_to_table(data_pd, table_name, engine, table_option=table_option, table_dtype=table_dtype, histo=histo, test=test)
 
 def indic_to_table(pd_df, table_name, engine, table_option="replace", table_dtype=None, histo=None, test=None):
@@ -146,20 +148,21 @@ def indic_to_table(pd_df, table_name, engine, table_option="replace", table_dtyp
         cols = pd_df.columns
         pd_df.rename(columns={cols[1]: 'mean', cols[3]: 'crit_v'}, inplace = True)
         pd_df = pd_df.astype({'quantity': 'int', 'last': 'float', 'mean': 'float', 
-                              'query': 'string', 'level': 'string', 'val': 'string', 'area': 'string'})
-    if not test:
-        pd_df.rename(columns={'mean': 'value', 'crit_v': 'category', 'level': 'perimeter', 'val': 'code_p', 'area': 'zoning', 'code': 'code_z'},
-                     inplace = True)
-        pd_df['add_value'] = pd.Series([{'quantity': quantity, 'last': last} 
-                                    for quantity, last in zip(pd_df['quantity'], pd_df['last'])])
-        del pd_df['last']
-        del pd_df['quantity']
-    elif test == '1bis':
-        pd_df['value'] = pd.Series([{'quantity': quantity, 'mean': mean, 'last': last} 
-                                    for quantity, mean, last in zip(pd_df['quantity'], pd_df['mean'], pd_df['last'])])
-        del pd_df['mean']
-        del pd_df['last']
-        del pd_df['quantity']
+                              'query': 'string', 'level': 'string', 'val': 'string', 'target': 'string'})
+        #print(pd_df.columns)
+        if not test:
+            pd_df.rename(columns={'mean': 'value', 'crit_v': 'category', 'level': 'perimeter', 'val': 'code_p', 'target': 'zoning', 'code': 'code_z'},
+                        inplace = True)
+            pd_df['add_value'] = pd.Series([{'quantity': quantity, 'last': last} 
+                                        for quantity, last in zip(pd_df['quantity'], pd_df['last'])])
+            del pd_df['last']
+            del pd_df['quantity']
+        elif test == '1bis':
+            pd_df['value'] = pd.Series([{'quantity': quantity, 'mean': mean, 'last': last} 
+                                        for quantity, mean, last in zip(pd_df['quantity'], pd_df['mean'], pd_df['last'])])
+            del pd_df['mean']
+            del pd_df['last']
+            del pd_df['quantity']
     if table_name:
         dtype = table_dtype if table_dtype else {}
         pd_df.to_sql(table_name, engine, if_exists=table_option, index=False, dtype=dtype)
@@ -186,20 +189,24 @@ def init_param_ixx(simple, gen, indic,  *param):
     s_overhead = "" if simple else f"""'{indic}' AS QUERY,
     '{perim}' AS LEVEL,
     '{val}' AS VAL,
-    '{zone}' AS AREA"""
+    '{zone}' AS TARGET"""
     where_isin_perim = "" if perim == '00' else f"""WHERE
     {TABLE[perim]}.code = '{val}'"""
     table_zone_code = "" if zone == '00' else f"{TABLE[zone]}.code"
+    table_zone_pop = "" if zone == '00' else f"/ {TABLE[zone]}.population * 100000"
+    zone_pop = "" if zone == '00' else f"{TABLE[zone]}.population"
     coma = "" if f"{s_overhead}" == "" else ","
 
     if gen:
         s_overhead = "" if simple else f"""'{{indic}}' AS QUERY,
     '{{perim}}' AS LEVEL,
     '{{val}}' AS VAL,
-    '{{zone}}' AS AREA"""
+    '{{zone}}' AS TARGET"""
         where_isin_perim = "" if perim == '00' else f"""WHERE
     {{TABLE[perim]}}.code = '{{val}}'"""
-        table_zone_code = f"{{TABLE[zone]}}.code"
+        table_zone_code = "" if zone == '00' else f"{{TABLE[zone]}}.code"
+        table_zone_pop = "" if zone == '00' else f"/ {{TABLE[zone]}}.population * 100000"
+        zone_pop = "" if zone == '00' else f"{{TABLE[zone]}}.population"
 
     coma1 = "" if f"{table_zone_code}{s_overhead}" == "" else ","
     coma2 = "" if f"{table_zone_code}" == "" else ","
@@ -211,7 +218,8 @@ def init_param_ixx(simple, gen, indic,  *param):
 
     return {'perim': perim, 'zone': zone, 'coma': coma, 'coma1': coma1, 'coma2': coma2, 'coma3': coma3, 
             'code': code, 'group_by': group_by, 'g_overhead': g_overhead, 's_overhead': s_overhead, 
-            'where_isin_perim': where_isin_perim, 'table_zone_code': table_zone_code}
+            'where_isin_perim': where_isin_perim, 'table_zone_code': table_zone_code,
+            'zone_pop': zone_pop, 'table_zone_pop': table_zone_pop}
 
 def query_t1(*param, simple=True, gen=False):
     '''Create SQL query for 't1' indicators (see parameters in module docstring)'''
@@ -430,6 +438,34 @@ FROM
 {param['group_by']}
 ORDER BY
     nb_pdc DESC"""
+
+def query_i2(*param, simple=True, gen=False):
+    '''Create SQL query for 'i2' indicators (see parameters in module docstring)'''
+
+    indic = 'i1'
+    param = init_param_ixx(simple, gen, indic, *param)
+
+    if param['perim'] == param['zone'] == '00':
+        return f"""
+SELECT
+    count(id_pdc_itinerance) AS nb_pdc_pop{param['coma']}
+    {param['s_overhead']}
+FROM
+    pointdecharge"""
+
+    return f"""
+SELECT
+    count(id_pdc_itinerance)::float {param['table_zone_pop']} AS nb_pdc_pop{param['coma1']}
+    {param['table_zone_code']}{param['coma3']}
+    {param['s_overhead']}
+FROM
+    {PDC_ALL}
+    {COG_ALL}
+{param['where_isin_perim']}
+{param['group_by']},
+    {param['zone_pop']}
+ORDER BY
+    nb_pdc_pop DESC"""
 
 def query_i4(*param, simple=True, gen=False):
     '''Create SQL query for 'i4' indicators (see parameters in module docstring)'''
