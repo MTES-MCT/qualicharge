@@ -194,7 +194,7 @@ def init_param_ixx(simple, gen, indic,  *param):
     {TABLE[perim]}.code = '{val}'"""
     table_zone_code = "" if zone == '00' else f"{TABLE[zone]}.code"
     table_zone_pop = "" if zone == '00' else f"/ {TABLE[zone]}.population * 100000"
-    zone_pop = "" if zone == '00' else f"{TABLE[zone]}.population"
+    zone_pop = "" if zone == '00' else f",{TABLE[zone]}.population"
     coma = "" if f"{s_overhead}" == "" else ","
 
     if gen:
@@ -206,7 +206,7 @@ def init_param_ixx(simple, gen, indic,  *param):
     {{TABLE[perim]}}.code = '{{val}}'"""
         table_zone_code = "" if zone == '00' else f"{{TABLE[zone]}}.code"
         table_zone_pop = "" if zone == '00' else f"/ {{TABLE[zone]}}.population * 100000"
-        zone_pop = "" if zone == '00' else f"{{TABLE[zone]}}.population"
+        zone_pop = "" if zone == '00' else f",{{TABLE[zone]}}.population"
 
     coma1 = "" if f"{table_zone_code}{s_overhead}" == "" else ","
     coma2 = "" if f"{table_zone_code}" == "" else ","
@@ -462,7 +462,7 @@ FROM
     {PDC_ALL}
     {COG_ALL}
 {param['where_isin_perim']}
-{param['group_by']},
+{param['group_by']}
     {param['zone_pop']}
 ORDER BY
     nb_pdc_pop DESC"""
