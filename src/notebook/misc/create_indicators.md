@@ -243,9 +243,7 @@ print(query_gen)
 #### requête globale avec critère
 
 ```python
-i1_nat = to_indicator(engine, 'i2-00-00-01')
-print(i1_nat['nb_pdc_pop'].sum())
-i1_nat[:5]
+to_indicator(engine, 'i2-00-00-01')[:5]
 ```
 
 ```python editable=true slideshow={"slide_type": ""}
@@ -284,8 +282,7 @@ print(query_gen)
 
 ```python editable=true slideshow={"slide_type": ""}
 paca_epci = 'i2-01-93-02'
-i1_paca = to_indicator(engine, paca_epci, simple=True)
-i1_paca[:10]
+to_indicator(engine, paca_epci, simple=True)[:10]
 ```
 
 ```python editable=true slideshow={"slide_type": ""}
@@ -294,6 +291,87 @@ print(to_indicator(engine, 'i2-01-93-02', simple=True, format='query'))
 
 ```python editable=true slideshow={"slide_type": ""}
 query_gen = to_indicator(engine, 'i2-01-93-02', simple=True, format='query', query_gen=True)
+print(query_gen)
+```
+
+<!-- #region editable=true slideshow={"slide_type": ""} -->
+### I3 : Nombre de points de recharge ouverts au public pour 100 km2
+
+'nb_pdc_area' est le nombre de points de recharge pour 100 km2.
+<!-- #endregion -->
+
+<!-- #region editable=true slideshow={"slide_type": ""} -->
+#### requête globale
+<!-- #endregion -->
+
+```python
+to_indicator(engine, 'i3')
+```
+
+```python
+to_indicator(engine, 'i3-00-00-00', simple=False)
+```
+
+```python editable=true slideshow={"slide_type": ""}
+print(to_indicator(engine, 'i3', simple=True, format='query'))
+```
+
+```python editable=true slideshow={"slide_type": ""}
+query_gen = to_indicator(engine, 'i3', simple=True, format='query', query_gen=True)
+print(query_gen)
+```
+
+#### requête globale avec critère
+
+```python
+to_indicator(engine, 'i3-00-00-01')[:5]
+```
+
+```python editable=true slideshow={"slide_type": ""}
+print(to_indicator(engine, 'i3-00-00-01', simple=True, format='query'))
+```
+
+```python editable=true slideshow={"slide_type": ""}
+query_gen = to_indicator(engine, 'i3---01', simple=True, format='query', query_gen=True)
+print(query_gen)
+```
+
+<!-- #region editable=true slideshow={"slide_type": ""} -->
+#### requête locale
+<!-- #endregion -->
+
+```python
+to_indicator(engine, 'i3-01-93-00')
+```
+
+```python editable=true slideshow={"slide_type": ""}
+print(to_indicator(engine, 'i3-01-93-00', simple=True, format='query'))
+```
+
+```python
+to_indicator(engine, 'i3-01-93')
+```
+
+```python editable=true slideshow={"slide_type": ""}
+query_gen = to_indicator(engine, 'i3-01-93', simple=True, format='query', query_gen=True)
+print(query_gen)
+```
+
+<!-- #region editable=true slideshow={"slide_type": ""} -->
+#### requête locale avec critère
+<!-- #endregion -->
+
+```python editable=true slideshow={"slide_type": ""}
+paca_epci = 'i3-01-93-02'
+to_indicator(engine, paca_epci, simple=True)[:10]
+```
+
+```python editable=true slideshow={"slide_type": ""}
+print(to_indicator(engine, 'i3-01-93-02', simple=True, format='query'))
+```
+
+```python editable=true slideshow={"slide_type": ""}
+query_gen = to_indicator(engine, 'i3-01-93-02', simple=True, format='query', query_gen=True)
 print(query_gen)
 ```
 
@@ -366,6 +444,150 @@ print(to_indicator(engine, 'i4-01-93-03', simple=True, format='query'))
 
 ```python editable=true slideshow={"slide_type": ""}
 query_gen = to_indicator(engine, 'i4-01-93-03', simple=True, format='query', query_gen=True)
+print(query_gen)
+```
+
+### I5 : Nombre de stations ouvertes au public pour 100 000 habitants
+
+'nb_stat_pop' est le nombre de stations pour 100 000 habitants.
+
+<!-- #region editable=true slideshow={"slide_type": ""} -->
+#### requête globale
+<!-- #endregion -->
+
+```python
+to_indicator(engine, 'i5-0', simple=True)
+```
+
+```python editable=true slideshow={"slide_type": ""}
+print(to_indicator(engine, 'i5', simple=True, format='query'))
+```
+
+```python editable=true slideshow={"slide_type": ""}
+query_gen = to_indicator(engine, 'i5', simple=True, format='query', query_gen=True)
+print(query_gen)
+```
+
+<!-- #region editable=true slideshow={"slide_type": ""} -->
+#### requête globale avec critère
+<!-- #endregion -->
+
+```python
+to_indicator(engine, 'i5-0-xx-01')[:5]
+```
+
+```python editable=true slideshow={"slide_type": ""}
+print(to_indicator(engine, 'i5-0-xx-01', simple=True, format='query'))
+```
+
+```python editable=true slideshow={"slide_type": ""}
+query_gen = to_indicator(engine, 'i5-0-xx-01', simple=True, format='query', query_gen=True)
+print(query_gen)
+```
+
+<!-- #region editable=true slideshow={"slide_type": ""} -->
+#### requête locale
+<!-- #endregion -->
+
+```python
+to_indicator(engine, 'i5-01-93-0')
+```
+
+```python editable=true slideshow={"slide_type": ""}
+print(to_indicator(engine, 'i5-01-93-0', simple=True, format='query'))
+```
+
+```python editable=true slideshow={"slide_type": ""}
+query_gen = to_indicator(engine, 'i5-01-93-0', simple=True, format='query', query_gen=True)
+print(query_gen)
+```
+
+<!-- #region editable=true slideshow={"slide_type": ""} -->
+#### requête locale avec critère
+<!-- #endregion -->
+
+```python editable=true slideshow={"slide_type": ""}
+to_indicator(engine, 'i5-01-93-03')[:5]
+```
+
+```python editable=true slideshow={"slide_type": ""}
+print(to_indicator(engine, 'i5-01-93-03', simple=True, format='query'))
+```
+
+```python editable=true slideshow={"slide_type": ""}
+query_gen = to_indicator(engine, 'i5-01-93-03', simple=True, format='query', query_gen=True)
+print(query_gen)
+```
+
+### I6 : Nombre de stations ouvertes au public pour 100 km2
+
+'nb_stat_area' est le nombre de stations pour 100 km2.
+
+<!-- #region editable=true slideshow={"slide_type": ""} -->
+#### requête globale
+<!-- #endregion -->
+
+```python
+to_indicator(engine, 'i6-0', simple=True)
+```
+
+```python editable=true slideshow={"slide_type": ""}
+print(to_indicator(engine, 'i6', simple=True, format='query'))
+```
+
+```python editable=true slideshow={"slide_type": ""}
+query_gen = to_indicator(engine, 'i6', simple=True, format='query', query_gen=True)
+print(query_gen)
+```
+
+<!-- #region editable=true slideshow={"slide_type": ""} -->
+#### requête globale avec critère
+<!-- #endregion -->
+
+```python
+to_indicator(engine, 'i6-0-xx-01')[:5]
+```
+
+```python editable=true slideshow={"slide_type": ""}
+print(to_indicator(engine, 'i6-0-xx-01', simple=True, format='query'))
+```
+
+```python editable=true slideshow={"slide_type": ""}
+query_gen = to_indicator(engine, 'i6-0-xx-01', simple=True, format='query', query_gen=True)
+print(query_gen)
+```
+
+<!-- #region editable=true slideshow={"slide_type": ""} -->
+#### requête locale
+<!-- #endregion -->
+
+```python
+to_indicator(engine, 'i6-01-93-0')
+```
+
+```python editable=true slideshow={"slide_type": ""}
+print(to_indicator(engine, 'i6-01-93-0', simple=True, format='query'))
+```
+
+```python editable=true slideshow={"slide_type": ""}
+query_gen = to_indicator(engine, 'i6-01-93-0', simple=True, format='query', query_gen=True)
+print(query_gen)
+```
+
+<!-- #region editable=true slideshow={"slide_type": ""} -->
+#### requête locale avec critère
+<!-- #endregion -->
+
+```python editable=true slideshow={"slide_type": ""}
+to_indicator(engine, 'i6-01-93-03')[:5]
+```
+
+```python editable=true slideshow={"slide_type": ""}
+print(to_indicator(engine, 'i6-01-93-03', simple=True, format='query'))
+```
+
+```python editable=true slideshow={"slide_type": ""}
+query_gen = to_indicator(engine, 'i6-01-93-03', simple=True, format='query', query_gen=True)
 print(query_gen)
 ```
 
@@ -443,6 +665,156 @@ print(to_indicator(engine, 'i7-01-93-04', simple=True, format='query'))
 
 ```python editable=true slideshow={"slide_type": ""}
 query_gen = to_indicator(engine, 'i7-01-93-04', simple=True, format='query', query_gen=True)
+print(query_gen)
+```
+
+<!-- #region editable=true slideshow={"slide_type": ""} -->
+### I8 : Puissance installée pour 100 000 habitants
+
+'p_nom_pop' est la puissance nominale cumulée pour 100 000 habitants
+<!-- #endregion -->
+
+<!-- #region editable=true slideshow={"slide_type": ""} -->
+#### requête globale
+<!-- #endregion -->
+
+```python
+to_indicator(engine, 'i8', simple=True)
+```
+
+```python editable=true slideshow={"slide_type": ""}
+print(to_indicator(engine, 'i8', simple=True, format='query'))
+```
+
+```python editable=true slideshow={"slide_type": ""}
+query_gen = to_indicator(engine, 'i8', simple=True, format='query', query_gen=True)
+print(query_gen)
+```
+
+<!-- #region editable=true slideshow={"slide_type": ""} -->
+#### requête globale avec critère
+<!-- #endregion -->
+
+```python
+to_indicator(engine, 'i8-0--01')[:5]
+```
+
+```python editable=true slideshow={"slide_type": ""}
+print(to_indicator(engine, 'i8-0--01', simple=True, format='query'))
+```
+
+```python editable=true slideshow={"slide_type": ""}
+query_gen = to_indicator(engine, 'i8-0--01', simple=True, format='query', query_gen=True)
+print(query_gen)
+```
+
+<!-- #region editable=true slideshow={"slide_type": ""} -->
+#### requête locale
+<!-- #endregion -->
+
+```python
+to_indicator(engine, 'i8-01-93-00', simple=True)
+```
+
+```python editable=true slideshow={"slide_type": ""}
+print(to_indicator(engine, 'i8-01-93-00', simple=True, format='query'))
+```
+
+```python editable=true slideshow={"slide_type": ""}
+query_gen = to_indicator(engine, 'i8-01-93-00', simple=True, format='query', query_gen=True)
+print(query_gen)
+```
+
+<!-- #region editable=true slideshow={"slide_type": ""} -->
+#### requête locale avec critère
+<!-- #endregion -->
+
+```python
+i7_paca_city = to_indicator(engine, 'i8-01-93-04', simple=True)
+i7_paca_city[:5]
+```
+
+```python editable=true slideshow={"slide_type": ""}
+print(to_indicator(engine, 'i8-01-93-04', simple=True, format='query'))
+```
+
+```python editable=true slideshow={"slide_type": ""}
+query_gen = to_indicator(engine, 'i8-01-93-04', simple=True, format='query', query_gen=True)
+print(query_gen)
+```
+
+<!-- #region editable=true slideshow={"slide_type": ""} -->
+### I9 : Puissance installée pour 100 km2
+
+'p_nom_area' est la puissance nominale cumulée pour 100 km2.
+<!-- #endregion -->
+
+<!-- #region editable=true slideshow={"slide_type": ""} -->
+#### requête globale
+<!-- #endregion -->
+
+```python
+to_indicator(engine, 'i9', simple=True)
+```
+
+```python editable=true slideshow={"slide_type": ""}
+print(to_indicator(engine, 'i9', simple=True, format='query'))
+```
+
+```python editable=true slideshow={"slide_type": ""}
+query_gen = to_indicator(engine, 'i9', simple=True, format='query', query_gen=True)
+print(query_gen)
+```
+
+<!-- #region editable=true slideshow={"slide_type": ""} -->
+#### requête globale avec critère
+<!-- #endregion -->
+
+```python
+to_indicator(engine, 'i9-0--01')[:5]
+```
+
+```python editable=true slideshow={"slide_type": ""}
+print(to_indicator(engine, 'i9-0--01', simple=True, format='query'))
+```
+
+```python editable=true slideshow={"slide_type": ""}
+query_gen = to_indicator(engine, 'i9-0--01', simple=True, format='query', query_gen=True)
+print(query_gen)
+```
+
+<!-- #region editable=true slideshow={"slide_type": ""} -->
+#### requête locale
+<!-- #endregion -->
+
+```python
+to_indicator(engine, 'i9-01-93-00', simple=True)
+```
+
+```python editable=true slideshow={"slide_type": ""}
+print(to_indicator(engine, 'i9-01-93-00', simple=True, format='query'))
+```
+
+```python editable=true slideshow={"slide_type": ""}
+query_gen = to_indicator(engine, 'i9-01-93-00', simple=True, format='query', query_gen=True)
+print(query_gen)
+```
+
+<!-- #region editable=true slideshow={"slide_type": ""} -->
+#### requête locale avec critère
+<!-- #endregion -->
+
+```python
+i7_paca_city = to_indicator(engine, 'i9-01-93-04', simple=True)
+i7_paca_city[:5]
+```
+
+```python editable=true slideshow={"slide_type": ""}
+print(to_indicator(engine, 'i9-01-93-04', simple=True, format='query'))
+```
+
+```python editable=true slideshow={"slide_type": ""}
+query_gen = to_indicator(engine, 'i9-01-93-04', simple=True, format='query', query_gen=True)
 print(query_gen)
 ```
 
