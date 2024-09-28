@@ -192,9 +192,13 @@ def init_param_ixx(simple, gen, indic,  *param):
     '{zone}' AS TARGET"""
     where_isin_perim = "" if perim == '00' else f"""WHERE
     {TABLE[perim]}.code = '{val}'"""
+    from_perim = """FROM
+        region""" if perim == '00' else f"""FROM
+        {TABLE[perim]}"""
+    table_zone = "" if zone == '00' else f"{TABLE[zone]}"
     table_zone_code = "" if zone == '00' else f"{TABLE[zone]}.code"
-    table_zone_pop = "" if zone == '00' else f"/ {TABLE[zone]}.population * 100000"
-    zone_pop = "" if zone == '00' else f",{TABLE[zone]}.population"
+    table_zone_pop = "" if zone == '00' else f"{TABLE[zone]}.population * 100000"
+    table_zone_area = "" if zone == '00' else f"{TABLE[zone]}.area::float * 100000000"
     coma = "" if f"{s_overhead}" == "" else ","
 
     if gen:
@@ -204,9 +208,13 @@ def init_param_ixx(simple, gen, indic,  *param):
     '{{zone}}' AS TARGET"""
         where_isin_perim = "" if perim == '00' else f"""WHERE
     {{TABLE[perim]}}.code = '{{val}}'"""
+        from_perim = """FROM
+        region""" if perim == '00' else f"""FROM
+        {TABLE[perim]}"""
+        table_zone = "" if zone == '00' else f"{{TABLE[zone]}}"
         table_zone_code = "" if zone == '00' else f"{{TABLE[zone]}}.code"
-        table_zone_pop = "" if zone == '00' else f"/ {{TABLE[zone]}}.population * 100000"
-        zone_pop = "" if zone == '00' else f",{{TABLE[zone]}}.population"
+        table_zone_pop = "" if zone == '00' else f"{{TABLE[zone]}}.population * 100000"
+        table_zone_area = "" if zone == '00' else f"{{TABLE[zone]}}.area::float * 100000000"
 
     coma1 = "" if f"{table_zone_code}{s_overhead}" == "" else ","
     coma2 = "" if f"{table_zone_code}" == "" else ","
@@ -218,8 +226,9 @@ def init_param_ixx(simple, gen, indic,  *param):
 
     return {'perim': perim, 'zone': zone, 'coma': coma, 'coma1': coma1, 'coma2': coma2, 'coma3': coma3, 
             'code': code, 'group_by': group_by, 'g_overhead': g_overhead, 's_overhead': s_overhead, 
-            'where_isin_perim': where_isin_perim, 'table_zone_code': table_zone_code,
-            'zone_pop': zone_pop, 'table_zone_pop': table_zone_pop}
+            'where_isin_perim': where_isin_perim, 'from_perim': from_perim, 
+            'table_zone': table_zone, 'table_zone_code': table_zone_code,
+            'table_zone_pop': table_zone_pop, 'table_zone_area': table_zone_area}
 
 def query_t1(*param, simple=True, gen=False):
     '''Create SQL query for 't1' indicators (see parameters in module docstring)'''
@@ -255,7 +264,7 @@ def query_t2(*param, simple=True, gen=False):
 
     return f"""WITH 
     t1 AS (
-        {query_t1(*param, simple=simple, gen=gen)}
+        {query_t1(*param, simple=True, gen=gen)}
     )
 SELECT
     nb_pdc / (
@@ -304,7 +313,7 @@ def query_t4(*param, simple=True, gen=False):
 
     return f"""WITH 
     t3 AS (
-        {query_t3(*param, simple=simple, gen=gen)}
+        {query_t3(*param, simple=True, gen=gen)}
     )
 SELECT
     nb_stations / (
@@ -350,7 +359,7 @@ def query_t6(*param, simple=True, gen=False):
 
     return f"""WITH 
     t5 AS (
-        {query_t5(*param, simple=simple, gen=gen)}
+        {query_t5(*param, simple=True, gen=gen)}
     )
 SELECT
     nb_stations / (
@@ -397,7 +406,7 @@ def query_t9(*param, simple=True, gen=False):
 
     return f"""WITH 
     t8 AS (
-        {query_t8(*param, simple=simple, gen=gen)}
+        {query_t8(*param, simple=True, gen=gen)}
     )
 SELECT
     nb_stations / (
@@ -442,30 +451,70 @@ ORDER BY
 def query_i2(*param, simple=True, gen=False):
     '''Create SQL query for 'i2' indicators (see parameters in module docstring)'''
 
-    indic = 'i1'
-    param = init_param_ixx(simple, gen, indic, *param)
+    indic = 'i2'
+    prm = init_param_ixx(simple, gen, indic, *param)
 
-    if param['perim'] == param['zone'] == '00':
+    if prm['zone'] == '00':
         return f"""
-SELECT
-    count(id_pdc_itinerance) AS nb_pdc_pop{param['coma']}
-    {param['s_overhead']}
-FROM
-    pointdecharge"""
+SELECT 
+    (
+        {query_i1(*param, simple=True, gen=gen)}
+    ) / (
+        SELECT 
+            sum(population) 
+        {prm['from_perim']}
+        {prm['where_isin_perim']}
+    ) * 100000 AS nb_pdc_pop{prm['coma']}
+    {prm['s_overhead']}"""    
 
     return f"""
+WITH
+    i1 AS (
+        {query_i1(*param, simple=True, gen=gen)}
+    )
 SELECT
-    count(id_pdc_itinerance)::float {param['table_zone_pop']} AS nb_pdc_pop{param['coma1']}
-    {param['table_zone_code']}{param['coma3']}
-    {param['s_overhead']}
+    i1.nb_pdc::float / {prm['table_zone_pop']} AS nb_pdc_pop,
+    {prm['table_zone_code']}{prm['coma3']}
+    {prm['s_overhead']}
 FROM
-    {PDC_ALL}
-    {COG_ALL}
-{param['where_isin_perim']}
-{param['group_by']}
-    {param['zone_pop']}
-ORDER BY
+    i1
+    LEFT JOIN {prm['table_zone']} on i1.code = {prm['table_zone_code']}
+ORDER by
     nb_pdc_pop DESC"""
+
+def query_i3(*param, simple=True, gen=False):
+    '''Create SQL query for 'i3' indicators (see parameters in module docstring)'''
+
+    indic = 'i3'
+    prm = init_param_ixx(simple, gen, indic, *param)
+
+    if prm['zone'] == '00':
+        return f"""
+SELECT 
+    (
+        {query_i1(*param, simple=True, gen=gen)}
+    ) / (
+        SELECT 
+            sum(area::float) 
+        {prm['from_perim']}
+        {prm['where_isin_perim']}
+    ) * 100000000 AS nb_pdc_area{prm['coma']}
+    {prm['s_overhead']}"""
+
+    return f"""
+WITH
+    i1 AS (
+        {query_i1(*param, simple=True, gen=gen)}
+    )
+SELECT
+    i1.nb_pdc::float / {prm['table_zone_area']} AS nb_pdc_area,
+    {prm['table_zone_code']}{prm['coma3']}
+    {prm['s_overhead']}
+FROM
+    i1
+    LEFT JOIN {prm['table_zone']} on i1.code = {prm['table_zone_code']}
+ORDER by
+    nb_pdc_area DESC"""
 
 def query_i4(*param, simple=True, gen=False):
     '''Create SQL query for 'i4' indicators (see parameters in module docstring)'''
@@ -494,6 +543,74 @@ FROM
 ORDER BY
     nb_stat DESC"""
 
+def query_i5(*param, simple=True, gen=False):
+    '''Create SQL query for 'i5' indicators (see parameters in module docstring)'''
+
+    indic = 'i5'
+    prm = init_param_ixx(simple, gen, indic, *param)
+
+    if prm['zone'] == '00':
+        return f"""
+SELECT 
+    (
+        {query_i4(*param, simple=True, gen=gen)}
+    ) / (
+        SELECT 
+            sum(population) 
+        {prm['from_perim']}
+        {prm['where_isin_perim']}
+    ) * 100000 AS nb_stat_pop{prm['coma']}
+    {prm['s_overhead']}"""    
+
+    return f"""
+WITH
+    i4 AS (
+        {query_i4(*param, simple=True, gen=gen)}
+    )
+SELECT
+    i4.nb_stat::float / {prm['table_zone_pop']} AS nb_stat_pop,
+    {prm['table_zone_code']}{prm['coma3']}
+    {prm['s_overhead']}
+FROM
+    i4
+    LEFT JOIN {prm['table_zone']} on i4.code = {prm['table_zone_code']}
+ORDER by
+    nb_stat_pop DESC"""
+
+def query_i6(*param, simple=True, gen=False):
+    '''Create SQL query for 'i6' indicators (see parameters in module docstring)'''
+
+    indic = 'i6'
+    prm = init_param_ixx(simple, gen, indic, *param)
+
+    if prm['zone'] == '00':
+        return f"""
+SELECT 
+    (
+        {query_i4(*param, simple=True, gen=gen)}
+    ) / (
+        SELECT 
+            sum(area::float) 
+        {prm['from_perim']}
+        {prm['where_isin_perim']}
+    ) * 100000000 AS nb_stat_area{prm['coma']}
+    {prm['s_overhead']}"""
+
+    return f"""
+WITH
+    i4 AS (
+        {query_i4(*param, simple=True, gen=gen)}
+    )
+SELECT
+    i4.nb_stat::float / {prm['table_zone_area']} AS nb_stat_area,
+    {prm['table_zone_code']}{prm['coma3']}
+    {prm['s_overhead']}
+FROM
+    i4
+    LEFT JOIN {prm['table_zone']} on i4.code = {prm['table_zone_code']}
+ORDER by
+    nb_stat_area DESC"""
+
 def query_i7(*param, simple=True, gen=False):
     '''Create SQL query for 'i7' indicators (see parameters in module docstring)'''
 
@@ -520,6 +637,74 @@ FROM
 {param['group_by']}
 ORDER BY
     p_nom DESC"""
+
+def query_i8(*param, simple=True, gen=False):
+    '''Create SQL query for 'i8' indicators (see parameters in module docstring)'''
+
+    indic = 'i8'
+    prm = init_param_ixx(simple, gen, indic, *param)
+
+    if prm['zone'] == '00':
+        return f"""
+SELECT 
+    (
+        {query_i7(*param, simple=True, gen=gen)}
+    ) / (
+        SELECT 
+            sum(population) 
+        {prm['from_perim']}
+        {prm['where_isin_perim']}
+    ) * 100000 AS p_nom_pop{prm['coma']}
+    {prm['s_overhead']}"""    
+
+    return f"""
+WITH
+    i7 AS (
+        {query_i7(*param, simple=True, gen=gen)}
+    )
+SELECT
+    i7.p_nom::float / {prm['table_zone_pop']} AS p_nom_pop,
+    {prm['table_zone_code']}{prm['coma3']}
+    {prm['s_overhead']}
+FROM
+    i7
+    LEFT JOIN {prm['table_zone']} on i7.code = {prm['table_zone_code']}
+ORDER by
+    p_nom_pop DESC"""
+
+def query_i9(*param, simple=True, gen=False):
+    '''Create SQL query for 'i9' indicators (see parameters in module docstring)'''
+
+    indic = 'i9'
+    prm = init_param_ixx(simple, gen, indic, *param)
+
+    if prm['zone'] == '00':
+        return f"""
+SELECT 
+    (
+        {query_i7(*param, simple=True, gen=gen)}
+    ) / (
+        SELECT 
+            sum(area::float) 
+        {prm['from_perim']}
+        {prm['where_isin_perim']}
+    ) * 100000000 AS p_nom_area{prm['coma']}
+    {prm['s_overhead']}"""
+
+    return f"""
+WITH
+    i7 AS (
+        {query_i7(*param, simple=True, gen=gen)}
+    )
+SELECT
+    i7.p_nom::float / {prm['table_zone_area']} AS p_nom_area,
+    {prm['table_zone_code']}{prm['coma3']}
+    {prm['s_overhead']}
+FROM
+    i7
+    LEFT JOIN {prm['table_zone']} on i7.code = {prm['table_zone_code']}
+ORDER by
+    p_nom_area DESC"""
 
 """def create_table_pop(engine):
     '''create temporay table with population'''
