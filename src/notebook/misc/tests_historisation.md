@@ -70,16 +70,17 @@ Comparaison des temps de réponse d'une query pour les trois solutions avec le s
 ```python
 dd = timedelta(days=1)
 ti = datetime.fromisoformat('2024-01-01')
+duree = 36 # 365
 test = 't8---01'
-test = 't8---02'
-test = 't8---03'
-test = 't8---04'
+#test = 't8---02'
+#test = 't8---03'
+#test = 't8---04'
 ```
 
-### tests perf sol 0
+### tests perf sol 0 (solution retenue)
 
 ```python
-dtype_0 = {'value': types.FLOAT, 'category': types.TEXT, 'code_z': types.TEXT, 'query': types.TEXT, 'perimeter': types.TEXT, 'code_p': types.TEXT, 'zoning': types.TEXT, 
+dtype_0 = {'value': types.FLOAT, 'category': types.TEXT, 'code_z': types.TEXT, 'query': types.TEXT, 'perim': types.TEXT, 'code_p': types.TEXT, 'zoning': types.TEXT, 
         'timestamp': types.TIMESTAMP, 'add_value': dialects.postgresql.JSONB}
 ```
 
@@ -87,7 +88,7 @@ dtype_0 = {'value': types.FLOAT, 'category': types.TEXT, 'code_z': types.TEXT, '
 # simulation de l'historisation quotidienne de l'indicateur 'test' sur un an
 ti = datetime.fromisoformat('2024-01-01')
 to_indicator(engine, test, histo=True, format='table', histo_timest= ti.isoformat(), table_name='quotidien_0', table_option='replace', table_dtype=dtype_0)
-for i in range(365):
+for i in range(duree):
     ti += dd
     to_indicator(engine, test, histo=True, format='table', histo_timest= ti.isoformat(), table_name='quotidien_0', table_option='append', table_dtype=dtype_0)
 ```
@@ -109,15 +110,15 @@ SELECT
   SUM((add_value->>'quantity')::float) AS quantity,  
   SUM((add_value->>'quantity')::float * value) / SUM((add_value->>'quantity')::float) AS value,  
   (add_value->>'last')::float AS last, 
-  category, code_z, query,  perimeter,  code_p,  zoning
+  category, target, code,  perim,  val,  level
 FROM
   quotidien_0
 WHERE
   (timest >= to_timestamp('2024-01-01', 'YYYY-MM-DD')   AND   timest < to_timestamp('2025-01-01', 'YYYY-MM-DD'))
 GROUP BY
-  last, category,  code_z, query,  perimeter,  code_p,  zoning
+  last, category,  target, code,  perim,  val,  level
 ORDER BY
-  value, query,  perimeter,  code_p,  zoning
+  value, code,  perim,  val,  level
 """
 
 with engine.connect() as conn:
@@ -126,7 +127,7 @@ mensuel
 ```
 
 ```python
-%%timeit
+#%%timeit
 with engine.connect() as conn:
     mensuel = pd.read_sql_query(query, conn)
 ```
@@ -140,7 +141,7 @@ mensuel.to_sql('mensuel_0', engine, if_exists='replace', index=False)
 ```python
 # simulation de l'historisation quotidienne de l'indicateur 'test' sur un an
 to_indicator(engine, test, histo=True, format='table', histo_timest= ti.isoformat(), table_name='quotidien_1', table_option='replace', test='1')
-for i in range(365):
+for i in range(duree):
     ti += dd
     to_indicator(engine, test, histo=True, format='table', histo_timest= ti.isoformat(), table_name='quotidien_1', table_option='append', test='1')
 ```
@@ -158,15 +159,15 @@ quotidien_1
 
 query = """
 SELECT
-  SUM(quantity) AS quantity,  SUM(quantity * mean)/SUM(quantity) AS mean,  last, crit_v,  code, query,  level,  val,  area
+  SUM(quantity) AS quantity,  SUM(quantity * value)/SUM(quantity) AS value,  last, category,  target, code,  perim,  val,  level
 FROM
   quotidien_1
 WHERE
   (timest >= to_timestamp('2024-01-01', 'YYYY-MM-DD')   AND   timest < to_timestamp('2025-01-01', 'YYYY-MM-DD'))
 GROUP BY
-  last, crit_v,  code, query,  level,  val,  area
+  last, category,  target, code,  perim,  val,  level
 ORDER BY
-  query,  level,  val,  area
+  code,  perim,  val,  level
 """
 
 with engine.connect() as conn:
@@ -175,7 +176,7 @@ mensuel
 ```
 
 ```python
-%%timeit
+#%%timeit
 with engine.connect() as conn:
     mensuel = pd.read_sql_query(query, conn)
 ```
@@ -187,15 +188,15 @@ mensuel.to_sql('mensuel_1', engine, if_exists='replace', index=False)
 ### tests perf sol 1 bis
 
 ```python
-dtype_1_bis = {'crit_v': types.TEXT, 'code': types.TEXT, 'query': types.TEXT, 'level': types.TEXT, 'val': types.TEXT, 'area': types.TEXT, 
-        'timestamp': types.TIMESTAMP, 'value': dialects.postgresql.JSONB}
+dtype_1_bis = {'category': types.TEXT, 'target': types.TEXT, 'code': types.TEXT, 'perim': types.TEXT, 'val': types.TEXT, 'level': types.TEXT, 
+               'timestamp': types.TIMESTAMP, 'all_value': dialects.postgresql.JSONB}
 ```
 
 ```python
 # simulation de l'historisation quotidienne de l'indicateur 'test' sur un an
 ti = datetime.fromisoformat('2024-01-01')
 to_indicator(engine, test, histo=True, format='table', histo_timest= ti.isoformat(), table_name='quotidien_1_bis', table_option='replace', table_dtype=dtype_1_bis, test='1bis')
-for i in range(365):
+for i in range(duree):
     ti += dd
     to_indicator(engine, test, histo=True, format='table', histo_timest= ti.isoformat(), table_name='quotidien_1_bis', table_option='append', table_dtype=dtype_1_bis, test='1bis')
 ```
@@ -214,18 +215,18 @@ quotidien_1_bis
 # requête pour générer un tableau "à plat" :
 query = """
 SELECT
-  SUM((value->>'quantity')::float) AS quantity,  
-  SUM((value->>'quantity')::float * (value->>'mean')::float) / SUM((value->>'quantity')::float) AS mean,  
-  (value->>'last')::float AS last, 
-  crit_v,  code, query,  level,  val,  area
+  SUM((all_value->>'quantity')::float) AS quantity,  
+  SUM((all_value->>'quantity')::float * (all_value->>'value')::float) / SUM((all_value->>'quantity')::float) AS value,  
+  (all_value->>'last')::float AS last, 
+  category, target, code, perim, val, level
 FROM
   quotidien_1_bis
 WHERE
   (timest >= to_timestamp('2024-01-01', 'YYYY-MM-DD')   AND   timest < to_timestamp('2025-01-01', 'YYYY-MM-DD'))
 GROUP BY
-  last, crit_v,  code, query,  level,  val,  area
+  last, category, target, code, perim, val, level
 ORDER BY
-  mean, query,  level,  val,  area
+  value, code, perim, val, level
 """
 
 with engine.connect() as conn:
@@ -234,7 +235,7 @@ mensuel
 ```
 
 ```python
-%%timeit
+#%%timeit
 with engine.connect() as conn:
     mensuel = pd.read_sql_query(query, conn)
 ```
@@ -251,7 +252,7 @@ with engine.connect() as conn:
 ```
 
 ```python
-quotidien_2 = quotidien_1_bis[['query', 'level', 'val', 'area', 'timest']].drop_duplicates().reset_index(drop=True)
+quotidien_2 = quotidien_1_bis[['code', 'perim', 'val', 'level', 'timest']].drop_duplicates().reset_index(drop=True)
 quotidien_2['timest'] = quotidien_2['timest'].astype('string')
 ```
 
@@ -259,8 +260,8 @@ quotidien_2['timest'] = quotidien_2['timest'].astype('string')
 # génération du json
 def value_2(row, df):
     param = row.to_dict()
-    query = f"query == '{param['query']}' and level == '{param['level']}' and val == '{param['val']}' and area == '{param['area']}' and timest == '{param['timest']}'"
-    return df.query(query)[['code', 'crit_v', 'value']].to_dict(orient='records')    
+    query = f"code == '{param['code']}' and perim == '{param['perim']}' and val == '{param['val']}' and level == '{param['level']}' and timest == '{param['timest']}'"
+    return df.query(query)[['target', 'category', 'all_value']].to_dict(orient='records')    
 ```
 
 ```python
@@ -274,7 +275,7 @@ quotidien_2['result'][0][:5]
 ```
 
 ```python
-dtype_2 = {'result': dialects.postgresql.JSONB, 'query': types.TEXT, 'level': types.TEXT, 'val': types.TEXT, 'area': types.TEXT, 'timestamp': types.TIMESTAMP}
+dtype_2 = {'result': dialects.postgresql.JSONB, 'code': types.TEXT, 'perim': types.TEXT, 'val': types.TEXT, 'level': types.TEXT, 'timestamp': types.TIMESTAMP}
 quotidien_2.to_sql("quotidien_2", engine, if_exists="replace", dtype=dtype_2)
 ```
 
@@ -287,26 +288,26 @@ quotidien_2.to_sql("quotidien_2", engine, if_exists="replace", dtype=dtype_2)
 query = """
 WITH quotidien_flat AS
     (SELECT 
-        query, level, val, area, 
-        jsonb_path_query(result, '$.code') AS code, 
-        jsonb_path_query(result, '$.crit_v') AS crit_v, 
-        jsonb_path_query(result, '$.value') AS value, 
+        code, perim, val, level, 
+        jsonb_path_query(result, '$.target') AS target, 
+        jsonb_path_query(result, '$.category') AS category, 
+        jsonb_path_query(result, '$.all_value') AS all_value, 
         timest
     FROM 
         quotidien_2)
 SELECT
-  SUM((value->>'quantity')::float) AS quantity,  
-  SUM((value->>'quantity')::float * (value->>'mean')::float) / SUM((value->>'quantity')::float) AS mean,  
-  (value->>'last')::float AS last, 
-  crit_v,  code, query,  level,  val,  area
+  SUM((all_value->>'quantity')::float) AS quantity,  
+  SUM((all_value->>'quantity')::float * (all_value->>'value')::float) / SUM((all_value->>'quantity')::float) AS value,  
+  (all_value->>'last')::float AS last, 
+  category, target, code, perim, val, level
 FROM
   quotidien_flat
 WHERE
   (timest::TIMESTAMP >= to_timestamp('2024-01-01', 'YYYY-MM-DD')   AND   timest::TIMESTAMP < to_timestamp('2025-01-01', 'YYYY-MM-DD'))
 GROUP BY
-  last, crit_v,  code, query,  level,  val,  area
+  last, category, target, code, perim, val, level
 ORDER BY
-  mean, query,  level,  val,  area
+  value, code, perim, val, level
 """
 with engine.connect() as conn:
     mensuel = pd.read_sql_query(query, conn)
@@ -314,7 +315,7 @@ mensuel
 ```
 
 ```python
-%%timeit
+#%%timeit
 with engine.connect() as conn:
     mensuel = pd.read_sql_query(query, conn)
 ```
@@ -353,14 +354,14 @@ NOTA :
 ```python
 # ajout d'indicateurs dans la table 'quotidien'
 # on simule l'envoi quotidien des indicateurs (en répétant le même indicateur)
-to_indicator(engine, 'i1',          histo=True, format='table', table_name='quotidien_1', table_option='replace')
-to_indicator(engine, 'i1-01-93-02', histo=True, format='table', table_name='quotidien_1', table_option='append')
-to_indicator(engine, 't1-02-75',    histo=True, format='table', table_name='quotidien_1', table_option='append')
-to_indicator(engine, 't3-04-13001', histo=True, format='table', table_name='quotidien_1', table_option='append')
-to_indicator(engine, 'i1',          histo=True, format='table', table_name='quotidien_1', table_option='append')
-to_indicator(engine, 't1-02-75',    histo=True, format='table', table_name='quotidien_1', table_option='append')
-to_indicator(engine, 't3-04-13001', histo=True, format='table', table_name='quotidien_1', table_option='append')
-to_indicator(engine, 't1-02-75',    histo=True, format='table', table_name='quotidien_1', table_option='append')
+to_indicator(engine, 'i1',          histo=True, format='table', table_name='quotidien_1', table_option='replace', test='1')
+to_indicator(engine, 'i1-01-93-02', histo=True, format='table', table_name='quotidien_1', table_option='append', test='1')
+to_indicator(engine, 't1-02-75',    histo=True, format='table', table_name='quotidien_1', table_option='append', test='1')
+to_indicator(engine, 't3-04-13001', histo=True, format='table', table_name='quotidien_1', table_option='append', test='1')
+to_indicator(engine, 'i1',          histo=True, format='table', table_name='quotidien_1', table_option='append', test='1')
+to_indicator(engine, 't1-02-75',    histo=True, format='table', table_name='quotidien_1', table_option='append', test='1')
+to_indicator(engine, 't3-04-13001', histo=True, format='table', table_name='quotidien_1', table_option='append', test='1')
+to_indicator(engine, 't1-02-75',    histo=True, format='table', table_name='quotidien_1', table_option='append', test='1')
 ```
 
 ```python
@@ -377,15 +378,15 @@ quotidien_1
 
 query = """
 SELECT
-  SUM(quantity) AS quantity,  SUM(quantity * mean) / SUM(quantity) AS mean,  last, crit_v,  code, query,  level,  val,  area
+  SUM(quantity) AS quantity,  SUM(quantity * value) / SUM(quantity) AS value, last, category, target, code, perim, val, level
 FROM
   quotidien_1
 WHERE
   (timest >= CAST(NOW() AS date))   AND   (timest < CAST((NOW() + INTERVAL '1 month') AS date))
 GROUP BY
-  last, crit_v,  code, query,  level,  val,  area
+  last, category, target, code, perim, val, level
 ORDER BY
-  query,  level,  val,  area
+  code, perim, val, level
 """
 
 with engine.connect() as conn:
@@ -403,11 +404,11 @@ mensuel.to_sql('mensuel_1', engine, if_exists='replace', index=False)
 
 query = """
 SELECT
-  mean::int AS nb_pdc,  crit_v AS p_range
+  value::int AS nb_pdc,  category AS p_range
 FROM
   mensuel_1
 WHERE
-  query = 't1' AND level = '02' AND val = '75'
+  code = 't1' AND perim = '02' AND val = '75'
 """
 with engine.connect() as conn:
     t1_m_02_75 = pd.read_sql_query(query, conn)

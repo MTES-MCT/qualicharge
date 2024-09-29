@@ -46,8 +46,8 @@ STAT_ALL = f"""station
 TABLE = {'00': 'national', '01': 'region', '02': 'department', '03': 'epci', '04': 'city'}
 G_OVERHEAD = f"""QUERY,
     VAL,
-    LEVEL,
-    TARGET"""
+    PERIM,
+    LEVEL"""
 STAT_NB_PDC = f"""stat_nb_pdc AS (
     SELECT
       count(station_id) AS nb_pdc,
@@ -142,27 +142,25 @@ def indic_to_table(pd_df, table_name, engine, table_option="replace", table_dtyp
         if 'code' not in pd_df.columns:
             pd_df.insert(len(pd_df.columns)-5, 'code', [""]*len(pd_df))
         if len(pd_df.columns) == 7:
-            pd_df.insert(1, 'crit_v', [""]*len(pd_df))
+            pd_df.insert(1, 'category', [""]*len(pd_df))
         pd_df.insert(0, 'quantity', [1]*len(pd_df))
         pd_df.insert(2, 'last', pd_df[pd_df.columns[1]])
         cols = pd_df.columns
-        pd_df.rename(columns={cols[1]: 'mean', cols[3]: 'crit_v'}, inplace = True)
-        pd_df = pd_df.astype({'quantity': 'int', 'last': 'float', 'mean': 'float', 
-                              'query': 'string', 'level': 'string', 'val': 'string', 'target': 'string'})
-        #print(pd_df.columns)
+        pd_df.rename(columns={cols[1]: 'value', cols[3]: 'category'}, inplace = True)
+        pd_df = pd_df.astype({'quantity': 'int', 'last': 'float', 'value': 'float', 
+                              'query': 'string', 'perim': 'string', 'val': 'string', 'level': 'string'})
+        pd_df.rename(columns={'code': 'target', 'query': 'code'}, inplace = True)
         if not test:
-            pd_df.rename(columns={'mean': 'value', 'crit_v': 'category', 'level': 'perimeter', 'val': 'code_p', 'target': 'zoning', 'code': 'code_z'},
-                        inplace = True)
             pd_df['add_value'] = pd.Series([{'quantity': quantity, 'last': last} 
                                         for quantity, last in zip(pd_df['quantity'], pd_df['last'])])
             del pd_df['last']
             del pd_df['quantity']
         elif test == '1bis':
-            pd_df['value'] = pd.Series([{'quantity': quantity, 'mean': mean, 'last': last} 
-                                        for quantity, mean, last in zip(pd_df['quantity'], pd_df['mean'], pd_df['last'])])
-            del pd_df['mean']
+            pd_df['all_value'] = pd.Series([{'quantity': quantity, 'value': value, 'last': last} 
+                                        for quantity, value, last in zip(pd_df['quantity'], pd_df['value'], pd_df['last'])])
             del pd_df['last']
             del pd_df['quantity']
+            del pd_df['value']
     if table_name:
         dtype = table_dtype if table_dtype else {}
         pd_df.to_sql(table_name, engine, if_exists=table_option, index=False, dtype=dtype)
@@ -180,55 +178,55 @@ def query_histo(query, timestamp=None):
 def init_param_ixx(simple, gen, indic,  *param):
     '''parameters initialization for 'query_ixx' and 'query_txx' functions  '''
     
-    perim, val, zone = (param + ('00', '00', '00'))[:3]
+    perim, val, level = (param + ('00', '00', '00'))[:3]
     perim = perim.rjust(2, '0')
     val = val.rjust(2, '0')
-    zone = zone.rjust(2, '0')
+    level = level.rjust(2, '0')
 
     g_overhead = "" if simple else f"{G_OVERHEAD},"
     s_overhead = "" if simple else f"""'{indic}' AS QUERY,
-    '{perim}' AS LEVEL,
+    '{perim}' AS PERIM,
     '{val}' AS VAL,
-    '{zone}' AS TARGET"""
+    '{level}' AS LEVEL"""
     where_isin_perim = "" if perim == '00' else f"""WHERE
     {TABLE[perim]}.code = '{val}'"""
     from_perim = """FROM
         region""" if perim == '00' else f"""FROM
         {TABLE[perim]}"""
-    table_zone = "" if zone == '00' else f"{TABLE[zone]}"
-    table_zone_code = "" if zone == '00' else f"{TABLE[zone]}.code"
-    table_zone_pop = "" if zone == '00' else f"{TABLE[zone]}.population * 100000"
-    table_zone_area = "" if zone == '00' else f"{TABLE[zone]}.area::float * 100000000"
+    table_level = "" if level == '00' else f"{TABLE[level]}"
+    table_level_code = "" if level == '00' else f"{TABLE[level]}.code"
+    table_level_pop = "" if level == '00' else f"{TABLE[level]}.population * 100000"
+    table_level_area = "" if level == '00' else f"{TABLE[level]}.area::float * 100000000"
     coma = "" if f"{s_overhead}" == "" else ","
 
     if gen:
         s_overhead = "" if simple else f"""'{{indic}}' AS QUERY,
-    '{{perim}}' AS LEVEL,
+    '{{perim}}' AS PERIM,
     '{{val}}' AS VAL,
-    '{{zone}}' AS TARGET"""
+    '{{level}}' AS LEVEL"""
         where_isin_perim = "" if perim == '00' else f"""WHERE
     {{TABLE[perim]}}.code = '{{val}}'"""
         from_perim = """FROM
         region""" if perim == '00' else f"""FROM
         {TABLE[perim]}"""
-        table_zone = "" if zone == '00' else f"{{TABLE[zone]}}"
-        table_zone_code = "" if zone == '00' else f"{{TABLE[zone]}}.code"
-        table_zone_pop = "" if zone == '00' else f"{{TABLE[zone]}}.population * 100000"
-        table_zone_area = "" if zone == '00' else f"{{TABLE[zone]}}.area::float * 100000000"
+        table_level = "" if level == '00' else f"{{TABLE[level]}}"
+        table_level_code = "" if level == '00' else f"{{TABLE[level]}}.code"
+        table_level_pop = "" if level == '00' else f"{{TABLE[level]}}.population * 100000"
+        table_level_area = "" if level == '00' else f"{{TABLE[level]}}.area::float * 100000000"
 
-    coma1 = "" if f"{table_zone_code}{s_overhead}" == "" else ","
-    coma2 = "" if f"{table_zone_code}" == "" else ","
-    coma3 = "" if f"{s_overhead}" == "" or f"{table_zone_code}" == "" else ","
-    group_by = "" if f"{table_zone_code}{g_overhead}" == "" else f"""GROUP BY
+    coma1 = "" if f"{table_level_code}{s_overhead}" == "" else ","
+    coma2 = "" if f"{table_level_code}" == "" else ","
+    coma3 = "" if f"{s_overhead}" == "" or f"{table_level_code}" == "" else ","
+    group_by = "" if f"{table_level_code}{g_overhead}" == "" else f"""GROUP BY
     {g_overhead}
-    {table_zone_code}"""
-    code = "" if zone == '00' else "code"
+    {table_level_code}"""
+    code = "" if level == '00' else "code"
 
-    return {'perim': perim, 'zone': zone, 'coma': coma, 'coma1': coma1, 'coma2': coma2, 'coma3': coma3, 
+    return {'perim': perim, 'level': level, 'coma': coma, 'coma1': coma1, 'coma2': coma2, 'coma3': coma3, 
             'code': code, 'group_by': group_by, 'g_overhead': g_overhead, 's_overhead': s_overhead, 
             'where_isin_perim': where_isin_perim, 'from_perim': from_perim, 
-            'table_zone': table_zone, 'table_zone_code': table_zone_code,
-            'table_zone_pop': table_zone_pop, 'table_zone_area': table_zone_area}
+            'table_level': table_level, 'table_level_code': table_level_code,
+            'table_level_pop': table_level_pop, 'table_level_area': table_level_area}
 
 def query_t1(*param, simple=True, gen=False):
     '''Create SQL query for 't1' indicators (see parameters in module docstring)'''
@@ -242,7 +240,7 @@ WITH
 SELECT
     count(id_pdc_itinerance) AS nb_pdc,
     p_range{prm['coma1']}
-    {prm['table_zone_code']}{prm['coma3']}
+    {prm['table_level_code']}{prm['coma3']}
     {prm['s_overhead']}
 FROM
     {PDC_ALL}
@@ -252,7 +250,7 @@ FROM
 GROUP BY
     {prm['g_overhead']}
     p_range{prm['coma2']}
-    {prm['table_zone_code']}
+    {prm['table_level_code']}
 ORDER BY
     nb_pdc DESC"""
 
@@ -291,7 +289,7 @@ WITH
 SELECT
     count(nb_pdc) AS nb_stations,
     nb_pdc{prm['coma1']}
-    {prm['table_zone_code']}{prm['coma3']}
+    {prm['table_level_code']}{prm['coma3']}
     {prm['s_overhead']}
 FROM
     stat_nb_pdc
@@ -301,7 +299,7 @@ FROM
 GROUP BY
     {prm['g_overhead']}
     nb_pdc{prm['coma2']}
-    {prm['table_zone_code']}
+    {prm['table_level_code']}
 ORDER BY
     nb_stations DESC"""
 
@@ -338,7 +336,7 @@ def query_t5(*param, simple=True, gen=False):
 SELECT
     count(id_station_itinerance) AS nb_stations,
     implantation_station{prm['coma1']}
-    {prm['table_zone_code']}{prm['coma3']}
+    {prm['table_level_code']}{prm['coma3']}
     {prm['s_overhead']}
 FROM
     {STAT_ALL}
@@ -347,7 +345,7 @@ FROM
 GROUP BY
     {prm['g_overhead']}
     implantation_station{prm['coma2']}
-    {prm['table_zone_code']}
+    {prm['table_level_code']}
 ORDER BY
     nb_stations DESC"""
 
@@ -384,7 +382,7 @@ def query_t8(*param, simple=True, gen=False):
 SELECT
     count(id_station_itinerance) AS nb_stations,
     nom_operateur{prm['coma1']}
-    {prm['table_zone_code']}{prm['coma3']}
+    {prm['table_level_code']}{prm['coma3']}
     {prm['s_overhead']}
 FROM
     {STAT_ALL}
@@ -394,7 +392,7 @@ FROM
 GROUP BY
     {prm['g_overhead']}
     nom_operateur{prm['coma2']}
-    {prm['table_zone_code']}
+    {prm['table_level_code']}
 ORDER BY
     nb_stations DESC"""
 
@@ -427,7 +425,7 @@ def query_i1(*param, simple=True, gen=False):
     indic = 'i1'
     param = init_param_ixx(simple, gen, indic, *param)
 
-    if param['perim'] == param['zone'] == '00':
+    if param['perim'] == param['level'] == '00':
         return f"""
 SELECT
     count(id_pdc_itinerance) AS nb_pdc{param['coma']}
@@ -438,7 +436,7 @@ FROM
     return f"""
 SELECT
     count(id_pdc_itinerance) AS nb_pdc{param['coma1']}
-    {param['table_zone_code']}{param['coma3']}
+    {param['table_level_code']}{param['coma3']}
     {param['s_overhead']}
 FROM
     {PDC_ALL}
@@ -454,7 +452,7 @@ def query_i2(*param, simple=True, gen=False):
     indic = 'i2'
     prm = init_param_ixx(simple, gen, indic, *param)
 
-    if prm['zone'] == '00':
+    if prm['level'] == '00':
         return f"""
 SELECT 
     (
@@ -473,12 +471,12 @@ WITH
         {query_i1(*param, simple=True, gen=gen)}
     )
 SELECT
-    i1.nb_pdc::float / {prm['table_zone_pop']} AS nb_pdc_pop,
-    {prm['table_zone_code']}{prm['coma3']}
+    i1.nb_pdc::float / {prm['table_level_pop']} AS nb_pdc_pop,
+    {prm['table_level_code']}{prm['coma3']}
     {prm['s_overhead']}
 FROM
     i1
-    LEFT JOIN {prm['table_zone']} on i1.code = {prm['table_zone_code']}
+    LEFT JOIN {prm['table_level']} on i1.code = {prm['table_level_code']}
 ORDER by
     nb_pdc_pop DESC"""
 
@@ -488,7 +486,7 @@ def query_i3(*param, simple=True, gen=False):
     indic = 'i3'
     prm = init_param_ixx(simple, gen, indic, *param)
 
-    if prm['zone'] == '00':
+    if prm['level'] == '00':
         return f"""
 SELECT 
     (
@@ -507,12 +505,12 @@ WITH
         {query_i1(*param, simple=True, gen=gen)}
     )
 SELECT
-    i1.nb_pdc::float / {prm['table_zone_area']} AS nb_pdc_area,
-    {prm['table_zone_code']}{prm['coma3']}
+    i1.nb_pdc::float / {prm['table_level_area']} AS nb_pdc_area,
+    {prm['table_level_code']}{prm['coma3']}
     {prm['s_overhead']}
 FROM
     i1
-    LEFT JOIN {prm['table_zone']} on i1.code = {prm['table_zone_code']}
+    LEFT JOIN {prm['table_level']} on i1.code = {prm['table_level_code']}
 ORDER by
     nb_pdc_area DESC"""
 
@@ -522,7 +520,7 @@ def query_i4(*param, simple=True, gen=False):
     indic = 'i4'
     param = init_param_ixx(simple, gen, indic, *param)
 
-    if param['perim'] == param['zone'] == '00':
+    if param['perim'] == param['level'] == '00':
         return f"""
 SELECT
     count(id_station_itinerance) AS nb_stat{param['coma']}
@@ -533,7 +531,7 @@ FROM
     return f"""
 SELECT
     count(id_station_itinerance) AS nb_stat{param['coma1']}
-    {param['table_zone_code']}{param['coma3']}
+    {param['table_level_code']}{param['coma3']}
     {param['s_overhead']}
 FROM
     {STAT_ALL}
@@ -549,7 +547,7 @@ def query_i5(*param, simple=True, gen=False):
     indic = 'i5'
     prm = init_param_ixx(simple, gen, indic, *param)
 
-    if prm['zone'] == '00':
+    if prm['level'] == '00':
         return f"""
 SELECT 
     (
@@ -568,12 +566,12 @@ WITH
         {query_i4(*param, simple=True, gen=gen)}
     )
 SELECT
-    i4.nb_stat::float / {prm['table_zone_pop']} AS nb_stat_pop,
-    {prm['table_zone_code']}{prm['coma3']}
+    i4.nb_stat::float / {prm['table_level_pop']} AS nb_stat_pop,
+    {prm['table_level_code']}{prm['coma3']}
     {prm['s_overhead']}
 FROM
     i4
-    LEFT JOIN {prm['table_zone']} on i4.code = {prm['table_zone_code']}
+    LEFT JOIN {prm['table_level']} on i4.code = {prm['table_level_code']}
 ORDER by
     nb_stat_pop DESC"""
 
@@ -583,7 +581,7 @@ def query_i6(*param, simple=True, gen=False):
     indic = 'i6'
     prm = init_param_ixx(simple, gen, indic, *param)
 
-    if prm['zone'] == '00':
+    if prm['level'] == '00':
         return f"""
 SELECT 
     (
@@ -602,12 +600,12 @@ WITH
         {query_i4(*param, simple=True, gen=gen)}
     )
 SELECT
-    i4.nb_stat::float / {prm['table_zone_area']} AS nb_stat_area,
-    {prm['table_zone_code']}{prm['coma3']}
+    i4.nb_stat::float / {prm['table_level_area']} AS nb_stat_area,
+    {prm['table_level_code']}{prm['coma3']}
     {prm['s_overhead']}
 FROM
     i4
-    LEFT JOIN {prm['table_zone']} on i4.code = {prm['table_zone_code']}
+    LEFT JOIN {prm['table_level']} on i4.code = {prm['table_level_code']}
 ORDER by
     nb_stat_area DESC"""
 
@@ -617,7 +615,7 @@ def query_i7(*param, simple=True, gen=False):
     indic = 'i7'
     param = init_param_ixx(simple, gen, indic, *param)
 
-    if param['perim'] == param['zone'] == '00':
+    if param['perim'] == param['level'] == '00':
         return f"""
 SELECT
     sum(puissance_nominale) AS p_nom{param['coma']}
@@ -628,7 +626,7 @@ FROM
     return f"""
 SELECT
     sum(puissance_nominale) AS p_nom{param['coma1']}
-    {param['table_zone_code']}{param['coma3']}
+    {param['table_level_code']}{param['coma3']}
     {param['s_overhead']}
 FROM
     {PDC_ALL}
@@ -644,7 +642,7 @@ def query_i8(*param, simple=True, gen=False):
     indic = 'i8'
     prm = init_param_ixx(simple, gen, indic, *param)
 
-    if prm['zone'] == '00':
+    if prm['level'] == '00':
         return f"""
 SELECT 
     (
@@ -663,12 +661,12 @@ WITH
         {query_i7(*param, simple=True, gen=gen)}
     )
 SELECT
-    i7.p_nom::float / {prm['table_zone_pop']} AS p_nom_pop,
-    {prm['table_zone_code']}{prm['coma3']}
+    i7.p_nom::float / {prm['table_level_pop']} AS p_nom_pop,
+    {prm['table_level_code']}{prm['coma3']}
     {prm['s_overhead']}
 FROM
     i7
-    LEFT JOIN {prm['table_zone']} on i7.code = {prm['table_zone_code']}
+    LEFT JOIN {prm['table_level']} on i7.code = {prm['table_level_code']}
 ORDER by
     p_nom_pop DESC"""
 
@@ -678,7 +676,7 @@ def query_i9(*param, simple=True, gen=False):
     indic = 'i9'
     prm = init_param_ixx(simple, gen, indic, *param)
 
-    if prm['zone'] == '00':
+    if prm['level'] == '00':
         return f"""
 SELECT 
     (
@@ -697,47 +695,11 @@ WITH
         {query_i7(*param, simple=True, gen=gen)}
     )
 SELECT
-    i7.p_nom::float / {prm['table_zone_area']} AS p_nom_area,
-    {prm['table_zone_code']}{prm['coma3']}
+    i7.p_nom::float / {prm['table_level_area']} AS p_nom_area,
+    {prm['table_level_code']}{prm['coma3']}
     {prm['s_overhead']}
 FROM
     i7
-    LEFT JOIN {prm['table_zone']} on i7.code = {prm['table_zone_code']}
+    LEFT JOIN {prm['table_level']} on i7.code = {prm['table_level_code']}
 ORDER by
     p_nom_area DESC"""
-
-"""def create_table_pop(engine):
-    '''create temporay table with population'''
-    pop = pd.read_json(URL_POP).loc[:,['code', 'population']]
-    pop.rename(columns={'code': 'p_code'}, inplace=True)
-    indic_to_table(pop, 'tmp_pop', engine, table_option="replace")
-
-def query_i2(*param, simple=True, gen=False):
-    '''Create SQL query for 't2' indicators (see parameters in module docstring)'''
-
-    perim, val, zone = (param + ('00', '00', '00'))[:3]
-    perim = perim.rjust(2, '0')
-    val = val.rjust(2, '0')
-    zone = zone.rjust(2, '0')
-"""
-'''
-    pdc_cog_pop = f"""
-        {CITY_COG},
-        pdc_all AS (SELECT * from {PDC_ALL}),
-        pdc_cog_pop AS (SELECT * from pdc_all LEFT JOIN city_cog ON {ISIN_GEOM } LEFT JOIN temp_pop ON c_code)
-        """
-
-    FIELD = {'00': 'all_data', '01': 'r_code', '02': 'd_code', '03': 'e_code', '04': 'c_code'}
-    zone = perim if zone == '00' else zone
-
-    return f"""
-    WITH {pdc_cog_pop}, 
-         perimeter(level, all_data) AS (VALUES ('{zone}', '00')),
-         tot_pop AS (
-            SELECT count(id_pdc_itinerance) AS nb_pdc, sum(population) AS nb_pop, level, {FIELD[zone]} AS x_code
-            FROM perimeter, pdc_cog_pop
-            WHERE {FIELD[perim]} = '{val}'
-            GROUP BY level, x_code ORDER BY nb_pdc DESC)
-    SELECT nb_pdc / nb_pop * 100000 AS ratio_nb_pdc_per_pop, p_cat, p_range, level, code
-    FROM tot_pop"""
-'''
