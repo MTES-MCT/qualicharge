@@ -63,8 +63,9 @@ STAT_NB_PDC = f"""stat_nb_pdc AS (
 # URL_POP = 'https://unpkg.com/@etalab/decoupage-administratif@4.0.0/data/communes.json'
 # POP = None 
 
-def to_indicator(engine, indicator, simple=True, histo=False, format='pandas', histo_timest=None, json_orient='split',
-                 table_name=None, table_option="replace", table_dtype=None, query_gen=False, test=None):
+def to_indicator(engine, indicator, simple=True, histo=False, format='pandas', histo_timest=None, histo_period=None, 
+                 json_orient='split', table_name=None, table_option="replace", table_dtype=None, query_gen=False, 
+                 test=None):
     """create data for an indicator
     
     Parameters
@@ -87,14 +88,19 @@ def to_indicator(engine, indicator, simple=True, histo=False, format='pandas', h
         Json structure (see 'orient' option for 'DataFrame.to_json').
     histo_timest: string (used if histo=True), default None
         Value of timestamp. If None the timestamp is the execution query timestamp.
+    histo_period: string (used if histo=True), default 'm'
+        Value of initial periodicity ('h', 'd', 'm', 'w', 'y')
     table_name: string (used if format='table'), default None
         Name of the table to create (format='table'). If None the name is the indicator name.
     table_option: string (used if format='table'), default 'replace'
         Option if table exists ('replace' or 'append')
+    table_dtype: dict (used if format='table'), default None
+        Postgree dtype for each field
     query_gen: boolean (default False)
         If True, the query is generic (with variables) else the query is specific (with values)
     test: string, default None
         choice of historization solution
+    
     Returns
     -------
     String or Dataframe
@@ -106,7 +112,7 @@ def to_indicator(engine, indicator, simple=True, histo=False, format='pandas', h
     table_dtype = table_dtype if table_dtype else {'value': types.FLOAT, 'category': types.TEXT, 'code_z': types.TEXT, 'query': types.TEXT, 'perimeter': types.TEXT, 'code_p': types.TEXT, 'zoning': types.TEXT, 
         'timestamp': types.TIMESTAMP, 'add_value': dialects.postgresql.JSONB}
     if histo:
-        query = create_query.query_histo(query, timestamp=histo_timest)
+        query = create_query.query_histo(query, timestamp=histo_timest, histo_period=histo_period)
     if format == 'query':
         return query
     with engine.connect() as conn:
@@ -131,6 +137,14 @@ def indic_to_table(pd_df, table_name, engine, table_option="replace", table_dtyp
         Name of the table to create.
     table_option: string (used if format='table'), default 'replace'
         Option if table exists 'replace' or 'append'
+    table_dtype: dict (used if format='table'), default None
+        Postgree dtype for each field
+    histo: boolean, default False
+        If True, timestamp additional column is added (with others additional columns)
+    histo_period: string (used if histo=True), default 'm'
+        Value of initial periodicity ('h', 'd', 'm', 'w', 'y')
+    test: string ('0', '1', '1bis'), default None
+        Choice of historization solution (used only for tests)
 
     Returns
     -------
@@ -140,17 +154,20 @@ def indic_to_table(pd_df, table_name, engine, table_option="replace", table_dtyp
     from datetime import datetime
     if histo:
         if 'code' not in pd_df.columns:
-            pd_df.insert(len(pd_df.columns)-5, 'code', [""]*len(pd_df))
-        if len(pd_df.columns) == 7:
+            pd_df.insert(len(pd_df.columns)-6, 'code', [""]*len(pd_df))
+        if len(pd_df.columns) == 8:
             pd_df.insert(1, 'category', [""]*len(pd_df))
         pd_df.insert(0, 'quantity', [1]*len(pd_df))
         pd_df.insert(2, 'last', pd_df[pd_df.columns[1]])
         cols = pd_df.columns
         pd_df.rename(columns={cols[1]: 'value', cols[3]: 'category'}, inplace = True)
+        del pd_df['val']
+        del pd_df['perim']
         pd_df = pd_df.astype({'quantity': 'int', 'last': 'float', 'value': 'float', 
-                              'query': 'string', 'perim': 'string', 'val': 'string', 'level': 'string'})
+                              'query': 'string', 'level': 'string', 'period': 'string'})
         pd_df.rename(columns={'code': 'target', 'query': 'code'}, inplace = True)
         if not test:
+            #pd_df['add_value'] = pd.Series([{}]*len(pd_df))
             pd_df['add_value'] = pd.Series([{'quantity': quantity, 'last': last} 
                                         for quantity, last in zip(pd_df['quantity'], pd_df['last'])])
             del pd_df['last']
@@ -167,13 +184,17 @@ def indic_to_table(pd_df, table_name, engine, table_option="replace", table_dtyp
         return pd.read_sql_query('SELECT COUNT(*) AS count FROM "' + table_name + '"', engine)
     return pd_df
 
-def query_histo(query, timestamp=None):
+def query_histo(query, histo_period, timestamp=None):
 
     if timestamp:
-        datation = "datation(timest) AS (VALUES ('" + timestamp + "'::timestamp)) "
+        datation = "datation(timestamp) AS (VALUES ('" + timestamp + "'::timestamp))"
     else:
-        datation = "datation(timest) AS (VALUES (CURRENT_TIMESTAMP)) "
-    return " WITH query AS (" + query + "), " + datation + " SELECT * FROM query, datation "
+        datation = "datation(timestamp) AS (VALUES (CURRENT_TIMESTAMP))"
+    return f"""WITH 
+        query AS ({query}),
+        {datation},
+        periodicity(period) as (VALUES ('{histo_period}'))
+    SELECT * FROM query, datation, periodicity"""
 
 def init_param_ixx(simple, gen, indic,  *param):
     '''parameters initialization for 'query_ixx' and 'query_txx' functions  '''

@@ -100,9 +100,7 @@ Cinq types d'indicateurs sont définis:
 ### Codification des indicateurs
 
 Les indicateurs sont codifiés par une chaine de caractères : *[type]-[périmètre]-[valeur de périmètre]-[level]*
-
 ou bien pour les indicateurs temporels : *[type]-[périodicité]-[périmètre]-[valeur de périmètre]-[level]*
-
 avec:
 
 - type : identifiant du type d'indicateur (ex. 'i1' : nombre de points de recharge)
@@ -140,7 +138,6 @@ Le résultat d'un indicateur peut être représenté par une structure tabulaire
 - target (facultative) : découpage associé au level choisi
 
 Le champ 'valeur additionnelle' est utilisé pour les données structurées associées au champ 'valeur'.
-
 Ce champ est au format JSON et concerne les informations liées à l'historisation ainsi que les données des indicateurs d'état.
 
 Si aucune catégorisation et aucun level ne sont définis, le résultat se réduit à une valeur.
@@ -169,7 +166,6 @@ Si uniquement un level est défini, le résultat est une liste de valeurs associ
 *Exemple*
 
 i1-1-93-2 : Nombre de points de recharge (i1) pour la région (1) PACA (93) par département (2)
-
 Le résultat est le nombre de points de recharge (valeur : nb_pdc) par département (target : code du département).
 
 | nb_pdc | code   |
@@ -186,7 +182,6 @@ Si une catégorisation et un level sont définis, le résultat est une liste de 
 *Exemple*
 
 t8-1-93-2 : Nombre de stations par opérateur (t8) pour la région (1) PACA (93) par département (2)
-
 La 'target' est ici le département (représenté par son code) et la 'catégorie' est l'opérateur (nom_operateur).
 
 | nb_stat | nom_operateur                   | code   |
@@ -223,7 +218,6 @@ Objectif :
 | t9-xx-yy-zz | Pourcentage de stations par opérateur                     | 2   | infra | synthèse              |
 
 L'identification des opérateurs (nom) est actuellment facultative (à rendre obligatoire).
-
 La classification des niveaux de puissances nominale est à valider (en liaison avec le type d'alimentation AC/DC). La classification retenue actuellement est la suivante : 0-15 / 15-26 / 26-65 / 65-175 / 175-360 / > 360 (valeurs de seuil choisies à partir de l'existant Qualicharge).
 
 ### Infrastructure - quantitatif
@@ -266,8 +260,10 @@ Objectif:
 | a6  | Distance moyenne inter-station de recharge                         | 3   | infra | oui       |
 
 ex. Suivi du déploiement des IRVE dans les stations (nécessite de disposer du nombre de stations).
-
 ex. Suivi temporel de la distance interstation (utilisation du graphe pour calculer les distances de recharge associée à chaque station).
+
+L'appartenance d'une station au réseau autoroute est à définir (attribut spécifique et / ou proximité géographique avec les voies de circulation).
+Le graphe autoroutier doit permettre d'associer plusieurs stations à un noeud (ou à un tronçon).
 
 ### Indicateurs par station
 
@@ -293,9 +289,7 @@ ex. Analyse de la distance interstation (zones blanches).
 | u4-xx-yy-zz | Energie distribuée                   | 2   | usage | oui (national/région) |
 
 u1 est calculé sur une journée
-
 u2 est calculé à partir de u1 et i1
-
 u3 et u4 sont calculés par heure
 
 exemple d'utilisation : Analyse du profil horaire de l'énergie fournie en fonction des périodes et de la localisation.
