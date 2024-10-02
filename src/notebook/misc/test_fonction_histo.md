@@ -20,6 +20,7 @@ jupyter:
 ```python editable=true slideshow={"slide_type": ""}
 import os
 from datetime import datetime, timedelta
+import json
 import pandas as pd
 import geopandas as gpd
 from sqlalchemy import create_engine, types, dialects
@@ -86,20 +87,23 @@ mensuel
 df = pd.DataFrame({'a':[1,2,3], 'b':[4,5,6], 'c':[{'d':1, 'e':7}, {'d':2, 'e':8}, {'d':3, 'e':9}]})
 mean = (df['a'] * df['b']).sum() / df['b'].sum()
 mean
-df['c']
+pd.concat([df, pd.json_normalize(df['c'])], axis=1)
 ```
 
 ```python
-histo = mensuel.sort_values(by='timestamp', ascending=False).set_index(['code', 'level', 'target', 'category'])
+histo = pd.concat([mensuel, pd.json_normalize(mensuel['add_value'])], axis=1)
+histo.sort_values(by='timestamp', ascending=False, inplace=True)
+histo = histo.set_index(['code', 'level', 'target', 'category']) #, inplace=True)
+#histo = histo.sort_index()
 for idx in histo.index.unique()[0:1]:
     print(idx)
-    data_n = histo.loc[idx]
-    quantity = data_n[
-    last = data_n['value'][0]
-    value = 
+    data_n = histo.loc[idx].copy()
+    quantity = data_n['quantity'].sum()
+    last = data_n['value'].iloc[0]
+    value = (data_n['quantity'] * data_n['value']).sum() / quantity
     #print(histo.loc[idx])
-    print(data_n['value'][0])
-    print(data_n)
+    print(last, quantity, value)
+    #print(data_n)
 ```
 
 ```python
