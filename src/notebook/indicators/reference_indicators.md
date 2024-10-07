@@ -115,7 +115,6 @@ avec:
   - 2: département (valeur : code du département)
   - 3: EPCI (valeur : code de l'EPCI)
   - 4: commune (valeur : code de la commune)
-  - 5: métropole (sans valeur)
 - level : niveau de découpage du résultat (découpage administratif - voir périmètre). Les valeurs associées à un 'level' sont dénommées 'target'.
 
 Le périmètre par défaut est l'ensemble des données.
