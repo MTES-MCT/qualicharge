@@ -8,6 +8,10 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Fixed
+
+- Migrate administrative boundaries tables schema and data
+
 ### Changed
 
 - Add geo-boundaries population and area fields
