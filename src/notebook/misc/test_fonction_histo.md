@@ -45,7 +45,7 @@ dtype_0 = {'value': types.FLOAT, 'category': types.TEXT, 'code_z': types.TEXT, '
 ```
 
 ```python
-# simulation de l'historisation quotidienne de l'indicateur 'test' sur un an
+# simulation de l'historisation quotidienne de l'indicateur 'test'
 ti = datetime.fromisoformat('2024-01-01')
 period = 'd'
 print(to_indicator(engine, test, histo=True, format='table', histo_period=period, histo_timest= ti.isoformat(), table_name='quotidien_0', table_option='replace', table_dtype=dtype_0))
@@ -80,29 +80,68 @@ WHERE
 
 with engine.connect() as conn:
     mensuel = pd.read_sql_query(query, conn)
-mensuel
+mensuel['add_value'] = mensuel['add_value'].fillna('empty')
+mensuel = mensuel.dropna().reset_index()
+print(mensuel)
 ```
 
 ```python
-df = pd.DataFrame({'a':[1,2,3], 'b':[4,5,6], 'c':[{'d':1, 'e':7}, {'d':2, 'e':8}, {'d':3, 'e':9}]})
+import numpy as np
+df = pd.DataFrame({'a':[1,1,2,2], 'b':[4,5,6,7], 'c':[{'d':1, 'e':7}, None, {'d':2, 'e':8}, {'d':3, 'e':6, 'f':9}]})
+#print(df['c'])
+df['c'] = df['c'].fillna('vide')
+#print(df['c'])
 mean = (df['a'] * df['b']).sum() / df['b'].sum()
 mean
-pd.concat([df, pd.json_normalize(df['c'])], axis=1)
+norm = pd.concat([df[['a', 'b']], pd.json_normalize(df['c'])], axis=1)
+norm['bd'] = norm['b'] * norm['d']
+print(norm)
+grp_sum = norm.groupby(['a']).sum()
+grp_max = norm.groupby(['a']).max()
+grp = pd.concat([grp_sum[['b', 'bd']], grp_max['e']], axis=1)
+grp['b_mean'] = grp['bd'] / grp['b']
+grp
+```
+
+```python
+max(pd.isna(norm['d']))
+```
+
+```python
+min(norm['d'])
+```
+
+```python
+1 - df['a']
+```
+
+```python
+df = pd.DataFrame.from_records([(3, 'a'), (2, 'b'), (1, 'c'), (0, 'd')], columns=['col_1', 'col_2'])
 ```
 
 ```python
 histo = pd.concat([mensuel, pd.json_normalize(mensuel['add_value'])], axis=1)
-histo.sort_values(by='timestamp', ascending=False, inplace=True)
-histo = histo.set_index(['code', 'level', 'target', 'category']) #, inplace=True)
-#histo = histo.sort_index()
+histo = histo.set_index(['code', 'level', 'target', 'category']).sort_index()
 for idx in histo.index.unique()[0:1]:
     print(idx)
-    data_n = histo.loc[idx].copy()
+    data_n = histo.loc[idx].reset_index().sort_values(by='timestamp', ascending=False)
     quantity = data_n['quantity'].sum()
     last = data_n['value'].iloc[0]
     value = (data_n['quantity'] * data_n['value']).sum() / quantity
-    #print(histo.loc[idx])
-    print(last, quantity, value)
+    if 'variance' not in data_n.columns or max(pd.isna(data_n['variance'])):
+        variance = None
+    else:
+        variance = (data_n['quantity'] * (data_n['variance'] + (value - data_n['value'])**2)).sum() / quantity
+    if 'mini' not in data_n.columns or max(pd.isna(data_n['mini'])):
+        mini = None
+    else:
+        mini = min(data_n['mini'])
+    if 'maxi' not in data_n.columns or max(pd.isna(data_n['maxi'])):
+        maxi = None
+    else:
+        maxi = min(data_n['mini'])        
+    add_value = {'quantity': quantity, 'last': last, 'variance': variance, 'mini': mini, 'maxi': maxi}
+    print(last, quantity, value, variance, mini, maxi)
     #print(data_n)
 ```
 
