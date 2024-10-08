@@ -79,15 +79,97 @@ WHERE
 """
 
 with engine.connect() as conn:
-    mensuel = pd.read_sql_query(query, conn)
-mensuel['add_value'] = mensuel['add_value'].fillna('empty')
-mensuel = mensuel.dropna().reset_index()
-print(mensuel)
+    quotidien = pd.read_sql_query(query, conn)
+quotidien['add_value'] = quotidien['add_value'].fillna('empty')
+quotidien = quotidien.dropna().reset_index(drop=True)
+print(quotidien)
+```
+
+```python
+quotidien.columns
+```
+
+```python
+def to_histo_plus(indic, timest, period):
+
+    index = ['code', 'level', 'target', 'category']
+    histo = ['period', 'timestamp']
+    value = ['value']
+
+    df = indic.sort_values(by='timestamp')
+    if 'add_value' in df.columns:
+        add_value = pd.json_normalize(df['add_value'])
+        add_value['quantity'] = add_value['quantity'].fillna(1).astype('int')
+    else:
+        add_value = pd.DataFrame({'quantity': [1] * len(df)})   
+    df_n = pd.concat([df[index + value], add_value], axis=1)
+    add_col = list(set(df_n.columns) - set(index) - set(value))
+    
+    df_n['val_qua'] = df_n['value'] * df_n['quantity']
+    grp = df_n.groupby(index)[value + ['val_qua'] + add_col]
+    grp_sum = grp.sum()
+    indic_n1 = grp_sum[['quantity']].copy()
+    indic_n1['value'] = grp_sum['val_qua'] / grp_sum['quantity']
+    if 'maxi' in add_col:
+        indic_n1['maxi'] = grp.max()['maxi']   
+    if 'mini' in add_col:
+        indic_n1['mini'] = grp.min()['mini']   
+    if 'last' in add_col:
+        indic_n1['last'] = grp.last()['last']    
+    indic_n1['add_value'] = indic_n1[add_col].to_dict(orient='records')
+    
+    indic_n1['timestamp'] = timest
+    indic_n1['period'] = period
+    
+    return indic_n1.reset_index()[index + value + histo + ['add_value']]
+```
+
+```python
+mensuel = to_histo_plus(quotidien, '2024-01-31', 'm')
+mensuel
 ```
 
 ```python
 import numpy as np
-df = pd.DataFrame({'a':[1,1,2,2], 'b':[4,5,6,7], 'c':[{'d':1, 'e':7}, None, {'d':2, 'e':8}, {'d':3, 'e':6, 'f':9}]})
+
+def to_histo_plus_tst(df):
+    index = ['code', 'level', 'value']
+    df = indic.sort_values(by='timestamp')
+    if 'add_value' in df.columns:
+        add_value = pd.json_normalize(df['add_value'])
+        add_value['quantity'] = add_value['quantity'].fillna(1).astype('int')
+    else:
+        add_value = pd.DataFrame({'quantity': [1] * len(df)})   
+    df_n = pd.concat([df[index], add_value], axis=1)
+    add_col = list(set(df_n.columns) - set(index))
+    print(add_col)
+        
+    df_n['val_qua'] = df_n['value'] * df_n['quantity']
+    print(df_n)
+    
+    grp = df_n.groupby(['code', 'level'])[['value', 'val_qua'] + add_col]
+    grp_sum = grp.sum()
+    indic_n1 = grp_sum[['quantity']].copy()
+    indic_n1['value'] = grp_sum['val_qua'] / grp_sum['quantity']
+    if 'maxi' in add_col:
+        indic_n1['maxi'] = grp.max()['maxi']   
+    if 'mini' in add_col:
+        indic_n1['mini'] = grp.min()['mini']   
+    if 'last' in add_col:
+        indic_n1['last'] = grp.last()['last']
+    indic_n1['add_value'] = indic_n1[add_col].to_dict(orient='records')
+    return indic_n1.reset_index()[index + ['add_value']]
+
+df = pd.DataFrame({'code':[1,1,2,2], 'level':[4,4,4,4], 'value':[10, 5, 20, 4], 'add_value':[{'maxi':7}, {'quantity':5}, {'quantity':2, 'mini':8}, {'quantity':3, 'mini':6, 'maxi':9}]})
+print(df)
+
+df_plus = to_histo_plus_tst(df)
+df_plus
+```
+
+```python
+import numpy as np
+df = pd.DataFrame({'code':[1,1,2,2], 'level':[4,4,4,4], 'c':[{'quantity':1, 'e':7}, {'quantity':5}, {'quantity':2, 'e':8}, {'quantity':3, 'e':6, 'f':9}]})
 #print(df['c'])
 df['c'] = df['c'].fillna('vide')
 #print(df['c'])
