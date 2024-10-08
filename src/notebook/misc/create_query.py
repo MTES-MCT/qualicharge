@@ -196,6 +196,8 @@ def query_histo(query, histo_period, timestamp=None):
         periodicity(period) as (VALUES ('{histo_period}'))
     SELECT * FROM query, datation, periodicity"""
 
+def historicize(periodicity, period):
+
 def init_param_ixx(simple, gen, indic,  *param):
     '''parameters initialization for 'query_ixx' and 'query_txx' functions  '''
     
