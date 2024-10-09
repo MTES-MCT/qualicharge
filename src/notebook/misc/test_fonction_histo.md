@@ -30,6 +30,49 @@ engine = create_engine(os.getenv("DATABASE_URL"))
 ```
 
 ```python
+def to_histo_plus(indic, timest, period):
+
+    index = ['code', 'level', 'target', 'category']
+    histo = ['period', 'timestamp']
+    value = ['value']
+
+    df = indic.sort_values(by='timestamp').reset_index()
+    if 'add_value' in df.columns:
+        add_value = pd.json_normalize(df['add_value'])
+        add_value['quantity'] = add_value['quantity'].fillna(1).astype('int')
+    else:
+        add_value = pd.DataFrame({'quantity': [1] * len(df)})   
+    df_n = pd.concat([df[index + value], add_value], axis=1)
+    #print('df\n', df[index + value])
+    #print('add\n', add_value)
+    #print('df_n\n', df_n)
+    add_col = list(set(df_n.columns) - set(index) - set(value))
+    
+    df_n['val_qua'] = df_n['value'] * df_n['quantity']
+    #print(df_n)
+    grp = df_n.groupby(index, sort=False)[value + ['val_qua'] + add_col]
+    grp_sum = grp.sum()
+    #print(grp.sum())
+    indic_n1 = grp_sum[['quantity']].copy()
+    indic_n1['value'] = grp_sum['val_qua'] / grp_sum['quantity']
+    if 'maxi' in add_col:
+        indic_n1['maxi'] = grp.max()['maxi']   
+    if 'mini' in add_col:
+        indic_n1['mini'] = grp.min()['mini']   
+    if 'last' in add_col:
+        indic_n1['last'] = grp.last()['last']  
+        grp = df_n.groupby(index, sort=False)[value + ['val_qua'] + add_col]
+        #print(grp.get_group(('i1', '01', '11', '')))
+        #print(grp.last())
+    indic_n1['add_value'] = indic_n1[add_col].to_dict(orient='records')
+    
+    indic_n1['timestamp'] = timest
+    indic_n1['period'] = period
+    
+    return indic_n1.reset_index()[index + value + histo + ['add_value']]
+```
+
+```python
 dd = timedelta(days=1)
 ti = datetime.fromisoformat('2024-01-01')
 duree = 5 # 365
@@ -42,6 +85,31 @@ test = 't8---01'
 ```python
 dtype_0 = {'value': types.FLOAT, 'category': types.TEXT, 'code_z': types.TEXT, 'query': types.TEXT, 'perim': types.TEXT, 'code_p': types.TEXT, 'zoning': types.TEXT, 
         'timestamp': types.TIMESTAMP, 'period': types.TEXT, 'add_value': dialects.postgresql.JSONB}
+```
+
+```python
+# simulation de l'historisation quotidienne de l'indicateur 'test'
+ti = datetime.fromisoformat('2024-01-01')
+period = 'd'
+test = 'i1---01'
+histo = to_indicator(engine, test, histo=True, format='table', histo_period=period, histo_timest= ti.isoformat())
+for i in range(duree):
+    ti += dd
+    indic = to_indicator(engine, test, histo=True, format='table', histo_period=period, histo_timest= ti.isoformat())
+    indic['value'] += i
+    histo = pd.concat([histo, indic], ignore_index=True)
+histo
+```
+
+```python
+print(histo[histo['target']=='11'])
+histo[histo['target']=='11']['value'].mean()
+
+```
+
+```python
+mensuel = to_histo_plus(histo, '2024-01-31', 'm')
+mensuel
 ```
 
 ```python
@@ -87,41 +155,6 @@ print(quotidien)
 
 ```python
 quotidien.columns
-```
-
-```python
-def to_histo_plus(indic, timest, period):
-
-    index = ['code', 'level', 'target', 'category']
-    histo = ['period', 'timestamp']
-    value = ['value']
-
-    df = indic.sort_values(by='timestamp')
-    if 'add_value' in df.columns:
-        add_value = pd.json_normalize(df['add_value'])
-        add_value['quantity'] = add_value['quantity'].fillna(1).astype('int')
-    else:
-        add_value = pd.DataFrame({'quantity': [1] * len(df)})   
-    df_n = pd.concat([df[index + value], add_value], axis=1)
-    add_col = list(set(df_n.columns) - set(index) - set(value))
-    
-    df_n['val_qua'] = df_n['value'] * df_n['quantity']
-    grp = df_n.groupby(index)[value + ['val_qua'] + add_col]
-    grp_sum = grp.sum()
-    indic_n1 = grp_sum[['quantity']].copy()
-    indic_n1['value'] = grp_sum['val_qua'] / grp_sum['quantity']
-    if 'maxi' in add_col:
-        indic_n1['maxi'] = grp.max()['maxi']   
-    if 'mini' in add_col:
-        indic_n1['mini'] = grp.min()['mini']   
-    if 'last' in add_col:
-        indic_n1['last'] = grp.last()['last']    
-    indic_n1['add_value'] = indic_n1[add_col].to_dict(orient='records')
-    
-    indic_n1['timestamp'] = timest
-    indic_n1['period'] = period
-    
-    return indic_n1.reset_index()[index + value + histo + ['add_value']]
 ```
 
 ```python
