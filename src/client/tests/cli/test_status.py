@@ -176,6 +176,12 @@ def test_cli_status_create(runner, qcc, httpx_mock):
     assert result.exit_code == QCCExitCodes.OK
     assert "Created status successfully" in result.stdout
 
+    httpx_mock.add_response(
+        method="POST",
+        url="http://example.com/api/v1/dynamique/status/",
+        json=status,
+    )
+
     # Valid interactive input
     result = runner.invoke(app, ["create"], obj=qcc, input=f"{status_json}\n")
     assert result.exit_code == QCCExitCodes.OK
@@ -248,6 +254,7 @@ def test_cli_status_create_bulk(runner, qcc, httpx_mock):
 
 
 @pytest.mark.parametrize("chunk_size", (5, 6, 10))
+@pytest.mark.httpx_mock(can_send_already_matched_responses=True)
 def test_cli_status_bulk_chunks(runner, qcc, httpx_mock, chunk_size):
     """Test the `status bulk` command with different chunk sizes."""
     total = 30

@@ -75,6 +75,12 @@ def test_cli_static_create(runner, qcc, httpx_mock):
     assert result.exit_code == QCCExitCodes.OK
     assert "Created statique successfully" in result.stdout
 
+    httpx_mock.add_response(
+        method="POST",
+        url="http://example.com/api/v1/statique/",
+        json=statique,
+    )
+
     # Valid interactive input
     result = runner.invoke(app, ["create"], obj=qcc, input=f"{statique_json}\n")
     assert result.exit_code == QCCExitCodes.OK
@@ -159,6 +165,12 @@ def test_cli_static_update(runner, qcc, httpx_mock):
     assert result.exit_code == QCCExitCodes.OK
     assert "Updated statique successfully" in result.stdout
 
+    httpx_mock.add_response(
+        method="PUT",
+        url=f"http://example.com/api/v1/statique/{id_pdc_itinerance}",
+        json=statique,
+    )
+
     # Valid interactive input
     result = runner.invoke(app, ["update"], obj=qcc, input=f"{statique_json}\n")
     assert result.exit_code == QCCExitCodes.OK
@@ -240,6 +252,7 @@ def test_cli_static_bulk(runner, qcc, httpx_mock):
 
 
 @pytest.mark.parametrize("chunk_size", (5, 6, 10))
+@pytest.mark.httpx_mock(can_send_already_matched_responses=True)
 def test_cli_static_bulk_chunks(runner, qcc, httpx_mock, chunk_size):
     """Test the `static bulk` command with different chunk sizes."""
     total = 30

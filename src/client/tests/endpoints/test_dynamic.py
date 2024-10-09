@@ -172,6 +172,7 @@ async def test_dynamic_status_create(client, httpx_mock):
 
 
 @pytest.mark.anyio
+@pytest.mark.httpx_mock(can_send_already_matched_responses=True)
 async def test_dynamic_status_bulk(client, httpx_mock):
     """Test the /dynamique/status/bulk endpoint call."""
     status = Status(client)
@@ -279,6 +280,7 @@ async def test_dynamic_session_create(client, httpx_mock):
 
 
 @pytest.mark.anyio
+@pytest.mark.httpx_mock(can_send_already_matched_responses=True)
 async def test_dynamic_session_bulk(client, httpx_mock):
     """Test the /dynamique/session/bulk endpoint call."""
     session = Session(client)

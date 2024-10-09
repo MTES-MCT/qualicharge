@@ -134,6 +134,7 @@ async def test_static_update(client, httpx_mock):
 
 
 @pytest.mark.anyio
+@pytest.mark.httpx_mock(can_send_already_matched_responses=True)
 async def test_static_bulk(client, httpx_mock):
     """Test the /statique/bulk endpoint call."""
     static = Static(client)

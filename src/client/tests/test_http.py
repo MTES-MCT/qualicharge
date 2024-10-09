@@ -77,6 +77,7 @@ async def test_client_unauthorized_request(httpx_mock):
 
 
 @pytest.mark.anyio
+@pytest.mark.httpx_mock(can_send_already_matched_responses=True)
 async def test_client_expired_token_renewal(httpx_mock):
     """Test client request when the access token expired."""
     httpx_mock.add_response(

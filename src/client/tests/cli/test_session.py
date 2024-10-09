@@ -41,6 +41,12 @@ def test_cli_session_create(runner, qcc, httpx_mock):
     assert result.exit_code == QCCExitCodes.OK
     assert "Created session successfully" in result.stdout
 
+    httpx_mock.add_response(
+        method="POST",
+        url="http://example.com/api/v1/dynamique/session/",
+        json=session,
+    )
+
     # Valid interactive input
     result = runner.invoke(app, ["create"], obj=qcc, input=f"{status_json}\n")
     assert result.exit_code == QCCExitCodes.OK
@@ -113,6 +119,7 @@ def test_cli_session_create_bulk(runner, qcc, httpx_mock):
 
 
 @pytest.mark.parametrize("chunk_size", (5, 6, 10))
+@pytest.mark.httpx_mock(can_send_already_matched_responses=True)
 def test_cli_session_bulk_chunks(runner, qcc, httpx_mock, chunk_size):
     """Test the `session bulk` command with different chunk sizes."""
     total = 30
