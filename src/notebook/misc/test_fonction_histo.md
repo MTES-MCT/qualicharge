@@ -39,7 +39,10 @@ def to_histo_plus(indic, timest, period):
     df = indic.sort_values(by='timestamp').reset_index()
     if 'add_value' in df.columns:
         add_value = pd.json_normalize(df['add_value'])
-        add_value['quantity'] = add_value['quantity'].fillna(1).astype('int')
+        if 'quantity' in add_value.columns:
+            add_value['quantity'] = add_value['quantity'].fillna(1).astype('int')
+        else:
+            add_value['quantity'] = [1] * len(df)
     else:
         add_value = pd.DataFrame({'quantity': [1] * len(df)})   
     df_n = pd.concat([df[index + value], add_value], axis=1)
@@ -93,7 +96,7 @@ ti = datetime.fromisoformat('2024-01-01')
 period = 'd'
 test = 'i1---01'
 histo = to_indicator(engine, test, histo=True, format='table', histo_period=period, histo_timest= ti.isoformat())
-for i in range(duree):
+for i in range(duree - 1):
     ti += dd
     indic = to_indicator(engine, test, histo=True, format='table', histo_period=period, histo_timest= ti.isoformat())
     indic['value'] += i
@@ -102,14 +105,26 @@ histo
 ```
 
 ```python
-print(histo[histo['target']=='11'])
-histo[histo['target']=='11']['value'].mean()
-
+mensuel = to_histo_plus(histo, '2024-01-31', 'm')
+assert(mensuel[mensuel['target']=='11']['value'][0] == histo[histo['target']=='11']['value'].mean())
+assert(len(mensuel) == len(histo) / duree)
+mensuel
 ```
 
 ```python
-mensuel = to_histo_plus(histo, '2024-01-31', 'm')
-mensuel
+histo_t = histo.copy()
+histo_t['add_value'] = [None] * len(histo_t)
+mensuel = to_histo_plus(histo_t, '2024-01-31', 'm')
+assert(mensuel[mensuel['target']=='11']['add_value'][0] == {'quantity': duree})
+```
+
+```python
+histo_t = histo.copy()
+add_val = list(histo_t['add_value'])
+add_val[0] = dict(last=3300)
+histo_t['add_value'] = add_val
+mensuel = to_histo_plus(histo_t, '2024-01-31', 'm')
+assert(mensuel[mensuel['target']=='11']['add_value'][0] == {'quantity': duree, 'last':3300})
 ```
 
 ```python
