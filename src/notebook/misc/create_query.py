@@ -35,14 +35,14 @@ P_TAB = """puissance(p_range, p_cat) AS (
     )"""
 JOIN_P = "LEFT JOIN puissance ON puissance_nominale::numeric <@ p_range "
 PDC_ALL = f"""pointdecharge 
-    LEFT JOIN station ON station.id = station_id 
-    LEFT JOIN localisation ON localisation_id = localisation.id"""
-COG_ALL = f"""LEFT JOIN city on city.code = code_insee_commune
-    LEFT JOIN epci on city.epci_id = epci.id
-    LEFT JOIN department on city.department_id = department.id
-    LEFT JOIN region on department.region_id = region.id"""
+    INNER JOIN station ON station.id = station_id 
+    INNER JOIN localisation ON localisation_id = localisation.id"""
+COG_ALL = f"""INNER JOIN city on city.code = code_insee_commune
+    INNER JOIN epci on city.epci_id = epci.id
+    INNER JOIN department on city.department_id = department.id
+    INNER JOIN region on department.region_id = region.id"""
 STAT_ALL = f"""station 
-    LEFT JOIN localisation ON localisation_id = localisation.id"""
+    INNER JOIN localisation ON localisation_id = localisation.id"""
 TABLE = {'00': 'national', '01': 'region', '02': 'department', '03': 'epci', '04': 'city'}
 G_OVERHEAD = f"""QUERY,
     VAL,
@@ -54,7 +54,7 @@ STAT_NB_PDC = f"""stat_nb_pdc AS (
       localisation_id
     FROM
       pointdecharge
-      LEFT JOIN station ON station.id = station_id
+      INNER JOIN station ON station.id = station_id
     GROUP BY
       station_id,
       localisation_id
@@ -317,7 +317,7 @@ SELECT
     {prm['s_overhead']}
 FROM
     stat_nb_pdc
-    LEFT JOIN localisation ON localisation_id = localisation.id
+    INNER JOIN localisation ON localisation_id = localisation.id
     {COG_ALL}
 {prm['where_isin_perim']}
 GROUP BY
@@ -411,7 +411,7 @@ SELECT
 FROM
     {STAT_ALL}
     {COG_ALL}
-    LEFT JOIN operateur ON operateur_id = operateur.id
+    INNER JOIN operateur ON operateur_id = operateur.id
 {prm['where_isin_perim']}
 GROUP BY
     {prm['g_overhead']}
@@ -500,7 +500,7 @@ SELECT
     {prm['s_overhead']}
 FROM
     i1
-    LEFT JOIN {prm['table_level']} on i1.code = {prm['table_level_code']}
+    INNER JOIN {prm['table_level']} on i1.code = {prm['table_level_code']}
 ORDER by
     nb_pdc_pop DESC"""
 
@@ -534,7 +534,7 @@ SELECT
     {prm['s_overhead']}
 FROM
     i1
-    LEFT JOIN {prm['table_level']} on i1.code = {prm['table_level_code']}
+    INNER JOIN {prm['table_level']} on i1.code = {prm['table_level_code']}
 ORDER by
     nb_pdc_area DESC"""
 
@@ -629,7 +629,7 @@ SELECT
     {prm['s_overhead']}
 FROM
     i4
-    LEFT JOIN {prm['table_level']} on i4.code = {prm['table_level_code']}
+    INNER JOIN {prm['table_level']} on i4.code = {prm['table_level_code']}
 ORDER by
     nb_stat_area DESC"""
 
@@ -690,7 +690,7 @@ SELECT
     {prm['s_overhead']}
 FROM
     i7
-    LEFT JOIN {prm['table_level']} on i7.code = {prm['table_level_code']}
+    INNER JOIN {prm['table_level']} on i7.code = {prm['table_level_code']}
 ORDER by
     p_nom_pop DESC"""
 
@@ -724,6 +724,6 @@ SELECT
     {prm['s_overhead']}
 FROM
     i7
-    LEFT JOIN {prm['table_level']} on i7.code = {prm['table_level_code']}
+    INNER JOIN {prm['table_level']} on i7.code = {prm['table_level_code']}
 ORDER by
     p_nom_area DESC"""
