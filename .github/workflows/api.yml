@@ -24,6 +24,7 @@ jobs:
         with:
           python-version: "3.12"
           cache: "pipenv"
+          cache-dependency-path: "src/api/Pipfile.lock"
       - name: Install dependencies
         run: |
           cd src/api
@@ -44,6 +45,7 @@ jobs:
         with:
           python-version: "3.12"
           cache: "pipenv"
+          cache-dependency-path: "src/api/Pipfile.lock"
       - name: Lint with Black
         run: pipenv run black qualicharge tests
       - name: Lint with Ruff
@@ -82,6 +84,7 @@ jobs:
         with:
           python-version: "3.12"
           cache: "pipenv"
+          cache-dependency-path: "src/api/Pipfile.lock"
       - name: Run migrations
         run: pipenv run alembic -c qualicharge/alembic.ini upgrade head
         env:
@@ -126,6 +129,7 @@ jobs:
         with:
           python-version: "3.12"
           cache: "pipenv"
+          cache-dependency-path: "src/api/Pipfile.lock"
       - name: Test with pytest
         run: pipenv run pytest
         env:

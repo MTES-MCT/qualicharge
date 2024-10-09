@@ -24,6 +24,7 @@ jobs:
         with:
           python-version: "3.12"
           cache: "pipenv"
+          cache-dependency-path: "src/prefect/Pipfile.lock"
       - name: Install dependencies
         run: |
           cd src/prefect
@@ -44,6 +45,7 @@ jobs:
         with:
           python-version: "3.12"
           cache: "pipenv"
+          cache-dependency-path: "src/prefect/Pipfile.lock"
       - name: Lint with Black
         run: pipenv run black indicators tests
       - name: Lint with Ruff
@@ -87,5 +89,6 @@ jobs:
         with:
           python-version: "3.12"
           cache: "pipenv"
+          cache-dependency-path: "src/prefect/Pipfile.lock"
       - name: Test with pytest
         run: pipenv run pytest
