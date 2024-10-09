@@ -24,9 +24,7 @@ def upgrade() -> None:
         "city",
         sa.Column("population", sa.Integer(), nullable=True),
     )
-    op.add_column(
-        "city", sa.Column("area", sa.Float(), nullable=True)
-    )
+    op.add_column("city", sa.Column("area", sa.Float(), nullable=True))
     op.add_column(
         "department",
         sa.Column("population", sa.Integer(), nullable=True),
@@ -39,16 +37,12 @@ def upgrade() -> None:
         "epci",
         sa.Column("population", sa.Integer(), nullable=True),
     )
-    op.add_column(
-        "epci", sa.Column("area", sa.Float(), nullable=True)
-    )
+    op.add_column("epci", sa.Column("area", sa.Float(), nullable=True))
     op.add_column(
         "region",
         sa.Column("population", sa.Integer(), nullable=True),
     )
-    op.add_column(
-        "region", sa.Column("area", sa.Float(), nullable=True)
-    )
+    op.add_column("region", sa.Column("area", sa.Float(), nullable=True))
     # ### end Alembic commands ###
 
 
