@@ -21,6 +21,7 @@ String
 import pandas as pd
 import sys
 from sqlalchemy import types, dialects
+from pydantic import BaseModel
 
 create_query = sys.modules[__name__]
 
