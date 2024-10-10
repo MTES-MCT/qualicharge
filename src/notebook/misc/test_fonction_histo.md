@@ -17,6 +17,27 @@ jupyter:
 
 <!-- #endregion -->
 
+```python
+import os
+import sys
+print(sys.path)
+print(sys.executable)
+# os.environ['PYTHONPATH']
+```
+
+```python
+#sys.path.append('/home/phtquali/github/qualicharge/src') 
+sys.path
+```
+
+```python
+sys.path.append('/home/phtquali/github/qualicharge/src/prefect') 
+```
+
+```python
+from models import Level
+```
+
 ```python editable=true slideshow={"slide_type": ""}
 import os
 from datetime import datetime, timedelta
@@ -25,6 +46,7 @@ import pandas as pd
 import geopandas as gpd
 from sqlalchemy import create_engine, types, dialects
 from create_query import to_indicator
+from string import Template
 
 engine = create_engine(os.getenv("DATABASE_URL"))
 ```
@@ -40,6 +62,7 @@ def to_histo_plus(indic, timest, period):
     add_value = ['quantity', 'mini', 'maxi', 'last', 'variance']
     fixe = index + value + add_value + histo
     
+    # normalize the DataFrame
     df = indic.sort_values(by='timestamp').reset_index(drop=True)
     if 'add_value' in df.columns:
         df = pd.concat([df, pd.json_normalize(df['add_value'])], axis=1)
@@ -51,7 +74,8 @@ def to_histo_plus(indic, timest, period):
         df['maxi'] = df['value']
         df['last'] = df['value']
         df['variance'] = 0.0
-    
+
+    # decode specific additional values
     add_col = list(set(df.columns) - set(fixe))
     add_col_sum = [col for col in add_col if col[:4] == 'sum_']
     add_col_min = [col for col in add_col if col[:4] == 'min_']
@@ -59,12 +83,12 @@ def to_histo_plus(indic, timest, period):
     add_col_mean = [col for col in add_col if col[:5] == 'mean_']
     add_col_last = list(set(add_col) - set(add_col_sum + add_col_min + add_col_max + add_col_mean))
 
+    # group the DataFrame
     for col in add_col_mean + ['value']:
         df[col + '_qua'] = df[col] * df['quantity']
     grp = df.groupby(index, sort=False)
     col_mean = [col + '_qua' for col in add_col_sum + add_col_mean + value]
     grp_sum = grp[col_mean + ['quantity']].sum()
-    
     df_n1 = grp_sum[['quantity']].copy()
     for col in add_col_mean + ['value']:
         df_n1[col] = grp_sum[col + '_qua'] / df_n1['quantity']
@@ -78,12 +102,12 @@ def to_histo_plus(indic, timest, period):
     for col in add_col_last + ['last']:
         df_n1[col] = grp_last[col]   
     df_n1['variance'] = 0.0
-    
+    pass # variance calculation to add
+
+    # add the historization format
     df_n1['add_value'] = df_n1[add_value].to_dict(orient='records')    
     df_n1['timestamp'] = timest
     df_n1['period'] = period
-
-    
     return df_n1.reset_index()[index + value + ['add_value'] + histo + add_col]
 ```
 
@@ -116,9 +140,7 @@ for i in range(duree - 1):
 histo
 ```
 
-```python
 ## tests traitement pandas
-```
 
 ```python
 mensuel = to_histo_plus(histo, '2024-01-31', 'm')
@@ -155,22 +177,37 @@ assert(mensuel[mensuel['target']=='11']['add_value'][0]['quantity'] == duree)
 # le traitement est le même pour passer de jour à mois que pour passer de mois à année
 
 # requête pour générer un tableau "à plat" :
-query = """
-SELECT
-  *
-FROM
-  quotidien_0
-WHERE
-  period ='d' AND
-  timestamp >= to_timestamp('2024-01-01', 'YYYY-MM-DD')   AND
-  timestamp < to_timestamp('2025-01-01', 'YYYY-MM-DD')
-"""
+from datetime import datetime
+from . import to_indicator
+from indicators.models import IndicatorPeriod
 
-with engine.connect() as conn:
+HOUR = "h"
+DAY = "d"
+WEEK = "w"
+MONTH = "m"
+QUARTER = "q"
+YEAR = "y"
+
+def histo_plus(init_period, timest_histo, final_period, table='histo'):
+    delta = {DAY: timedelta(days=1), WEEK: timedelta(days=7), MONTH: timedelta(month=1), QUARTER: timedelta(month=3), YEAR: timedelta(year=1)}
+    param = {'histo_table': table, 'period': init_period, 'start': timest_histo, 'end': date_histo.fromtimestamp(timest_histo)}
+    query = Template("""
+    SELECT
+      *
+    FROM
+      $histo_table
+    WHERE
+      period = $period AND
+      timestamp >= $start   AND
+      timestamp < $end
+    """)
+
+print(query.substitude(param))
+'''with engine.connect() as conn:
     quotidien = pd.read_sql_query(query, conn)
 quotidien['add_value'] = quotidien['add_value'].fillna('empty')
 quotidien = quotidien.dropna().reset_index(drop=True)
-print(quotidien)
+print(quotidien)'''
 ```
 
 ```python
