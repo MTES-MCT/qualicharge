@@ -111,7 +111,7 @@ def to_indicator(engine, indicator, simple=True, histo=False, format='pandas', h
     simple = False if histo else simple
     query = getattr(create_query, 'query_' + indic.split('-')[0])(*indic.split('-')[1:], simple=simple, gen=query_gen)
     table_dtype = table_dtype if table_dtype else {'value': types.FLOAT, 'category': types.TEXT, 'code_z': types.TEXT, 'query': types.TEXT, 'perimeter': types.TEXT, 'code_p': types.TEXT, 'zoning': types.TEXT, 
-        'timestamp': types.TIMESTAMP, 'add_value': dialects.postgresql.JSONB}
+        'timestamp': types.TIMESTAMP, 'extras': dialects.postgresql.JSONB}
     if histo:
         query = create_query.query_histo(query, timestamp=histo_timest, histo_period=histo_period)
     if format == 'query':
@@ -168,8 +168,8 @@ def indic_to_table(pd_df, table_name, engine, table_option="replace", table_dtyp
                               'query': 'string', 'level': 'string', 'period': 'string'})
         pd_df.rename(columns={'code': 'target', 'query': 'code'}, inplace = True)
         if not test:
-            #pd_df['add_value'] = pd.Series([{}]*len(pd_df))
-            pd_df['add_value'] = pd.Series([{'quantity': quantity, 'last': last} 
+            #pd_df['extras'] = pd.Series([{}]*len(pd_df))
+            pd_df['extras'] = pd.Series([{'quantity': quantity, 'last': last} 
                                         for quantity, last in zip(pd_df['quantity'], pd_df['last'])])
             del pd_df['last']
             del pd_df['quantity']

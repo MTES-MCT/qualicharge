@@ -1,0 +1,29 @@
+[
+    {
+        "code": "t1",
+        "descr": "Nombre de points de recharge par niveau de puissance",
+        "category": "p_range",
+        "value": "nb_pdc",
+        "h_level": 4,
+        "h_period": "m",
+        "h_add_col": false
+    },
+    {
+        "code": "i1",
+        "descr": "Nombre de points de recharge",
+        "category": null,
+        "value": "nb_pdc",
+        "h_level": 4,
+        "h_period": "m",
+        "h_add_col": false
+    },
+    {
+        "code": "i2",
+        "descr": "Nombre de points de recharge pour 100 000 habitants",
+        "category": null,
+        "value": "nb_pdc_pop",
+        "h_level": null,
+        "h_period": null,
+        "h_add_col": false
+    }
+]

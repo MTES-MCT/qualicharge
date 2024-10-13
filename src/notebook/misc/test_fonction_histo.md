@@ -40,7 +40,7 @@ YEAR = "y"
 
 day_delta = timedelta(days=1)
 type_histo = {'value': types.FLOAT, 'category': types.TEXT, 'code': types.TEXT, 'level': types.TEXT, 'target': types.TEXT, 
-              'period': types.TEXT, 'timestamp': types.TIMESTAMP, 'add_value': dialects.postgresql.JSONB}
+              'period': types.TEXT, 'timestamp': types.TIMESTAMP, 'extras': dialects.postgresql.JSONB}
 ```
 
 ## traitement pandas
@@ -58,9 +58,9 @@ def to_df_histo_up(indic, timest, period):
     df = indic.sort_values(by='timestamp').reset_index(drop=True)
     df['category'] = df['category'].fillna(' ')
     df['value'] = df['value'].astype('float')
-    if 'add_value' in df.columns:
-        df = pd.concat([df, pd.json_normalize(df['add_value'])], axis=1)
-        del df['add_value']
+    if 'extras' in df.columns:
+        df = pd.concat([df, pd.json_normalize(df['extras'])], axis=1)
+        del df['extras']
     if 'quantity' not in df.columns:
         df['quantity'] = 1        
     if (df['quantity'] == 1).all():
@@ -101,16 +101,15 @@ def to_df_histo_up(indic, timest, period):
     pass # variance calculation to add
 
     # add the historization format
-    df_n1['add_value'] = df_n1[add_val + add_col].to_dict(orient='records')    
+    df_n1['extras'] = df_n1[add_val + add_col].to_dict(orient='records')    
     df_n1['timestamp'] = timest
     df_n1['period'] = period
-    return df_n1.reset_index()[index + value + ['add_value'] + histo]
+    return df_n1.reset_index()[index + value + ['extras'] + histo]
 ```
 
 ## traitement global
 
 ```python
-
 def histo_up(engine, init_period, time_histo, final_period, init_table='histo', final_table='histo', if_exists='append'):
     delta = {DAY: timedelta(days=1), WEEK: timedelta(days=7), MONTH: relativedelta(months=1), QUARTER: relativedelta(months=3), YEAR: relativedelta(year=1)}
     param = {'histo_table': init_table, 'period': init_period, 'start': time_histo, 'end': time_histo + delta[final_period]}
@@ -124,11 +123,36 @@ def histo_up(engine, init_period, time_histo, final_period, init_table='histo', 
       timestamp >= '$start'   AND
       timestamp < '$end'
     """)
-    with engine.connect() as conn:
-        histo_df = pd.read_sql_query(query.substitute(param), conn)
+    with engine.connect() as connection:
+        histo_df = pd.read_sql_query(query.substitute(param), connection)
     histo_up_df = to_df_histo_up(histo_df, time_histo, final_period)
     histo_up_df.to_sql(final_table, engine, if_exists=if_exists, index=False, dtype=type_histo)
     return histo_up_df
+```
+
+## indicateurs temporels
+
+```python
+def temporal_indicator(code, period, perim, val, level, interval_start, interval_end, h_level=None, table='histo'): 
+    
+    # level and h-level validation
+    with engine.connect() as connection:
+        query = f"""
+            SELECT DISTINCT level 
+            FROM {table} 
+            WHERE code = {code} AND level = {level} and period = {period}"""
+        h_levels = pd.read_sql_query(query, connection)
+    if not h_level:
+        h_levels = [lvl for lvl in list(h_levels['level'].astype('int')) if lvl >= level]
+        if not h_levels:
+            raise NotImplementedError("Unavailable level %d", level)
+        h_level = min(h_levels)
+    if h_level not in h_levels:
+        raise NotImplementedError("Level not compatible with h_level %d", h_level)
+
+    pass
+    return
+
 ```
 
 ## tests traitement pandas
@@ -164,8 +188,8 @@ for i in range(1, duree):
 
 ```python
 mensuel = to_df_histo_up(histo, '2024-01-01', 'm')
-df = pd.concat([mensuel, pd.json_normalize(mensuel['add_value'])], axis=1)
-del df['add_value']
+df = pd.concat([mensuel, pd.json_normalize(mensuel['extras'])], axis=1)
+del df['extras']
 assert(df['value'].equals(pd.Series(range(1, size+1), dtype='float')))
 assert(df['mini'].equals(pd.Series(range(size), dtype='float')))
 assert(df['maxi'].equals(pd.Series(range(2, size+2), dtype='float')))
@@ -173,12 +197,12 @@ assert(df['last'].equals(df['maxi']))
 assert(df['quantity'].equals(pd.Series([3]*size)))
 ```
 
-### tests add_value
+### tests extras
 
 ```python
 duree = 3
 data_add = data.copy()
-data_add['add_value'] = [{'liste': ['a', 'b', 'c'], 'sum_val': i, 'max_val': float(i),
+data_add['extras'] = [{'liste': ['a', 'b', 'c'], 'sum_val': i, 'max_val': float(i),
                           'min_val': float(i), 'last_val': float(i)} for i in range(size)]
 histo = pd.DataFrame(data_add)
 data2 = data_add.copy()
@@ -186,15 +210,15 @@ date_init2 = date_init
 for j in range(1, duree):
     date_init2 += day_delta
     data2 |= {'timestamp': [date_init2]*size, 'value': list(range(j, size+j))}
-    data2 |= {'add_value': [{'sum_val': i+j, 'max_val': float(i+j),
+    data2 |= {'extras': [{'sum_val': i+j, 'max_val': float(i+j),
                           'min_val': float(i+j), 'last_val': float(i+j)} for i in range(size)]}
     histo = pd.concat([histo, pd.DataFrame(data2)], ignore_index=True)
 ```
 
 ```python
 mensuel = to_df_histo_up(histo, '2024-01-01', 'm')
-df = pd.concat([mensuel, pd.json_normalize(mensuel['add_value'])], axis=1)
-del df['add_value']
+df = pd.concat([mensuel, pd.json_normalize(mensuel['extras'])], axis=1)
+del df['extras']
 assert(df['value'].equals(pd.Series(range(1, size+1), dtype='float')))
 assert(df['mini'].equals(pd.Series(range(size), dtype='float')))
 assert(df['maxi'].equals(pd.Series(range(2, size+2), dtype='float')))
@@ -227,7 +251,7 @@ for i in range(duree - 1):
 ```python
 mensuel = to_df_histo_up(histo, '2024-01-01', 'm')
 assert(mensuel[mensuel['target']=='11']['value'][0] == histo[histo['target']=='11']['value'].mean())
-assert(mensuel[mensuel['target']=='01']['add_value'].iloc[0]['last'] == mensuel[mensuel['target']=='01']['add_value'].iloc[0]['maxi'])
+assert(mensuel[mensuel['target']=='01']['extras'].iloc[0]['last'] == mensuel[mensuel['target']=='01']['extras'].iloc[0]['maxi'])
 assert(len(mensuel) == len(histo) / duree)
 ```
 
@@ -239,16 +263,16 @@ assert(mensuel.equals(mensuel_bis))
 
 ```python
 histo_t = histo.copy()
-del histo_t['add_value']
+del histo_t['extras']
 mensuel_bis = to_df_histo_up(histo_t, '2024-01-01', 'm')
 assert(mensuel.equals(mensuel_bis))
 ```
 
 ```python
 histo_t = histo.copy()
-histo_t['add_value'] = [None] * len(histo_t)
+histo_t['extras'] = [None] * len(histo_t)
 mensuel = to_df_histo_up(histo_t, '2024-01-31', 'm')
-assert(mensuel[mensuel['target']=='11']['add_value'][0]['quantity'] == duree)
+assert(mensuel[mensuel['target']=='11']['extras'][0]['quantity'] == duree)
 ```
 
 ## Tests traitement global
@@ -278,7 +302,7 @@ histo_df
 ```python
 histo_d = pd.read_sql_query('SELECT * FROM histo', engine)
 histo_m = pd.read_sql_query('SELECT * FROM histo_m', engine)
-histo_m_n = pd.concat([histo_m, pd.json_normalize(histo_m['add_value'])], axis=1)
+histo_m_n = pd.concat([histo_m, pd.json_normalize(histo_m['extras'])], axis=1)
 
 assert(len(histo_m) == len(histo_d) / duree)
 ```
