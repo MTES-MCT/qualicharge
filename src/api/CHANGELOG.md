@@ -8,6 +8,11 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Changed
+
+- Upgrade fastapi to `0.115.2`
+- Upgrade pyinstrument to `5.0.0`
+
 ## [0.13.0] - 2024-10-11
 
 ### Fixed
