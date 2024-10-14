@@ -10,6 +10,7 @@ and this project adheres to
 
 ### Changed
 
+- Upgrade anyio to `4.6.1`
 - Upgrade Pydantic to `2.9.1`
 - Upgrade pydantic-settings to `2.5.2`
 
