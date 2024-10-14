@@ -39,4 +39,3 @@ class Indicator(BaseModel):
     value: float
     extras: Optional[dict] = None
     timestamp: datetime
- 

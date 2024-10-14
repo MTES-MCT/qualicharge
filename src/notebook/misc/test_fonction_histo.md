@@ -27,6 +27,7 @@ import geopandas as gpd
 from sqlalchemy import create_engine, types, dialects
 from create_query import to_indicator
 from string import Template
+from models import Level, IndicatorPeriod, Indicator
 
 engine = create_engine(os.getenv("DATABASE_URL"))
 
@@ -41,6 +42,11 @@ YEAR = "y"
 day_delta = timedelta(days=1)
 type_histo = {'value': types.FLOAT, 'category': types.TEXT, 'code': types.TEXT, 'level': types.TEXT, 'target': types.TEXT, 
               'period': types.TEXT, 'timestamp': types.TIMESTAMP, 'extras': dialects.postgresql.JSONB}
+```
+
+```python
+indic = Indicator(code='er', level=0, period='h', value=3, timestamp=datetime.now())
+print(list(indic))
 ```
 
 ## traitement pandas
@@ -151,8 +157,14 @@ def temporal_indicator(code, period, perim, val, level, interval_start, interval
         raise NotImplementedError("Level not compatible with h_level %d", h_level)
 
     pass
-    return
+    return h_level
 
+```
+
+## tests indicateurs temporels
+
+```python
+temporal_indicator(code, period, perim, val, level, interval_start, interval_end, h_level=None, table='histo')
 ```
 
 ## tests traitement pandas
