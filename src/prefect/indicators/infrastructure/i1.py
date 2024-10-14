@@ -118,7 +118,7 @@ def i1_for_level(
     engine = get_database_engine()
     with engine.connect() as connection:
         targets = get_targets_for_level(connection, level)
-        ids = targets["id"].apply(UUID)  # type: ignore[arg-type]
+        ids = targets["id"]
         chunks = (
             np.array_split(ids, int(len(ids) / chunk_size))
             if len(ids) > chunk_size
