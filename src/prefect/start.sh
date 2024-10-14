@@ -6,9 +6,6 @@ set -eo pipefail
 echo "${PREFECT_HTPASSWD_CLIENT}" > .htpasswd
 echo "${PREFECT_HTPASSWD_ADMIN}" >> .htpasswd
 
-# Run database migrations
-prefect server database upgrade -y
-
 # Run prefect server in the background
 prefect server start &
 
