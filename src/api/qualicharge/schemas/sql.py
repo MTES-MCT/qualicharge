@@ -19,7 +19,7 @@ from typing_extensions import Optional
 
 from ..exceptions import ObjectDoesNotExist, ProgrammingError
 from ..models.static import Statique
-from . import BaseTimestampedSQLModel
+from . import BaseAuditableSQLModel
 from .core import (
     Amenageur,
     Enseigne,
@@ -41,7 +41,7 @@ class StatiqueImporter:
 
         self._statique: pd.DataFrame = df
         self._statique_with_fk: pd.DataFrame = self._statique.copy()
-        self._saved_schemas: list[type[BaseTimestampedSQLModel]] = []
+        self._saved_schemas: list[type[BaseAuditableSQLModel]] = []
 
         self._amenageur: Optional[pd.DataFrame] = None
         self._enseigne: Optional[pd.DataFrame] = None
@@ -60,7 +60,7 @@ class StatiqueImporter:
 
     @staticmethod
     def _add_timestamped_model_fields(df: pd.DataFrame):
-        """Add required fields for a BaseTimestampedSQLModel."""
+        """Add required fields for a BaseAuditableSQLModel."""
         df["id"] = df.apply(lambda x: uuid.uuid4(), axis=1)
         now = pd.Timestamp.now(tz="utc")
         df["created_at"] = now
@@ -68,12 +68,12 @@ class StatiqueImporter:
         return df
 
     @staticmethod
-    def _schema_fk(schema: type[BaseTimestampedSQLModel]) -> str:
+    def _schema_fk(schema: type[BaseAuditableSQLModel]) -> str:
         """Get expected schema foreign key name."""
         return f"{schema.__table__.name}_id"  # type: ignore[attr-defined]
 
     @staticmethod
-    def _get_schema_fks(schema: type[BaseTimestampedSQLModel]) -> list[str]:
+    def _get_schema_fks(schema: type[BaseAuditableSQLModel]) -> list[str]:
         """Get foreign key field names from a schema."""
         return [
             fk.parent.name
@@ -81,7 +81,7 @@ class StatiqueImporter:
         ]
 
     def _get_fields_for_schema(
-        self, schema: type[BaseTimestampedSQLModel], with_fk: bool = False
+        self, schema: type[BaseAuditableSQLModel], with_fk: bool = False
     ) -> list[str]:
         """Get Statique fields from a core schema."""
         fields = list(
@@ -93,7 +93,7 @@ class StatiqueImporter:
 
     def _get_dataframe_for_schema(
         self,
-        schema: type[BaseTimestampedSQLModel],
+        schema: type[BaseAuditableSQLModel],
         subset: Optional[str] = None,
         with_fk: bool = False,
     ):
@@ -105,7 +105,7 @@ class StatiqueImporter:
         return df
 
     def _add_fk_from_saved_schema(
-        self, saved: pd.DataFrame, schema: type[BaseTimestampedSQLModel]
+        self, saved: pd.DataFrame, schema: type[BaseAuditableSQLModel]
     ):
         """Add foreign keys to the statique DataFrame using saved schema."""
         fields = self._get_fields_for_schema(schema)
@@ -192,7 +192,7 @@ class StatiqueImporter:
     def _save_schema(
         self,
         df: pd.DataFrame,
-        schema: type[BaseTimestampedSQLModel],
+        schema: type[BaseAuditableSQLModel],
         constraint: Optional[str] = None,
         index_elements: Optional[list[str]] = None,
         chunksize: int = 1000,

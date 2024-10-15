@@ -7,10 +7,10 @@ from geoalchemy2.types import Geometry
 from sqlmodel import Field, Relationship
 from sqlmodel.main import SQLModelConfig
 
-from . import BaseTimestampedSQLModel
+from . import BaseAuditableSQLModel
 
 
-class BaseAdministrativeBoundaries(BaseTimestampedSQLModel):
+class BaseAdministrativeBoundaries(BaseAuditableSQLModel):
     """Base administrative boundaries model."""
 
     model_config = SQLModelConfig(
