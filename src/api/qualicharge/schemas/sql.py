@@ -19,7 +19,7 @@ from typing_extensions import Optional
 
 from ..exceptions import ObjectDoesNotExist, ProgrammingError
 from ..models.static import Statique
-from . import BaseAuditableSQLModel
+from .audit import BaseAuditableSQLModel
 from .core import (
     Amenageur,
     Enseigne,

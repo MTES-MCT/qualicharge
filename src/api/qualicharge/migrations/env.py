@@ -17,6 +17,7 @@ from qualicharge.auth.schemas import (  # noqa: F401
     Group,
     GroupOperationalUnit,
 )
+from qualicharge.schemas.audit import Audit
 from qualicharge.schemas.core import (  # noqa: F401
     Amenageur,
     Enseigne,

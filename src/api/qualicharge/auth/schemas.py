@@ -9,7 +9,7 @@ from sqlalchemy.types import ARRAY, DateTime, String
 from sqlmodel import Field, Relationship, SQLModel
 
 from qualicharge.conf import settings
-from qualicharge.schemas import BaseAuditableSQLModel
+from qualicharge.schemas.audit import BaseAuditableSQLModel
 from qualicharge.schemas.core import OperationalUnit
 
 
