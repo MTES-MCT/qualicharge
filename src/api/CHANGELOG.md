@@ -13,11 +13,11 @@ and this project adheres to
 - Upgrade fastapi to `0.115.2`
 - Upgrade pyinstrument to `5.0.0`
 
-## [0.13.0] - 2024-10-11
-
 ### Fixed
 
-- Migrate administrative boundaries tables schema and data
+- Add missing City / Department table foreign key constraints
+
+## [0.13.0] - 2024-10-11
 
 ### Changed
 
@@ -31,6 +31,10 @@ and this project adheres to
 - Upgrade pyinstrument to `4.7.3`
 - Upgrade python-multipart to `0.0.12`
 - Upgrade sentry-sdk to `74.1.2`
+
+### Fixed
+
+- Migrate administrative boundaries tables schema and data
 
 ## [0.12.1] - 2024-09-09
 
