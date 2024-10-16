@@ -37,7 +37,7 @@ from ..models.static import (
     ImplantationStationEnum,
     RaccordementEnum,
 )
-from . import BaseAuditableSQLModel
+from .audit import BaseAuditableSQLModel
 
 if TYPE_CHECKING:
     from qualicharge.auth.schemas import Group

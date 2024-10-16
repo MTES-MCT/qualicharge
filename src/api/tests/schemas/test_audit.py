@@ -1,0 +1,1 @@
+"""QualiCharge auditable schemas tests."""
