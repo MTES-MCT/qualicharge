@@ -13,7 +13,7 @@ from indicators.conf import settings
 @pytest.fixture(autouse=True, scope="session")
 def prefect_test_fixture():
     """Autouse the prefect test context."""
-    with prefect_test_harness():
+    with prefect_test_harness(60):
         yield
 
 
