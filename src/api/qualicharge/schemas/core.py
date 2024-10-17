@@ -37,7 +37,7 @@ from ..models.static import (
     ImplantationStationEnum,
     RaccordementEnum,
 )
-from .audit import BaseAuditableSQLModel
+from .audit import BaseAuditableSQLModel, track_model_changes
 
 if TYPE_CHECKING:
     from qualicharge.auth.schemas import Group
@@ -370,3 +370,6 @@ class Status(BaseAuditableSQLModel, StatusBase, table=True):
     def id_pdc_itinerance(self) -> str:
         """Return the PointDeCharge.id_pdc_itinerance (used for serialization only)."""
         return self.point_de_charge.id_pdc_itinerance
+
+
+event.listen(Operateur, "after_update", track_model_changes)
