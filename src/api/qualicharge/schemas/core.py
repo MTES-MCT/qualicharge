@@ -51,7 +51,7 @@ from ..models.static import (
     RaccordementEnum,
     Statique,
 )
-from .audit import BaseAuditableSQLModel
+from .audit import BaseAuditableSQLModel, track_model_changes
 
 if TYPE_CHECKING:
     from qualicharge.auth.schemas import Group
@@ -584,3 +584,5 @@ class _StatiqueMV(SQLModel):
 
 
 mapper_registry.map_imperatively(StatiqueMV, _StatiqueMV.__table__)
+
+event.listen(Operateur, "after_update", track_model_changes)

@@ -1,5 +1,6 @@
 """QualiCharge auditable schemas."""
 
+import logging
 from datetime import datetime, timezone
 from enum import StrEnum
 from typing import Any, Optional
@@ -10,6 +11,8 @@ from sqlalchemy import CheckConstraint, and_, event, insert, inspect
 from sqlalchemy.orm import backref, foreign, relationship, remote
 from sqlalchemy.types import JSON, DateTime
 from sqlmodel import Field, SQLModel
+
+logger = logging.getLogger(__name__)
 
 
 class AuditableFieldBlackListEnum(StrEnum):
@@ -106,6 +109,10 @@ def track_model_changes(mapper, connection, target):
     date and the author. For fields with sensitive information (_e.g._ passwords or
     tokens), a null value is stored.
     """
+    if target.updated_by_id is None:
+        logger.debug("Target updated_by_id is empty, aborting changes tracking.")
+        return
+
     state = inspect(target)
 
     # Get changes
@@ -116,15 +123,21 @@ def track_model_changes(mapper, connection, target):
         history = attr.load_history()
         if not history.has_changes():
             continue
-        changes[attr.key] = [history.deleted, history.added]
+        changes[attr.key] = [
+            str(history.deleted[0]) if len(history.deleted) else None,
+            str(history.added[0]) if len(history.added) else None,
+        ]
+
+    logger.debug("Detected changes: %s", str(changes))
 
     # Log changes
-    connection.execute(
-        insert(Audit).values(
-            table=target.__tablename__,
-            author_id=target.updated_by_id,
-            target_id=target.id,
-            updated_at=target.updated_at,
-            changes=changes,
-        )
+    audit = Audit(
+        table=target.__tablename__,
+        author_id=target.updated_by_id,
+        target_id=target.id,
+        updated_at=target.updated_at,
+        changes=changes,
     )
+    connection.execute(insert(Audit).values(**audit.model_dump()))
+    print(f"{dir(target.audits)=}")
+    # target.audits.append(audit)

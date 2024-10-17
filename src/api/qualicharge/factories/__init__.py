@@ -32,5 +32,7 @@ class TimestampedSQLModelFactory(Generic[T], SQLAlchemyFactory[T]):
     __is_base_factory__ = True
 
     id = Use(uuid4)
+    created_by_id = None
+    updated_by_id = None
     created_at = Use(lambda: datetime.now(timezone.utc) - timedelta(hours=1))
     updated_at = Use(datetime.now, timezone.utc)
