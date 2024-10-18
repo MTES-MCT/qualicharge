@@ -1,12 +1,27 @@
 """QualiCharge auditable schemas tests."""
 
+import pytest
 from sqlalchemy import func
 from sqlmodel import select
 
 from qualicharge.auth.factories import UserFactory
-from qualicharge.factories.static import OperateurFactory
+from qualicharge.factories.static import (
+    AmenageurFactory,
+    EnseigneFactory,
+    LocalisationFactory,
+    OperateurFactory,
+    PointDeChargeFactory,
+    StationFactory,
+)
 from qualicharge.schemas.audit import Audit
-from qualicharge.schemas.core import Operateur
+from qualicharge.schemas.core import (
+    Amenageur,
+    Enseigne,
+    Localisation,
+    Operateur,
+    PointDeCharge,
+    Station,
+)
 
 
 def test_auditable_schema_changes(db_session):
@@ -131,3 +146,47 @@ def test_auditable_schema_audits_dynamic_fk(db_session):
         "contact_operateur": ["janine@doe.com", "janot@doe.com"],
         "telephone_operateur": ["tel:+33-1-44-27-63-52", "tel:+33-1-44-27-63-53"],
     }
+
+
+@pytest.mark.parametrize(
+    "factory,extras",
+    (
+        (AmenageurFactory, {}),
+        (OperateurFactory, {}),
+        (EnseigneFactory, {}),
+        (LocalisationFactory, {}),
+        (StationFactory, {}),
+        (PointDeChargeFactory, {"station_id": None}),
+    ),
+)
+def test_auditable_schema_audits(db_session, factory, extras):
+    """Test auditable schema dynamic audits foreign key."""
+    factory.__session__ = db_session
+    UserFactory.__session__ = db_session
+
+    user1 = UserFactory.create_sync()
+    user2 = UserFactory.create_sync()
+    instance = factory.create_sync(created_by_id=user1.id, updated_by_id=None, **extras)
+
+    assert len(instance.audits) == 0
+
+    # Update
+    instance.updated_by_id = user2.id
+    db_session.add(instance)
+    db_session.commit()
+    db_session.refresh(instance)
+
+    # Test audits dymanic generic FK
+    assert len(instance.audits) == 1
+    assert instance.audits[0].author_id == user2.id
+
+    # Update instance once again
+    instance.updated_by_id = user1.id
+    db_session.add(instance)
+    db_session.commit()
+    db_session.refresh(instance)
+
+    # Test audits dymanic generic FK
+    expected_audits = 2
+    assert len(instance.audits) == expected_audits
+    assert instance.audits[1].author_id == user1.id
