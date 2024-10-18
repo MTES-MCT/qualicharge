@@ -585,4 +585,13 @@ class _StatiqueMV(SQLModel):
 
 mapper_registry.map_imperatively(StatiqueMV, _StatiqueMV.__table__)
 
-event.listen(Operateur, "after_update", track_model_changes)
+# Declare auditable models
+for auditable_model in (
+    Amenageur,
+    Operateur,
+    Enseigne,
+    Localisation,
+    Station,
+    PointDeCharge,
+):
+    event.listen(auditable_model, "after_update", track_model_changes)

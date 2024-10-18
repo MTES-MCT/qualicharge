@@ -131,13 +131,12 @@ def track_model_changes(mapper, connection, target):
     logger.debug("Detected changes: %s", str(changes))
 
     # Log changes
-    audit = Audit(
-        table=target.__tablename__,
-        author_id=target.updated_by_id,
-        target_id=target.id,
-        updated_at=target.updated_at,
-        changes=changes,
+    connection.execute(
+        insert(Audit).values(
+            table=target.__tablename__,
+            author_id=target.updated_by_id,
+            target_id=target.id,
+            updated_at=target.updated_at,
+            changes=changes,
+        )
     )
-    connection.execute(insert(Audit).values(**audit.model_dump()))
-    print(f"{dir(target.audits)=}")
-    # target.audits.append(audit)

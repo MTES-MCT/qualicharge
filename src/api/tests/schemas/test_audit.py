@@ -20,7 +20,7 @@ def test_auditable_schema_changes(db_session):
     assert db_session.exec(select(func.count(Operateur.id))).one() == 0
     assert db_session.exec(select(func.count(Audit.id))).one() == 0
 
-    # Persist an operateur with not creator or updator
+    # Persist an operateur without creator or updator
     operateur = OperateurFactory.create_sync(
         nom_operateur="Doe inc.",
         contact_operateur="john@doe.com",
@@ -80,7 +80,7 @@ def test_auditable_schema_changes(db_session):
     }
 
 
-def test_auditable_schema_changes_dynamic_fk(db_session):
+def test_auditable_schema_audits_dynamic_fk(db_session):
     """Test auditable schema dynamic audits foreign key."""
     OperateurFactory.__session__ = db_session
     UserFactory.__session__ = db_session
@@ -90,16 +90,43 @@ def test_auditable_schema_changes_dynamic_fk(db_session):
         nom_operateur="Doe inc.",
         contact_operateur="john@doe.com",
         telephone_operateur="+33144276350",
-        updated_by_id=user.id
+        updated_by_id=user.id,
     )
 
-    # Now update operateur twice
+    # Update operateur
     operateur.contact_operateur = "janine@doe.com"
     operateur.telephone_operateur = "+33144276352"
     db_session.add(operateur)
+    db_session.commit()
+    db_session.refresh(operateur)
+
+    # Test audits dymanic generic FK
+    assert len(operateur.audits) == 1
+    assert operateur.audits[0].table == "operateur"
+    assert operateur.audits[0].author_id == user.id
+    assert operateur.audits[0].target_id == operateur.id
+    assert operateur.audits[0].updated_at == operateur.updated_at
+    assert operateur.audits[0].changes == {
+        "updated_by_id": ["None", str(user.id)],
+        "contact_operateur": ["jane@doe.com", "janine@doe.com"],
+        "telephone_operateur": ["tel:+33-1-44-27-63-51", "tel:+33-1-44-27-63-52"],
+    }
+
+    # Update operateur once again
     operateur.contact_operateur = "janot@doe.com"
     operateur.telephone_operateur = "+33144276353"
     db_session.add(operateur)
+    db_session.commit()
+    db_session.refresh(operateur)
 
     # Test audits dymanic generic FK
-    assert len(operateur.audits) == 2
+    expected_audits = 2
+    assert len(operateur.audits) == expected_audits
+    assert operateur.audits[1].table == "operateur"
+    assert operateur.audits[1].author_id == user.id
+    assert operateur.audits[1].target_id == operateur.id
+    assert operateur.audits[1].updated_at == operateur.updated_at
+    assert operateur.audits[1].changes == {
+        "contact_operateur": ["janine@doe.com", "janot@doe.com"],
+        "telephone_operateur": ["tel:+33-1-44-27-63-52", "tel:+33-1-44-27-63-53"],
+    }

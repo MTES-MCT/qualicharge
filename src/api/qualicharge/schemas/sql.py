@@ -59,12 +59,14 @@ class StatiqueImporter:
         return len(self._statique)
 
     @staticmethod
-    def _add_timestamped_model_fields(df: pd.DataFrame):
+    def _add_auditable_model_fields(df: pd.DataFrame):
         """Add required fields for a BaseAuditableSQLModel."""
         df["id"] = df.apply(lambda x: uuid.uuid4(), axis=1)
         now = pd.Timestamp.now(tz="utc")
         df["created_at"] = now
         df["updated_at"] = now
+        df["created_by_id"] = None
+        df["updated_by_id"] = None
         return df
 
     @staticmethod
@@ -87,8 +89,10 @@ class StatiqueImporter:
         fields = list(
             set(Statique.model_fields.keys()) & set(schema.model_fields.keys())
         )
+        # Auditable model fks should be ignored
+        ignored_fks = {"created_by_id", "updated_by_id"}
         if with_fk:
-            fields += self._get_schema_fks(schema)
+            fields += list(set(self._get_schema_fks(schema)) - ignored_fks)
         return fields
 
     def _get_dataframe_for_schema(
@@ -101,7 +105,7 @@ class StatiqueImporter:
         src = self._statique_with_fk if with_fk else self._statique
         df = src[self._get_fields_for_schema(schema, with_fk=with_fk)]
         df = df.drop_duplicates(subset)
-        df = self._add_timestamped_model_fields(df)
+        df = self._add_auditable_model_fields(df)
         return df
 
     def _add_fk_from_saved_schema(
