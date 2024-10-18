@@ -93,6 +93,8 @@ def test_auditable_schema_audits_dynamic_fk(db_session):
         updated_by_id=user.id,
     )
 
+    assert len(operateur.audits) == 0
+
     # Update operateur
     operateur.contact_operateur = "janine@doe.com"
     operateur.telephone_operateur = "+33144276352"
@@ -107,9 +109,8 @@ def test_auditable_schema_audits_dynamic_fk(db_session):
     assert operateur.audits[0].target_id == operateur.id
     assert operateur.audits[0].updated_at == operateur.updated_at
     assert operateur.audits[0].changes == {
-        "updated_by_id": ["None", str(user.id)],
-        "contact_operateur": ["jane@doe.com", "janine@doe.com"],
-        "telephone_operateur": ["tel:+33-1-44-27-63-51", "tel:+33-1-44-27-63-52"],
+        "contact_operateur": ["john@doe.com", "janine@doe.com"],
+        "telephone_operateur": ["tel:+33-1-44-27-63-50", "tel:+33-1-44-27-63-52"],
     }
 
     # Update operateur once again
