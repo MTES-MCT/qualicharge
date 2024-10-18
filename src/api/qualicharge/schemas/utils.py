@@ -9,6 +9,7 @@ import pandas as pd
 from sqlalchemy import func
 from sqlalchemy.exc import MultipleResultsFound
 from sqlalchemy.schema import Column as SAColumn
+from qualicharge.schemas.audit import BaseAuditableSQLModel
 from sqlmodel import Session, SQLModel, select
 
 from qualicharge.auth.schemas import User
@@ -90,7 +91,7 @@ def get_or_create(
 
         # Update database entry
         for key, value in entry.model_dump(
-            exclude=DB_TO_STATIC_EXCLUDED_FIELDS
+            exclude=list(set(DB_TO_STATIC_EXCLUDED_FIELDS) - {"updated_by_id"})
         ).items():
             setattr(db_entry, key, value)
         session.add(db_entry)
@@ -110,6 +111,7 @@ def save_schema_from_statique(
     statique: Statique,
     fields: Optional[Set] = None,
     update: bool = False,
+    author: Optional[User] = None,
 ) -> Tuple[EntryStatus, SQLModel]:
     """Save schema to database from Statique instance.
 
@@ -120,6 +122,7 @@ def save_schema_from_statique(
         fields: entry fields used in database query to select target entry.
                 Defaults to None (use all fields).
         update: should we update existing instance if required?
+        author: the user that creates/updates the schema entry
 
     Returns:
         A (EntryStatus, entry) tuple. The status refers on the entry creation/update.
@@ -129,6 +132,12 @@ def save_schema_from_statique(
     """
     # Is this a new entry?
     entry = schema_klass(**statique.get_fields_for_schema(schema_klass))
+
+    # Add author for auditability
+    if issubclass(schema_klass, BaseAuditableSQLModel):
+        entry.created_by_id = author.id if author else None
+        entry.updated_by_id = author.id if author else None
+
     return get_or_create(
         session,
         entry,
@@ -150,23 +159,38 @@ def pdc_to_statique(pdc: PointDeCharge) -> Statique:
 
 
 def save_statique(
-    session: Session, statique: Statique, update: bool = False
+    session: Session,
+    statique: Statique,
+    update: bool = False,
+    author: Optional[User] = None,
 ) -> Statique:
     """Save Statique instance to database."""
     # Core schemas
     _, pdc = save_schema_from_statique(
-        session, PointDeCharge, statique, fields={"id_pdc_itinerance"}, update=update
+        session,
+        PointDeCharge,
+        statique,
+        fields={"id_pdc_itinerance"},
+        update=update,
+        author=author,
     )
     _, station = save_schema_from_statique(
-        session, Station, statique, fields={"id_station_itinerance"}, update=update
+        session,
+        Station,
+        statique,
+        fields={"id_station_itinerance"},
+        update=update,
+        author=author,
     )
     _, amenageur = save_schema_from_statique(
-        session, Amenageur, statique, update=update
+        session, Amenageur, statique, update=update, author=author
     )
     _, operateur = save_schema_from_statique(
-        session, Operateur, statique, update=update
+        session, Operateur, statique, update=update, author=author
     )
-    _, enseigne = save_schema_from_statique(session, Enseigne, statique, update=update)
+    _, enseigne = save_schema_from_statique(
+        session, Enseigne, statique, update=update, author=author
+    )
     _, localisation = save_schema_from_statique(
         session,
         Localisation,
@@ -175,6 +199,7 @@ def save_statique(
             "adresse_station",
         },
         update=update,
+        author=author,
     )
 
     # Relationships
@@ -195,7 +220,10 @@ def save_statique(
 
 
 def update_statique(
-    session: Session, id_pdc_itinerance: str, to_update: Statique
+    session: Session,
+    id_pdc_itinerance: str,
+    to_update: Statique,
+    author: Optional[User] = None,
 ) -> Statique:
     """Update given statique from its id_pdc_itinerance."""
     # Check that submitted id_pdc_itinerance corresponds to the update
@@ -215,10 +243,12 @@ def update_statique(
     ):
         raise ObjectDoesNotExist("Statique with id_pdc_itinerance does not exist")
 
-    return save_statique(session, to_update, update=True)
+    return save_statique(session, to_update, update=True, author=author)
 
 
-def save_statiques(db_session: Session, statiques: List[Statique]):
+def save_statiques(
+    db_session: Session, statiques: List[Statique], author: Optional[User] = None
+):
     """Save input statiques to database."""
     df = pd.read_json(
         BytesIO(
@@ -229,7 +259,7 @@ def save_statiques(db_session: Session, statiques: List[Statique]):
         engine="pyarrow",
         dtype_backend="pyarrow",
     )
-    importer = StatiqueImporter(df, db_session.connection())
+    importer = StatiqueImporter(df, db_session.connection(), author=author)
     importer.save()
 
 
