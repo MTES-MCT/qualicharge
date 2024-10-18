@@ -32,7 +32,13 @@ from .core import (
 
 logger = logging.getLogger(__name__)
 
-DB_TO_STATIC_EXCLUDED_FIELDS = {"id", "created_at", "updated_at"}
+DB_TO_STATIC_EXCLUDED_FIELDS = {
+    "id",
+    "created_at",
+    "updated_at",
+    "created_by_id",
+    "updated_by_id",
+}
 
 
 class EntryStatus(IntEnum):

@@ -372,4 +372,13 @@ class Status(BaseAuditableSQLModel, StatusBase, table=True):
         return self.point_de_charge.id_pdc_itinerance
 
 
-event.listen(Operateur, "after_update", track_model_changes)
+# Declare auditable models
+for auditable_model in (
+    Amenageur,
+    Operateur,
+    Enseigne,
+    Localisation,
+    Station,
+    PointDeCharge,
+):
+    event.listen(auditable_model, "after_update", track_model_changes)
