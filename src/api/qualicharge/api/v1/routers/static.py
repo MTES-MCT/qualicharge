@@ -210,7 +210,7 @@ async def update(
 
     transaction = session.begin_nested()
     try:
-        update = update_statique(session, id_pdc_itinerance, statique)
+        update = update_statique(session, id_pdc_itinerance, statique, author=user)
     except QCIntegrityError as err:
         transaction.rollback()
         raise HTTPException(
@@ -243,7 +243,7 @@ async def create(
 
     transaction = session.begin_nested()
     try:
-        db_statique = save_statique(session, statique)
+        db_statique = save_statique(session, statique, author=user)
     except ObjectDoesNotExist as err:
         transaction.rollback()
         raise HTTPException(
@@ -276,7 +276,7 @@ async def bulk(
         dtype_backend="pyarrow",
     )
 
-    importer = StatiqueImporter(df, session.connection())
+    importer = StatiqueImporter(df, session.connection(), author=user)
     transaction = session.begin_nested()
     try:
         importer.save()
