@@ -9,4 +9,4 @@ prefect server database upgrade -y
 prefect work-pool create --type process --overwrite indicators
 
 # Create or update deployments
-prefect deploy
+prefect deploy --all
