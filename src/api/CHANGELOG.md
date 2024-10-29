@@ -10,8 +10,12 @@ and this project adheres to
 
 ### Changed
 
-- Upgrade fastapi to `0.115.2`
+- Upgrade fastapi to `0.115.4`
+- Upgrade pyarrow to `18.0.0`
+- Upgrade pydantic-settings to `2.6.0`
 - Upgrade pyinstrument to `5.0.0`
+- Upgrade python-multipart to `0.0.16`
+- Upgrade sentry-sdk to `2.17.0`
 
 ### Fixed
 
@@ -30,7 +34,7 @@ and this project adheres to
 - Upgrade pydantic-settings to `2.5.2`
 - Upgrade pyinstrument to `4.7.3`
 - Upgrade python-multipart to `0.0.12`
-- Upgrade sentry-sdk to `74.1.2`
+- Upgrade sentry-sdk to `2.16.0`
 
 ### Fixed
 
