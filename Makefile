@@ -37,9 +37,12 @@ bootstrap: \
   create-api-test-db \
   create-metabase-db \
   create-prefect-db \
+  create-dashboard-db \
+  migrate-dashboard-db \
   seed-metabase \
   seed-oidc \
-  create-superuser \
+  create-api-superuser \
+  create-dashboard-superuser \
   jupytext--to-ipynb \
   seed-api
 .PHONY: bootstrap
@@ -68,6 +71,10 @@ build-prefect: ## build prefect image
 	@$(COMPOSE) build prefect
 .PHONY: build-prefect
 
+build-dashboard: ## build dashboard image
+	@$(COMPOSE) build dashboard
+.PHONY: build-dashboard
+
 down: ## stop and remove all containers
 	@$(COMPOSE) down
 .PHONY: down
@@ -92,12 +99,16 @@ logs-prefect: ## display prefect logs (follow mode)
 	@$(COMPOSE) logs -f prefect prefect-worker
 .PHONY: logs-prefect
 
+logs-dashboard: ## display dashboard logs (follow mode)
+	@$(COMPOSE) logs -f dashboard
+.PHONY: logs-dashboard
+
 run: ## run the api server (and dependencies)
 	$(COMPOSE_UP) --wait api
 .PHONY: run
 
 run-all: ## run the whole stack
-	$(COMPOSE_UP) api keycloak metabase notebook opendata
+	$(COMPOSE_UP) api keycloak metabase notebook opendata dashboard
 .PHONY: run-all
 
 run-metabase: ## run the metabase service
@@ -172,6 +183,11 @@ create-prefect-db: ## create prefect database
 	@$(COMPOSE) exec postgresql bash -c 'psql "postgresql://$${POSTGRES_USER}:$${POSTGRES_PASSWORD}@$${QUALICHARGE_DB_HOST}:$${QUALICHARGE_DB_PORT}/postgres" -c "create database \"$${PREFECT_API_DATABASE_NAME}\";"' || echo "Duly noted, skipping database creation."
 .PHONY: create-prefect-db
 
+create-dashboard-db: ## create dashboard database
+	@echo "Creating dashboard service database…"
+	@$(COMPOSE) exec postgresql bash -c 'psql "postgresql://$${POSTGRES_USER}:$${POSTGRES_PASSWORD}@$${QUALICHARGE_DB_HOST}:$${QUALICHARGE_DB_PORT}/postgres" -c "create database \"$${DASHBOARD_DB_NAME}\";"' || echo "Duly noted, skipping database creation."
+.PHONY: create-dashboard-db
+
 drop-api-test-db: ## drop API test database
 	@echo "Droping api service test database…"
 	@$(COMPOSE) exec postgresql bash -c 'psql "postgresql://$${POSTGRES_USER}:$${POSTGRES_PASSWORD}@$${QUALICHARGE_DB_HOST}:$${QUALICHARGE_DB_PORT}/postgres" -c "drop database \"$${QUALICHARGE_TEST_DB_NAME}\";"' || echo "Duly noted, skipping database deletion."
@@ -186,6 +202,11 @@ drop-metabase-db: ## drop Metabase database
 	@echo "Droping metabase service database…"
 	@$(COMPOSE) exec postgresql bash -c 'psql "postgresql://$${POSTGRES_USER}:$${POSTGRES_PASSWORD}@$${QUALICHARGE_DB_HOST}:$${QUALICHARGE_DB_PORT}/postgres" -c "drop database \"$${MB_DB_DBNAME}\";"' || echo "Duly noted, skipping database deletion."
 .PHONY: drop-metabase-db
+
+drop-dashboard-db: ## drop dashboard database
+	@echo "Droping dashboard service database…"
+	@$(COMPOSE) exec postgresql bash -c 'psql "postgresql://$${POSTGRES_USER}:$${POSTGRES_PASSWORD}@$${QUALICHARGE_DB_HOST}:$${QUALICHARGE_DB_PORT}/postgres" -c "drop database \"$${DASHBOARD_DB_NAME}\";"' || echo "Duly noted, skipping database deletion."
+.PHONY: drop-dashboard-db
 
 dump-metabase:  ## dump metabase objects
 	bin/pg_dump -a --inserts \
@@ -208,6 +229,14 @@ migrate-api:  ## run alembic database migrations for the api service
 	@bin/alembic upgrade head
 .PHONY: migrate-api
 
+migrate-dashboard-db: ## create dashboard database
+	@echo "Running dashboard service database engine…"
+	@$(COMPOSE_UP) --wait postgresql
+	@echo "Migrating dashboard database…"#
+	@bin/manage migrate
+.PHONY: migrate-dashboard-db
+
+create-api-superuser: ## create api super user
 migrate-prefect:  ## run prefect database migrations
 	@echo "Running prefect service database engine…"
 	@$(COMPOSE_UP) --wait postgresql
@@ -232,7 +261,14 @@ create-superuser: ## create super user
 		--is-superuser \
 		--is-staff \
 		--force
-.PHONY: create-superuser
+.PHONY: create-api-superuser
+
+create-dashboard-superuser: ## create dashboard super user
+	@echo "Running dashboard service database engine…"
+	@$(COMPOSE_UP) --wait postgresql
+	@echo "Creating dashboard super user…"
+	@bin/manage createsuperuser --noinput
+.PHONY: create-dashboard-superuser
 
 jupytext--to-md: ## convert local ipynb files into md
 	bin/jupytext --to md work/src/notebook/**/*.ipynb
@@ -246,11 +282,14 @@ reset-db: ## Reset the PostgreSQL database
 	$(COMPOSE) stop
 	$(COMPOSE) down postgresql metabase
 	$(MAKE) migrate-api
-	$(MAKE) create-superuser
+	$(MAKE) create-api-superuser
 	$(MAKE) create-api-test-db
 	$(MAKE) create-metabase-db
 	$(MAKE) seed-metabase
 	$(MAKE) create-prefect-db
+	$(MAKE) create-dashboard-db
+	$(MAKE) migrate-dashboard-db
+	$(MAKE) create-dashboard-superuser
 	$(MAKE) migrate-prefect
 .PHONY: reset-db
 

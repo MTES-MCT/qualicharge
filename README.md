@@ -69,6 +69,13 @@ un navigateur sur l'URL suivante :
 
 Voir la documentation du projet : [./src/client/](./src/client/)
 
+## Utilisation du dashboard
+
+Le dashboard qualicharge est disponible depuis l'url suivante :
+[http://localhost:8030](http://localhost:8030).
+
+Voir la documentation du projet dashboard : [./src/dashboard/](./src/dashboard/)
+
 ## Licence
 
 QualiCharge est distribué selon les termes de la licence MIT (voir le fichier
