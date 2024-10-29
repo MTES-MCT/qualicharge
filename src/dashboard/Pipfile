@@ -1,0 +1,17 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+django = "5.1.2"
+psycopg = {extras = ["pool", "binary"], version = "==3.2.3"}
+django-environ = "0.11.2"
+whitenoise = "6.8.2"
+gunicorn = "==23.0.0"
+
+[dev-packages]
+honcho = "==2.0.0"
+
+[requires]
+python_version = "3.12"
