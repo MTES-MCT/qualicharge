@@ -47,7 +47,7 @@ jobs:
           cache: "pipenv"
           cache-dependency-path: "src/api/Pipfile.lock"
       - name: Lint with Black
-        run: pipenv run black qualicharge tests
+        run: pipenv run black --check qualicharge tests
       - name: Lint with Ruff
         run: pipenv run ruff check qualicharge tests
       - name: Lint with MyPy

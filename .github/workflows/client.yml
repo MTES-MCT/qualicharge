@@ -45,7 +45,7 @@ jobs:
           python-version: "3.12"
           cache: "poetry"
       - name: Lint with Black
-        run: poetry run black qcc tests
+        run: poetry run black --check qcc tests
       - name: Lint with Ruff
         run: poetry run ruff check qcc tests
       - name: Lint with MyPy
