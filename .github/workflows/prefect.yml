@@ -47,7 +47,7 @@ jobs:
           cache: "pipenv"
           cache-dependency-path: "src/prefect/Pipfile.lock"
       - name: Lint with Black
-        run: pipenv run black indicators tests
+        run: pipenv run black --check indicators tests
       - name: Lint with Ruff
         run: pipenv run ruff check indicators tests
       - name: Lint with MyPy
