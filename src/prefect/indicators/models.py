@@ -17,6 +17,7 @@ class Level(IntEnum):
     EPCI = 3
     CITY = 4
 
+
 class IndicatorPeriod(Enum):
     """Time-based indicator periods."""
 
@@ -40,11 +41,13 @@ class Indicator(BaseModel):
     extras: Optional[dict] = None
     timestamp: datetime
 
+
 class IndicatorTimeSpan(BaseModel):
     """Time span of a period for an indicator."""
 
     period: IndicatorPeriod
     start: datetime
+
 
 class PeriodDuration(Enum):
     """Represents the time delta of an IndicatorPeriod."""
