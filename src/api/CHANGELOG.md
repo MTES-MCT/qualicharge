@@ -16,6 +16,7 @@ and this project adheres to
 - Upgrade pyinstrument to `5.0.0`
 - Upgrade python-multipart to `0.0.16`
 - Upgrade sentry-sdk to `2.17.0`
+- Set fk to `NULL` when related table entry is deleted for the `Station` table
 
 ### Fixed
 

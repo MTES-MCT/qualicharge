@@ -241,20 +241,38 @@ class Station(BaseTimestampedSQLModel, table=True):
     date_mise_en_service: Optional[PastDate] = Field(sa_type=Date)
 
     # Relationships
-    amenageur_id: Optional[UUID] = Field(default=None, foreign_key="amenageur.id")
+    amenageur_id: Optional[UUID] = Field(
+        default=None,
+        foreign_key="amenageur.id",
+        ondelete="SET NULL",
+    )
     amenageur: Amenageur = Relationship(back_populates="stations")
 
-    operateur_id: Optional[UUID] = Field(default=None, foreign_key="operateur.id")
+    operateur_id: Optional[UUID] = Field(
+        default=None,
+        foreign_key="operateur.id",
+        ondelete="SET NULL",
+    )
     operateur: Operateur = Relationship(back_populates="stations")
 
-    enseigne_id: Optional[UUID] = Field(default=None, foreign_key="enseigne.id")
+    enseigne_id: Optional[UUID] = Field(
+        default=None,
+        foreign_key="enseigne.id",
+        ondelete="SET NULL",
+    )
     enseigne: Enseigne = Relationship(back_populates="stations")
 
-    localisation_id: Optional[UUID] = Field(default=None, foreign_key="localisation.id")
+    localisation_id: Optional[UUID] = Field(
+        default=None,
+        foreign_key="localisation.id",
+        ondelete="SET NULL",
+    )
     localisation: Localisation = Relationship(back_populates="stations")
 
     operational_unit_id: Optional[UUID] = Field(
-        default=None, foreign_key="operationalunit.id"
+        default=None,
+        foreign_key="operationalunit.id",
+        ondelete="SET NULL",
     )
     operational_unit: OperationalUnit = Relationship(back_populates="stations")
 
