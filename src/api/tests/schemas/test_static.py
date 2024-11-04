@@ -194,7 +194,7 @@ def test_timestamped_model_constraints_composition(db_session):
     ],
 )
 def test_relationships_for_stations(db_session, related_factory, related_field):
-    """Test Schema.stations one-to-many relationship.
+    """Test Schema.station one-to-many relationship.
 
     Note that the OperationalUnit FK is tested separately as operational units already
     exist in database and the FK is automatically set via a dedicated event listener.
@@ -215,6 +215,59 @@ def test_relationships_for_stations(db_session, related_factory, related_field):
         == getattr(stations[1], related_field).id
         == related.id
     )
+
+
+def test_stations_fk_ondelete(db_session):
+    """Test Schema.Station foreign keys `on delete` triggers."""
+    AmenageurFactory.__session__ = db_session
+    OperateurFactory.__session__ = db_session
+    EnseigneFactory.__session__ = db_session
+    LocalisationFactory.__session__ = db_session
+    StationFactory.__session__ = db_session
+
+    amenageur = AmenageurFactory.create_sync()
+    operateur = OperateurFactory.create_sync()
+    enseigne = EnseigneFactory.create_sync()
+    localisation = LocalisationFactory.create_sync()
+
+    # Create the station
+    station = StationFactory.create_sync(
+        amenageur=amenageur,
+        operateur=operateur,
+        enseigne=enseigne,
+        localisation=localisation,
+    )
+    operational_unit = db_session.exec(
+        select(OperationalUnit).where(
+            OperationalUnit.code == station.id_station_itinerance[:5]
+        )
+    ).one()
+    assert station.amenageur_id == amenageur.id
+    assert station.operateur_id == operateur.id
+    assert station.enseigne_id == enseigne.id
+    assert station.localisation_id == localisation.id
+    assert station.operational_unit_id == operational_unit.id
+
+    # Delete a foreign key
+    db_session.delete(amenageur)
+    db_session.commit()
+    assert station.amenageur_id is None
+
+    db_session.delete(operateur)
+    db_session.commit()
+    assert station.operateur_id is None
+
+    db_session.delete(enseigne)
+    db_session.commit()
+    assert station.enseigne_id is None
+
+    db_session.delete(localisation)
+    db_session.commit()
+    assert station.localisation_id is None
+
+    db_session.delete(operational_unit)
+    db_session.commit()
+    assert station.operational_unit_id is None
 
 
 def test_relationships_for_point_de_charge(db_session):
