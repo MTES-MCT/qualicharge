@@ -96,7 +96,7 @@ services:
     environment:
       NB_UID: ${DOCKER_UID:-1000}
       NB_GID: ${DOCKER_GID:-1000}
-      CHOWN_HOME: 'yes'
+      CHOWN_HOME: "yes"
       CHOWN_HOME_OPTS: -R
     env_file:
       - env.d/notebook
@@ -137,6 +137,15 @@ services:
     env_file:
       - env.d/prefect
       - env.d/prefect-qc
+    healthcheck:
+      test:
+        - "CMD"
+        - "curl"
+        - "--fail"
+        - "http://localhost:4200/api/health"
+      interval: 2s
+      timeout: 5s
+      retries: 20
     volumes:
       - ./src/prefect:/app
     depends_on:
@@ -147,12 +156,13 @@ services:
     command: ["pipenv", "run", "honcho", "start", "worker"]
     user: ${DOCKER_USER:-1000}
     env_file:
-      - env.d/prefect
+      - env.d/prefect-worker
       - env.d/prefect-qc
     volumes:
       - ./src/prefect:/app
     depends_on:
-      - prefect
+      prefect:
+        condition: service_healthy
 
   prefect-test:
     image: "qualicharge:prefect"

@@ -33,6 +33,7 @@ bootstrap: ## bootstrap the project for development
 bootstrap: \
   build \
   migrate-api \
+  migrate-prefect \
   create-api-test-db \
   create-metabase-db \
   create-prefect-db \
@@ -207,6 +208,20 @@ migrate-api:  ## run alembic database migrations for the api service
 	@bin/alembic upgrade head
 .PHONY: migrate-api
 
+migrate-prefect:  ## run prefect database migrations
+	@echo "Running prefect service database engine…"
+	@$(COMPOSE_UP) --wait postgresql
+	@echo "Running migrations for prefect service…"
+	@$(COMPOSE_RUN_PREFECT_PIPENV) prefect server database upgrade -y
+.PHONY: migrate-prefect
+
+post-deploy-prefect:  ## run prefect post-deployment script
+	@echo "Running prefect service…"
+	@$(COMPOSE_UP) --wait prefect
+	@echo "Running postdeploy script for prefect service…"
+	@$(COMPOSE) exec prefect pipenv run honcho start postdeploy
+.PHONY: post-deploy-prefect
+
 create-superuser: ## create super user
 	@echo "Creating super user…"
 	@$(COMPOSE_RUN_API_PIPENV) python -m qualicharge create-user \
@@ -236,6 +251,7 @@ reset-db: ## Reset the PostgreSQL database
 	$(MAKE) create-metabase-db
 	$(MAKE) seed-metabase
 	$(MAKE) create-prefect-db
+	$(MAKE) migrate-prefect
 .PHONY: reset-db
 
 seed-api: ## seed the API database (static data)
