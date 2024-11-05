@@ -7,6 +7,7 @@ ARG DOCKER_GID 1000
 # Upgrade system packages to install security updates
 RUN apt-get update && \
     apt-get -y upgrade && \
+    apt-get install -y curl && \
     rm -rf /var/lib/apt/lists/*
 
 # Upgrade pip to its latest release to speed up dependencies
