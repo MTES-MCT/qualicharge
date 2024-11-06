@@ -287,10 +287,10 @@ reset-db: ## Reset the PostgreSQL database
 	$(MAKE) create-metabase-db
 	$(MAKE) seed-metabase
 	$(MAKE) create-prefect-db
+	$(MAKE) migrate-prefect
 	$(MAKE) create-dashboard-db
 	$(MAKE) migrate-dashboard-db
 	$(MAKE) create-dashboard-superuser
-	$(MAKE) migrate-prefect
 .PHONY: reset-db
 
 seed-api: ## seed the API database (static data)

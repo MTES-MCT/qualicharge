@@ -60,6 +60,23 @@ services:
     volumes:
       - ./src/client:/app
 
+  dashboard:
+    container_name: dashboard
+    build:
+      context: ./src/dashboard
+      args:
+        DOCKER_UID: ${DOCKER_UID:-1000}
+        DOCKER_GID: ${DOCKER_GID:-1000}
+    user: ${DOCKER_USER:-1000}
+    ports:
+      - "8030:8000"
+    env_file:
+      - env.d/dashboard
+    volumes:
+      - ./src/dashboard:/app
+    depends_on:
+      - postgresql
+
   keycloak:
     image: quay.io/keycloak/keycloak:26.0
     env_file:
@@ -205,21 +222,4 @@ services:
     working_dir: /home/terraform
     volumes:
       - ./provisioning:/home/terraform
-
-  dashboard:
-    container_name: dashboard
-    build:
-      context: ./src/dashboard
-      args:
-        DOCKER_UID: ${DOCKER_UID:-1000}
-        DOCKER_GID: ${DOCKER_GID:-1000}
-    user: ${DOCKER_USER:-1000}
-    ports:
-      - "8030:8000"
-    env_file:
-      - env.d/dashboard
-    volumes:
-      - ./src/dashboard:/app
-    depends_on:
-      - postgresql
 
