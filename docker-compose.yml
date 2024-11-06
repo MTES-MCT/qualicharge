@@ -44,7 +44,8 @@ services:
       - ./src/api:/app
       - ./data:/data
     depends_on:
-      - postgresql
+      postgresql:
+        condition: service_healthy
 
   client:
     build:
@@ -75,7 +76,8 @@ services:
     volumes:
       - ./src/dashboard:/app
     depends_on:
-      - postgresql
+      postgresql:
+        condition: service_healthy
 
   keycloak:
     image: quay.io/keycloak/keycloak:26.0
@@ -104,7 +106,8 @@ services:
       timeout: 5s
       retries: 5
     depends_on:
-      - postgresql
+      postgresql:
+        condition: service_healthy
 
   notebook:
     build:
@@ -123,7 +126,8 @@ services:
     volumes:
       - .:/home/jovyan/work
     depends_on:
-      - postgresql
+      postgresql:
+        condition: service_healthy
 
   opendata:
     build:
@@ -140,7 +144,8 @@ services:
     volumes:
       - ./src/opendata:/app
     depends_on:
-      - postgresql
+      postgresql:
+        condition: service_healthy
 
   prefect:
     build:
@@ -167,7 +172,8 @@ services:
     volumes:
       - ./src/prefect:/app
     depends_on:
-      - postgresql
+      postgresql:
+        condition: service_healthy
 
   prefect-worker:
     image: "qualicharge:prefect"
@@ -191,6 +197,25 @@ services:
       - ./src/prefect:/app
     depends_on:
       - postgresql
+
+  locust:
+    image: locustio/locust:2.32.1
+    ports:
+      - "8040:8089"
+    volumes:
+      - ./src/bench:/app
+    command: -f FIXME --master -H http://locust:8089
+    depends_on:
+      api:
+        condition: service_healthy
+
+  locust-worker:
+    image: locustio/locust:2.32.1
+    volumes:
+      - ./src/bench:/app
+    command: -f FIXME --worker --master-host locust
+    depends_on:
+      - locust
 
   # -- tools
   curl:
@@ -222,4 +247,3 @@ services:
     working_dir: /home/terraform
     volumes:
       - ./provisioning:/home/terraform
-
