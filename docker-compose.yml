@@ -43,8 +43,10 @@ services:
     volumes:
       - ./src/api:/app
       - ./data:/data
+      - ./src/bench:/mnt/bench
     depends_on:
-      - postgresql
+      postgresql:
+        condition: service_healthy
 
   client:
     build:
@@ -75,7 +77,8 @@ services:
     volumes:
       - ./src/dashboard:/app
     depends_on:
-      - postgresql
+      postgresql:
+        condition: service_healthy
 
   keycloak:
     image: quay.io/keycloak/keycloak:26.0
@@ -104,7 +107,8 @@ services:
       timeout: 5s
       retries: 5
     depends_on:
-      - postgresql
+      postgresql:
+        condition: service_healthy
 
   notebook:
     build:
@@ -123,7 +127,8 @@ services:
     volumes:
       - .:/home/jovyan/work
     depends_on:
-      - postgresql
+      postgresql:
+        condition: service_healthy
 
   opendata:
     build:
@@ -140,7 +145,8 @@ services:
     volumes:
       - ./src/opendata:/app
     depends_on:
-      - postgresql
+      postgresql:
+        condition: service_healthy
 
   prefect:
     build:
@@ -167,7 +173,8 @@ services:
     volumes:
       - ./src/prefect:/app
     depends_on:
-      - postgresql
+      postgresql:
+        condition: service_healthy
 
   prefect-worker:
     image: "qualicharge:prefect"
@@ -191,6 +198,45 @@ services:
       - ./src/prefect:/app
     depends_on:
       - postgresql
+
+  locust:
+    build:
+      context: ./src/bench
+      args:
+        DOCKER_UID: ${DOCKER_UID:-1000}
+        DOCKER_GID: ${DOCKER_GID:-1000}
+    user: ${DOCKER_USER:-1000}
+    image: "qualicharge:locust"
+    ports:
+      - "8040:8089"
+    env_file:
+      - env.d/locust
+    volumes:
+      - ./src/bench:/app
+      - ./data:/data
+    command: -f /app/locustfile.py --master -H 'http://api:8000/api/v1'
+    depends_on:
+      api:
+        condition: service_healthy
+
+  locust-worker:
+    build:
+      context: ./src/bench
+      args:
+        DOCKER_UID: ${DOCKER_UID:-1000}
+        DOCKER_GID: ${DOCKER_GID:-1000}
+    user: ${DOCKER_USER:-1000}
+    image: "qualicharge:locust"
+    deploy:
+      replicas: 5
+    env_file:
+      - env.d/locust
+    volumes:
+      - ./src/bench:/app
+      - ./data:/data
+    command: -f /app/locustfile.py --worker --master-host locust
+    depends_on:
+      - locust
 
   # -- tools
   curl:
@@ -222,4 +268,3 @@ services:
     working_dir: /home/terraform
     volumes:
       - ./provisioning:/home/terraform
-
