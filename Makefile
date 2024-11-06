@@ -30,6 +30,29 @@ data/afirev-charging.csv: data
 	@echo "You should download CSV file from $(AFIREV_CHARGING_DATASET_URL)"
 
 # -- Docker/compose
+bench-reset-db: ## Reset API database to run benchmark
+	$(COMPOSE) stop
+	$(COMPOSE) up -d --wait --force-recreate postgresql
+	$(MAKE) migrate-api
+	$(MAKE) create-api-superuser
+	$(COMPOSE) up -d --wait api
+	zcat data/irve-statique.json.gz | head -n 500 | \
+		bin/qcc static bulk --chunk-size 1000
+.PHONY: bench-reset-db
+
+bench: ## run API benchmark
+	$(COMPOSE_RUN_API_PIPENV) \
+		locust \
+		  -f /mnt/bench/locustfile.py \
+			--headless \
+			-u 30 \
+			-r 1 \
+			--run-time 30s \
+			-H 'http://api:8000/api/v1' \
+			--csv bench_admin \
+			APIAdminUser
+.PHONY: bench
+
 bootstrap: ## bootstrap the project for development
 bootstrap: \
   build \
@@ -60,6 +83,10 @@ build-api: ## build the api image
 build-client: ## build the client image
 	$(COMPOSE) build client
 .PHONY: build-client
+
+build-locust: ## build locust image
+	@$(COMPOSE) build locust
+.PHONY: build-locust
 
 build-notebook: ## build custom jupyter notebook image
 	@$(COMPOSE) build notebook
@@ -133,6 +160,10 @@ run-prefect: ## run the prefect service
 run-dashboard: ## run the dashboard service
 	$(COMPOSE_UP) dashboard
 .PHONY: run-dashboard
+
+run-locust: ## run the locust service
+	$(COMPOSE_UP) --wait locust-worker
+.PHONY: run-locust
 
 status: ## an alias for "docker compose ps"
 	@$(COMPOSE) ps
@@ -285,7 +316,6 @@ jupytext--to-ipynb: ## convert remote md files into ipynb
 
 reset-db: ## Reset the PostgreSQL database
 	$(COMPOSE) stop
-	$(COMPOSE) down postgresql metabase
 	$(MAKE) migrate-api
 	$(MAKE) create-api-superuser
 	$(MAKE) create-api-test-db
@@ -339,6 +369,7 @@ seed-dashboard: ## seed dashboard
 lint: ## lint all sources
 lint: \
 	lint-api \
+	lint-bench \
 	lint-client \
 	lint-prefect \
 	lint-dashboard
@@ -350,6 +381,13 @@ lint-api: \
   lint-api-ruff \
   lint-api-mypy
 .PHONY: lint-api
+
+lint-bench: ## lint api python sources
+lint-bench: \
+  lint-bench-black \
+  lint-bench-ruff \
+  lint-bench-mypy
+.PHONY: lint-bench
 
 lint-client: ## lint client python sources
 lint-client: \
@@ -392,6 +430,26 @@ lint-api-mypy: ## lint api python sources with mypy
 	@echo 'lint:mypy started…'
 	@$(COMPOSE_RUN_API_PIPENV) mypy qualicharge tests
 .PHONY: lint-api-mypy
+
+lint-bench-black: ## lint bench python sources with black
+	@echo 'lint:black started…'
+	@$(COMPOSE_RUN_API_PIPENV) black /mnt/bench
+.PHONY: lint-bench-black
+
+lint-bench-ruff: ## lint bench python sources with ruff
+	@echo 'lint:ruff started…'
+	@$(COMPOSE_RUN_API_PIPENV) ruff check /mnt/bench
+.PHONY: lint-bench-ruff
+
+lint-bench-ruff-fix: ## lint and fix api python sources with ruff
+	@echo 'lint:ruff-fix started…'
+	@$(COMPOSE_RUN_API_PIPENV) ruff check --fix /mnt/bench
+.PHONY: lint-bench-ruff-fix
+
+lint-bench-mypy: ## lint bench python sources with mypy
+	@echo 'lint:mypy started…'
+	@$(COMPOSE_RUN_API_PIPENV) mypy /mnt/bench
+.PHONY: lint-bench-mypy
 
 lint-client-black: ## lint api python sources with black
 	@echo 'lint:black started…'
