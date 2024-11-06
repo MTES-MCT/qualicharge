@@ -33,12 +33,12 @@ bootstrap: ## bootstrap the project for development
 bootstrap: \
   build \
   migrate-api \
-  migrate-prefect \
   create-api-test-db \
   create-metabase-db \
   create-prefect-db \
+  migrate-prefect \
   create-dashboard-db \
-  migrate-dashboard-db \
+  migrate-dashboard \
   seed-metabase \
   seed-oidc \
   create-api-superuser \
@@ -229,14 +229,13 @@ migrate-api:  ## run alembic database migrations for the api service
 	@bin/alembic upgrade head
 .PHONY: migrate-api
 
-migrate-dashboard-db: ## create dashboard database
+migrate-dashboard: ## create dashboard database
 	@echo "Running dashboard service database engine…"
 	@$(COMPOSE_UP) --wait postgresql
 	@echo "Migrating dashboard database…"#
 	@bin/manage migrate
-.PHONY: migrate-dashboard-db
+.PHONY: migrate-dashboard
 
-create-api-superuser: ## create api super user
 migrate-prefect:  ## run prefect database migrations
 	@echo "Running prefect service database engine…"
 	@$(COMPOSE_UP) --wait postgresql
@@ -251,7 +250,7 @@ post-deploy-prefect:  ## run prefect post-deployment script
 	@$(COMPOSE) exec prefect pipenv run honcho start postdeploy
 .PHONY: post-deploy-prefect
 
-create-superuser: ## create super user
+create-api-superuser: ## create api super user
 	@echo "Creating super user…"
 	@$(COMPOSE_RUN_API_PIPENV) python -m qualicharge create-user \
 		admin \
@@ -289,7 +288,7 @@ reset-db: ## Reset the PostgreSQL database
 	$(MAKE) create-prefect-db
 	$(MAKE) migrate-prefect
 	$(MAKE) create-dashboard-db
-	$(MAKE) migrate-dashboard-db
+	$(MAKE) migrate-dashboard
 	$(MAKE) create-dashboard-superuser
 .PHONY: reset-db
 
