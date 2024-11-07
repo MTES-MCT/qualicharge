@@ -28,7 +28,7 @@ jobs:
       - name: Install dependencies
         run: |
           cd src/api
-          pipenv install -de .
+          pipenv install -d .
 
   lint-api:
     needs: build-api
