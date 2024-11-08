@@ -7,9 +7,10 @@
 #
 # [*] optional
 
-set -eo pipefail
+set -euo pipefail
 
 declare -i debug=${QUALICHARGE_DEBUG:-0}
+declare -i workers=${QUALICHARGE_UVICORN_WORKERS:-1}
 declare -a extra_opts
 
 if [ ${debug} == 1 ]; then
@@ -20,6 +21,7 @@ if [ ${debug} == 1 ]; then
   echo "⚗️ DEBUG mode activated. We hope your are not running in production. 🤞"
 else
   extra_opts=(
+    "--workers ${workers}" \
     "--log-config logging-config.prod.yaml"
   )
 fi
