@@ -32,18 +32,31 @@ class Engine(metaclass=Singleton):
 
     _engine: Optional[SAEngine] = None
 
-    def get_engine(self, url: PostgresDsn, echo: bool = False) -> SAEngine:
+    def get_engine(
+        self,
+        url: PostgresDsn,
+        echo: bool = False,
+        pool_size: int = 10,
+        max_overflow: int = 20,
+    ) -> SAEngine:
         """Get created engine or create a new one."""
         if self._engine is None:
             logger.debug("Create a new engine")
-            self._engine = create_engine(str(url), echo=echo)
+            self._engine = create_engine(
+                str(url), echo=echo, pool_size=pool_size, max_overflow=max_overflow
+            )
         logger.debug("Getting database engine %s", self._engine)
         return self._engine
 
 
 def get_engine() -> SAEngine:
     """Get database engine."""
-    return Engine().get_engine(url=settings.DATABASE_URL, echo=settings.DEBUG)
+    return Engine().get_engine(
+        url=settings.DATABASE_URL,
+        echo=settings.DEBUG,
+        pool_size=settings.DB_CONNECTION_POOL_SIZE,
+        max_overflow=settings.DB_CONNECTION_MAX_OVERFLOW,
+    )
 
 
 def get_session() -> Generator[SMSession, None, None]:
