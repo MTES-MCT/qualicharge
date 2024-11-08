@@ -40,6 +40,8 @@ class Settings(BaseSettings):
     DB_USER: str = "qualicharge"
     DB_PASSWORD: str = "pass"
     DB_PORT: int = 5432
+    DB_CONNECTION_POOL_SIZE: int = 5
+    DB_CONNECTION_MAX_OVERFLOW: int = 10
     TEST_DB_NAME: str = "test-qualicharge-api"
 
     @computed_field  # type: ignore[misc]

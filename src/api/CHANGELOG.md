@@ -12,6 +12,8 @@ and this project adheres to
 
 - Allow uvicorn workers configuration in start script using the
   `QUALICHARGE_UVICORN_WORKERS` environment variable
+- Make database engine connections pool size configurable
+  (`DB_CONNECTION_POOL_SIZE` and `DB_CONNECTION_MAX_OVERFLOW` settings)
 
 ### Changed
 
