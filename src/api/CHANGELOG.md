@@ -8,6 +8,11 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Added
+
+- Allow uvicorn workers configuration in start script using the
+  `QUALICHARGE_UVICORN_WORKERS` environment variable
+
 ### Changed
 
 - Upgrade fastapi to `0.115.4`
