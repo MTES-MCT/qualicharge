@@ -204,16 +204,18 @@ services:
       - "8040:8089"
     volumes:
       - ./src/bench:/app
-    command: -f FIXME --master -H http://locust:8089
+    command: -f /app/locustfile.py --master -H 'http://api:8000/api/v1'
     depends_on:
       api:
         condition: service_healthy
 
   locust-worker:
     image: locustio/locust:2.32.1
+    deploy:
+      replicas: 5
     volumes:
       - ./src/bench:/app
-    command: -f FIXME --worker --master-host locust
+    command: -f /app/locustfile.py --worker --master-host locust
     depends_on:
       - locust
 
