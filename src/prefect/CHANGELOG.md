@@ -10,6 +10,7 @@ and this project adheres to
 
 ### Added
 
-- Implement i1 and t1 workflows
+- Implement t1 workflow
+- Implement i1 workflow
 
 [unreleased]: https://github.com/MTES-MCT/qualicharge/
