@@ -285,7 +285,7 @@ jupytext--to-ipynb: ## convert remote md files into ipynb
 
 reset-db: ## Reset the PostgreSQL database
 	$(COMPOSE) stop
-	$(COMPOSE) down postgresql metabase
+	# $(COMPOSE) down postgresql metabase
 	$(MAKE) migrate-api
 	$(MAKE) create-api-superuser
 	$(MAKE) create-api-test-db
