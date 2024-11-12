@@ -1,0 +1,6 @@
+#
+# QualiCharge Open Data package
+#
+[project]
+name = "qualicharge-dashboard"
+version = "0.1.0"

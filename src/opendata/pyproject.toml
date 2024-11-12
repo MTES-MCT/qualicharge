@@ -1,0 +1,6 @@
+#
+# QualiCharge Open Data package
+#
+[project]
+name = "qualicharge-opendata"
+version = "0.1.0"
