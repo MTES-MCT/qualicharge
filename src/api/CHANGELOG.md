@@ -17,12 +17,14 @@ and this project adheres to
 
 ### Changed
 
+- Upgrade alembic to `1.14.0`
 - Upgrade fastapi to `0.115.4`
 - Upgrade pyarrow to `18.0.0`
-- Upgrade pydantic-settings to `2.6.0`
+- Upgrade pydantic-extras-types to `2.10.0`
+- Upgrade pydantic-settings to `2.6.1`
 - Upgrade pyinstrument to `5.0.0`
-- Upgrade python-multipart to `0.0.16`
-- Upgrade sentry-sdk to `2.17.0`
+- Upgrade python-multipart to `0.0.17`
+- Upgrade sentry-sdk to `2.18.0`
 - Set fk to `NULL` when related table entry is deleted for the `Station` table
 
 ### Fixed
