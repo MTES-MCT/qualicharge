@@ -1,2 +1,2 @@
-web: bash ./bin/start.sh
-postdeploy: bash ./bin/post_deploy.sh
+web: bash ./start.sh
+postdeploy: bash ./post_deploy.sh

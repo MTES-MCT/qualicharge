@@ -1,0 +1,92 @@
+# This workflow will install Python dependencies, run tests and lint with a single version of Python
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
+
+name: dashboard CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-dashboard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Pipenv
+        run: pipx install pipenv
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pipenv"
+          cache-dependency-path: "src/dashboard/Pipfile.lock"
+      - name: Install dependencies
+        run: |
+          cd src/dashboard
+          pipenv install -d
+          
+  lint-dashboard:
+    needs: build-dashboard
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./src/dashboard
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install pipenv
+        run: pipx install pipenv
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pipenv"
+          cache-dependency-path: "src/dashboard/Pipfile.lock"
+      - name: Lint with Black
+        run: pipenv run black dashboard apps tests
+      - name: Lint with Ruff
+        run: pipenv run ruff check dashboard apps tests
+      - name: Lint with MyPy
+        run: pipenv run mypy dashboard apps tests
+        env:
+          DASHBOARD_DATABASE_URL: psql://qualicharge:pass@postgresql:5432/qualicharge-dashboard
+          DASHBOARD_SECRET_KEY: the_secret_key
+
+  test-dashboard:
+    needs: build-dashboard
+    runs-on: ubuntu-latest
+    services:
+      postgresql:
+        image: postgres:14
+        env:
+          POSTGRES_DB: test-qualicharge-dashboard
+          POSTGRES_USER: qualicharge
+          POSTGRES_PASSWORD: pass
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    defaults:
+      run:
+        working-directory: ./src/dashboard
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install pipenv
+        run: pipx install pipenv
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pipenv"
+          cache-dependency-path: "src/dashboard/Pipfile.lock"
+      - name: Test with pytest
+        run: pipenv run pytest
+        env:
+          # fake data in settings.py for mypy checking (due to django environ usage)
+          DASHBOARD_DB_NAME: test-qualicharge-dashboard
+          DASHBOARD_DATABASE_URL: psql://qualicharge:pass@localhost:5432/test-qualicharge-dashboard
+          DASHBOARD_SECRET_KEY: the_secret_key

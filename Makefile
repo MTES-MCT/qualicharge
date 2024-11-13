@@ -2,13 +2,14 @@
 SHELL := /bin/bash
 
 # -- Docker
-COMPOSE                    = bin/compose
-COMPOSE_UP                 = $(COMPOSE) up -d
-COMPOSE_RUN                = $(COMPOSE) run --rm --no-deps
-COMPOSE_RUN_API            = $(COMPOSE_RUN) api
-COMPOSE_RUN_API_PIPENV     = $(COMPOSE_RUN_API) pipenv run
-COMPOSE_RUN_CLIENT         = $(COMPOSE_RUN) client
-COMPOSE_RUN_PREFECT_PIPENV = $(COMPOSE_RUN) prefect pipenv run
+COMPOSE                    	 = bin/compose
+COMPOSE_UP                 	 = $(COMPOSE) up -d
+COMPOSE_RUN                	 = $(COMPOSE) run --rm --no-deps
+COMPOSE_RUN_API            	 = $(COMPOSE_RUN) api
+COMPOSE_RUN_API_PIPENV     	 = $(COMPOSE_RUN_API) pipenv run
+COMPOSE_RUN_CLIENT         	 = $(COMPOSE_RUN) client
+COMPOSE_RUN_PREFECT_PIPENV 	 = $(COMPOSE_RUN) prefect pipenv run
+COMPOSE_RUN_DASHBOARD_PIPENV = $(COMPOSE_RUN) dashboard pipenv run
 
 # -- Tools
 CURL = $(COMPOSE_RUN) curl
@@ -127,6 +128,10 @@ run-prefect: ## run the prefect service
 	$(COMPOSE_UP) --wait prefect
 	$(COMPOSE_UP) prefect-worker
 .PHONY: run-prefect
+
+run-dashboard: ## run the dashboard service
+	$(COMPOSE_UP) dashboard
+.PHONY: run-dashboard
 
 status: ## an alias for "docker compose ps"
 	@$(COMPOSE) ps
@@ -325,7 +330,8 @@ lint: ## lint all sources
 lint: \
 	lint-api \
 	lint-client \
-	lint-prefect
+	lint-prefect \
+	lint-dashboard
 .PHONY: lint
 
 lint-api: ## lint api python sources
@@ -335,19 +341,26 @@ lint-api: \
   lint-api-mypy
 .PHONY: lint-api
 
-lint-client: ## lint api python sources
+lint-client: ## lint client python sources
 lint-client: \
   lint-client-black \
   lint-client-ruff \
   lint-client-mypy
 .PHONY: lint-client
 
-lint-prefect: ## lint api python sources
+lint-prefect: ## lint prefect python sources
 lint-prefect: \
   lint-prefect-black \
   lint-prefect-ruff \
   lint-prefect-mypy
 .PHONY: lint-prefect
+
+lint-dashboard: ## lint dashboard python sources
+lint-dashboard: \
+  lint-dashboard-black \
+  lint-dashboard-ruff \
+  lint-dashboard-mypy
+.PHONY: lint-dashboard
 
 lint-api-black: ## lint api python sources with black
 	@echo 'lint:black started…'
@@ -409,11 +422,32 @@ lint-prefect-mypy: ## lint prefect python sources with mypy
 	@$(COMPOSE_RUN_PREFECT_PIPENV) mypy indicators tests
 .PHONY: lint-prefect-mypy
 
+lint-dashboard-black: ## lint dashboard python sources with black
+	@echo 'lint:black dashboard started…'
+	@$(COMPOSE_RUN_DASHBOARD_PIPENV) black dashboard apps tests
+.PHONY: lint-dashboard-black
+
+lint-dashboard-ruff: ## lint dashboard python sources with ruff
+	@echo 'lint:ruff dashboard started…'
+	@$(COMPOSE_RUN_DASHBOARD_PIPENV) ruff check dashboard apps tests
+.PHONY: lint-dashboard-ruff
+
+lint-dashboard-ruff-fix: ## lint and fix dashboard python sources with ruff
+	@echo 'lint:ruff-fix dashboard started…'
+	@$(COMPOSE_RUN_DASHBOARD_PIPENV) ruff check --fix dashboard apps tests
+.PHONY: lint-dashboard-ruff-fix
+
+lint-dashboard-mypy: ## lint dashboard python sources with mypy
+	@echo 'lint:mypy dashboard started…'
+	@$(COMPOSE_RUN_DASHBOARD_PIPENV) mypy dashboard apps tests
+.PHONY: lint-dashboard-mypy
+
 test: ## run all services tests
 test: \
 	test-api \
 	test-client \
-	test-prefect
+	test-prefect \
+	test-dashboard
 .PHONY: test
 
 test-api: ## run API tests
@@ -427,6 +461,11 @@ test-client: ## run client tests
 test-prefect: ## run prefect tests
 	SERVICE=prefect-test bin/pytest
 .PHONY: test-prefect
+
+test-dashboard: ## run dashboard tests
+	@echo "Run dashboard tests…"
+	SERVICE=dashboard bin/pytest
+.PHONY: test-dashboard
 
 # -- Misc
 help:

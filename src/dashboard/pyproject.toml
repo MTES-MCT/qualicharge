@@ -1,6 +1,83 @@
 #
-# QualiCharge Open Data package
+# QualiCharge Dashboard package
 #
+[build-system]
+requires = ["setuptools >= 61.0"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "qualicharge-dashboard"
 version = "0.1.0"
+
+[tool.setuptools]
+packages = ["apps", "dashboard"]
+
+# Third party packages configuration
+[tool.coverage.run]
+omit = [
+  "migrations",
+  "dashboard/asgi.py",
+  "dashboard/wsgi.py",
+]
+
+[tool.pytest.ini_options]
+addopts = "-v --cov-report term-missing --cov=apps --cov=dashboard"
+DJANGO_SETTINGS_MODULE = "dashboard.settings"
+python_files = [
+    "test_*.py",
+    "tests.py",
+]
+testpaths = [
+    "tests",
+]
+
+[tool.ruff]
+target-version = "py310"
+# Exclude a variety of commonly ignored directories.
+exclude = [
+  "migrations",
+]
+
+[tool.ruff.lint]
+select = [
+    "B",  # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "D",  # pydocstyle
+    "E",  # pycodestyle error
+    "F",  # Pyflakes
+    "I",  # Isort
+    "ISC",  # flake8-implicit-str-concat
+    "PLC",  # Pylint Convention
+    "PLE",  # Pylint Error
+    "PLR",  # Pylint Refactor
+    "PLW",  # Pylint Warning
+    "RUF100",  # Ruff unused-noqa
+    "S",  # flake8-bandit
+    "T20", # flake8-print
+    "W",  # pycodestyle warning
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = [
+    "S101", # use of assert
+]
+
+[tool.ruff.lint.pydocstyle]
+# Use Google-style docstrings.
+convention = "google"
+
+[tool.mypy]
+plugins = ["mypy_django_plugin.main"]
+exclude = [
+  "migrations"
+]
+
+[[tool.mypy.overrides]]
+module = [
+    "environ"
+]
+ignore_missing_imports = true
+
+[tool.django-stubs]
+django_settings_module = "dashboard.settings"
+ignore_missing_model_attributes = true
