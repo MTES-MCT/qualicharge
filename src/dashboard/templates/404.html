@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% load static i18n %}
+
+{# todo: revoir le contenu rédactionnel de cette page #}
+
+{% block page_title %}
+  <title>{% trans "Page not found (Err 404)" %}</title>
+{% endblock page_title %}
+
+{% block content %}
+    <div class="text-center">
+        <h2 class="display-4">{% trans "Page not found (Err 404)" %}</h2>
+        {% url 'home:index' as url_home %}        
+        <p>
+            {% blocktranslate %}
+              Sorry but this page does not exist.<br /> 
+              You can return to the <a href="{{ url_home }}">home page.</a>
+            {% endblocktranslate %}
+        </p>
+    </div>
+{% endblock content %}

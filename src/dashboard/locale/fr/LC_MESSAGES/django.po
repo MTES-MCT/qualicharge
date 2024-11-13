@@ -1,0 +1,110 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <ssorin@dwdlc.com>, 2024.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2024-11-14 16:32+0100\n"
+"PO-Revision-Date: 2024-11-14 16:37+0100\n"
+"Last-Translator: ssorin <ssorin@dwdlc.com>\n"
+"Language-Team: \n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+"X-Generator: Poedit 3.5\n"
+
+#: dashboard/settings.py:124
+msgid "French"
+msgstr "Français"
+
+#: dashboard/settings.py:125
+msgid "English"
+msgstr "Anglais"
+
+#: templates/404.html:7 templates/404.html:12
+msgid "Page not found (Err 404)"
+msgstr "Page non trouvée (Erreur 404)"
+
+#: templates/404.html:15
+#, python-format
+msgid ""
+"\n"
+"              Sorry but this page does not exist.<br /> \n"
+"              You can return to the <a href=\"%(url_home)s\">home page.</"
+"a>\n"
+"            "
+msgstr ""
+"\n"
+"              Désolé, mais cette page n'existe pas.<br /> \n"
+"              Vous pouvez revenir à la <a href=\"%(url_home)s\">page "
+"d'accueil.</a>\n"
+"            "
+
+#: templates/500.html:7
+msgid "Server Error (Err. 500)"
+msgstr "Erreur du serveur (Err. 500)"
+
+#: templates/500.html:12
+msgid "Server Error (Err 500)"
+msgstr "Erreur du serveur (Err 500)"
+
+#: templates/500.html:15
+#, python-format
+msgid ""
+"\n"
+"              Oops, It seems that the server has a problem.<br /> \n"
+"              You can try to return to the <a href=\"%(url_home)s\">home "
+"page.</a>\n"
+"            "
+msgstr ""
+"\n"
+"              Oups, il semble que le serveur a un problème.<br /> \n"
+"              Vous pouvez essayer de revenir à la <a href=\"%(url_home)s"
+"\">page d'accueil.</a>\n"
+"            "
+
+#: templates/blocks/header.html:6
+msgid "Home page"
+msgstr "Accueil"
+
+#: templates/blocks/header.html:28
+msgid "Display settings"
+msgstr "Paramètres d'affichage"
+
+#: templates/blocks/header.html:37
+msgid "Search"
+msgstr "Recherche"
+
+#: templates/blocks/header.html:44
+msgid "Menu"
+msgstr "Menu"
+
+#: templates/blocks/language_selector.html:10
+msgid "Select language"
+msgstr "Sélectionner la langue"
+
+#: templates/blocks/main_menu.html:8
+msgid "close"
+msgstr "fermer"
+
+#: templates/blocks/main_menu.html:10
+msgid "Main menu"
+msgstr "Menu principal"
+
+#: templates/blocks/main_menu.html:21
+msgid "Home"
+msgstr "Accueil"
+
+#: templates/home/cards/consentement.html:12
+msgid "Consent Management"
+msgstr "Gestion du consentement"
+
+#: templates/home/index.html:6
+msgid "QualiCharge dashboard"
+msgstr "Tableau de bord QualiCharge"
