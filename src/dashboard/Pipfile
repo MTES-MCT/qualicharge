@@ -4,14 +4,22 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-django = "5.1.2"
-psycopg = {extras = ["pool", "binary"], version = "==3.2.3"}
-django-environ = "0.11.2"
-whitenoise = "6.8.2"
+Django = "==5.1.3"
+django-environ = "==0.11.2"
 gunicorn = "==23.0.0"
+psycopg = {extras = ["pool", "binary"], version = "==3.2.3"}
+whitenoise = "==6.8.2"
 
 [dev-packages]
+black = "==24.10.0"
+django-stubs = {extras = ["compatible-mypy"], version = "==5.1.1"}
 honcho = "==2.0.0"
+mypy = "==1.13.0"
+pytest = "==8.3.3"
+pytest-cov = "==6.0.0"
+pytest-django = "==4.9.0"
+pytest-httpx = "==0.33.0"
+ruff = "==0.7.2"
 
 [requires]
 python_version = "3.12"

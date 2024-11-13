@@ -42,7 +42,7 @@ COPY --chown="${PIPENV_USER_NAME}:${PIPENV_GROUP_NAME}" . /app
 WORKDIR /app
 USER ${PIPENV_USER_NAME}:${PIPENV_GROUP_NAME}
 RUN pipenv install -d && \
-    pipenv install -e .
+    pipenv install -v -e .
 
 # -- Run --
 CMD pipenv run honcho -f Procfile.dev start
