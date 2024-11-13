@@ -199,7 +199,7 @@ services:
       - postgresql
 
   locust:
-    image: locustio/locust:2.32.1
+    image: locustio/locust:2.32.2
     ports:
       - "8040:8089"
     volumes:
@@ -210,7 +210,7 @@ services:
         condition: service_healthy
 
   locust-worker:
-    image: locustio/locust:2.32.1
+    image: locustio/locust:2.32.2
     deploy:
       replicas: 5
     volumes:
