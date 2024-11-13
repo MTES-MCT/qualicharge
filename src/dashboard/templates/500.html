@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% load static i18n %}
+
+{# todo: revoir le contenu rédactionnel de cette page #}
+
+{% block page_title %}
+  <title>{% trans "Server Error (Err. 500)" %}</title>
+{% endblock page_title %}
+
+{% block content %}
+    <div class="text-center">
+        <h2 class="display-4">{% trans "Server Error (Err 500)" %}</h2>
+        {% url 'home:index' as url_home %}        
+        <p>
+            {% blocktrans %}
+              Oops, It seems that the server has a problem.<br /> 
+              You can try to return to the <a href="{{ url_home }}">home page.</a>
+            {% endblocktrans %}
+        </p>
+    </div>
+{% endblock content %}

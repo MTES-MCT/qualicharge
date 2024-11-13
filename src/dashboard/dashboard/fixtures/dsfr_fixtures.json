@@ -1,0 +1,30 @@
+[
+   {
+      "model":"dsfr.dsfrconfig",
+      "pk":1,
+      "fields":{
+         "language":"fr",
+         "site_title":"QualiCharge",
+         "site_tagline":"Améliorer la qualité globale du service de recharge pour véhicules électriques",
+         "notice_title":"",
+         "notice_description":"",
+         "notice_type":"info",
+         "notice_link":"",
+         "notice_icon_class":"",
+         "notice_is_collapsible":false,
+         "header_brand":"Ministère chargé de l'énergie",
+         "header_brand_html":"Ministère chargé<br /> de l'énergie",
+         "beta_tag":false,
+         "footer_brand":"Ministère chargé de l'énergie",
+         "footer_brand_html":"Ministère chargé<br /> de l'énergie",
+         "footer_description":"",
+         "newsletter_description":"",
+         "newsletter_url":"",
+         "operator_logo_file":"",
+         "operator_logo_alt":"",
+         "operator_logo_width":"0.0",
+         "mourning":false,
+         "accessibility_status":"NOT"
+      }
+   }
+]

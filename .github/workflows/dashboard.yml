@@ -33,6 +33,9 @@ jobs:
     defaults:
       run:
         working-directory: ./src/dashboard
+    env:
+      DASHBOARD_DATABASE_URL: psql://qualicharge:pass@postgresql:5432/qualicharge-dashboard
+      DASHBOARD_SECRET_KEY: the_secret_key
     steps:
       - uses: actions/checkout@v4
       - name: Install pipenv
@@ -49,9 +52,8 @@ jobs:
         run: pipenv run ruff check dashboard apps tests
       - name: Lint with MyPy
         run: pipenv run mypy dashboard apps tests
-        env:
-          DASHBOARD_DATABASE_URL: psql://qualicharge:pass@postgresql:5432/qualicharge-dashboard
-          DASHBOARD_SECRET_KEY: the_secret_key
+      - name: Lint with DjLint
+        run: pipenv run djlint -
 
   test-dashboard:
     needs: build-dashboard

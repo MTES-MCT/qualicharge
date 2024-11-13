@@ -11,6 +11,8 @@ and this project adheres to
 ### Added
 
 - bootstrap dashboard project
+- add dashboard homepage
+- add internationalization and language switcher
 
 [unreleased]: https://github.com/MTES-MCT/qualicharge/compare/main...bootstrap-dashboard-project
 

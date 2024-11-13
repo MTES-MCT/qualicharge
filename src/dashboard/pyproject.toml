@@ -15,9 +15,11 @@ packages = ["apps", "dashboard"]
 # Third party packages configuration
 [tool.coverage.run]
 omit = [
-  "migrations",
+  "migrations/*",
   "dashboard/asgi.py",
   "dashboard/wsgi.py",
+  "dashboard/tests/*",
+  "apps/**/tests/*",
 ]
 
 [tool.pytest.ini_options]
@@ -29,6 +31,8 @@ python_files = [
 ]
 testpaths = [
     "tests",
+    "dasboard/tests",
+    "apps/**/tests",
 ]
 
 [tool.ruff]
@@ -58,7 +62,7 @@ select = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/*" = [
+"**/tests/*" = [
     "S101", # use of assert
 ]
 
@@ -81,3 +85,14 @@ ignore_missing_imports = true
 [tool.django-stubs]
 django_settings_module = "dashboard.settings"
 ignore_missing_model_attributes = true
+
+[tool.djlint]
+profile="django"
+line_break_after_multiline_tag = true
+max_blank_lines=1
+indent=2
+files=[
+    "templates",
+    "dashboard/",
+    "apps/",
+]

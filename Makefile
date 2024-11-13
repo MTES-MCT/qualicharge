@@ -44,6 +44,7 @@ bootstrap: \
   seed-oidc \
   create-api-superuser \
   create-dashboard-superuser \
+  seed-dashboard \
   jupytext--to-ipynb \
   seed-api
 .PHONY: bootstrap
@@ -295,6 +296,7 @@ reset-db: ## Reset the PostgreSQL database
 	$(MAKE) create-dashboard-db
 	$(MAKE) migrate-dashboard
 	$(MAKE) create-dashboard-superuser
+	$(MAKE) seed-dashboard
 .PHONY: reset-db
 
 seed-api: ## seed the API database (static data)
@@ -324,6 +326,13 @@ seed-oidc: ## seed the OIDC provider
 	@echo 'Seeding OIDC client…'
 	@$(COMPOSE) exec keycloak /usr/local/bin/kc-init
 .PHONY: seed-oidc
+
+seed-dashboard: ## seed dashboard
+	@echo "Running dashboard service database engine…"
+	@$(COMPOSE_UP) --wait postgresql
+	@echo "Seeding dashboard…"#
+	@bin/manage loaddata dashboard/fixtures/dsfr_fixtures.json
+.PHONY: seed-dashboard
 
 # -- API
 lint: ## lint all sources
@@ -359,7 +368,8 @@ lint-dashboard: ## lint dashboard python sources
 lint-dashboard: \
   lint-dashboard-black \
   lint-dashboard-ruff \
-  lint-dashboard-mypy
+  lint-dashboard-mypy \
+  lint-dashboard-djlint
 .PHONY: lint-dashboard
 
 lint-api-black: ## lint api python sources with black
@@ -441,6 +451,16 @@ lint-dashboard-mypy: ## lint dashboard python sources with mypy
 	@echo 'lint:mypy dashboard started…'
 	@$(COMPOSE_RUN_DASHBOARD_PIPENV) mypy dashboard apps tests
 .PHONY: lint-dashboard-mypy
+
+lint-dashboard-djlint: ## lint dashboard html sources with djlint
+	@echo 'lint:djlint dashboard started…'
+	@$(COMPOSE_RUN_DASHBOARD_PIPENV) djlint -
+.PHONY: lint-dashboard-djlint
+
+lint-dashboard-djlint-reformat: ## lint and reformat dashboard html sources with djlint
+	@echo 'lint:djlint-reformat dashboard started…'
+	@$(COMPOSE_RUN_DASHBOARD_PIPENV) djlint - --reformat
+.PHONY: lint-dashboard-djlint-reformat
 
 test: ## run all services tests
 test: \
