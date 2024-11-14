@@ -3,6 +3,7 @@
 from io import StringIO
 
 import pandas as pd
+from pydantic_core import from_json
 from sqlalchemy import func
 from sqlmodel import select
 
@@ -193,16 +194,44 @@ def test_read_user(runner, db_session):
 
     db_user = UserFactory.create_sync()
 
+    # Unknown user
+    result = runner.invoke(app, ["read-user", "foo"], obj=db_session)
+    assert result.exit_code == 1
+    assert "User foo does not exist!" in result.stdout
+
     # Proceed
     result = runner.invoke(app, ["read-user", db_user.username], obj=db_session)
     assert result.exit_code == 0
 
-    # Expected number of rows
+    # Expected data
     assert db_user.first_name in result.stdout
     assert db_user.last_name in result.stdout
     assert db_user.email in result.stdout
-    assert db_user.first_name in result.stdout
+    assert db_user.username in result.stdout
     assert str(db_user.id) in result.stdout
+
+
+def test_read_user_json_flag(runner, db_session):
+    """Test the `read-user` command."""
+    UserFactory.__session__ = db_session
+
+    db_user = UserFactory.create_sync()
+
+    # Proceed
+    result = runner.invoke(
+        app, ["read-user", "--json", db_user.username], obj=db_session
+    )
+    assert result.exit_code == 0
+
+    # Parse output as a JSON string
+    output_user = User(**from_json(result.output))
+
+    # Expected output
+    assert output_user.first_name == db_user.first_name
+    assert output_user.last_name == db_user.last_name
+    assert output_user.email == db_user.email
+    assert output_user.username == db_user.username
+    assert output_user.id == str(db_user.id)
 
 
 def test_create_user_with_no_group(runner, db_session):

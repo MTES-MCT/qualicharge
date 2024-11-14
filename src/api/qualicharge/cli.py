@@ -216,12 +216,20 @@ def list_users(ctx: typer.Context):
 
 
 @app.command()
-def read_user(ctx: typer.Context, username: str):
+def read_user(ctx: typer.Context, username: str, json: bool = False):
     """Read detailled user informations."""
     session: SMSession = ctx.obj
 
     db_user = session.exec(select(User).where(User.username == username)).one_or_none()
-    print(db_user)
+
+    if db_user is None:
+        print(f"[bold red]User {username} does not exist![/bold red]")
+        raise typer.Exit(1)
+
+    out = str(db_user)
+    if json:
+        out = db_user.model_dump_json(indent=2)
+    print(out)
 
 
 @app.command()
