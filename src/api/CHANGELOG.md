@@ -14,6 +14,7 @@ and this project adheres to
   `QUALICHARGE_UVICORN_WORKERS` environment variable
 - Make database engine connections pool size configurable
   (`DB_CONNECTION_POOL_SIZE` and `DB_CONNECTION_MAX_OVERFLOW` settings)
+- Add a `--json` flag to the `read-user` CLI command
 
 ### Changed
 
