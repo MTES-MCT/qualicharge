@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-set -eo pipefail
-
 #
 # Dependencies
 #
@@ -24,30 +22,20 @@ set -eo pipefail
 # export BREVO_API_KEY
 #
 
+set -euo pipefail
+
 declare SCRIPTS_DIR
 SCRIPTS_DIR="$(dirname "$0")"
+
+# Load libraries
+source "${SCRIPTS_DIR}/_common.sh"
+
+# Globals
 declare GROUPS_CSV_FILENAME="${SCRIPTS_DIR}/groups.csv"
 declare USERS_CSV_FILENAME="${SCRIPTS_DIR}/users.csv"
 
-# Password generator
-function generate_password() {
-  xkcdpass -d "-"
-}
-
-# QualiCharge API
-function qualicharge() {
-
-  # Scalingo command is eating stdin preventing iteration over a file for
-  # example. Fixing this by sending empty stdin.
-  echo "" | scalingo \
-    --app qualicharge-api \
-    --region osc-fr1 \
-    run --silent \
-    python -m qualicharge "$@"
-}
-
 # Create API group
-function api_group() {
+function create_group() {
 
   # Group name
   local group="${1}"
@@ -57,11 +45,13 @@ function api_group() {
   echo "⚙️ Will create API group ${group}"
 
   # shellcheck disable=SC2068
-  qualicharge create-group --force "${group}" --operational-units ${ou[@]}
+  # Scalingo command is eating stdin preventing iteration over a file for
+  # example. Fixing this by sending empty stdin.
+  echo "" | qualicharge create-group --force "${group}" --operational-units ${ou[@]}
 }
 
 # Create API user
-function api_user() {
+function create_user() {
 
   local username="${1}"
   local firstname="${2}"
@@ -73,7 +63,9 @@ function api_user() {
   echo "⚙️ Will create API user ${username}"
 
   # shellcheck disable=SC2068
-  qualicharge create-user --force \
+  # Scalingo command is eating stdin preventing iteration over a file for
+  # example. Fixing this by sending empty stdin.
+  echo "" | qualicharge create-user --force \
     --first-name "${firstname}" \
     --last-name "${lastname}" \
     --email "${email}" \
@@ -86,138 +78,7 @@ function api_user() {
     "${username}"
 }
 
-# Create a Vaultwarden send with the user password
-function bw_send() {
-
-  local user="${1}"
-  local pass="${2}"
-  local send_password="${3}"
-  local send_url
-
-  if ! bw login --check > /dev/null; then
-    bw login --apikey
-  fi
-
-  # Unlock Vault and get a session key
-  if ! bw unlock --check > /dev/null; then
-    BW_SESSION=$(bw unlock --raw --passwordenv BW_PASSWORD)
-    export BW_SESSION
-  fi
-
-  # Create a send with the user password
-  send_url=$(bw send template send.text | \
-    jq \
-      '.notes="This send should stay private. It expires in 5 days."' | \
-    jq \
-      --arg user "${user}" \
-      '.name="QualiCharge API access - " + $user' | \
-    jq \
-      --arg pass "${pass}" \
-      '.text.text="Your API password is: " + $pass | .text.hidden=true' | \
-    jq \
-      --arg send_password "${send_password}" \
-      '.password=$send_password | .maxAccessCount=3' | \
-    jq \
-      --arg exp "$(date --iso-8601=s -d '+5 days')" \
-      '.expirationDate=$exp' | \
-    bw encode | \
-    bw send create | \
-    jq -r '.accessUrl'
-  )
-
-  echo "${send_url}"
-}
-
-# Send a transactional email using Brevo
-function brevo_email() {
-
-  local payload="${1}"
-
-  curl --request POST \
-    --url https://api.brevo.com/v3/smtp/email \
-    --header "accept: application/json" \
-    --header "api-key: ${BREVO_API_KEY}" \
-    --header "content-type: application/json" \
-    --data "${payload}"
-}
-
-# Send the BW send link by email
-function email_send_link() {
-
-  local email="${1}"
-  local firstname="${2}"
-  local url="${3}"
-  local tpl
-  local payload
-
-  echo "✉️ Will send BW send link to ${email}"
-
-  # Payload jq template
-  # shellcheck disable=SC2016
-  tpl='{
-     to: [
-        {
-           email: $email
-        }
-     ],
-     templateId: 1,
-     params:{
-        first_name: $firstname,
-        send_url: $url
-     }
-  }'
-
-  # Compile jq template
-  payload=$( \
-    jq -nc \
-      --arg email "${email}" \
-      --arg firstname "${firstname}" \
-      --arg url "${url}" \
-      -f <(echo "${tpl}")
-  )
-
-  brevo_email "${payload}"
-}
-
-# Send the BW send password by email
-function email_send_password() {
-
-  local email="${1}"
-  local firstname="${2}"
-  local send_password="${3}"
-  local tpl
-  local payload
-
-  echo "✉️ Will send BW send password to ${email}"
-
-  # Payload jq template
-  # shellcheck disable=SC2016
-  tpl='{
-     to: [
-        {
-           email: $email
-        }
-     ],
-     templateId: 2,
-     params:{
-        first_name: $firstname,
-        send_password: $send_password
-     }
-  }'
-
-  # Compile jq template
-  payload=$( \
-    jq -nc \
-      --arg email "${email}" \
-      --arg firstname "${firstname}" \
-      --arg send_password "${send_password}" \
-      -f <(echo "${tpl}")
-  )
-
-  brevo_email "${payload}"
-}
-
-# Create users and groups
+# Create groups
 function create_groups() {
 
   local name
@@ -233,10 +94,11 @@ function create_groups() {
     name=$(echo "${name}" | xargs)
     ou=$(echo "${ou}" | xargs)
 
-    api_group "${name}" "${ou}"
+    create_group "${name}" "${ou}"
   done < <(tail -n +2 "${GROUPS_CSV_FILENAME}")
 }
 
+# Create users
 function create_users() {
 
   local email
@@ -262,7 +124,7 @@ function create_users() {
     groups=$(echo "${groups}" | xargs)
 
     password=$(generate_password)
-    api_user \
+    create_user \
       "${username}" \
       "${firstname}" \
       "${lastname}" \
