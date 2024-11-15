@@ -8,6 +8,8 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.14.0] - 2024-11-15
+
 ### Added
 
 - Allow uvicorn workers configuration in start script using the
@@ -226,7 +228,8 @@ and this project adheres to
 
 - Implement base FastAPI app
 
-[unreleased]: https://github.com/MTES-MCT/qualicharge/compare/v0.13.0...main
+[unreleased]: https://github.com/MTES-MCT/qualicharge/compare/v0.14.0...main
+[0.14.0]: https://github.com/MTES-MCT/qualicharge/compare/v0.13.0...v0.14.0
 [0.13.0]: https://github.com/MTES-MCT/qualicharge/compare/v0.12.1...v0.13.0
 [0.12.1]: https://github.com/MTES-MCT/qualicharge/compare/v0.12.0...v0.12.1
 [0.12.0]: https://github.com/MTES-MCT/qualicharge/compare/v0.11.0...v0.12.0
