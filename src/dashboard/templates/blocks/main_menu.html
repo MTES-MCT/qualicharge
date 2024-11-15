@@ -5,21 +5,26 @@
   <div class="fr-container">
     <button type="button"
             class="fr-btn--close fr-btn"
-            aria-controls="fr-menu-mobile">{% trans "close" %}</button>
-    <div class="fr-header__menu-links"></div>
+            aria-controls="fr-menu-mobile">
+      {% trans "close" %}
+    </button>
+    <div class="fr-header__menu-links">
+    </div>
     {% translate "Main menu" as main_menu_label %}
     <nav role="navigation"
          class="fr-nav"
          id="fr-navigation"
          aria-label="{{ main_menu_label }}">
       <ul class="fr-nav__list">
-        <li class="fr-nav__item">
-          {% url 'index' as home_url %}
-          <a class="fr-nav__link"
-             href="{{ home_url }}"
-             target="_self"
-             {% if request.path == home_url %}aria-current="true"{% endif %}>{% trans "Home" %}</a>
-        </li>
+        {% if request.user.is_authenticated %}
+          <li class="fr-nav__item">
+            {% url 'index' as home_url %}
+            <a class="fr-nav__link"
+               href="{{ home_url }}"
+               target="_self"
+               {% if request.path == home_url %}aria-current="true"{% endif %}>{% trans "Home" %}</a>
+          </li>
+        {% endif %}
       </ul>
     </nav>
   </div>

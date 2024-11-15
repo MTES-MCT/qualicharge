@@ -47,6 +47,8 @@ INSTALLED_APPS = [
     "widget_tweaks",
     "dsfr",
     "dashboard",
+    "apps",
+    "apps.auth",
     "apps.home",
 ]
 
@@ -141,3 +143,9 @@ STATIC_ROOT = BASE_DIR.parent / "static"
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# Authentication
+LOGIN_REDIRECT_URL = "/"
+LOGOUT_REDIRECT_URL = "/"
+
+AUTH_USER_MODEL = "qcd_auth.DashboardUser"

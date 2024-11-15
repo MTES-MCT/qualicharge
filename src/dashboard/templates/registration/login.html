@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% load static i18n %}
+
+{% comment %}
+  todo: add real content to the card 
+  todo: implement proconnect
+  todo: implement account creation
+  todo: implement reset password
+  todo: implement remember me
+{% endcomment %}
+
+{% block content %}
+  <div class="fr-container fr-container--fluid fr-mb-md-14v">
+    <div class="fr-grid-row fr-grid-row-gutters fr-grid-row--center">
+      <div class="fr-col-12 fr-col-md-8 fr-col-lg-6">
+        <div class="fr-container fr-background-alt--grey fr-px-md-0 fr-py-10v fr-py-md-14v">
+          <div class="fr-grid-row fr-grid-row-gutters fr-grid-row--center">
+            <div class="fr-col-12 fr-col-md-9 fr-col-lg-8">
+              <h1>
+                {% trans "Login to" %} {{ SITE_CONFIG.site_title }}
+              </h1>
+              <div>
+                <form method="post" id="dashboard-login">
+                  {% csrf_token %}
+                  <fieldset class="fr-fieldset"
+                            id="dashboard-login-fieldset"
+                            aria-labelledby="dashboard-login-fieldset-legend dashboard-login-fieldset-messages">
+                    <legend class="fr-fieldset__legend" id="dashboard-login-fieldset-legend">
+                      <h2>
+                        {% trans "Log in with your account" %}
+                      </h2>
+                    </legend>
+                    <div class="fr-fieldset__element">
+                      <p class="fr-text--sm">
+                        Description — Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+                      </p>
+                    </div>
+                    <div class="fr-fieldset__element">
+                      <fieldset class="fr-fieldset"
+                                id="credentials"
+                                aria-labelledby="credentials-messages">
+                        <div class="fr-fieldset__element">
+                          <span class="fr-hint-text">
+                            {% trans "Unless otherwise stated, all fields are required." %}                            
+                          </span>
+                        </div>
+                        <div class="fr-fieldset__element">
+                          <div class="fr-input-group">
+                            <label class="fr-label" for="id_username">
+                              {% trans "Identifier" %}
+                              <span class="fr-hint-text">{% trans "Expected format: myusername" %} </span>
+                            </label>
+                            <input class="fr-input"
+                                   autocomplete="username"
+                                   aria-required="true"
+                                   aria-describedby="id_username-messages"
+                                   name="username"
+                                   id="id_username"
+                                   type="text">
+                            <div class="fr-messages-group"
+                                 id="id_username-messages"
+                                 aria-live="assertive">
+                            </div>
+                          </div>
+                        </div>
+                        <div class="fr-fieldset__element">
+                          <div class="fr-password" id="id_password">
+                            <label class="fr-label" for="id_password-input">
+                              {% trans "Password" %}                              
+                            </label>
+                            <div class="fr-input-wrap">
+                              <input class="fr-password__input fr-input"
+                                     aria-describedby="id_password-input-messages"
+                                     aria-required="true"
+                                     name="password"
+                                     autocomplete="current-password"
+                                     id="id_password-input"
+                                     type="password">
+                            </div>
+                            <div class="fr-messages-group"
+                                 id="id_password-input-messages"
+                                 aria-live="assertive">
+                            </div>
+                            <div class="fr-password__checkbox fr-checkbox-group fr-checkbox-group--sm">
+                              <input aria-label="{% trans "Show password" %}"
+                                     id="id_password-show"
+                                     type="checkbox"
+                                     aria-describedby="id_password-show-messages">
+                              <label class="fr-password__checkbox fr-label" for="id_password-show">
+                                {% trans "Show" %}                                
+                              </label>
+                              <div class="fr-messages-group"
+                                   id="id_password-show-messages"
+                                   aria-live="assertive">
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <div class="fr-messages-group"
+                             id="credentials-messages"
+                             aria-live="assertive">
+                        </div>
+                      </fieldset>
+                    </div>
+                    <div class="fr-fieldset__element">
+                      <ul class="fr-btns-group">
+                        <li>
+                          <button class="fr-mt-2v fr-btn">
+                            {% trans "Login" %}                            
+                          </button>
+                        </li>
+                      </ul>
+                    </div>
+                    <div class="fr-messages-group"
+                         id="dashboard-login-fieldset-messages"
+                         aria-live="assertive">
+                    </div>
+                  </fieldset>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock content %}
