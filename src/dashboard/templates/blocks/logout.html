@@ -1,0 +1,8 @@
+{% load i18n %}
+
+<form action="{% url 'logout' %}" method="post">
+  {% csrf_token %}
+  <button type="submit" class="fr-icon-lock-line fr-btn">
+    {% trans "Log Out" %}
+  </button>
+</form>

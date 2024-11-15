@@ -13,6 +13,8 @@ and this project adheres to
 - bootstrap dashboard project
 - add dashboard homepage
 - add internationalization and language switcher
+- add authentication system
+- introduce new custom user model
 
 [unreleased]: https://github.com/MTES-MCT/qualicharge/compare/main...bootstrap-dashboard-project
 

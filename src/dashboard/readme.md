@@ -36,6 +36,21 @@ Display dashboard logs
 make logs-dashboard
 ```
 
+## Project specific naming convention
+
+For each Django application, the application config label 
+(present in my_apps.apps.MyAppConfig) must be of type `qcd_myapp`.
+
+i.e. for the `home` app:  
+```python
+class HomeConfig(AppConfig):
+    """Home app config."""
+
+    default_auto_field = "django.db.models.BigAutoField"
+    name = "apps.home"
+    label = "qcd_home"  # prefix app name with 'qcd_'
+```
+
 ## License
 
 This work is released under the MIT License (see LICENSE).

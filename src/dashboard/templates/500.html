@@ -8,14 +8,16 @@
 {% endblock page_title %}
 
 {% block content %}
-    <div class="text-center">
-        <h2 class="display-4">{% trans "Server Error (Err 500)" %}</h2>
-        {% url 'home:index' as url_home %}        
-        <p>
-            {% blocktrans %}
-              Oops, It seems that the server has a problem.<br /> 
-              You can try to return to the <a href="{{ url_home }}">home page.</a>
-            {% endblocktrans %}
-        </p>
-    </div>
+  <div class="text-center">
+    <h2 class="display-4">
+      {% trans "Server Error (Err 500)" %}
+    </h2>
+    {% url 'home:index' as url_home %}
+    <p>
+      {% blocktrans %}
+        Oops, It seems that the server has a problem.<br />
+        You can try to return to the <a href="{{ url_home }}">home page.</a>
+      {% endblocktrans %}
+    </p>
+  </div>
 {% endblock content %}

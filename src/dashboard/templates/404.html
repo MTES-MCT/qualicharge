@@ -8,14 +8,16 @@
 {% endblock page_title %}
 
 {% block content %}
-    <div class="text-center">
-        <h2 class="display-4">{% trans "Page not found (Err 404)" %}</h2>
-        {% url 'home:index' as url_home %}        
-        <p>
-            {% blocktranslate %}
-              Sorry but this page does not exist.<br /> 
-              You can return to the <a href="{{ url_home }}">home page.</a>
-            {% endblocktranslate %}
-        </p>
-    </div>
+  <div class="text-center">
+    <h2 class="display-4">
+      {% trans "Page not found (Err 404)" %}
+    </h2>
+    {% url 'home:index' as url_home %}
+    <p>
+      {% blocktranslate %}
+        Sorry but this page does not exist.<br /> 
+        You can return to the <a href="{{ url_home }}">home page.</a>
+      {% endblocktranslate %}
+    </p>
+  </div>
 {% endblock content %}

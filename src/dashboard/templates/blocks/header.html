@@ -16,7 +16,9 @@
   <a href="{{ home_url }}" title="Accueil — {{ SITE_CONFIG.site_title }}">
     <p class="fr-header__service-title">
       {{ SITE_CONFIG.site_title }}
-      {% if SITE_CONFIG.beta_tag %}<span class="fr-badge fr-badge--sm fr-badge--green-emeraude">BETA</span>{% endif %}
+      {% if SITE_CONFIG.beta_tag %}
+        <span class="fr-badge fr-badge--sm fr-badge--green-emeraude">BETA</span>
+      {% endif %}
     </p>
   </a>
 {% endblock service_title %}
@@ -25,28 +27,36 @@
   <li>
     <button class="fr-btn--display fr-btn"
             aria-controls="fr-theme-modal"
-            data-fr-opened="false">{% translate "Display settings" %}</button>
+            data-fr-opened="false">
+      {% translate "Display settings" %}
+    </button>
   </li>
 
-  <li>{% include "blocks/language_selector.html" %}</li>
+  <li>
+    {% include "blocks/language_selector.html" %}
+  </li>
+
+  {% if request.user.is_authenticated %}
+    <li>
+      {% include "blocks/logout.html" %}
+    </li>
+  {% endif %}
 
 {% endblock header_tools %}
 
 {# Leave burger_menu and main_menu blocks empty if the main menu is not used #}
 {% block burger_menu %}
+
   {% translate "Search" as search_label %}
   <div class="fr-header__navbar">
-    <button class="fr-btn--search fr-btn"
-            data-fr-opened="false"
-            aria-controls="modal-search"
-            id="fr-btn-search-mobile"
-            title="{{ search_label }}">{{ search_label }}</button>
     {% translate "Menu" as menu_label %}
     <button class="fr-btn--menu fr-btn"
             data-fr-opened="false"
             aria-controls="fr-menu-mobile"
             id="fr-btn-menu-mobile"
-            title="{{ menu_label }}">{{ menu_label }}</button>
+            title="{{ menu_label }}">
+      {{ menu_label }}
+    </button>
   </div>
 {% endblock burger_menu %}
 
