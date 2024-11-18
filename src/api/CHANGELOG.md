@@ -8,6 +8,13 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Changed
+
+- Upgrade fastapi to `0.115.5`
+- Upgrade geoalchemy2 to `0.16.0`
+- Upgrade pyjwt to `2.10.0`
+- Upgrade setuptools to `75.5.0`
+
 ## [0.14.0] - 2024-11-15
 
 ### Added
