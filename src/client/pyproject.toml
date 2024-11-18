@@ -22,7 +22,7 @@ black = "^24.4.2"
 mypy = "^1.10.0"
 pytest = "^8.2.2"
 pytest-cov = "^6.0.0"
-pytest-httpx = "^0.33.0"
+pytest-httpx = "^0.34.0"
 ruff = "^0.7.0"
 
 [tool.poetry.scripts]
