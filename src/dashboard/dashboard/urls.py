@@ -22,6 +22,7 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("accounts/", include("django.contrib.auth.urls")),
     # apps
+    path("consent/", include("apps.consent.urls")),
     path("", include("apps.home.urls")),
     # internationalization
     path("i18n/", include("django.conf.urls.i18n")),

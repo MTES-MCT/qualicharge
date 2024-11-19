@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-11-18 16:10+0100\n"
-"PO-Revision-Date: 2024-11-18 16:11+0100\n"
+"POT-Creation-Date: 2024-11-19 11:20+0100\n"
+"PO-Revision-Date: 2024-11-19 11:22+0100\n"
 "Last-Translator: ssorin <ssorin@dwdlc.com>\n"
 "Language-Team: \n"
 "Language: fr\n"
@@ -19,11 +19,31 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 "X-Generator: Poedit 3.5\n"
 
-#: apps/auth/apps.py:12
+#: apps/auth/apps.py:13
 msgid "Authentication"
 msgstr "Authentification"
 
-#: apps/home/templates/home/cards/consentement.html:12
+#: apps/consent/templates/consent/consent-management.html:7
+msgid "Consents management"
+msgstr "Gestion du consentement"
+
+#: apps/consent/templates/consent/index.html:7
+msgid "Consents summary"
+msgstr "Résumé des consentements"
+
+#: apps/consent/templates/consent/index.html:12
+msgid "Manage consent"
+msgstr "Gérer le consentement"
+
+#: apps/consent/views.py:17 apps/consent/views.py:32
+msgid "Consent"
+msgstr "Consentement"
+
+#: apps/consent/views.py:34
+msgid "Manage Consents"
+msgstr "Gérer les consentements"
+
+#: apps/home/templates/home/cards/consentement.html:13
 msgid "Consent Management"
 msgstr "Gestion du consentement"
 
@@ -31,11 +51,11 @@ msgstr "Gestion du consentement"
 msgid "QualiCharge dashboard"
 msgstr "Tableau de bord QualiCharge"
 
-#: dashboard/settings.py:126
+#: dashboard/settings.py:129
 msgid "French"
 msgstr "Français"
 
-#: dashboard/settings.py:127
+#: dashboard/settings.py:130
 msgid "English"
 msgstr "Anglais"
 
@@ -133,8 +153,8 @@ msgid "Identifier"
 msgstr "Identifiant"
 
 #: templates/registration/login.html:51
-msgid "Expected format: name@domain.fr"
-msgstr "Format attendu : nom@domaine.fr"
+msgid "Expected format: myusername"
+msgstr "Format attendu : nomdutilisateur"
 
 #: templates/registration/login.html:69
 msgid "Password"
