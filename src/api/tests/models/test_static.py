@@ -94,3 +94,15 @@ def test_statique_model_afirev_previx_check():
 
     # Default factory behavior should be consistent
     StatiqueFactory.build()
+
+
+def test_statique_model_num_pdl():
+    """Test statique model accept various num_pdf patterns."""
+    statique = StatiqueFactory.build(num_pdl="0" * 14)
+    assert statique.num_pdl == "0" * 14
+
+    statique = StatiqueFactory.build(num_pdl="66666/E2/0000001")
+    assert statique.num_pdl == "66666/E2/0000001"
+
+    with pytest.raises(ValueError, match="String should have at most 64 characters"):
+        StatiqueFactory.build(num_pdl="a" * 65)

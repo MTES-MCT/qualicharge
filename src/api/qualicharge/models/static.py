@@ -165,7 +165,7 @@ class Statique(ModelSchemaMixin, BaseModel):
     restriction_gabarit: str
     station_deux_roues: bool
     raccordement: Optional[RaccordementEnum]
-    num_pdl: Optional[Annotated[str, Field(pattern=r"^\d{14}$")]]
+    num_pdl: Optional[Annotated[str, Field(max_length=64)]]
     date_mise_en_service: Optional[PastDate]
     observations: Optional[str]
     date_maj: PastDate

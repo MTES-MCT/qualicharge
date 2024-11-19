@@ -15,6 +15,7 @@ and this project adheres to
 - Upgrade pyjwt to `2.10.0`
 - Upgrade setuptools to `75.5.0`
 - Send DB query details on Statique API errors only in debug mode
+- Move `num_pdl` field to a 64-chars string
 
 ## [0.14.0] - 2024-11-15
 
