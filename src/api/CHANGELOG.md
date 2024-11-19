@@ -14,6 +14,7 @@ and this project adheres to
 - Upgrade geoalchemy2 to `0.16.0`
 - Upgrade pyjwt to `2.10.0`
 - Upgrade setuptools to `75.5.0`
+- Send DB query details on Statique API errors only in debug mode
 
 ## [0.14.0] - 2024-11-15
 

@@ -731,6 +731,43 @@ def test_bulk_for_unknown_operational_unit(client_auth, db_session):
     assert n_stations == 0
 
 
+def test_bulk_with_inconsistent_station_data(client_auth, db_session, monkeypatch):
+    """Test the /statique/bulk create endpoint with unconsistent Station data."""
+    # DEBUG mode: off
+    monkeypatch.setattr(settings, "DEBUG", False)
+    station1 = StatiqueFactory.build(
+        id_pdc_itinerance="FR911E1111ER1", date_mise_en_service="2024-10-14"
+    )
+    station2 = station1.model_copy(
+        update={
+            "id_pdc_itinerance": "FR911E1111ER2",
+            "date_mise_en_service": "2024-10-15",
+        }
+    )
+    payload = [json.loads(d.model_dump_json()) for d in [station1, station2]]
+    response = client_auth.post("/statique/bulk", json=payload)
+
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    json_response = response.json()
+    assert (
+        json_response["detail"]
+        == "Point of charge (or related entry) is not consistent"
+    )
+
+    # DEBUG mode: on
+    monkeypatch.setattr(settings, "DEBUG", True)
+    payload = [json.loads(d.model_dump_json()) for d in [station1, station2]]
+    response = client_auth.post("/statique/bulk", json=payload)
+
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    json_response = response.json()
+    assert "psycopg.errors.CardinalityViolation" in json_response["detail"]
+
+    # Check created statiques (if any)
+    n_stations = db_session.exec(select(func.count(Station.id))).one()
+    assert n_stations == 0
+
+
 def test_bulk_with_outbound_sizes(client_auth):
     """Test the /statique/bulk create endpoint with a single or too many entries."""
     id_pdc_itinerance = "FR911E1111ER1"

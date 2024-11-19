@@ -276,8 +276,8 @@ async def bulk(
         dtype_backend="pyarrow",
     )
 
-    importer = StatiqueImporter(df, session.connection())
     transaction = session.begin_nested()
+    importer = StatiqueImporter(df, transaction.session.connection())
     try:
         importer.save()
     except (
@@ -285,8 +285,15 @@ async def bulk(
         IntegrityError,
         OperationalError,
         PGError,
-        ObjectDoesNotExist,
     ) as err:
+        transaction.rollback()
+        detail = "Point of charge (or related entry) is not consistent"
+        if settings.DEBUG:
+            detail = str(err)
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=detail
+        ) from err
+    except ObjectDoesNotExist as err:
         transaction.rollback()
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=str(err)
