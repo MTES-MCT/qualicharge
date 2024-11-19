@@ -15,6 +15,7 @@ and this project adheres to
 - add internationalization and language switcher
 - add authentication system
 - introduce new custom user model
+- add consent base app 
 
 [unreleased]: https://github.com/MTES-MCT/qualicharge/compare/main...bootstrap-dashboard-project
 
