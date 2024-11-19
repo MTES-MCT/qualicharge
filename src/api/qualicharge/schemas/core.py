@@ -236,7 +236,7 @@ class Station(BaseTimestampedSQLModel, table=True):
     horaires: str = Field(regex=r"(.*?)((\d{1,2}:\d{2})-(\d{1,2}:\d{2})|24/7)")
     station_deux_roues: bool
     raccordement: Optional[RaccordementEnum]
-    num_pdl: Optional[str] = Field(regex=r"^\d{14}$")
+    num_pdl: Optional[str] = Field(max_length=64)
     date_maj: PastDate = Field(sa_type=Date)
     date_mise_en_service: Optional[PastDate] = Field(sa_type=Date)
 
