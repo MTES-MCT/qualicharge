@@ -6,7 +6,7 @@ from typing import Annotated, List, cast
 from annotated_types import Len
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, Security
 from fastapi import status as fa_status
-from pydantic import BaseModel, PastDatetime, StringConstraints
+from pydantic import UUID4, BaseModel, PastDatetime, StringConstraints
 from sqlalchemy import func
 from sqlalchemy.schema import Column as SAColumn
 from sqlmodel import Session, join, select
@@ -46,10 +46,17 @@ IdItinerance = Annotated[
 ]
 
 
+class DynamiqueItemCreatedResponse(BaseModel):
+    """API response model used when a dynamic item is created."""
+
+    id: UUID4
+
+
 class DynamiqueItemsCreatedResponse(BaseModel):
     """API response model used when dynamic items are created."""
 
     size: int
+    items: List[UUID4]
 
 
 @router.get("/status/", tags=["Status"])
@@ -301,7 +308,7 @@ async def create_status(
     user: Annotated[User, Security(get_user, scopes=[ScopesEnum.DYNAMIC_CREATE.value])],
     status: StatusCreate,
     session: Session = Depends(get_session),
-) -> None:
+) -> DynamiqueItemCreatedResponse:
     """Create a status."""
     if not is_pdc_allowed_for_user(status.id_pdc_itinerance, user):
         raise PermissionDenied("You cannot create statuses for this point of charge")
@@ -320,6 +327,8 @@ async def create_status(
     db_status.point_de_charge_id = pdc.id
     session.add(db_status)
     session.commit()
+
+    return DynamiqueItemCreatedResponse(id=db_status.id)
 
 
 @router.post("/status/bulk", status_code=fa_status.HTTP_201_CREATED, tags=["Status"])
@@ -367,7 +376,10 @@ async def create_status_bulk(
     session.add_all(db_statuses)
     session.commit()
 
-    return DynamiqueItemsCreatedResponse(size=len(db_statuses))
+    return DynamiqueItemsCreatedResponse(
+        size=len(db_statuses),
+        items=[s.id for s in db_statuses],
+    )
 
 
 @router.post("/session/", status_code=fa_status.HTTP_201_CREATED, tags=["Session"])
@@ -375,7 +387,7 @@ async def create_session(
     user: Annotated[User, Security(get_user, scopes=[ScopesEnum.DYNAMIC_CREATE.value])],
     session: SessionCreate,
     db_session: Session = Depends(get_session),
-) -> None:
+) -> DynamiqueItemCreatedResponse:
     """Create a session."""
     if not is_pdc_allowed_for_user(session.id_pdc_itinerance, user):
         raise PermissionDenied("You cannot create sessions for this point of charge")
@@ -398,6 +410,8 @@ async def create_session(
     db_qc_session.point_de_charge_id = pdc.id
     db_session.add(db_qc_session)
     db_session.commit()
+
+    return DynamiqueItemCreatedResponse(id=db_qc_session.id)
 
 
 @router.post("/session/bulk", status_code=fa_status.HTTP_201_CREATED, tags=["Session"])
@@ -444,4 +458,7 @@ async def create_session_bulk(
     db_session.add_all(db_qc_sessions)
     db_session.commit()
 
-    return DynamiqueItemsCreatedResponse(size=len(db_qc_sessions))
+    return DynamiqueItemsCreatedResponse(
+        size=len(db_qc_sessions),
+        items=[s.id for s in db_qc_sessions],
+    )
