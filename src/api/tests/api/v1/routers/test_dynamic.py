@@ -750,7 +750,6 @@ def test_create_status_for_superuser(db_session, client_auth):
         "/dynamique/status/", json=json.loads(qc_status.model_dump_json())
     )
     assert response.status_code == status.HTTP_201_CREATED
-    assert response.json() is None
 
     # Query database to check created status and relations
     pdc = db_session.exec(
@@ -761,6 +760,7 @@ def test_create_status_for_superuser(db_session, client_auth):
     db_status = db_session.exec(select(Status)).one()
     assert db_status.point_de_charge_id == pdc.id
     assert db_status in pdc.statuses
+    assert response.json() == {"id": str(db_status.id)}
 
 
 @pytest.mark.parametrize(
@@ -812,7 +812,6 @@ def test_create_status_for_user(db_session, client_auth):
         "/dynamique/status/", json=json.loads(qc_status.model_dump_json())
     )
     assert response.status_code == status.HTTP_201_CREATED
-    assert response.json() is None
 
     # Query database to check created status and relations
     pdc = db_session.exec(
@@ -823,6 +822,7 @@ def test_create_status_for_user(db_session, client_auth):
     db_status = db_session.exec(select(Status)).one()
     assert db_status.point_de_charge_id == pdc.id
     assert db_status in pdc.statuses
+    assert response.json() == {"id": str(db_status.id)}
 
 
 def test_create_status_bulk_for_missing_point_of_charge(db_session, client_auth):
@@ -909,13 +909,13 @@ def test_create_status_bulk_for_superuser(db_session, client_auth):
         json=[json.loads(s.model_dump_json()) for s in qc_statuses],
     )
     assert response.status_code == status.HTTP_201_CREATED
-    assert response.json() == {"size": 3}
 
     # Check created statuses
     db_statuses = db_session.exec(select(Status)).all()
     db_pdcs = db_session.exec(select(PointDeCharge)).all()
     assert len(db_statuses) == len(qc_statuses)
     assert {s.point_de_charge_id for s in db_statuses} == {p.id for p in db_pdcs}
+    assert response.json() == {"size": 3, "items": [str(s.id) for s in db_statuses]}
 
     # Check foreign keys
     for qc_status in qc_statuses:
@@ -1024,13 +1024,13 @@ def test_create_status_bulk_for_user(db_session, client_auth):
         json=[json.loads(s.model_dump_json()) for s in qc_statuses],
     )
     assert response.status_code == status.HTTP_201_CREATED
-    assert response.json() == {"size": 3}
 
     # Check created statuses
     db_statuses = db_session.exec(select(Status)).all()
     db_pdcs = db_session.exec(select(PointDeCharge)).all()
     assert len(db_statuses) == len(qc_statuses)
     assert {s.point_de_charge_id for s in db_statuses} == {p.id for p in db_pdcs}
+    assert response.json() == {"size": 3, "items": [str(s.id) for s in db_statuses]}
 
     # Check foreign keys
     for qc_status in qc_statuses:
@@ -1075,13 +1075,13 @@ def test_create_status_bulk_gzipped_request(db_session, client_auth):
         },
     )
     assert response.status_code == status.HTTP_201_CREATED
-    assert response.json() == {"size": 3}
 
     # Check created statuses
     db_statuses = db_session.exec(select(Status)).all()
     db_pdcs = db_session.exec(select(PointDeCharge)).all()
     assert len(db_statuses) == len(qc_statuses)
     assert {s.point_de_charge_id for s in db_statuses} == {p.id for p in db_pdcs}
+    assert response.json() == {"size": 3, "items": [str(s.id) for s in db_statuses]}
 
 
 def test_create_status_bulk_with_outbound_sizes(db_session, client_auth):
@@ -1165,7 +1165,6 @@ def test_create_session_for_superuser(db_session, client_auth):
         "/dynamique/session/", json=json.loads(qc_session.model_dump_json())
     )
     assert response.status_code == status.HTTP_201_CREATED
-    assert response.json() is None
 
     # Query database to check created status and relations
     pdc = db_session.exec(
@@ -1176,6 +1175,7 @@ def test_create_session_for_superuser(db_session, client_auth):
     db_qc_session = db_session.exec(select(Session)).one()
     assert db_qc_session.point_de_charge_id == pdc.id
     assert db_qc_session in pdc.sessions
+    assert response.json() == {"id": str(db_qc_session.id)}
 
 
 @pytest.mark.parametrize(
@@ -1227,7 +1227,6 @@ def test_create_session_for_user(db_session, client_auth):
         "/dynamique/session/", json=json.loads(qc_session.model_dump_json())
     )
     assert response.status_code == status.HTTP_201_CREATED
-    assert response.json() is None
 
     # Query database to check created status and relations
     pdc = db_session.exec(
@@ -1238,6 +1237,7 @@ def test_create_session_for_user(db_session, client_auth):
     db_qc_session = db_session.exec(select(Session)).one()
     assert db_qc_session.point_de_charge_id == pdc.id
     assert db_qc_session in pdc.sessions
+    assert response.json() == {"id": str(db_qc_session.id)}
 
 
 def test_create_session_bulk_for_missing_point_of_charge(db_session, client_auth):
@@ -1325,13 +1325,13 @@ def test_create_session_bulk_for_superuser(db_session, client_auth):
         json=[json.loads(s.model_dump_json()) for s in qc_sessions],
     )
     assert response.status_code == status.HTTP_201_CREATED
-    assert response.json() == {"size": 3}
 
     # Check created sessions
     db_qc_sessions = db_session.exec(select(Session)).all()
     db_pdcs = db_session.exec(select(PointDeCharge)).all()
     assert len(db_qc_sessions) == len(qc_sessions)
     assert {s.point_de_charge_id for s in db_qc_sessions} == {p.id for p in db_pdcs}
+    assert response.json() == {"size": 3, "items": [str(s.id) for s in db_qc_sessions]}
 
     # Check foreign keys
     for qc_session in qc_sessions:
@@ -1434,13 +1434,13 @@ def test_create_session_bulk_for_user(db_session, client_auth):
         json=[json.loads(s.model_dump_json()) for s in qc_sessions],
     )
     assert response.status_code == status.HTTP_201_CREATED
-    assert response.json() == {"size": 3}
 
     # Check created sessions
     db_qc_sessions = db_session.exec(select(Session)).all()
     db_pdcs = db_session.exec(select(PointDeCharge)).all()
     assert len(db_qc_sessions) == len(qc_sessions)
     assert {s.point_de_charge_id for s in db_qc_sessions} == {p.id for p in db_pdcs}
+    assert response.json() == {"size": 3, "items": [str(s.id) for s in db_qc_sessions]}
 
     # Check foreign keys
     for qc_session in qc_sessions:
@@ -1486,13 +1486,13 @@ def test_create_session_bulk_gzipped_request(db_session, client_auth):
         },
     )
     assert response.status_code == status.HTTP_201_CREATED
-    assert response.json() == {"size": 3}
 
     # Check created sessions
     db_qc_sessions = db_session.exec(select(Session)).all()
     db_pdcs = db_session.exec(select(PointDeCharge)).all()
     assert len(db_qc_sessions) == len(qc_sessions)
     assert {s.point_de_charge_id for s in db_qc_sessions} == {p.id for p in db_pdcs}
+    assert response.json() == {"size": 3, "items": [str(s.id) for s in db_qc_sessions]}
 
 
 def test_create_session_bulk_with_outbound_sizes(db_session, client_auth):
