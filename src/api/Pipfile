@@ -15,6 +15,7 @@ pandas = "==2.2.3"
 passlib = {extras = ["bcrypt"], version = "==1.7.4"}
 psycopg = {extras = ["pool", "binary"], version = "==3.2.3"}
 pyarrow = "==18.0.0"
+pydantic = "==2.9.2"
 pydantic-extra-types = {extras = ["all"], version = "==2.10.0"}
 pydantic-settings = "==2.6.1"
 pyinstrument = "==5.0.0"
