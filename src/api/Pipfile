@@ -32,6 +32,7 @@ uvicorn = {extras = ["standard"] }
 black = "==24.10.0"
 csvkit = "==2.0.1"
 honcho = "==2.0.0"
+locust = "==2.32.2"
 mypy = "==1.13.0"
 pandas-stubs = "==2.2.3.241009"
 polyfactory = "==2.17.0"
@@ -41,7 +42,6 @@ pytest-httpx = "==0.34.0"
 ruff = "==0.7.4"
 types-passlib = "==1.7.7.20240819"
 types-python-jose = "==3.3.4.20240106"
-locust = "==2.32.2"
 
 [requires]
 python_version = "3.12"
