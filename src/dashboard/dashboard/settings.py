@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     "dashboard",
     "apps",
     "apps.auth",
+    "apps.core",
     "apps.home",
     "apps.consent",
 ]

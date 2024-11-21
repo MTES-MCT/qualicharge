@@ -1,0 +1,1 @@
+"""Dashboard core app migrations."""
