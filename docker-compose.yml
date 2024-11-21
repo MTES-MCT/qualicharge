@@ -43,6 +43,7 @@ services:
     volumes:
       - ./src/api:/app
       - ./data:/data
+      - ./src/bench:/mnt/bench
     depends_on:
       postgresql:
         condition: service_healthy

@@ -30,6 +30,20 @@ data/afirev-charging.csv: data
 	@echo "You should download CSV file from $(AFIREV_CHARGING_DATASET_URL)"
 
 # -- Docker/compose
+bench: ## run API benchmark
+bench: run
+	$(COMPOSE_RUN_API_PIPENV) \
+		locust \
+		  -f /mnt/bench/locustfile.py \
+			--headless \
+			-u 30 \
+			-r 1 \
+			--run-time 30s \
+			-H 'http://api:8000/api/v1' \
+			--csv bench_admin \
+			APIAdminUser
+.PHONY: bench
+
 bootstrap: ## bootstrap the project for development
 bootstrap: \
   build \
