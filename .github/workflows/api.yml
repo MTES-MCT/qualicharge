@@ -28,7 +28,7 @@ jobs:
       - name: Install dependencies
         run: |
           cd src/api
-          pipenv install -d .
+          pipenv install -d
 
   lint-api:
     needs: build-api
@@ -52,6 +52,193 @@ jobs:
         run: pipenv run ruff check qualicharge tests
       - name: Lint with MyPy
         run: pipenv run mypy qualicharge tests
+
+  bench-api:
+    needs: build-api
+    runs-on: ubuntu-latest
+    services:
+      postgresql:
+        image: timescale/timescaledb-ha:pg14-ts2.14-oss
+        env:
+          POSTGRES_DB: qualicharge-api
+          POSTGRES_USER: qualicharge
+          POSTGRES_PASSWORD: pass
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    permissions:
+      pull-requests: write
+      contents: write
+    defaults:
+      run:
+        working-directory: ./src/api
+    env:
+      PORT: 8000
+      QUALICHARGE_DB_ENGINE: postgresql+psycopg
+      QUALICHARGE_DB_HOST: localhost
+      QUALICHARGE_DB_NAME: qualicharge-api
+      QUALICHARGE_TEST_DB_NAME: test-qualicharge-api
+      QUALICHARGE_OIDC_IS_ENABLED: False
+      QUALICHARGE_ALLOWED_HOSTS: '["http://localhost:8000"]'
+      QUALICHARGE_API_STATIQUE_BULK_CREATE_MAX_SIZE: 1000
+      # This is a fake setting required to run the app
+      QUALICHARGE_OIDC_PROVIDER_BASE_URL: http://localhost:8000/fake
+      QUALICHARGE_OAUTH2_TOKEN_ENCODING_KEY: thisissupersecret
+      QUALICHARGE_OAUTH2_TOKEN_ISSUER: http://test:8000
+      QUALICHARGE_EXECUTION_ENVIRONMENT: ci
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+      - name: Create postgis extension
+        run: psql "postgresql://qualicharge:pass@localhost:5432/qualicharge-api" -c "create extension postgis;"
+      - name: Install pipenv
+        run: pipx install pipenv
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pipenv"
+          cache-dependency-path: "src/api/Pipfile.lock"
+      - name: Run database migrations
+        run: pipenv run alembic -c qualicharge/alembic.ini upgrade head
+      - name: Create API superuser
+        run: |
+          pipenv run python -m qualicharge create-user \
+            admin \
+            --email admin@example.com \
+            --password admin \
+            --is-active \
+            --is-superuser \
+            --is-staff \
+            --force
+      - name: Seed API database
+        run: |
+          pipenv install -d --skip-lock qualicharge-client
+          pipenv run honcho start &
+          sleep 10
+          zcat ../../data/irve-statique.json.gz | \
+            head -n 500 | \
+            pipenv run qcc static bulk --chunk-size 100
+        env:
+          QCC_API_LOGIN_USERNAME: admin
+          QCC_API_LOGIN_PASSWORD: admin
+          QCC_API_ROOT_URL: "http://localhost:8000/api/v1"
+      # API server is still running here
+      - name: Run locust
+        run: |
+          pipenv run locust \
+            -f ../bench/locustfile.py \
+            --headless \
+            -u 30 \
+            -r 1 \
+            --run-time 30s \
+            -H "http://localhost:${PORT}/api/v1" \
+            --csv bench_admin \
+            APIAdminUser
+      - name: Add bench file metadata
+        run: |
+          pipenv run \
+            python ../bench/cli.py \
+              stamp bench_admin_stats.csv $(git rev-parse --short "${GITHUB_SHA}") \
+                > bench_admin_stats_stamped.csv
+      - name: Save bench CSV as artefact
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-admin-benchmark
+          path: ./src/api/bench_admin_stats_stamped.csv
+      - name: Generate markdown table
+        run: |
+          echo -e "### Current benchmark\n\n" >> bench_admin_stats.md && \
+          pipenv run csvlook -I bench_admin_stats_stamped.csv >> bench_admin_stats.md && \
+          echo -e "\n### Comparison with the latest previous benchmark\n\n" >> bench_admin_stats.md && \
+          echo -e "> A lower (negative) value means the current version performs better than the previous one.\n\n" >> bench_admin_stats.md && \
+          pipenv run \
+            python ../bench/cli.py diff ../../data/bench.csv bench_admin_stats_stamped.csv | \
+            pipenv run \
+              csvlook -I >> bench_admin_stats.md
+          cat bench_admin_stats.md
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('node:fs');
+            fs.readFile('/home/runner/work/qualicharge/qualicharge/src/api/bench_admin_stats.md', 'utf8', (err, data) => {
+              if (err) {
+                console.error(err);
+                return;
+              }
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: data
+              });
+            });
+
+  # Only when a PR is merged
+  update-bench-db:
+    if: github.event.pull_request.merged == true
+    needs:
+      - build-api
+      - bench-api
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: write
+    defaults:
+      run:
+        working-directory: ./src/api
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+      - name: Install pipenv
+        run: pipx install pipenv
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pipenv"
+          cache-dependency-path: "src/api/Pipfile.lock"
+      - name: Get latest bench CSV artefact
+        uses: actions/download-artifact@v4
+        with:
+          name: api-admin-benchmark
+      - name: Merge Bench database
+        run: |
+          pipenv run \
+            csvstack \
+              ../../data/bench.csv \
+              bench_admin_stats_stamped.csv \
+                > /tmp/bench.csv
+          cp -f /tmp/bench.csv ../../data/bench.csv
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v7
+        with:
+          add-paths: |
+            data/bench.csv
+          commit-message: |
+            ⚡️(api) update benchmark database
+
+            Update bench database.
+          branch: update-api-bench-db
+          title: "⚡️(api) update benchmark database"
+          body: |
+            ## Purpose
+
+            Each time a PR is merged and a new benchmark has been released, the bench database is updated.
+
+            ## Proposal
+
+            - [x] update `data/bench.csv`
+
+          labels: |
+            API
+            needs review
 
   test-database-migrations:
     needs: build-api
