@@ -3,30 +3,25 @@
 from datetime import timedelta
 
 import pytest
-from django.contrib.auth import get_user_model
-from django.utils import formats, timezone
+from django.utils import formats
 
+from apps.auth.factories import UserFactory
+from apps.consent.factories import ConsentFactory
 from apps.consent.models import Consent
-from apps.core.models import DeliveryPoint
+from apps.core.factories import DeliveryPointFactory
 
 
 @pytest.mark.django_db
 def test_create_consent():
     """Tests the creation of a consent."""
-    # create user
-    User = get_user_model()
-    user1 = User.objects.create_user(username="user1", password="foo")  # noqa: S106
+    user1 = UserFactory()
+    delivery_point = DeliveryPointFactory()
 
-    # create delivery point
-    delivery_point = DeliveryPoint.objects.create(provider_id="provider_1234")
-
-    # create consent
-    consent = Consent.objects.create(
+    consent = ConsentFactory(
         delivery_point=delivery_point,
         created_by=user1,
-        start=timezone.now(),
-        end=timezone.now() + timedelta(days=90),
     )
+
     assert consent.delivery_point == delivery_point
     assert consent.created_by == user1
     assert consent.status == Consent.AWAITING
@@ -48,20 +43,14 @@ def test_create_consent():
 @pytest.mark.django_db
 def test_update_consent_status():
     """Tests updating a consent status."""
-    # create user
-    User = get_user_model()
-    user1 = User.objects.create_user(username="user1", password="foo")  # noqa: S106
+    user1 = UserFactory()
+    delivery_point = DeliveryPointFactory()
 
-    # create delivery point
-    delivery_point = DeliveryPoint.objects.create(provider_id="provider_1234")
-
-    # create consent
-    consent = Consent.objects.create(
+    consent = ConsentFactory(
         delivery_point=delivery_point,
         created_by=user1,
-        start=timezone.now(),
-        end=timezone.now() + timedelta(days=90),
     )
+
     new_updated_at = consent.updated_at
 
     # update status to VALIDATED
