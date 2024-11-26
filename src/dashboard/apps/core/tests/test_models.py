@@ -14,11 +14,20 @@ def test_create_entity():
     user1 = UserFactory()
     user2 = UserFactory()
 
-    entity = EntityFactory(name="entity_1234", users=(user1, user2))
+    entity2 = EntityFactory(name="entity 2", users=(user1, user2))
+    entity3 = EntityFactory(name="entity 3", users=(user1, user2))
+    entity = EntityFactory(
+        name="entity 1", users=(user1, user2), proxy_for=(entity2, entity3)
+    )
+
+    assert entity.name == "entity 1"
+    assert entity.slug == "entity-1"
 
     # test users have been added.
-    assert entity.name == "entity_1234"
     assert all(user in entity.users.all() for user in [user1, user2])
+
+    # test `proxy_for` have been added.
+    assert all(proxy_for in entity.proxy_for.all() for proxy_for in [entity2, entity3])
 
     # test created_at and updated_at have been updated.
     assert entity.created_at is not None
@@ -33,11 +42,16 @@ def test_create_entity():
 def test_update_entity():
     """Tests updating an entity."""
     user1 = UserFactory()
-    entity = EntityFactory(users=(user1,))
+    entity2 = EntityFactory(name="entity 2")
+    entity = EntityFactory(users=(user1,), proxy_for=(entity2,))
 
     # test user1 have been removed
     entity.users.remove(user1)
     assert all(user != user1 for user in entity.users.all())
+
+    # test `proxy_for` have been removed
+    entity.proxy_for.remove(entity2)
+    assert all(entity != entity2 for entity in entity.proxy_for.all())
 
     # test updated_at has been updated
     assert entity.updated_at > entity.created_at
@@ -51,26 +65,39 @@ def test_create_delivery_point():
 
     # create entities
     entity1 = EntityFactory(users=(user1,))
-    entity2 = EntityFactory(users=(user1,))
 
     # create delivery point
     delivery_point = DeliveryPointFactory(
-        provider_id="provider_1234", entities=(entity1, entity2)
+        provider_assigned_id="dp_1234", entity=entity1
     )
 
-    assert delivery_point.provider_id == "provider_1234"
+    assert delivery_point.provider_assigned_id == "dp_1234"
     assert delivery_point.is_active is True
-
-    # test entities have been added to delivery point.
-    assert all(entity in delivery_point.entities.all() for entity in [entity1, entity2])
+    assert delivery_point.entity == entity1
 
     # test created_at and updated_at have been updated.
     assert delivery_point.created_at is not None
     assert delivery_point.updated_at is not None
 
-    # test IntegrityError: provider must not be null
+
+@pytest.mark.django_db
+def test_integrity_error_create_provider_assigned_id_null():
+    """Test IntegrityError on provider_assigned_id.
+
+    provider_assigned_id must not be null.
+    """
     with pytest.raises(IntegrityError):
-        DeliveryPointFactory(provider_id=None)
+        DeliveryPointFactory(provider_assigned_id=None)
+
+
+@pytest.mark.django_db
+def test_integrity_error_create_entity_null():
+    """Test IntegrityError on entity.
+
+    Entity fk must not be null.
+    """
+    with pytest.raises(IntegrityError):
+        DeliveryPointFactory(provider_assigned_id="dp1", entity=None)
 
 
 @pytest.mark.django_db
@@ -83,11 +110,7 @@ def test_update_delivery_point():
     entity1 = EntityFactory(users=(user1,))
 
     # create delivery point
-    delivery_point = DeliveryPointFactory(entities=(entity1,))
-
-    # test entity1 have been removed
-    delivery_point.entities.remove(entity1)
-    assert all(entity != entity1 for entity in delivery_point.entities.all())
+    delivery_point = DeliveryPointFactory(entity=entity1)
 
     # test updated_at has been updated
     assert delivery_point.updated_at > delivery_point.created_at
