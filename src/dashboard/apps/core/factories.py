@@ -23,6 +23,15 @@ class EntityFactory(factory.django.DjangoModelFactory):
         # Add the iterable of groups using bulk addition
         self.users.add(*extracted)
 
+    @factory.post_generation
+    def proxy_for(self, create, extracted, **kwargs):
+        """Method to add `proxy_for` after the entity is created."""
+        if not create or not extracted:
+            # Simple build, or nothing to add, do nothing.
+            return
+
+        self.proxy_for.add(*extracted)
+
 
 class DeliveryPointFactory(factory.django.DjangoModelFactory):
     """Factory class for creating instances of the DeliveryPoint model."""
@@ -30,14 +39,5 @@ class DeliveryPointFactory(factory.django.DjangoModelFactory):
     class Meta:  # noqa: D106
         model = DeliveryPoint
 
-    provider_id = factory.Sequence(lambda n: "provider_%d" % n)
-
-    @factory.post_generation
-    def entities(self, create, extracted, **kwargs):
-        """Method to add entities after the delivery point is created."""
-        if not create or not extracted:
-            # Simple build, or nothing to add, do nothing.
-            return
-
-        # Add the iterable of groups using bulk addition
-        self.entities.add(*extracted)
+    provider_assigned_id = factory.Sequence(lambda n: "dp_%d" % n)
+    entity = factory.SubFactory(EntityFactory)

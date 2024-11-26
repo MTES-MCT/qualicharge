@@ -5,6 +5,7 @@ import uuid
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
+from django_extensions.db.fields import AutoSlugField
 
 from apps.auth.models import DashboardUser as User
 
@@ -38,16 +39,20 @@ class Entity(DashboardBase):
     """Represents an operator or an aggregator in the system.
 
     Attributes:
+    - slug (AutoSlugField): Unique slug generated from the name field.
     - name (CharField): Name of the entity, unique and maximum length of 64.
     - users (ManyToManyField): Users associated with the entity.
+    - proxy_for (ManyToManyField): self-referential relationship indicating proxies.
     """
 
+    slug = AutoSlugField(_("slug"), populate_from="name", unique=True)
     name = models.CharField(_("name"), max_length=64, unique=True)
     users = models.ManyToManyField(User, verbose_name=_("users"))
+    proxy_for = models.ManyToManyField("self", verbose_name=_("proxy for"), blank=True)
 
     class Meta:  # noqa: D106
-        verbose_name = "Entity"
-        verbose_name_plural = "Entities"
+        verbose_name = "entity"
+        verbose_name_plural = "entities"
         ordering = ["name"]
 
     def __str__(self):  # noqa: D105
@@ -58,19 +63,22 @@ class DeliveryPoint(DashboardBase):
     """Represents a delivery point for electric vehicles.
 
     Attributes:
-    - provider_id (CharField): stores the unique identifier for the delivery provider.
-    - entities (ManyToManyField): linking DeliveryPoint to associated Entity instances.
+    - provider_assigned_id (CharField): stores the unique identifier
+    assigned by the provider for the delivery point.
+    - entity (ForeignKey): linking DeliveryPoint to associated Entity.
     - is_active (BooleanField): indicating the active status of the delivery point.
     """
 
-    provider_id = models.CharField(_("provider id"), max_length=64)
-    entities = models.ManyToManyField(Entity, verbose_name=_("entities"))
+    provider_assigned_id = models.CharField(_("provider assigned id"), max_length=64)
+    entity = models.ForeignKey(
+        Entity, on_delete=models.CASCADE, verbose_name=_("entity")
+    )
     is_active = models.BooleanField(_("is active"), default=True)
 
     class Meta:  # noqa: D106
-        verbose_name = _("Delivery point")
-        verbose_name_plural = _("Delivery points")
-        ordering = ["provider_id"]
+        verbose_name = _("delivery point")
+        verbose_name_plural = _("delivery points")
+        ordering = ["provider_assigned_id"]
 
     def __str__(self):  # noqa: D105
-        return self.provider_id
+        return self.provider_assigned_id
