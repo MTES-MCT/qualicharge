@@ -1,0 +1,1 @@
+"""Dashboard consent app management."""
