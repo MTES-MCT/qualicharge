@@ -1,0 +1,8 @@
+.consent-wrapper {
+  position: relative;
+  border: 1px solid grey;
+}
+
+.consent-wrapper__inner {
+  padding: 0 1.5rem;
+}

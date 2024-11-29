@@ -11,13 +11,14 @@ and this project adheres to
 ### Added
 
 - bootstrap dashboard project
-- add dashboard homepage
-- add internationalization and language switcher
-- add authentication system
-- introduce new custom user model
+- add custom user model
+- add core app with Entity and DeliveryPoint models
 - add consent app with Consent model
-- add core app with Entity and DeliveryPoint models 
+- add basic authentication system
+- add internationalization and language switcher
+- add dashboard homepage
 - add consent form to manage consents of one or many entities 
+- integration of custom 403, 404 and 500 pages 
 
 [unreleased]: https://github.com/MTES-MCT/qualicharge/compare/main...bootstrap-dashboard-project
 

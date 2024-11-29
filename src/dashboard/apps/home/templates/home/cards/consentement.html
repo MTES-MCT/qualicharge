@@ -1,43 +1,11 @@
-{% load i18n %}
+{% load i18n dsfr_tags %}
 
-{# todo: add real content to the card #}
+{% comment %}
+todo: add real content and image to the card
+{% endcomment %}
 
-<div class="fr-grid-row fr-grid-row--gutters">
-  <div class="fr-col-12 fr-col-md-6">
-    <div class="fr-card">
-      <div class="fr-card__body">
+{% translate "Consent Management" as consent_card_title %}
+{% translate "Lorem [...] elit ut." as consent_card_description %}
+{% url 'consent:index' as consent_index_url %}
 
-        <div class="fr-card__content">
-          <p class="fr-card__title">
-            <a href="{% url 'consent:index' %}" rel="noopener noreferrer" title="">
-              {% trans "Consent Management" %}
-            </a>
-          </p>
-          <p class="fr-card__desc">
-            Texte de la carte.
-            …
-          </p>
-        </div>
-        <!-- /.fr-card__content -->
-
-        <div class="fr-card__footer">
-          <ul>
-            <li>
-              <a class="fr-link fr-icon-arrow-right-line fr-link--icon-right" href="#">
-                Lien interne
-              </a>
-            </li>
-            <li>
-              <a class="fr-link fr-icon-arrow-right-line fr-link--icon-right" href="#">
-                Lien interne
-              </a>
-            </li>
-          </ul>
-
-        </div>
-        <!-- /.fr-card__footer -->
-
-      </div>
-    </div>
-  </div>
-</div>
+{% dsfr_card title=consent_card_title link=consent_index_url description=consent_card_description extra_class="fr-card--horizontal" image_url="https://www.systeme-de-design.gouv.fr/img/placeholder.16x9.png" %}

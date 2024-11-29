@@ -1,0 +1,30 @@
+{% load i18n %}
+
+{% if entities %}
+  <strong>{% trans "Validated consent for all entities" %}</strong>
+  <ul class="fr-links-group fr-mb-2w">
+    <li>
+      <a class="fr-link fr-icon-arrow-right-line fr-link--icon-right"
+         href="{% url "consent:manage" %}"
+         data-fr-js-link-actionee="true">
+        {% trans "Validate content for all entities" %}
+      </a>
+    </li>
+  </ul>
+
+  <strong class="fr-mt-2w">{% trans "Validated consent entity by entity" %}</strong>
+  <ul class="fr-links-group">
+    {% for entity in entities %}
+      <li>
+        <a class="fr-link fr-icon-arrow-right-line fr-link--icon-right"
+           href="{% url "consent:manage" entity.slug %}"
+           data-fr-js-link-actionee="true">
+          {{ entity.name }} :
+          {% blocktranslate with consent_total=entity.get_consents.count entity_count=entity.count_awaiting_consents pluralize=entity.count_awaiting_consents|pluralize %}
+            {{ entity_count }}/{{ consent_total }} consent{{ pluralize }} to validate
+          {% endblocktranslate %}
+        </a>
+      </li>
+    {% endfor %}
+  </ul>
+{% endif %}

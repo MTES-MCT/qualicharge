@@ -1,0 +1,14 @@
+{% load i18n %}
+
+{% if entities %}
+  <ul class="fr-links-group">
+    {% for entity in entities %}
+      <li>
+        {{ entity.name }}:
+        {% blocktranslate with consent_total=entity.get_consents.count consent_count=entity.count_validated_consents pluralize=entity.count_validated_consents|pluralize %}
+          {{ consent_count }}/{{ consent_total }} consent{{ pluralize }} validated
+        {% endblocktranslate %}
+      </li>
+    {% endfor %}
+  </ul>
+{% endif %}

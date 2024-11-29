@@ -3,6 +3,19 @@
 {% load i18n %}
 
 {% block dashboard_content %}
-  {% include "consent/includes/_resume_awaiting_consents.html" %}
-  {% include "consent/includes/_resume_validated_consents.html" %}
+  <div class="fr-grid-row fr-grid-row--gutters fr-mb-1w">
+    <div class="fr-col-md-6 fr-col-12">
+      {% trans "Validated entities" as resume_title %}
+      {% trans "Lorem [...] elit ut." as resume_description %}
+
+      {% include "consent/includes/_consent_summary_card.html" with resume_validated=True resume_title=resume_title resume_description=resume_description %}
+    </div>
+
+    <div class="fr-col-md-6 fr-col-12">
+      {% trans "Awaiting consents" as resume_title %}
+      {% trans "Lorem [...] elit ut." as resume_description %}
+
+      {% include "consent/includes/_consent_summary_card.html" with resume_awaiting=True resume_title=resume_title resume_description=resume_description %}
+    </div>
+  </div>
 {% endblock dashboard_content %}
