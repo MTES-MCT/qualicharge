@@ -15,6 +15,7 @@ class EntityAdmin(admin.ModelAdmin):
         "users",
         "proxy_for",
     )
+    search_fields = ["name", "users__username", "users__email"]
 
     @admin.display(description=_("Users"))
     def get_users_name(self, obj):
@@ -32,3 +33,5 @@ class DeliveryPointAdmin(admin.ModelAdmin):
     """Delivery point admin."""
 
     list_display = ["provider_assigned_id", "entity", "is_active"]
+    search_fields = ["provider_assigned_id", "entity__name"]
+    list_filter = ["is_active"]
