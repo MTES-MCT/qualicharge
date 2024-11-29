@@ -8,7 +8,7 @@ https://www.systeme-de-design.gouv.fr/composants-et-modeles/modeles/page-d-erreu
 {% endcomment %}
 
 {% block page_title %}
-  <title>{% trans "Unexpected error" %}</title>
+  <title>{% trans "Permission denied" %}</title>
 {% endblock page_title %}
 
 {% block content %}
@@ -17,23 +17,31 @@ https://www.systeme-de-design.gouv.fr/composants-et-modeles/modeles/page-d-erreu
       <div class="fr-my-7w fr-mt-md-12w fr-mb-md-10w fr-grid-row fr-grid-row--gutters fr-grid-row--middle fr-grid-row--center">
         <div class="fr-py-0 fr-col-12 fr-col-md-6">
           <h1>
-            {% trans "Unexpected error" %}
+            {% trans "Permission denied" %}
           </h1>
           <p class="fr-text--sm fr-mb-3w">
-            {% trans "Error 500" %}
+            {% trans "Error 403" %}
           </p>
           <p class="fr-text--lead fr-mb-3w">
-            {% trans "Oops, looks like something terrible happened. We have already been notified." %}
+            {% trans "Sorry, you are not allowed to access this page." %}
           </p>
           <p class="fr-text--sm fr-mb-5w">
-            {% trans "Try refreshing the page or try again later." %}
+            {% blocktranslate %}
+          If you think this is a mistake, you can contact our team.<br />
+          Otherwise, to continue your visit you can consult our home page.                
+        {% endblocktranslate %}
           </p>
-          {% comment %}
-        <ul class="fr-btns-group fr-btns-group--inline-md">
+
+          <ul class="fr-btns-group fr-btns-group--inline-md">
+            <li>
+              <a class="fr-btn" href="{% url "home:index" %}"> {% trans "Home page" %}</a>
+            </li>
+            {% comment %}
           <li><a class="fr-btn fr-btn--secondary" href="[À MODIFIER - lien vers un formulaire de contact]">
             {% trans "Contact us" %} </a></li>
-        </ul>
-          {% endcomment %}
+            {% endcomment %}
+          </ul>
+
         </div>
         <div class="fr-col-12 fr-col-md-3 fr-col-offset-md-1 fr-px-6w fr-px-md-0 fr-py-0">
           <svg xmlns="http://www.w3.org/2000/svg"

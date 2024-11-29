@@ -1,25 +1,27 @@
 {% extends "dsfr/base.html" %}
-{% load static i18n %}
+{% load static i18n dsfr_tags %}
+
+{% block extra_css %}
+  {% block dashboard_extra_css %}
+  {% endblock dashboard_extra_css %}
+{% endblock extra_css %}
 
 {% block header %}
   {% include "blocks/header.html" %}
 {% endblock header %}
 
 {% block content %}
-  {% if messages %}
-    <ul class="messages">
-        {% for message in messages %}
-        <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
-        {% endfor %}
-    </ul>
-  {% endif %}
-  {% block dashboard_content %}{% endblock dashboard_content %}
+  {% dsfr_django_messages %}
+
+  {% block dashboard_content %}
+  {% endblock dashboard_content %}
 {% endblock content %}
 
 {% block extra_js %}
   <script src="{% static 'dashboard/js/common.js' %}">
   </script>
-  {% block extra_dashboard_js %}{% endblock extra_dashboard_js %}
+  {% block dashboard_extra_js %}
+  {% endblock dashboard_extra_js %}
 {% endblock extra_js %}
 
 {# djlint:off #}

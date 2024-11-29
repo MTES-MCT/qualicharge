@@ -3,9 +3,17 @@
 {% load i18n %}
 
 {% block dashboard_content %}
-  <h2>
-    {% trans "QualiCharge dashboard" %}
-  </h2>
+  <div class="fr-grid-row fr-grid-row--gutters">
+    <div class="fr-col-12 fr-col-md-12">
+      <h2>
+        {% trans "QualiCharge dashboard" %}
+      </h2>
+    </div>
+  </div>
 
-  {% include "home/cards/consentement.html" %}
+  <div class="fr-grid-row fr-grid-row--gutters">
+    <div class="fr-col-12 fr-col-md-6">
+      {% include "home/cards/consentement.html" %}
+    </div>
+  </div>
 {% endblock dashboard_content %}
