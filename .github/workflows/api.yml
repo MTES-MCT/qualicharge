@@ -85,6 +85,12 @@ jobs:
       QUALICHARGE_OIDC_IS_ENABLED: False
       QUALICHARGE_ALLOWED_HOSTS: '["http://localhost:8000"]'
       QUALICHARGE_API_STATIQUE_BULK_CREATE_MAX_SIZE: 1000
+      QUALICHARGE_DEBUG: 0
+      QUALICHARGE_PROFILING: 0
+      QUALICHARGE_UVICORN_WORKERS: 1
+      QUALICHARGE_DB_CONNECTION_MAX_OVERFLOW: 200
+      QUALICHARGE_DB_CONNECTION_POOL_SIZE: 50
+      QUALICHARGE_STATIQUE_DATA_PATH: /home/runner/work/qualicharge/qualicharge/data/irve-statique.json.gz
       # This is a fake setting required to run the app
       QUALICHARGE_OIDC_PROVIDER_BASE_URL: http://localhost:8000/fake
       QUALICHARGE_OAUTH2_TOKEN_ENCODING_KEY: thisissupersecret

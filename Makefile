@@ -31,7 +31,16 @@ data/afirev-charging.csv: data
 
 # -- Docker/compose
 bench: ## run API benchmark
-bench: run
+	# FIXME
+	#
+	# $(COMPOSE) stop
+	# $(COMPOSE) up -d --wait --force-recreate postgresql
+	# $(MAKE) migrate-api
+	# $(MAKE) create-api-superuser
+	# $(COMPOSE) up -d --wait api
+	# zcat data/irve-statique.json.gz | head -n 500 | \
+	# 	bin/qcc static bulk --chunk-size 1000
+
 	$(COMPOSE_RUN_API_PIPENV) \
 		locust \
 		  -f /mnt/bench/locustfile.py \
@@ -299,7 +308,6 @@ jupytext--to-ipynb: ## convert remote md files into ipynb
 
 reset-db: ## Reset the PostgreSQL database
 	$(COMPOSE) stop
-	# $(COMPOSE) down postgresql metabase
 	$(MAKE) migrate-api
 	$(MAKE) create-api-superuser
 	$(MAKE) create-api-test-db

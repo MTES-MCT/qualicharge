@@ -49,6 +49,7 @@ scripts/*.csv
 
 # -- Tools
 .coverage
+src/api/bench_*.csv
 
 # Prefect
 src/prefect/.htpasswd
