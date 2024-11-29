@@ -1,0 +1,15 @@
+{% load i18n %}
+
+<h2>{% trans "Validated entities" %}</h2>
+
+<ul>
+  {% for entity in entities %}
+  <li>
+    <strong>{{ entity.name }}</strong>
+    <br />
+    {% blocktranslate with entity_count=entity.count_validated_consents pluralize=entity.count_validated_consents|pluralize %}
+    {{ entity_count }} consent{{ pluralize }} validated
+    {% endblocktranslate %}
+  </li>
+  {% endfor %}
+</ul>

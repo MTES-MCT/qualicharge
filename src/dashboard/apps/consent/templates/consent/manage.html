@@ -1,0 +1,66 @@
+{% extends "consent/base.html" %}
+
+{% load i18n static %}
+
+{% block dashboard_content %}
+<h2>{% trans "Manage consents" %}</h2>
+
+{% if entities %}
+  <form action="" method="post">
+    {% csrf_token %}
+    <fieldset class="fr-fieldset" id="checkboxes" aria-labelledby="checkboxes-legend checkboxes-messages">
+  
+      <legend class="fr-fieldset__legend--regular fr-fieldset__legend"
+              id="checkboxes-legend"> {% trans "Legend for all elements" %}
+      </legend>
+  
+      {# toggle button #}
+      <div class="fr-fieldset__element">
+        <div class="fr-checkbox-group">
+          <input type="checkbox" id="toggle-all" name="toggle-all" 
+                 aria-describedby="toggle-all-messages" 
+                 data-fr-js-checkbox-input="true" 
+                 data-fr-js-checkbox-actionee="true">
+          <label class="fr-label" for="toggle-all">{% trans "Toggle All" %}</label>
+        </div>
+      </div>
+  
+      {% for entity in entities %}
+        <strong>{{ entity.name }}</strong>
+        
+        {% for consent in entity.get_consents %}
+        <div class="fr-fieldset__element">
+          <div class="fr-checkbox-group">
+            <input type="checkbox"
+                   name="status"
+                   value="{{ consent.id }}"
+                   id="{{ consent.id }}"
+                  {% if consent.status == "VALIDATED" %} checked{% endif %}
+                  aria-describedby="{{ consent.id }}-messages"
+                  data-fr-js-checkbox-input="true"
+                  data-fr-js-checkbox-actionee="true"
+            >
+            <label class="fr-label" for="{{ consent.id }}">{{ consent.delivery_point.provider_assigned_id }} </label>
+            <div class="fr-messages-group" id="{{ consent.id }}-messages" aria-live="assertive"></div>
+          </div>
+        </div>
+        {% endfor %}
+      {% endfor %}
+
+      <div class="fr-messages-group" id="checkboxes-messages" aria-live="assertive">
+        {{ field.errors }}
+      </div>
+    </fieldset>
+
+    <button class="fr-btn" type="submit" name="submit"> {% trans "submit" %} </button>
+  </form>
+  
+  {% else %}
+    <p>{% trans "No consents to validate" %}</p>
+  {% endif %}
+{% endblock dashboard_content %}
+
+{% block extra_dashboard_js %}  
+  <script src="{% static 'consent/js/app.js' %}">
+  </script>  
+{% endblock extra_dashboard_js %}

@@ -17,6 +17,7 @@ and this project adheres to
 - introduce new custom user model
 - add consent app with Consent model
 - add core app with Entity and DeliveryPoint models 
+- add consent form to manage consents of one or many entities 
 
 [unreleased]: https://github.com/MTES-MCT/qualicharge/compare/main...bootstrap-dashboard-project
 
