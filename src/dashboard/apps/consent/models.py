@@ -4,8 +4,10 @@ from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
-from apps.auth.models import DashboardUser as User
-from apps.core.models import DashboardBase, DeliveryPoint
+from apps.core.abstract_models import DashboardBase
+
+from . import AWAITING, CONSENT_STATUS_CHOICE, REVOKED
+from .managers import ConsentManager
 
 
 class Consent(DashboardBase):
@@ -26,18 +28,14 @@ class Consent(DashboardBase):
     - revoked_at (DateTimeField): recording the revoked date of the consent, if any.
     """
 
-    AWAITING = "AWAITING"
-    VALIDATED = "VALIDATED"
-    REVOKED = "REVOKED"
-    CONSENT_STATUS_CHOICE = [
-        (AWAITING, _("Awaiting")),
-        (VALIDATED, _("Validated")),
-        (REVOKED, _("Revoked")),
-    ]
-
-    delivery_point = models.ForeignKey(DeliveryPoint, on_delete=models.CASCADE)
+    delivery_point = models.ForeignKey(
+        "qcd_core.DeliveryPoint", on_delete=models.CASCADE, related_name="consents"
+    )
     created_by = models.ForeignKey(
-        User, on_delete=models.SET_NULL, null=True, verbose_name=_("created by")
+        "qcd_auth.DashboardUser",
+        on_delete=models.SET_NULL,
+        null=True,
+        verbose_name=_("created by"),
     )
     status = models.CharField(
         _("status"), max_length=20, choices=CONSENT_STATUS_CHOICE, default=AWAITING
@@ -48,6 +46,9 @@ class Consent(DashboardBase):
     end = models.DateTimeField(_("end date"))
     revoked_at = models.DateTimeField(_("revoked at"), null=True, blank=True)
 
+    active_objects = ConsentManager()
+    objects = models.Manager()
+
     class Meta:  # noqa: D106
         ordering = ["delivery_point"]
 
@@ -56,6 +57,6 @@ class Consent(DashboardBase):
 
     def save(self, *args, **kwargs):
         """Update the revoked_at timestamps if the consent is revoked."""
-        if self.status == self.REVOKED:
+        if self.status == REVOKED:
             self.revoked_at = timezone.now()
         return super(Consent, self).save(*args, **kwargs)

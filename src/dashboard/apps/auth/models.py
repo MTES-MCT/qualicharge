@@ -1,6 +1,9 @@
 """Dashboard auth models."""
 
 from django.contrib.auth.models import AbstractUser
+from django.db.models import Q, QuerySet
+
+from apps.core.models import Entity
 
 
 class DashboardUser(AbstractUser):
@@ -11,4 +14,10 @@ class DashboardUser(AbstractUser):
     AbstractUser model in Django.
     """
 
-    pass
+    def get_entities(self) -> QuerySet[Entity]:
+        """Get a list of entities, and their proxies associated."""
+        return Entity.objects.filter(Q(users=self) | Q(proxies__users=self)).distinct()
+
+    def can_validate_entity(self, entity: Entity) -> bool:
+        """Determines if the provided entity can be validated."""
+        return entity in self.get_entities()

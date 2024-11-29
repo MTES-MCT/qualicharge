@@ -6,8 +6,8 @@ import pytest
 from django.utils import formats
 
 from apps.auth.factories import UserFactory
+from apps.consent import AWAITING, REVOKED, VALIDATED
 from apps.consent.factories import ConsentFactory
-from apps.consent.models import Consent
 from apps.core.factories import DeliveryPointFactory
 
 
@@ -24,7 +24,7 @@ def test_create_consent():
 
     assert consent.delivery_point == delivery_point
     assert consent.created_by == user1
-    assert consent.status == Consent.AWAITING
+    assert consent.status == AWAITING
     assert consent.revoked_at is None
     assert consent.start is not None
     assert consent.end is not None
@@ -54,16 +54,16 @@ def test_update_consent_status():
     new_updated_at = consent.updated_at
 
     # update status to VALIDATED
-    consent.status = Consent.VALIDATED
+    consent.status = VALIDATED
     consent.save()
-    assert consent.status == Consent.VALIDATED
+    assert consent.status == VALIDATED
     assert consent.updated_at > new_updated_at
     assert consent.revoked_at is None
     new_updated_at = consent.updated_at
 
     # update status to REVOKED
-    consent.status = Consent.REVOKED
+    consent.status = REVOKED
     consent.save()
-    assert consent.status == Consent.REVOKED
+    assert consent.status == REVOKED
     assert consent.updated_at > new_updated_at
     assert consent.revoked_at is not None

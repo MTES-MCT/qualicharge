@@ -1,38 +1,15 @@
 """Dashboard core app models."""
 
-import uuid
-
 from django.db import models
-from django.utils import timezone
+from django.db.models import QuerySet
 from django.utils.translation import gettext_lazy as _
 from django_extensions.db.fields import AutoSlugField
 
-from apps.auth.models import DashboardUser as User
+from apps.consent import AWAITING, VALIDATED
+from apps.consent.models import Consent
 
-
-class DashboardBase(models.Model):
-    """Abstract base model, providing common fields and functionality.
-
-    Attributes:
-    - id (UUIDField): serves as the primary key, automatically generated, not editable.
-    - created_at (DateTimeField): records when the object was created, not editable by
-    default.
-    - updated_at (DateTimeField): records when the object was last updated, editable.
-    """
-
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    created_at = models.DateTimeField(
-        _("created at"), editable=False, default=timezone.now
-    )
-    updated_at = models.DateTimeField(_("updated at"), null=True, blank=True)
-
-    class Meta:  # noqa: D106
-        abstract = True
-
-    def save(self, *args, **kwargs):
-        """Update the updated_at timestamps."""
-        self.updated_at = timezone.now()
-        return super(DashboardBase, self).save(*args, **kwargs)
+from .abstract_models import DashboardBase
+from .managers import DeliveryPointManager
 
 
 class Entity(DashboardBase):
@@ -47,8 +24,16 @@ class Entity(DashboardBase):
 
     slug = AutoSlugField(_("slug"), populate_from="name", unique=True)
     name = models.CharField(_("name"), max_length=64, unique=True)
-    users = models.ManyToManyField(User, verbose_name=_("users"))
-    proxy_for = models.ManyToManyField("self", verbose_name=_("proxy for"), blank=True)
+    users = models.ManyToManyField(
+        "qcd_auth.DashboardUser", verbose_name=_("users"), related_name="entities"
+    )
+    proxy_for = models.ManyToManyField(
+        "self",
+        verbose_name=_("proxy for"),
+        blank=True,
+        symmetrical=False,
+        related_name="proxies",
+    )
 
     class Meta:  # noqa: D106
         verbose_name = "entity"
@@ -57,6 +42,44 @@ class Entity(DashboardBase):
 
     def __str__(self):  # noqa: D105
         return self.name
+
+    def is_proxy_for(self) -> bool:
+        """Return True if the entity is a proxy of other entities, False otherwise."""
+        return self.proxy_for.exists()
+
+    def get_proxy_entities(self) -> QuerySet:
+        """Retrieve entities for which this entity is a proxy."""
+        return self.proxy_for.all()
+
+    def get_consents(self, status: str | None = None) -> QuerySet:
+        """Get consents associated with this entity."""
+        queryset_filters: dict = {}
+        if status:
+            queryset_filters["status"] = status
+
+        return (
+            Consent.active_objects.filter(
+                delivery_point__entity=self,
+                **queryset_filters,
+            )
+            .select_related(
+                "delivery_point",
+                "delivery_point__entity",
+            )
+            .order_by("delivery_point__provider_assigned_id", "start")
+        )
+
+    def count_validated_consents(self) -> int:
+        """Counts the number of validated consents associated with a given entity."""
+        return self.get_consents(VALIDATED).count()
+
+    def count_awaiting_consents(self) -> int:
+        """Counts the number of validated consents associated with a given entity."""
+        return self.get_consents(AWAITING).count()
+
+    def get_awaiting_consents(self) -> QuerySet:
+        """Get all awaiting consents for this entity."""
+        return self.get_consents(AWAITING)
 
 
 class DeliveryPoint(DashboardBase):
@@ -71,9 +94,15 @@ class DeliveryPoint(DashboardBase):
 
     provider_assigned_id = models.CharField(_("provider assigned id"), max_length=64)
     entity = models.ForeignKey(
-        Entity, on_delete=models.CASCADE, verbose_name=_("entity")
+        Entity,
+        on_delete=models.CASCADE,
+        related_name="delivery_points",
+        verbose_name=_("entity"),
     )
     is_active = models.BooleanField(_("is active"), default=True)
+
+    active_objects = DeliveryPointManager()
+    objects = models.Manager()
 
     class Meta:  # noqa: D106
         verbose_name = _("delivery point")

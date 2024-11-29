@@ -28,7 +28,6 @@ def seed_consent():
     entity3 = EntityFactory(users=(user3,), proxy_for=(entity1, entity2))
     entity4 = EntityFactory(users=(user5,))
 
-
     # create delivery points
     for i in range(1, 4):
         DeliveryPointFactory(provider_assigned_id=f"entity1_{i}", entity=entity1)

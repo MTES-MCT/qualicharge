@@ -6,11 +6,20 @@
 {% endblock header %}
 
 {% block content %}
+  {% if messages %}
+    <ul class="messages">
+        {% for message in messages %}
+        <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+        {% endfor %}
+    </ul>
+  {% endif %}
+  {% block dashboard_content %}{% endblock dashboard_content %}
 {% endblock content %}
 
 {% block extra_js %}
   <script src="{% static 'dashboard/js/common.js' %}">
   </script>
+  {% block extra_dashboard_js %}{% endblock extra_dashboard_js %}
 {% endblock extra_js %}
 
 {# djlint:off #}

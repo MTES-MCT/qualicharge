@@ -14,6 +14,4 @@ class Command(BaseCommand):
         """Executes the command for creating development consent fixtures."""
         self.stdout.write(self.style.NOTICE("Seeding database with consents..."))
         seed_consent()
-        self.stdout.write(
-            self.style.SUCCESS("Done.")
-        )
+        self.stdout.write(self.style.SUCCESS("Done."))
