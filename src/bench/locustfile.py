@@ -9,9 +9,10 @@ import pandas as pd
 import requests
 from locust import FastHttpUser, task
 
-API_ADMIN_USER = "admin"
-API_ADMIN_PASSWORD = "admin"
-STATIC_DB_OFFSET = 500
+API_ADMIN_USER: str = os.environ["QUALICHARGE_API_ADMIN_USER"]
+API_ADMIN_PASSWORD: str = os.environ["QUALICHARGE_API_ADMIN_PASSWORD"]
+STATIQUE_DATA_PATH: Path = Path(os.environ["QUALICHARGE_STATIQUE_DATA_PATH"])
+STATIC_DB_OFFSET: int = 500
 
 
 @cache
@@ -27,10 +28,9 @@ class BaseAPIUser(FastHttpUser):
     abstract: bool = True
     username: str
     password: str
+    static_db_path: Path
     counter: dict = {
         "static": {"create": STATIC_DB_OFFSET, "bulk": 10000},
-        "status": 0,
-        "session": 0,
     }
 
     def on_start(self):
@@ -42,9 +42,7 @@ class BaseAPIUser(FastHttpUser):
         response = requests.post(f"{self.host}/auth/token", data=credentials)
         token = response.json()["access_token"]
         self.client.auth_header = f"Bearer {token}"
-        self.statique_db = load_statique_db(
-            Path(os.environ["QUALICHARGE_STATIQUE_DATA_PATH"])
-        )
+        self.statique_db = load_statique_db(self.static_db_path)
 
     @task
     def whoami(self):
@@ -217,3 +215,4 @@ class APIAdminUser(BaseAPIUser):
 
     username: str = API_ADMIN_USER
     password: str = API_ADMIN_PASSWORD
+    static_db_path: Path = STATIQUE_DATA_PATH
