@@ -188,7 +188,7 @@ jobs:
 
   # Only when a PR is merged
   update-bench-db:
-    if: github.event.pull_request.merged == true
+    # if: github.event.pull_request.merged == true
     needs:
       - build-api
       - bench-api
