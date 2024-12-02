@@ -215,6 +215,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: api-admin-benchmark
+          path: ./src/api/bench_admin_stats_stamped.csv
       - name: Merge Bench database
         run: |
           pipenv run \
