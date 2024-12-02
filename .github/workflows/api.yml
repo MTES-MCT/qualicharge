@@ -184,6 +184,8 @@ jobs:
           name: api-admin-benchmark
           path: ./src/api/bench_admin_stats_stamped.csv
       - name: Generate markdown table
+        # Only when in PR, not when merged
+        if: github.event.pull_request.merged == false
         run: |
           echo -e "### Current benchmark\n\n" >> bench_admin_stats.md && \
           pipenv run csvlook -I bench_admin_stats_stamped.csv >> bench_admin_stats.md && \
@@ -195,6 +197,8 @@ jobs:
               csvlook -I >> bench_admin_stats.md
           cat bench_admin_stats.md
       - uses: actions/github-script@v7
+        # Only when in PR, not when merged
+        if: github.event.pull_request.merged == false
         with:
           script: |
             const fs = require('node:fs');
