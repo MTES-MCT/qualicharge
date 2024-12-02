@@ -145,7 +145,8 @@ jobs:
             --run-time 30s \
             -H "http://localhost:${PORT}/api/v1" \
             --csv bench_admin \
-            APIAdminUser || true
+            --exit-code-on-error 0 \
+            APIAdminUser
       - name: Add bench file metadata
         run: |
           pipenv run \
