@@ -10,38 +10,38 @@ email-validator = "==2.2.0"
 fastapi = "==0.115.5"
 geoalchemy2 = {extras = ["shapely"], version = "==0.16.0"}
 geopandas = "==1.0.1"
-httpx = {extras = ["cli"], version = "==0.27.2"}
+httpx = {extras = ["cli"], version = "==0.28.0"}
 pandas = "==2.2.3"
 passlib = {extras = ["bcrypt"], version = "==1.7.4"}
 psycopg = {extras = ["pool", "binary"], version = "==3.2.3"}
-pyarrow = "==18.0.0"
-pydantic = "==2.9.2"
+pyarrow = "==18.1.0"
+pydantic = "==2.10.2"
 pydantic-extra-types = {extras = ["all"], version = "==2.10.0"}
 pydantic-settings = "==2.6.1"
 pyinstrument = "==5.0.0"
 pyjwt = "==2.10.0"
 python-multipart = "==0.0.17"
 questionary = "==2.0.1"
-sentry-sdk = {extras = ["fastapi"], version = "==2.18.0"}
-setuptools = "==75.5.0"
+sentry-sdk = {extras = ["fastapi"], version = "==2.19.0"}
+setuptools = "==75.6.0"
 sqlalchemy-timescaledb = "==0.4.1"
 sqlmodel = "==0.0.22"
-typer = "==0.13.0"
+typer = "==0.14.0"
 uvicorn = {extras = ["standard"] }
 
 [dev-packages]
 black = "==24.10.0"
 csvkit = "==2.0.1"
 honcho = "==2.0.0"
-locust = "==2.32.2"
+locust = "==2.32.4"
 mypy = "==1.13.0"
-pandas-stubs = "==2.2.3.241009"
-polyfactory = "==2.17.0"
-pytest = "==8.3.3"
+pandas-stubs = "==2.2.3.241126"
+polyfactory = "==2.18.1"
+pytest = "==8.3.4"
 pytest-cov = "==6.0.0"
-pytest-httpx = "==0.34.0"
+pytest-httpx = "==0.35.0"
 qualicharge = {path = ".", editable = true}
-ruff = "==0.7.4"
+ruff = "==0.8.1"
 types-passlib = "==1.7.7.20240819"
 types-python-jose = "==3.3.4.20240106"
 types-requests = "==2.32.0.20241016"

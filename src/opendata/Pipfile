@@ -9,7 +9,7 @@ psycopg = {extras = ["binary", "pool"], version = "==3.2.3"}
 
 [dev-packages]
 honcho = "==2.0.0"
-setuptools = "==75.5.0"
+setuptools = "==75.6.0"
 
 [requires]
 python_version = "3.12"
