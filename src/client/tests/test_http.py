@@ -97,7 +97,7 @@ async def test_client_expired_token_renewal(httpx_mock):
     )
     response = await client.get("/auth/whoami")
     assert response.status_code == httpx.codes.OK
-    assert response.content == b'{"fake": 1}'
+    assert response.content == b'{"fake":1}'
 
     # Check requests
     requests = httpx_mock.get_requests()
