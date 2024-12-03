@@ -8,6 +8,14 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Changed
+
+- Upgrade httpx to `0.28.0`
+- Upgrade pyarrow to `18.1.0`
+- Upgrade pydantic to `2.10.2`
+- Upgrade sentry-sdk to `2.19.0`
+- Upgrade typer to `0.14.0`
+
 ## [0.15.0] - 2024-11-21
 
 ### Changed
