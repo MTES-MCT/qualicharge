@@ -5,9 +5,11 @@ name: dashboard CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
+    paths:
+      - "src/dashboard/**"
 
 jobs:
   build-dashboard:
@@ -26,7 +28,7 @@ jobs:
         run: |
           cd src/dashboard
           pipenv install -d
-          
+
   lint-dashboard:
     needs: build-dashboard
     runs-on: ubuntu-latest
