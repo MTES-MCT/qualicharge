@@ -22,6 +22,7 @@ and this project adheres to
 ### Fixed
 
 - Allow `date_maj` field to be set to "today"
+- Forbid `/static/` POST usage for an existing PDC
 
 ## [0.15.0] - 2024-11-21
 
