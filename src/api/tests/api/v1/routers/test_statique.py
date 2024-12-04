@@ -383,6 +383,27 @@ def test_create_for_superuser(client_auth):
     assert json_response["items"][0] == id_pdc_itinerance
 
 
+def test_create_twice(client_auth):
+    """Test the /statique/ create endpoint with the same payload twice."""
+    id_pdc_itinerance = "FR911E1111ER1"
+    data = StatiqueFactory.build(
+        id_pdc_itinerance=id_pdc_itinerance,
+    )
+
+    response = client_auth.post("/statique/", json=json.loads(data.model_dump_json()))
+    assert response.status_code == status.HTTP_201_CREATED
+    json_response = response.json()
+    assert json_response["message"] == "Statique items created"
+    assert json_response["size"] == 1
+    assert json_response["items"][0] == id_pdc_itinerance
+
+    response = client_auth.post("/statique/", json=json.loads(data.model_dump_json()))
+    assert response.status_code == status.HTTP_409_CONFLICT
+    assert response.json() == {
+        "detail": f"Point of charge {id_pdc_itinerance} already exists"
+    }
+
+
 @pytest.mark.parametrize(
     "client_auth",
     (

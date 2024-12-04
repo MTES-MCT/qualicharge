@@ -241,6 +241,20 @@ async def create(
             "You cannot submit data for an organization you are not assigned to"
         )
 
+    # Check if the Point Of Charge does not already exist
+    if (
+        session.exec(
+            select(func.count(cast(SAColumn, PointDeCharge.id))).where(
+                PointDeCharge.id_pdc_itinerance == statique.id_pdc_itinerance
+            )
+        ).one()
+        > 0
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Point of charge {statique.id_pdc_itinerance} already exists",
+        )
+
     transaction = session.begin_nested()
     try:
         db_statique = save_statique(session, statique)
