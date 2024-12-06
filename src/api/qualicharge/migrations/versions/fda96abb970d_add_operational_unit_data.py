@@ -63,18 +63,18 @@ def data_upgrades():
     op.execute(
         """
         WITH station_ou AS (
-                SELECT
-                  Station.id as station_id,
-                  OperationalUnit.id as operational_unit_id
-                FROM
-                  Station
-                  INNER JOIN OperationalUnit ON
-                    SUBSTRING(Station.id_station_itinerance, 1, 5) = OperationalUnit.code
-            )
-            UPDATE Station
-            SET operational_unit_id = station_ou.operational_unit_id
-            FROM station_ou
-            WHERE Station.id = station_ou.station_id
+            SELECT
+              Station.id as station_id,
+              OperationalUnit.id as operational_unit_id
+            FROM
+              Station
+              INNER JOIN OperationalUnit ON
+                SUBSTRING(Station.id_station_itinerance, 1, 5) = OperationalUnit.code
+        )
+        UPDATE Station
+        SET operational_unit_id = station_ou.operational_unit_id
+        FROM station_ou
+        WHERE Station.id = station_ou.station_id
         """
     )
 
