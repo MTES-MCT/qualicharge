@@ -15,6 +15,7 @@ Values have been cleaned manually (trimmed and fixed encoding issues).
 """
 
 from collections import namedtuple
+from typing import List
 
 # Nota bene: we import the GroupOperationalUnit schema so that the MetaData registry
 # is aware of the GroupOperationalUnit table and allows to use this secondary
@@ -27,7 +28,7 @@ from qualicharge.schemas.core import OperationalUnit, OperationalUnitTypeEnum
 
 # Operational units
 Item = namedtuple("Item", ["code", "name"])
-data = [
+data: List[Item] = [
     Item(
         "FR073",
         "ACELEC CHARGE",

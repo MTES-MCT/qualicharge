@@ -6,13 +6,16 @@ Create Date: 2024-05-15 16:08:19.687606
 
 """
 
+from datetime import datetime, timezone
 from typing import Sequence, Union
+from uuid import uuid4
+
+from sqlalchemy import MetaData
 
 from alembic import op
-from sqlmodel import Session, select
 
-from qualicharge.fixtures.operational_units import operational_units
-from qualicharge.schemas.core import Station
+from qualicharge.fixtures.operational_units import data as operational_units
+from qualicharge.schemas.core import OperationalUnitTypeEnum
 
 
 # revision identifiers, used by Alembic.
@@ -32,32 +35,54 @@ def downgrade():
 
 def data_upgrades():
     """Add any optional data upgrade migrations here!"""
-
-    # We are running in a transaction, hence we need to get the current active connection
-    session = Session(op.get_bind())
-
     # Reset table before inserting data
     data_downgrades()
-    session.add_all(operational_units)
-    session.commit()
+
+    # Get OperationalUnit table
+    metadata = MetaData()
+    metadata.reflect(bind=op.get_bind())
+    ou_table = metadata.tables["operationalunit"]
+
+    # Bulk insert
+    now = datetime.now(timezone.utc)
+    op.bulk_insert(
+        ou_table,
+        [
+            {
+                "id": uuid4().hex,
+                "created_at": now,
+                "updated_at": now,
+                "type": "CHARGING",
+            }
+            | ou._asdict()
+            for ou in operational_units
+        ],
+    )
 
     # Create FK
-    for operational_unit in operational_units:
-        operational_unit.create_stations_fk(session)
+    op.execute(
+        """
+        WITH station_ou AS (
+                SELECT
+                  Station.id as station_id,
+                  OperationalUnit.id as operational_unit_id
+                FROM
+                  Station
+                  INNER JOIN OperationalUnit ON
+                    SUBSTRING(Station.id_station_itinerance, 1, 5) = OperationalUnit.code
+            )
+            UPDATE Station
+            SET operational_unit_id = station_ou.operational_unit_id
+            FROM station_ou
+            WHERE Station.id = station_ou.station_id
+        """
+    )
 
 
 def data_downgrades():
     """Add any optional data downgrade migrations here!"""
-
-    # We are running in a transaction, hence we need to get the current active connection
-    session = Session(op.get_bind())
-
     # Reset FK
-    stations = session.exec(select(Station)).all()
-    for station in stations:
-        station.operational_unit_id = None
-    session.add_all(stations)
-    session.commit()
+    op.execute("UPDATE Station SET operational_unit_id = NULL")
 
     # Delete records
-    op.execute("delete from operationalunit")
+    op.execute("DELETE FROM OperationalUnit")
