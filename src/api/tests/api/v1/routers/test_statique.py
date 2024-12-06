@@ -587,7 +587,10 @@ def test_update_for_superuser(client_auth, db_session):
 
 
 def test_update_audits(client_auth, db_session):
-    """Test the /statique/{id_pdc_itinerance} update endpoint audits (superuser case)."""
+    """Test the /statique/{id_pdc_itinerance} update endpoint audits.
+
+    (superuser case)
+    """
     id_pdc_itinerance = "FR911E1111ER1"
     db_statique = save_statique(
         db_session,

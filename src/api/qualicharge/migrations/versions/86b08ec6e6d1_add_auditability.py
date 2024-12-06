@@ -1,7 +1,7 @@
 """add auditability
 
 Revision ID: 86b08ec6e6d1
-Revises: 6e610f62bcc6
+Revises: c09664a85912
 Create Date: 2024-10-16 17:03:58.431420
 
 """
@@ -14,7 +14,7 @@ import sqlmodel
 
 # revision identifiers, used by Alembic.
 revision: str = "86b08ec6e6d1"
-down_revision: Union[str, None] = "6e610f62bcc6"
+down_revision: Union[str, None] = "c09664a85912"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

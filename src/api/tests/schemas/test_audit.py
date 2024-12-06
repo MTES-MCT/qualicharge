@@ -15,12 +15,7 @@ from qualicharge.factories.static import (
 )
 from qualicharge.schemas.audit import Audit
 from qualicharge.schemas.core import (
-    Amenageur,
-    Enseigne,
-    Localisation,
     Operateur,
-    PointDeCharge,
-    Station,
 )
 
 

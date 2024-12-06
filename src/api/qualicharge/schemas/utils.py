@@ -9,10 +9,10 @@ import pandas as pd
 from sqlalchemy import func
 from sqlalchemy.exc import MultipleResultsFound
 from sqlalchemy.schema import Column as SAColumn
-from qualicharge.schemas.audit import BaseAuditableSQLModel
 from sqlmodel import Session, SQLModel, select
 
 from qualicharge.auth.schemas import User
+from qualicharge.schemas.audit import BaseAuditableSQLModel
 
 from ..exceptions import (
     DatabaseQueryException,
@@ -91,7 +91,7 @@ def get_or_create(
 
         # Update database entry
         for key, value in entry.model_dump(
-            exclude=list(set(DB_TO_STATIC_EXCLUDED_FIELDS) - {"updated_by_id"})
+            exclude=set(DB_TO_STATIC_EXCLUDED_FIELDS) - {"updated_by_id"}
         ).items():
             setattr(db_entry, key, value)
         session.add(db_entry)
@@ -105,7 +105,7 @@ def get_or_create(
     return EntryStatus.CREATED, entry
 
 
-def save_schema_from_statique(
+def save_schema_from_statique(  # noqa: PLR0913
     session: Session,
     schema_klass: Type[SQLModel],
     statique: Statique,

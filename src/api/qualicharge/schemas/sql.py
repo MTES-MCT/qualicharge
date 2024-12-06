@@ -228,10 +228,12 @@ class StatiqueImporter:
                 f: stmt.excluded.get(f)
                 for f in self._get_fields_for_schema(schema, with_fk=True)
             }
-            updates_on_conflict.update({
-                "updated_at": stmt.excluded.updated_at,
-                "updated_by_id": stmt.excluded.updated_by_id,
-            })
+            updates_on_conflict.update(
+                {
+                    "updated_at": stmt.excluded.updated_at,
+                    "updated_by_id": stmt.excluded.updated_by_id,
+                }
+            )
             stmt = stmt.on_conflict_do_update(
                 constraint=constraint,
                 index_elements=index_elements,
