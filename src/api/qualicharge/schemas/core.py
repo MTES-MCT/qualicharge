@@ -35,6 +35,7 @@ from ..models.static import (
     DataGouvCoordinate,
     FrenchPhoneNumber,
     ImplantationStationEnum,
+    NotFutureDate,
     RaccordementEnum,
 )
 from . import BaseTimestampedSQLModel
@@ -237,7 +238,7 @@ class Station(BaseTimestampedSQLModel, table=True):
     station_deux_roues: bool
     raccordement: Optional[RaccordementEnum]
     num_pdl: Optional[str] = Field(max_length=64)
-    date_maj: PastDate = Field(sa_type=Date)
+    date_maj: NotFutureDate = Field(sa_type=Date)
     date_mise_en_service: Optional[PastDate] = Field(sa_type=Date)
 
     # Relationships

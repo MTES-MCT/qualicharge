@@ -19,6 +19,10 @@ and this project adheres to
 - Upgrade sentry-sdk to `2.19.2`
 - Upgrade typer to `0.15.1`
 
+### Fixed
+
+- Allow `date_maj` field to be set to "today"
+
 ## [0.15.0] - 2024-11-21
 
 ### Changed

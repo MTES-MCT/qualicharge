@@ -2,10 +2,12 @@
 
 import json
 import re
+from datetime import date, datetime, timezone
 from enum import StrEnum
 from typing import Optional
 
 from pydantic import (
+    AfterValidator,
     BaseModel,
     BeforeValidator,
     EmailStr,
@@ -107,6 +109,18 @@ DataGouvCoordinate = Annotated[
 ]
 
 
+def not_future(value: date):
+    """Ensure date is not in the future."""
+    today = datetime.now(timezone.utc).date()
+    if value > today:
+        raise ValueError(f"{value} is in the future")
+    return value
+
+
+# A date not in the future (today or in the past)
+NotFutureDate = Annotated[date, AfterValidator(not_future)]
+
+
 class Statique(ModelSchemaMixin, BaseModel):
     """IRVE static model."""
 
@@ -168,7 +182,7 @@ class Statique(ModelSchemaMixin, BaseModel):
     num_pdl: Optional[Annotated[str, Field(max_length=64)]]
     date_mise_en_service: Optional[PastDate]
     observations: Optional[str]
-    date_maj: PastDate
+    date_maj: NotFutureDate
     cable_t2_attache: Optional[bool]
 
     @model_validator(mode="after")

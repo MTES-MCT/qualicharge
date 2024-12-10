@@ -1,5 +1,7 @@
 """QualiCharge static models tests."""
 
+from datetime import datetime, timedelta, timezone
+
 import pytest
 from pydantic_extra_types.coordinate import Coordinate
 
@@ -106,3 +108,18 @@ def test_statique_model_num_pdl():
 
     with pytest.raises(ValueError, match="String should have at most 64 characters"):
         StatiqueFactory.build(num_pdl="a" * 65)
+
+
+def test_statique_model_date_maj():
+    """Test statique model accepts only a `date_maj` not in the future."""
+    today = datetime.now(timezone.utc).date()
+    statique = StatiqueFactory.build(date_maj=today)
+    assert statique.date_maj == today
+
+    yesterday = today - timedelta(days=1)
+    statique = StatiqueFactory.build(date_maj=yesterday)
+    assert statique.date_maj == yesterday
+
+    tomorrow = today + timedelta(days=1)
+    with pytest.raises(ValueError, match=f"{tomorrow} is in the future"):
+        StatiqueFactory.build(date_maj=tomorrow)
