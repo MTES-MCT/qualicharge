@@ -19,7 +19,7 @@ mypy = "==1.13.0"
 pandas-stubs = "==2.2.3.241126"
 pytest = "==8.3.4"
 pytest-cov = "==6.0.0"
-ruff = "==0.8.1"
+ruff = "==0.8.2"
 setuptools = "==75.6.0"
 types-python-dateutil = "*"
 
