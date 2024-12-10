@@ -10,11 +10,14 @@ and this project adheres to
 
 ### Changed
 
-- Upgrade httpx to `0.28.0`
+- Upgrade fastapi to `0.115.6`
+- Upgrade httpx to `0.28.1`
 - Upgrade pyarrow to `18.1.0`
-- Upgrade pydantic to `2.10.2`
-- Upgrade sentry-sdk to `2.19.0`
-- Upgrade typer to `0.14.0`
+- Upgrade pydantic to `2.10.3`
+- Upgrade pydantic-extra-types `2.10.1`
+- Upgrade python-multipart to `0.0.19`
+- Upgrade sentry-sdk to `2.19.2`
+- Upgrade typer to `0.15.1`
 
 ## [0.15.0] - 2024-11-21
 
