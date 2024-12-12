@@ -1,5 +1,7 @@
 """Dashboard core factories."""
 
+import uuid
+
 import factory
 
 from .models import DeliveryPoint, Entity
@@ -39,5 +41,5 @@ class DeliveryPointFactory(factory.django.DjangoModelFactory):
     class Meta:  # noqa: D106
         model = DeliveryPoint
 
-    provider_assigned_id = factory.Sequence(lambda n: "dp_%d" % n)
+    provider_assigned_id = factory.LazyFunction(lambda: str(uuid.uuid4()))
     entity = factory.SubFactory(EntityFactory)
