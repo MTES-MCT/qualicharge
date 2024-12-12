@@ -8,6 +8,10 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Changed
+
+- Prefetch user-related groups and operational units in `get_user` dependency
+
 ## [0.16.0] - 2024-12-12
 
 ### Changed
