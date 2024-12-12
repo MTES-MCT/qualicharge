@@ -278,3 +278,12 @@ def is_pdc_allowed_for_user(id_pdc_itinerance: str, user: User) -> bool:
     if id_pdc_itinerance[:5] in [ou.code for ou in user.operational_units]:
         return True
     return False
+
+
+def are_pdcs_allowed_for_user(ids_pdc_itinerance: set | list, user) -> bool:
+    """Check of a user can create/read/update a list of PDCs given their identifiers."""
+    if user.is_superuser:
+        return True
+    operational_unit_codes: set = {id_[:5] for id_ in ids_pdc_itinerance}
+    user_operational_unit_codes: set = {ou.code for ou in user.operational_units}
+    return operational_unit_codes.issubset(user_operational_unit_codes)

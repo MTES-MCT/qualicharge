@@ -32,6 +32,7 @@ from qualicharge.schemas.core import (
 )
 from qualicharge.schemas.utils import (
     EntryStatus,
+    are_pdcs_allowed_for_user,
     build_statique,
     get_or_create,
     is_pdc_allowed_for_user,
@@ -501,3 +502,39 @@ def test_is_pdc_allowed_for_user(db_session):
     user = UserFactory.create_sync(is_superuser=False)
     db_session.add(UserGroup(user_id=user.id, group_id=group.id))
     assert is_pdc_allowed_for_user(id_pdc_itinerance, user) is False
+
+
+def test_are_pdcs_allowed_for_user(db_session):
+    """Test the are_pdcs_allowed_for_user utility."""
+    UserFactory.__session__ = db_session
+    GroupFactory.__session__ = db_session
+
+    # Superuser
+    user = UserFactory.create_sync(is_superuser=True)
+    assert are_pdcs_allowed_for_user(["FRFASE001", "FRS63E0001"], user) is True
+    assert are_pdcs_allowed_for_user({"FRFASE001", "FRS63E0001"}, user) is True
+
+    # Normal user with no assigned operational units
+    user = UserFactory.create_sync(is_superuser=False)
+    assert user.operational_units == []
+    assert are_pdcs_allowed_for_user(["FRFASE001", "FRS63E0001"], user) is False
+
+    # Create groups linked to Operational Units
+    groups = GroupFactory.create_batch_sync(3)
+    operational_units = db_session.exec(select(OperationalUnit).limit(3)).all()
+    for group, operational_unit in zip(groups, operational_units, strict=True):
+        db_session.add(
+            GroupOperationalUnit(
+                group_id=group.id, operational_unit_id=operational_unit.id
+            )
+        )
+
+    # And a user belonging to groups linked to those operational units
+    user = UserFactory.create_sync(is_superuser=False, groups=groups)
+    assert {ou.code for ou in user.operational_units} == {
+        ou.code for ou in operational_units
+    }
+
+    ids_pdc_itinerance = [f"{ou.code}P001" for ou in operational_units]
+    assert are_pdcs_allowed_for_user(ids_pdc_itinerance, user) is True
+    assert are_pdcs_allowed_for_user(ids_pdc_itinerance + ["FRFASP0001"], user) is False

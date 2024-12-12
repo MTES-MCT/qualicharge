@@ -24,7 +24,7 @@ from qualicharge.models.dynamic import (
 )
 from qualicharge.schemas.core import PointDeCharge, Station, Status
 from qualicharge.schemas.core import Session as QCSession
-from qualicharge.schemas.utils import is_pdc_allowed_for_user
+from qualicharge.schemas.utils import are_pdcs_allowed_for_user, is_pdc_allowed_for_user
 
 logger = logging.getLogger(__name__)
 
@@ -313,18 +313,18 @@ async def create_status(
     if not is_pdc_allowed_for_user(status.id_pdc_itinerance, user):
         raise PermissionDenied("You cannot create statuses for this point of charge")
 
-    pdc = session.exec(
-        select(PointDeCharge).where(
+    pdc_id = session.exec(
+        select(PointDeCharge.id).where(
             PointDeCharge.id_pdc_itinerance == status.id_pdc_itinerance
         )
     ).one_or_none()
-    if pdc is None:
+    if pdc_id is None:
         raise HTTPException(
             status_code=fa_status.HTTP_404_NOT_FOUND,
             detail="Attached point of charge does not exist",
         )
     db_status = Status(**status.model_dump(exclude={"id_pdc_itinerance"}))
-    db_status.point_de_charge_id = pdc.id
+    db_status.point_de_charge_id = pdc_id
     session.add(db_status)
     session.commit()
 
@@ -338,23 +338,23 @@ async def create_status_bulk(
     session: Session = Depends(get_session),
 ) -> DynamiqueItemsCreatedResponse:
     """Create a statuses batch."""
-    for status in statuses:
-        if not is_pdc_allowed_for_user(status.id_pdc_itinerance, user):
-            raise PermissionDenied(
-                "You cannot submit data for an organization you are not assigned to"
-            )
-
-    # Check if all points of charge exist
-    # ids_pdc_itinerance = list({status.id_pdc_itinerance for status in statuses})
-    ids_pdc_itinerance = [status.id_pdc_itinerance for status in statuses]
-    ids_pdc_itinerance_set = set(ids_pdc_itinerance)
-    db_pdcs = session.exec(
-        select(PointDeCharge).filter(
-            cast(SAColumn, PointDeCharge.id_pdc_itinerance).in_(ids_pdc_itinerance_set)
+    ids_pdc_itinerance = {s.id_pdc_itinerance for s in statuses}
+    if not are_pdcs_allowed_for_user(ids_pdc_itinerance, user):
+        raise PermissionDenied(
+            "You cannot submit data for an organization you are not assigned to"
         )
-    ).all()
 
-    if len(db_pdcs) != len(ids_pdc_itinerance_set):
+    # Create a dict with keys as id_pdc_itinerance and values as PDC id
+    # for existing PDCs
+    db_pdcs = dict(
+        session.exec(
+            select(PointDeCharge.id_pdc_itinerance, PointDeCharge.id).filter(
+                cast(SAColumn, PointDeCharge.id_pdc_itinerance).in_(ids_pdc_itinerance)
+            )
+        ).all()
+    )
+
+    if len(db_pdcs) != len(ids_pdc_itinerance):
         raise HTTPException(
             status_code=fa_status.HTTP_404_NOT_FOUND,
             detail=(
@@ -363,15 +363,11 @@ async def create_status_bulk(
             ),
         )
 
-    # Prepare statuses PDC index
-    db_pdc_ids = [pdc.id_pdc_itinerance for pdc in db_pdcs]
-    pdc_indexes = [db_pdc_ids.index(id_) for id_ in ids_pdc_itinerance]
-
     # Create all statuses
     db_statuses = []
-    for status, pdc_index in zip(statuses, pdc_indexes, strict=True):
+    for status in statuses:
         db_status = Status(**status.model_dump(exclude={"id_pdc_itinerance"}))
-        db_status.point_de_charge_id = db_pdcs[pdc_index].id
+        db_status.point_de_charge_id = db_pdcs[status.id_pdc_itinerance]
         db_statuses.append(db_status)
     session.add_all(db_statuses)
     session.commit()
@@ -396,18 +392,18 @@ async def create_session(
     #
     # - `db_session` / `Session` refers to the database session, while,
     # - `session` / `QCSession` / `SessionCreate` refers to qualicharge charging session
-    pdc = db_session.exec(
-        select(PointDeCharge).where(
+    pdc_id = db_session.exec(
+        select(PointDeCharge.id).where(
             PointDeCharge.id_pdc_itinerance == session.id_pdc_itinerance
         )
     ).one_or_none()
-    if pdc is None:
+    if pdc_id is None:
         raise HTTPException(
             status_code=fa_status.HTTP_404_NOT_FOUND,
             detail="Attached point of charge does not exist",
         )
     db_qc_session = QCSession(**session.model_dump(exclude={"id_pdc_itinerance"}))
-    db_qc_session.point_de_charge_id = pdc.id
+    db_qc_session.point_de_charge_id = pdc_id
     db_session.add(db_qc_session)
     db_session.commit()
 
@@ -421,22 +417,23 @@ async def create_session_bulk(
     db_session: Session = Depends(get_session),
 ) -> DynamiqueItemsCreatedResponse:
     """Create a sessions batch."""
-    for session in sessions:
-        if not is_pdc_allowed_for_user(session.id_pdc_itinerance, user):
-            raise PermissionDenied(
-                "You cannot submit data for an organization you are not assigned to"
-            )
-
-    # Check if all points of charge exist
-    ids_pdc_itinerance = [session.id_pdc_itinerance for session in sessions]
-    ids_pdc_itinerance_set = set(ids_pdc_itinerance)
-    db_pdcs = db_session.exec(
-        select(PointDeCharge).filter(
-            cast(SAColumn, PointDeCharge.id_pdc_itinerance).in_(ids_pdc_itinerance_set)
+    ids_pdc_itinerance = {s.id_pdc_itinerance for s in sessions}
+    if not are_pdcs_allowed_for_user(ids_pdc_itinerance, user):
+        raise PermissionDenied(
+            "You cannot submit data for an organization you are not assigned to"
         )
-    ).all()
 
-    if len(db_pdcs) != len(ids_pdc_itinerance_set):
+    # Create a dict with keys as id_pdc_itinerance and values as PDC id
+    # for existing PDCs
+    db_pdcs = dict(
+        db_session.exec(
+            select(PointDeCharge.id_pdc_itinerance, PointDeCharge.id).filter(
+                cast(SAColumn, PointDeCharge.id_pdc_itinerance).in_(ids_pdc_itinerance)
+            )
+        ).all()
+    )
+
+    if len(db_pdcs) != len(ids_pdc_itinerance):
         raise HTTPException(
             status_code=fa_status.HTTP_404_NOT_FOUND,
             detail=(
@@ -445,15 +442,11 @@ async def create_session_bulk(
             ),
         )
 
-    # Prepare statuses PDC index
-    db_pdc_ids = [pdc.id_pdc_itinerance for pdc in db_pdcs]
-    pdc_indexes = [db_pdc_ids.index(id_) for id_ in ids_pdc_itinerance]
-
     # Create all statuses
     db_qc_sessions = []
-    for session, pdc_index in zip(sessions, pdc_indexes, strict=True):
+    for session in sessions:
         db_qc_session = QCSession(**session.model_dump(exclude={"id_pdc_itinerance"}))
-        db_qc_session.point_de_charge_id = db_pdcs[pdc_index].id
+        db_qc_session.point_de_charge_id = db_pdcs[session.id_pdc_itinerance]
         db_qc_sessions.append(db_qc_session)
     db_session.add_all(db_qc_sessions)
     db_session.commit()
