@@ -19,6 +19,7 @@ from jwt.exceptions import (
     InvalidTokenError,
 )
 from pydantic import AnyHttpUrl
+from sqlalchemy.orm import joinedload
 from sqlmodel import Session as SMSession
 from sqlmodel import select
 
@@ -31,7 +32,7 @@ from ..exceptions import (
     PermissionDenied,
 )
 from .models import IDToken
-from .schemas import User
+from .schemas import Group, User
 
 # API auth logger
 logger = logging.getLogger(__name__)
@@ -157,7 +158,15 @@ def get_user(
 ) -> User:
     """Get request user."""
     # Get registered user
-    user = session.exec(select(User).where(User.email == token.email)).one_or_none()
+    user = (
+        session.exec(
+            select(User)
+            .options(joinedload(User.groups).joinedload(Group.operational_units))  # type: ignore[arg-type]
+            .where(User.email == token.email)
+        )
+        .unique()
+        .one_or_none()
+    )
 
     # User does not exist: raise an error
     if user is None:
