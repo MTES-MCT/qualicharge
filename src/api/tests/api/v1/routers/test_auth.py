@@ -8,9 +8,10 @@ from fastapi import status
 
 from qualicharge.auth.factories import IDTokenFactory
 from qualicharge.auth.models import IDToken, UserCreate, UserRead
-from qualicharge.auth.oidc import discover_provider, get_public_keys
+from qualicharge.auth.oidc import discover_provider, get_public_keys, get_user_from_db
 from qualicharge.auth.schemas import User
 from qualicharge.conf import settings
+from qualicharge.db import SAQueryCounter
 
 
 def setup_function():
@@ -49,6 +50,42 @@ def test_whoami_auth(client_auth):
     assert user.is_active is True
     assert user.is_superuser is True
     assert user.is_staff is True
+
+
+@pytest.mark.parametrize(
+    "client_auth",
+    ((True, {"email": "jane@doe.com", "username": "jdoe"}),),
+    indirect=True,
+)
+def test_whoami_auth_get_user_cache(client_auth, db_session):
+    """Test the get_user cache on the whoami endpoint."""
+    cache_info = get_user_from_db.cache_info()
+    assert cache_info.hits == 0
+    assert cache_info.currsize == 0
+
+    with SAQueryCounter(db_session.connection()) as counter:
+        response = client_auth.get("/auth/whoami")
+    expected = 2
+    assert counter.count == expected
+    assert response.status_code == status.HTTP_200_OK
+    cache_info = get_user_from_db.cache_info()
+    assert cache_info.hits == 0
+    assert cache_info.currsize == 1
+
+    user = UserRead(**response.json())
+    assert user.email == "jane@doe.com"
+
+    # Now we should be using cache 10 times
+    for hit in range(1, 10):
+        with SAQueryCounter(db_session.connection()) as counter:
+            response = client_auth.get("/auth/whoami")
+        cache_info = get_user_from_db.cache_info()
+        assert counter.count == 0
+        assert cache_info.hits == hit
+        assert cache_info.currsize == 1
+        assert response.status_code == status.HTTP_200_OK
+        user = UserRead(**response.json())
+        assert user.email == "jane@doe.com"
 
 
 def test_whoami_expired_signature(

@@ -4,7 +4,7 @@
 
 from qualicharge.auth.factories import IDTokenFactory
 
-from .fixtures.app import client, client_auth
+from .fixtures.app import clear_lru_cache, client, client_auth
 from .fixtures.cli import runner
 from .fixtures.db import (
     db_engine,

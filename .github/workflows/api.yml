@@ -365,6 +365,7 @@ jobs:
           QUALICHARGE_DB_HOST: localhost
           QUALICHARGE_DB_NAME: test-qualicharge-api
           QUALICHARGE_TEST_DB_NAME: test-qualicharge-api
+          QUALICHARGE_API_GET_USER_CACHE_INFO: true
           # Speed up tests
           QUALICHARGE_API_STATIQUE_BULK_CREATE_MAX_SIZE: 10
           QUALICHARGE_API_STATUS_BULK_CREATE_MAX_SIZE: 10

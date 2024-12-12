@@ -17,6 +17,8 @@ and this project adheres to
 
 - Prefetch user-related groups and operational units in `get_user` dependency
 - Improve bulk endpoints permissions checking
+- Cache logged user object for `API_GET_USER_CACHE_TTL` seconds to decrease the
+  number of database queries
 
 ## [0.16.0] - 2024-12-12
 

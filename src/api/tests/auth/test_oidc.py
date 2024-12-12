@@ -15,6 +15,7 @@ from qualicharge.auth.oidc import (
     get_public_keys,
     get_token,
     get_user,
+    get_user_from_db,
 )
 from qualicharge.auth.schemas import GroupOperationalUnit, ScopesEnum
 from qualicharge.conf import settings
@@ -337,6 +338,71 @@ def test_get_user_number_of_queries(id_token_factory: IDTokenFactory, db_session
             session=db_session,
         )
     assert counter.count == 1
+
+    # When getting groups...
+    with SAQueryCounter(db_session.connection()) as counter:
+        assert {g.id for g in user.groups} == {g.id for g in groups}
+    assert counter.count == 0
+
+    # ... and related operational units
+    with SAQueryCounter(db_session.connection()) as counter:
+        assert {ou.id for g in user.groups for ou in g.operational_units} == {
+            ou.id for ou in operational_units
+        }
+    assert counter.count == 0
+
+
+def test_get_user_cache(id_token_factory: IDTokenFactory, db_session):
+    """Test the OIDC get user utility number of queries for a standard user."""
+    UserFactory.__session__ = db_session
+    GroupFactory.__session__ = db_session
+
+    token = id_token_factory.build()
+
+    # Create groups linked to Operational Units
+    groups = GroupFactory.create_batch_sync(3)
+    operational_units = db_session.exec(select(OperationalUnit).limit(3)).all()
+    for group, operational_unit in zip(groups, operational_units, strict=True):
+        db_session.add(
+            GroupOperationalUnit(
+                group_id=group.id, operational_unit_id=operational_unit.id
+            )
+        )
+
+    # Create user linked to this groups and related operational units
+    user = UserFactory.create_sync(
+        email=token.email,
+        is_superuser=False,
+        is_active=True,
+        groups=groups,
+        scopes=[ScopesEnum.ALL_CREATE],
+    )
+    security_scopes = SecurityScopes(scopes=[ScopesEnum.ALL_CREATE])
+
+    # Test the original number of queries
+    with SAQueryCounter(db_session.connection()) as counter:
+        user = get_user(
+            security_scopes=security_scopes,
+            token=token,
+            session=db_session,
+        )
+    cache_info = get_user_from_db.cache_info()  # type: ignore[attr-defined]
+    assert counter.count == 1
+    assert cache_info.hits == 0
+    assert cache_info.currsize == 1
+
+    # User should be cached, we should not hit the database
+    for hit in range(1, 10):
+        with SAQueryCounter(db_session.connection()) as counter:
+            user = get_user(
+                security_scopes=security_scopes,
+                token=token,
+                session=db_session,
+            )
+        cache_info = get_user_from_db.cache_info()  # type: ignore[attr-defined]
+        assert counter.count == 0
+        assert cache_info.hits == hit
+        assert cache_info.currsize == 1
 
     # When getting groups...
     with SAQueryCounter(db_session.connection()) as counter:
