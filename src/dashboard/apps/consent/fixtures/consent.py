@@ -29,11 +29,11 @@ def seed_consent():
     entity4 = EntityFactory(users=(user5,))
 
     # create delivery points
-    for i in range(1, 4):
-        DeliveryPointFactory(provider_assigned_id=f"entity1_{i}", entity=entity1)
-        DeliveryPointFactory(provider_assigned_id=f"entity2_{i}", entity=entity2)
-        DeliveryPointFactory(provider_assigned_id=f"entity3_{i}", entity=entity3)
-        DeliveryPointFactory(provider_assigned_id=f"entity4_{i}", entity=entity4)
+    for _ in range(1, 4):
+        DeliveryPointFactory(entity=entity1)
+        DeliveryPointFactory(entity=entity2)
+        DeliveryPointFactory(entity=entity3)
+        DeliveryPointFactory(entity=entity4)
 
     # create awaiting consents
     for delivery_point in DeliveryPoint.objects.all():

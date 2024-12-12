@@ -3,85 +3,87 @@
 {% load i18n static %}
 
 {% block dashboard_content %}
-  <h2>
-    {% trans "Manage consents" %}
-  </h2>
+<h2>{% trans "Manage consents" %}</h2>
 
-  {% if entities %}
-    <form action="" method="post">
-      {% csrf_token %}
-
+{% if entities %}
+  <form action="" method="post">
+    {% csrf_token %}
+    
+    <div class="fr-messages-group" id="error-messages" aria-live="assertive">
+      {% if form.errors %}          
+        <div class="{% if form.consent_agreed.errors %}fr-pl-3v{% endif %} fr-mb-6v">
+        <p class="fr-message fr-message--error" id="message-error">
+          {% trans "The form contains errors" %}
+        </p>          
+        </div>
+      {% endif %}
+    </div>   
+  
       {# toggle button #}
       <div class="fr-fieldset__element">
         <div class="fr-checkbox-group">
-          <input type="checkbox"
-                 id="toggle-all"
-                 name="toggle-all"
-                 aria-describedby="toggle-all-messages"
-                 data-fr-js-checkbox-input="true"
+          <input type="checkbox" id="toggle-all" name="toggle-all" 
+                 aria-describedby="toggle-all-messages" 
+                 data-fr-js-checkbox-input="true" 
                  data-fr-js-checkbox-actionee="true">
-          <label class="fr-label" for="toggle-all">
-            <strong>{% trans "Toggle All" %}</strong>
-          </label>
+          <label class="fr-label" for="toggle-all"><strong>{% trans "Toggle All" %}</strong></label>
         </div>
       </div>
 
       <div class="consent-wrapper fr-py-6v fr-mb-6v">
         <div class="consent-wrapper__inner">
           {% for entity in entities %}
-            <fieldset class="fr-fieldset"
-                      id="checkboxes"
-                      aria-labelledby="checkboxes-legend checkboxes-messages">
-              <legend class="fr-fieldset__legend--regular fr-fieldset__legend"
-                      id="checkboxes-legend">
-                {{ entity.name }}
-              </legend>
+          <fieldset class="fr-fieldset" id="checkboxes" aria-labelledby="checkboxes-legend checkboxes-messages">
+            <legend class="fr-fieldset__legend--regular fr-fieldset__legend" id="checkboxes-legend">{{ entity.name }}</legend>
 
-              {% for consent in entity.get_consents %}
-                <div class="fr-fieldset__element">
-                  <div class="fr-checkbox-group">
-                    <input type="checkbox"
-                           name="status"
-                           value="{{ consent.id }}"
-                           id="{{ consent.id }}"
-                           {% if consent.status == 'VALIDATED' %} checked{% endif %}
-                           aria-describedby="{{ consent.id }}-messages"
-                           data-fr-js-checkbox-input="true"
-                           data-fr-js-checkbox-actionee="true" />
-                    <label class="fr-label" for="{{ consent.id }}">
-                      {{ consent.delivery_point.provider_assigned_id }}
-                    </label>
-                    <div class="fr-messages-group"
-                         id="{{ consent.id }}-messages"
-                         aria-live="assertive">
-                    </div>
-                  </div>
-                </div>
-              {% endfor %}
-
-              <div class="fr-messages-group"
-                   id="checkboxes-messages"
-                   aria-live="assertive">
-                {{ field.errors }}
+            {% for consent in entity.get_consents %}
+            <div class="fr-fieldset__element">
+              <div class="fr-checkbox-group">
+                <input type="checkbox"
+                       name="status"
+                       value="{{ consent.id }}"
+                       id="{{ consent.id }}"
+                       {% if consent.status == 'VALIDATED' %} checked{% endif %}
+                       aria-describedby="{{ consent.id }}-messages"
+                       data-fr-js-checkbox-input="true"
+                       data-fr-js-checkbox-actionee="true" />
+                <label class="fr-label" for="{{ consent.id }}">{{ consent.delivery_point.provider_assigned_id }} </label>
+                <div class="fr-messages-group" id="{{ consent.id }}-messages" aria-live="assertive"></div>
               </div>
-            </fieldset>
+            </div>
+            {% endfor %}
+
+          </fieldset>
           {% endfor %}
         </div>
       </div>
-      <button class="fr-btn" type="submit" name="submit">
-        {% trans "submit" %}
-      </button>
-    </form>
 
+      {# checkbox to apply the consent globally #}      
+      <div class="{% if form.consent_agreed.errors %}fr-pl-3v{% endif %} fr-mb-6v">
+        <div class="fr-checkbox-group {% if form.consent_agreed.errors %}fr-checkbox-group--error{% endif %}">
+          {{ form.consent_agreed }}          
+          <div class="fr-messages-group" id="{{ consent.id }}-messages" aria-live="assertive">
+              {% if form.consent_agreed.errors %}
+                {% for error in form.consent_agreed.errors %}
+                <p class="fr-message fr-message--error" id="checkboxes-error-message-error">
+                {{ error }}
+                </p>
+                {% endfor %}
+              {% endif %}
+          </div>          
+        </div>
+      </div>
+
+      <button class="fr-btn" type="submit" name="submit"> {% trans "submit" %} </button>
+  </form>
+  
   {% else %}
-    <p>
-      {% trans "No consents to validate" %}
-    </p>
+    <p>{% trans "No consents to validate" %}</p>
   {% endif %}
 {% endblock dashboard_content %}
 
 {% block dashboard_extra_js %}
   {% if entities %}
-    <script src="{% static 'apps/consent/js/app.js' %}"></script>
+  <script src="{% static 'apps/consent/js/app.js' %}"></script>
   {% endif %}
 {% endblock dashboard_extra_js %}

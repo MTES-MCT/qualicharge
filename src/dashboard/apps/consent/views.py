@@ -2,102 +2,110 @@
 
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied
-from django.db.models import TextField
-from django.db.models.functions import Cast
-from django.shortcuts import get_object_or_404, redirect, render
+from django.db.models import Q
+from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy as reverse
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
-from django.views.generic import TemplateView
+from django.views.generic import FormView, TemplateView
 
 from apps.core.models import Entity
 
+from ..auth.models import DashboardUser
 from . import AWAITING, VALIDATED
+from .forms import ConsentForm
+from .mixins import BreadcrumbContextMixin
 from .models import Consent
 
 
-class IndexView(TemplateView):
+class IndexView(BreadcrumbContextMixin, TemplateView):
     """Index view of the consent app."""
 
     template_name = "consent/index.html"
+    breadcrumb_current = _("Consent")
 
-    def get_context_data(self, **kwargs):
-        """Add custom context to the view."""
+    def get_context_data(self, **kwargs):  # noqa: D102
         context = super().get_context_data(**kwargs)
         context["entities"] = self.request.user.get_entities()
 
-        context["breadcrumb_data"] = {
-            "current": _("Consent"),
-        }
         return context
 
 
-def consent_form_view(request, slug=None):
-    """Manage consent forms.
+class ConsentFormView(BreadcrumbContextMixin, FormView):
+    """Updates the status of consents."""
 
-    This function performs the following actions:
-    - Retrieves the entity associated with the given slug, if provided.
-    - Fetches consents awaiting validation for the current user and the specified
-    entity.
-    - If a POST request is received, updates the consent status to either VALIDATED
-    or AWAITING based on user selections and existing data.
-    """
     template_name = "consent/manage.html"
+    form_class = ConsentForm
 
-    entities = []
-    if slug:
-        entity = get_object_or_404(Entity, slug=slug)
-        if not request.user.can_validate_entity(entity):
-            raise PermissionDenied
-        entities.append(entity)
-    else:
-        entities = request.user.get_entities()
+    breadcrumb_links = [
+        {"url": reverse("consent:index"), "title": _("Consent")},
+    ]
+    breadcrumb_current = _("Manage Consents")
 
-    if request.POST:
-        selected_ids = request.POST.getlist("status")
-        update_consent_status(request.user, entities, selected_ids)
+    def form_valid(self, form):
+        """Update the consent status.
 
-        messages.success(request, _("Consents updated."))
+        Bulk update of the consent status:
+        - validated consents are set to VALIDATED
+        - infers AWAITING consents by comparing initial consents
+        and user VALIDATED consents, and sets them to waiting.
+        """
+        selected_ids: list[str] = self.request.POST.getlist("status")
+
+        self._bulk_update_consent(selected_ids, VALIDATED)  # type: ignore
+        awaiting_ids = self._get_awaiting_ids(selected_ids)
+        self._bulk_update_consent(awaiting_ids, AWAITING)  # type: ignore
+
+        messages.success(self.request, _("Consents updated."))
+
         return redirect(reverse("consent:index"))
 
-    breadcrumb_data = {
-        "links": [
-            {"url": reverse("consent:index"), "title": _("Consent")},
-        ],
-        "current": _("Manage Consents"),
-    }
+    def get_context_data(self, **kwargs):
+        """Add the user's entities to the context.
 
-    return render(
-        request=request,
-        template_name=template_name,
-        context={"entities": entities, "breadcrumb_data": breadcrumb_data},
-    )
+        Adds to the context the entities that the user has permission to access.
+        If a slug is provided, adds the entity corresponding to the slug.
+        """
+        context = super().get_context_data(**kwargs)
+        context["entities"] = self._get_entities()
+        return context
 
+    def _get_entities(self) -> list:
+        """Return a list of entities or specific entity if slug is provided."""
+        slug: str | None = self.kwargs.get("slug", None)
+        user: DashboardUser = self.request.user  # type: ignore
 
-def update_consent_status(user, entities, selected_ids):
-    """Updates the status of consents.."""
+        if slug:
+            entity: Entity = get_object_or_404(Entity, slug=slug)
+            if not user.can_validate_entity(entity):
+                raise PermissionDenied
+            return [entity]
+        else:
+            return list(user.get_entities())
 
-    def _bulk_update_consent(ids: list[str], status: str):
+    def _bulk_update_consent(self, ids: list[str], status: str) -> int:
         """Bulk update of the consent status for a given status and list of entities."""
-        Consent.objects.filter(id__in=ids).update(
-            status=status,
-            created_by=user,
-            updated_at=timezone.now(),
+        return (
+            Consent.objects.filter(id__in=ids)
+            .filter(
+                Q(delivery_point__entity__users=self.request.user)
+                | Q(delivery_point__entity__proxies__users=self.request.user)
+            )
+            .update(
+                status=status,
+                created_by=self.request.user,
+                updated_at=timezone.now(),
+            )
         )
 
-    def _get_awaiting_ids(entities, ids):
-        """Get the a list of the non selected ids (awaiting ids)."""
-        base_ids = []
-        for entity in entities:
-            base_ids.extend(
-                list(
-                    entity.get_consents()
-                    .annotate(str_id=Cast("id", output_field=TextField()))
-                    .values_list("str_id", flat=True)
-                )
-            )
-        return list(set(base_ids) - set(ids))
+    def _get_awaiting_ids(self, validated_ids: list[str]) -> list[str]:
+        """Get the list of the non-selected IDs (awaiting IDs)."""
+        if any(not isinstance(item, str) for item in validated_ids):
+            raise ValueError("validated_ids must be a list of strings")
 
-    _bulk_update_consent(selected_ids, VALIDATED)
-    awaiting_ids = _get_awaiting_ids(entities, selected_ids)
-    _bulk_update_consent(awaiting_ids, AWAITING)
+        return [
+            str(c.id)
+            for e in self._get_entities()
+            for c in e.get_consents()
+            if str(c.id) not in validated_ids
+        ]
