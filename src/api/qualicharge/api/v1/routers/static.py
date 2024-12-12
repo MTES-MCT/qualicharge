@@ -39,6 +39,7 @@ from qualicharge.models.static import Statique
 from qualicharge.schemas.core import OperationalUnit, PointDeCharge, Station
 from qualicharge.schemas.sql import StatiqueImporter
 from qualicharge.schemas.utils import (
+    are_pdcs_allowed_for_user,
     build_statique,
     is_pdc_allowed_for_user,
     list_statique,
@@ -277,11 +278,10 @@ async def bulk(
     session: Session = Depends(get_session),
 ) -> StatiqueItemsCreatedResponse:
     """Create a set of statique items."""
-    for statique in statiques:
-        if not is_pdc_allowed_for_user(statique.id_pdc_itinerance, user):
-            raise PermissionDenied(
-                "You cannot submit data for an organization you are not assigned to"
-            )
+    if not are_pdcs_allowed_for_user([s.id_pdc_itinerance for s in statiques], user):
+        raise PermissionDenied(
+            "You cannot submit data for an organization you are not assigned to"
+        )
 
     # Convert statiques to a Pandas DataFrame
     df = pd.read_json(

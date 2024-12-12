@@ -11,6 +11,7 @@ and this project adheres to
 ### Changed
 
 - Prefetch user-related groups and operational units in `get_user` dependency
+- Improve bulk endpoints permissions checking
 
 ## [0.16.0] - 2024-12-12
 
