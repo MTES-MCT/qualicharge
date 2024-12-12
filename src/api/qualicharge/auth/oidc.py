@@ -2,10 +2,12 @@
 
 import logging
 from functools import lru_cache
+from threading import Lock
 from typing import Annotated, Dict, Union
 
 import httpx
 import jwt
+from cachetools import TTLCache, cached
 from fastapi import Depends
 from fastapi.security import (
     HTTPAuthorizationCredentials,
@@ -148,6 +150,35 @@ def get_token(
     return IDToken(**decoded_token)
 
 
+@cached(
+    TTLCache(
+        maxsize=settings.API_GET_USER_CACHE_MAXSIZE,
+        ttl=settings.API_GET_USER_CACHE_TTL,
+    ),
+    lock=Lock(),
+    key=lambda email, session: email,
+    info=settings.API_GET_USER_CACHE_INFO,
+)
+def get_user_from_db(
+    email: str,
+    session: Annotated[
+        SMSession,
+        Depends(get_session),
+    ],
+):
+    """Fetch user and related objects from database."""
+    logging.debug(f"Getting user from database: {email}")
+    return (
+        session.exec(
+            select(User)
+            .options(joinedload(User.groups).joinedload(Group.operational_units))  # type: ignore[arg-type]
+            .where(User.email == email)
+        )
+        .unique()
+        .one_or_none()
+    )
+
+
 def get_user(
     security_scopes: SecurityScopes,
     token: Annotated[IDToken, Depends(get_token)],
@@ -157,16 +188,7 @@ def get_user(
     ],
 ) -> User:
     """Get request user."""
-    # Get registered user
-    user = (
-        session.exec(
-            select(User)
-            .options(joinedload(User.groups).joinedload(Group.operational_units))  # type: ignore[arg-type]
-            .where(User.email == token.email)
-        )
-        .unique()
-        .one_or_none()
-    )
+    user = get_user_from_db(email=token.email, session=session)
 
     # User does not exist: raise an error
     if user is None:

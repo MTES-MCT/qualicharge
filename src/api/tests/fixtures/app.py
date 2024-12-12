@@ -6,7 +6,7 @@ from sqlmodel import Session
 
 from qualicharge.api.v1 import app
 from qualicharge.auth.factories import GroupFactory, IDTokenFactory, UserFactory
-from qualicharge.auth.oidc import get_token
+from qualicharge.auth.oidc import get_token, get_user_from_db
 from qualicharge.auth.schemas import UserGroup
 
 
@@ -54,3 +54,16 @@ def client_auth(request, id_token_factory: IDTokenFactory, db_session: Session):
     )
     yield TestClient(app)
     app.dependency_overrides = {}
+
+
+@pytest.fixture(autouse=True)
+def clear_lru_cache():
+    """Taken from codeinthehole.
+
+    https://til.codeinthehole.com/posts/how-to-inspect-and-clear-pythons-functoolslrucache/
+    """
+    # Execute the test...
+    yield
+
+    # Clear the LRU cache.
+    get_user_from_db.cache_clear()

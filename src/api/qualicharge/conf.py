@@ -130,6 +130,9 @@ class Settings(BaseSettings):
     API_STATIQUE_PAGE_MAX_SIZE: int = 100
     API_STATIQUE_PAGE_SIZE: int = 10
     API_STATUS_BULK_CREATE_MAX_SIZE: int = 10
+    API_GET_USER_CACHE_MAXSIZE: int = 256
+    API_GET_USER_CACHE_TTL: int = 1800
+    API_GET_USER_CACHE_INFO: bool = False
 
     model_config = SettingsConfigDict(
         case_sensitive=True, env_nested_delimiter="__", env_prefix="QUALICHARGE_"
