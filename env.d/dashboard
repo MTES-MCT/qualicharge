@@ -1,9 +1,18 @@
 PORT=8000
+
+# django
+DASHBOARD_DEBUG=1
 DASHBOARD_ALLOWED_HOSTS=*
+DASHBOARD_SECRET_KEY=the_secret_key
+
+# database
 DASHBOARD_DB_NAME=qualicharge-dashboard
 DASHBOARD_DATABASE_URL=psql://qualicharge:pass@postgresql:5432/qualicharge-dashboard
-DASHBOARD_DEBUG=1
-DASHBOARD_SECRET_KEY=the_secret_key
+
+# tools
+DASHBOARD_SENTRY_DSN=
+
+# superuser
 DJANGO_SUPERUSER_PASSWORD=admin
 DJANGO_SUPERUSER_USERNAME=admin
 DJANGO_SUPERUSER_EMAIL=admin@example.com

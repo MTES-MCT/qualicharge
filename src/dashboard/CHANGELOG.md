@@ -19,6 +19,7 @@ and this project adheres to
 - add dashboard homepage
 - add consent form to manage consents of one or many entities 
 - integration of custom 403, 404 and 500 pages 
+- sentry integration
 
 [unreleased]: https://github.com/MTES-MCT/qualicharge/compare/main...bootstrap-dashboard-project
 
