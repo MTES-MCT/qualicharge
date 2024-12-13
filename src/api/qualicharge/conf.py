@@ -119,6 +119,7 @@ class Settings(BaseSettings):
     # Third-party integrations
     SENTRY_DSN: Optional[HttpUrl] = None
     SENTRY_TRACES_SAMPLE_RATE: float = 1.0
+    SENTRY_PROFILES_SAMPLE_RATE: float = 1.0
 
     # Misc
     EXECUTION_ENVIRONMENT: str
