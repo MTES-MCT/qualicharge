@@ -8,6 +8,11 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Added
+
+- Activate and configure Sentry profiling by setting the
+  `SENTRY_PROFILES_SAMPLE_RATE` configuration
+
 ### Changed
 
 - Prefetch user-related groups and operational units in `get_user` dependency
