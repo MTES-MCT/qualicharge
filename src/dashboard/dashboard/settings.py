@@ -9,12 +9,16 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
+import os
 from pathlib import Path
 
 import environ
 import sentry_sdk
 from django.utils.translation import gettext_lazy as _
 from sentry_sdk.integrations.django import DjangoIntegration
+
+# is pytest running
+TEST = os.environ.get("TEST", False)
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -169,3 +173,49 @@ sentry_sdk.init(
     # django.contrib.auth) you may enable sending PII data.
     send_default_pii=True,
 )
+
+# Debug-toolbar
+
+# Despite the `DEBUG` being set to `False`, for some tests,
+# pytest seems to consider `DEBUG` to be `True`.
+# So, if `pytest` is running, we don't activate `debug_toolbar`.
+if DEBUG and not TEST:
+    INTERNAL_IPS = ("localhost",)
+    INSTALLED_APPS += ("debug_toolbar",)
+
+    def show_toolbar(request):
+        """Force display of debug toolbar.
+
+        The default use `SHOW_TOOLBAR_CALLBACK` has no effect.
+        `SHOW_TOOLBAR_CALLBACK` checks if `DEBUG` is `True` and if the `IP` of the
+        request is in `INTERNAL_IPS` but without effect here.
+        (https://django-debug-toolbar.readthedocs.io/en/latest/configuration.html#debug-toolbar-config).
+        """
+        return True
+
+    DEBUG_TOOLBAR_CONFIG = {
+        "SHOW_TOOLBAR_CALLBACK": show_toolbar,
+        "INTERCEPT_REDIRECTS": False,
+    }
+
+    DEBUG_TOOLBAR_PANELS = (
+        "debug_toolbar.panels.history.HistoryPanel",
+        "debug_toolbar.panels.versions.VersionsPanel",
+        "debug_toolbar.panels.timer.TimerPanel",
+        "debug_toolbar.panels.settings.SettingsPanel",
+        "debug_toolbar.panels.headers.HeadersPanel",
+        "debug_toolbar.panels.request.RequestPanel",
+        "debug_toolbar.panels.sql.SQLPanel",
+        "debug_toolbar.panels.staticfiles.StaticFilesPanel",
+        "debug_toolbar.panels.templates.TemplatesPanel",
+        "debug_toolbar.panels.alerts.AlertsPanel",
+        "debug_toolbar.panels.cache.CachePanel",
+        "debug_toolbar.panels.signals.SignalsPanel",
+        "debug_toolbar.panels.redirects.RedirectsPanel",
+        "debug_toolbar.panels.profiling.ProfilingPanel",
+    )
+
+    MIDDLEWARE = [
+        "debug_toolbar.middleware.DebugToolbarMiddleware",
+        *MIDDLEWARE,
+    ]

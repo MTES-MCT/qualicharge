@@ -2,6 +2,7 @@
 
 set -eo pipefail
 
+declare TEST=true
 declare service=${SERVICE:-api}
 declare cmd
 declare DOCKER_USER
@@ -20,5 +21,6 @@ DOCKER_USER=${DOCKER_USER} \
   DOCKER_GID=${DOCKER_GID} \
   docker compose run --rm \
     -e QUALICHARGE_OIDC_IS_ENABLED=True \
+    -e TEST="${TEST}" \
     "${service}" \
     ${cmd} "$@"

@@ -67,6 +67,7 @@ jobs:
           POSTGRES_DB: test-qualicharge-dashboard
           POSTGRES_USER: qualicharge
           POSTGRES_PASSWORD: pass
+          TEST: true
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
