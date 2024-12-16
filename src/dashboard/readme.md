@@ -65,6 +65,13 @@ class HomeConfig(AppConfig):
     label = "qcd_home"  # prefix app name with 'qcd_'
 ```
 
+## Signals
+
+### apps.consent.signals.handle_new_delivery_point()
+There is a signal on the creation of a `delivery point` (`apps.core.models.DeliveryPoint`). 
+This signal allows the creation of a `consent` (`apps.consent.models.Consent`) 
+corresponding to the `delivery_point`.
+
 ## License
 
 This work is released under the MIT License (see LICENSE).

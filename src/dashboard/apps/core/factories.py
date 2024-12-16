@@ -14,6 +14,7 @@ class EntityFactory(factory.django.DjangoModelFactory):
 
     class Meta:  # noqa: D106
         model = Entity
+        skip_postgeneration_save = True
 
     @factory.post_generation
     def users(self, create, extracted, **kwargs):

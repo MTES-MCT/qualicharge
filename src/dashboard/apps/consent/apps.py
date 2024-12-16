@@ -11,3 +11,7 @@ class ConsentConfig(AppConfig):
     name = "apps.consent"
     label = "qcd_consent"
     verbose_name = _("Consent")
+
+    def ready(self):
+        """Register signals."""
+        from .signals import handle_new_delivery_point  # noqa: F401
