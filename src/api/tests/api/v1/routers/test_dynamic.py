@@ -15,6 +15,7 @@ from sqlmodel import select
 from qualicharge.auth.factories import GroupFactory
 from qualicharge.auth.schemas import GroupOperationalUnit, ScopesEnum, User
 from qualicharge.conf import settings
+from qualicharge.db import SAQueryCounter
 from qualicharge.factories.dynamic import (
     SessionCreateFactory,
     StatusCreateFactory,
@@ -763,6 +764,30 @@ def test_create_status_for_superuser(db_session, client_auth):
     assert response.json() == {"id": str(db_status.id)}
 
 
+def test_create_status_number_of_queries(db_session, client_auth):
+    """Test the /status/ create endpoint number of db queries."""
+    id_pdc_itinerance = "FR911E1111ER1"
+    qc_status = StatusCreateFactory.build(id_pdc_itinerance=id_pdc_itinerance)
+
+    # Create point of charge
+    save_statique(
+        db_session, StatiqueFactory.build(id_pdc_itinerance=id_pdc_itinerance)
+    )
+
+    # Create a new status
+    with SAQueryCounter(db_session.connection()) as counter:
+        response = client_auth.post(
+            "/dynamique/status/", json=json.loads(qc_status.model_dump_json())
+        )
+    assert response.status_code == status.HTTP_201_CREATED
+    # We expect 3 database requests:
+    #   1. select request user
+    #   2. select point of charge
+    #   3. insert status
+    expected = 3
+    assert counter.count == expected
+
+
 @pytest.mark.parametrize(
     "client_auth",
     (
@@ -936,6 +961,37 @@ def test_create_status_bulk_for_superuser(db_session, client_auth):
         )
         assert db_status.etat_prise_type_chademo == qc_status.etat_prise_type_chademo
         assert db_status.etat_prise_type_ef == qc_status.etat_prise_type_ef
+
+
+def test_create_status_bulk_number_of_queries(db_session, client_auth):
+    """Test the /status/bulk create endpoint number of db queries."""
+    qc_statuses = StatusCreateFactory.batch(3)
+
+    # Create points of charge
+    save_statiques(
+        db_session,
+        [
+            StatiqueFactory.build(id_pdc_itinerance=s.id_pdc_itinerance)
+            for s in qc_statuses
+        ],
+    )
+
+    # Assert no status exist
+    assert db_session.exec(select(func.count(Status.id))).one() == 0
+
+    # We expect the same answer as one point of charge does not exist
+    with SAQueryCounter(db_session.connection()) as counter:
+        response = client_auth.post(
+            "/dynamique/status/bulk",
+            json=[json.loads(s.model_dump_json()) for s in qc_statuses],
+        )
+    assert response.status_code == status.HTTP_201_CREATED
+    # We expect 3 database requests:
+    #   1. select request user
+    #   2. select points of charge
+    #   3. insert statuses
+    expected = 3
+    assert counter.count == expected
 
 
 @pytest.mark.parametrize(
@@ -1178,6 +1234,30 @@ def test_create_session_for_superuser(db_session, client_auth):
     assert response.json() == {"id": str(db_qc_session.id)}
 
 
+def test_create_session_number_of_queries(db_session, client_auth):
+    """Test the /session/ create endpoint number of db queries."""
+    id_pdc_itinerance = "FR911E1111ER1"
+    qc_session = SessionCreateFactory.build(id_pdc_itinerance=id_pdc_itinerance)
+
+    # Create point of charge
+    save_statique(
+        db_session, StatiqueFactory.build(id_pdc_itinerance=id_pdc_itinerance)
+    )
+
+    # Create a new status
+    with SAQueryCounter(db_session.connection()) as counter:
+        response = client_auth.post(
+            "/dynamique/session/", json=json.loads(qc_session.model_dump_json())
+        )
+    assert response.status_code == status.HTTP_201_CREATED
+    # We expect 3 database requests:
+    #   1. select request user
+    #   2. select point of charge
+    #   3. insert session
+    expected = 3
+    assert counter.count == expected
+
+
 @pytest.mark.parametrize(
     "client_auth",
     (
@@ -1346,6 +1426,37 @@ def test_create_session_bulk_for_superuser(db_session, client_auth):
         assert db_qc_session.start == qc_session.start.astimezone()
         assert db_qc_session.end == qc_session.end.astimezone()
         assert db_qc_session.energy == qc_session.energy
+
+
+def test_create_session_bulk_number_of_queries(db_session, client_auth):
+    """Test the /session/bulk create endpoint number of db queries."""
+    qc_sessions = SessionCreateFactory.batch(3)
+
+    # Create points of charge
+    save_statiques(
+        db_session,
+        [
+            StatiqueFactory.build(id_pdc_itinerance=s.id_pdc_itinerance)
+            for s in qc_sessions
+        ],
+    )
+
+    # Assert no session exist
+    assert db_session.exec(select(func.count(Session.id))).one() == 0
+
+    # We expect the same answer as one point of charge does not exist
+    with SAQueryCounter(db_session.connection()) as counter:
+        response = client_auth.post(
+            "/dynamique/session/bulk",
+            json=[json.loads(s.model_dump_json()) for s in qc_sessions],
+        )
+    assert response.status_code == status.HTTP_201_CREATED
+    # We expect 3 database requests:
+    #   1. select request user
+    #   2. select points of charge
+    #   3. insert sessions
+    expected = 3
+    assert counter.count == expected
 
 
 @pytest.mark.parametrize(

@@ -324,11 +324,13 @@ async def create_status(
             detail="Attached point of charge does not exist",
         )
     db_status = Status(**status.model_dump(exclude={"id_pdc_itinerance"}))
+    # Store status id so that we do not need to perform another request
+    db_status_id = db_status.id
     db_status.point_de_charge_id = pdc_id
     session.add(db_status)
     session.commit()
 
-    return DynamiqueItemCreatedResponse(id=db_status.id)
+    return DynamiqueItemCreatedResponse(id=db_status_id)
 
 
 @router.post("/status/bulk", status_code=fa_status.HTTP_201_CREATED, tags=["Status"])
@@ -365,16 +367,18 @@ async def create_status_bulk(
 
     # Create all statuses
     db_statuses = []
+    db_status_ids = []
     for status in statuses:
         db_status = Status(**status.model_dump(exclude={"id_pdc_itinerance"}))
+        db_status_ids.append(db_status.id)
         db_status.point_de_charge_id = db_pdcs[status.id_pdc_itinerance]
         db_statuses.append(db_status)
     session.add_all(db_statuses)
     session.commit()
 
     return DynamiqueItemsCreatedResponse(
-        size=len(db_statuses),
-        items=[s.id for s in db_statuses],
+        size=len(db_status_ids),
+        items=db_status_ids,
     )
 
 
@@ -403,11 +407,13 @@ async def create_session(
             detail="Attached point of charge does not exist",
         )
     db_qc_session = QCSession(**session.model_dump(exclude={"id_pdc_itinerance"}))
+    # Store session id so that we do not need to perform another request
+    db_qc_session_id = db_qc_session.id
     db_qc_session.point_de_charge_id = pdc_id
     db_session.add(db_qc_session)
     db_session.commit()
 
-    return DynamiqueItemCreatedResponse(id=db_qc_session.id)
+    return DynamiqueItemCreatedResponse(id=db_qc_session_id)
 
 
 @router.post("/session/bulk", status_code=fa_status.HTTP_201_CREATED, tags=["Session"])
@@ -444,14 +450,16 @@ async def create_session_bulk(
 
     # Create all statuses
     db_qc_sessions = []
+    db_qc_session_ids = []
     for session in sessions:
         db_qc_session = QCSession(**session.model_dump(exclude={"id_pdc_itinerance"}))
+        db_qc_session_ids.append(db_qc_session.id)
         db_qc_session.point_de_charge_id = db_pdcs[session.id_pdc_itinerance]
         db_qc_sessions.append(db_qc_session)
     db_session.add_all(db_qc_sessions)
     db_session.commit()
 
     return DynamiqueItemsCreatedResponse(
-        size=len(db_qc_sessions),
-        items=[s.id for s in db_qc_sessions],
+        size=len(db_qc_session_ids),
+        items=db_qc_session_ids,
     )
