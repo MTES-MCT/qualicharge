@@ -22,6 +22,7 @@ and this project adheres to
 - CLI: sort groups and operational units alphabetically in the `list-groups`
   command
 - Decrease the number of database queries for dynamic endpoints
+- Cache the "get PointDeCharge id from its `id_pdc_itinerance`" database query
 
 ## [0.16.0] - 2024-12-12
 

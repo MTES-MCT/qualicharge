@@ -7,11 +7,12 @@ from typing import cast
 from urllib.parse import quote_plus
 
 import pytest
-from fastapi import status
+from fastapi import HTTPException, status
 from sqlalchemy import func
 from sqlalchemy.schema import Column as SAColumn
 from sqlmodel import select
 
+from qualicharge.api.v1.routers.dynamic import get_pdc_id
 from qualicharge.auth.factories import GroupFactory
 from qualicharge.auth.schemas import GroupOperationalUnit, ScopesEnum, User
 from qualicharge.conf import settings
@@ -35,6 +36,52 @@ from qualicharge.schemas.core import (
     Status,
 )
 from qualicharge.schemas.utils import save_statique, save_statiques
+
+
+def test_get_pdc_id(db_session):
+    """Test the get_pdc_id utility."""
+    id_pdc_itinerance = "FRALLE0123456"
+    with pytest.raises(HTTPException, match="Point of charge does not exist"):
+        get_pdc_id(id_pdc_itinerance, db_session)
+
+    n_pdc = 4
+    save_statiques(db_session, StatiqueFactory.batch(n_pdc))
+    pdcs = db_session.exec(select(PointDeCharge)).all()
+    assert len(pdcs) == n_pdc
+
+    for pdc in pdcs:
+        assert pdc.id == get_pdc_id(pdc.id_pdc_itinerance, db_session)
+
+
+def test_get_pdc_id_cache(db_session):
+    """Test the get_pdc_id utility cache."""
+    n_pdc = 4
+    save_statiques(db_session, StatiqueFactory.batch(n_pdc))
+    pdcs = db_session.exec(select(PointDeCharge)).all()
+    assert len(pdcs) == n_pdc
+
+    hits_by_pdc = 9
+    for pdc_index in range(n_pdc):
+        pdc = pdcs[pdc_index]
+
+        # First call: feed the cache
+        with SAQueryCounter(db_session.connection()) as counter:
+            pdc_id = get_pdc_id(pdc.id_pdc_itinerance, db_session)
+        assert pdc_id == pdc.id
+        cache_info = get_pdc_id.cache_info()  # type: ignore[attr-defined]
+        assert counter.count == 1
+        assert cache_info.hits == pdc_index * hits_by_pdc
+        assert cache_info.currsize == pdc_index + 1
+
+        # Test cached entry
+        for hit in range(1, hits_by_pdc + 1):
+            with SAQueryCounter(db_session.connection()) as counter:
+                pdc_id = get_pdc_id(pdc.id_pdc_itinerance, db_session)
+            assert pdc_id == pdc.id
+            cache_info = get_pdc_id.cache_info()  # type: ignore[attr-defined]
+            assert counter.count == 0
+            assert cache_info.hits == (pdc_index * hits_by_pdc) + hit
+            assert cache_info.currsize == pdc_index + 1
 
 
 @pytest.mark.parametrize(
@@ -331,7 +378,7 @@ def test_read_status_for_non_existing_point_of_charge(client_auth):
     """Test the /status/{id_pdc_itinerance} endpoint for unknown point of charge."""
     response = client_auth.get("/dynamique/status/FR911E1111ER1")
     assert response.status_code == status.HTTP_404_NOT_FOUND
-    assert response.json() == {"detail": "Selected point of charge does not exist"}
+    assert response.json() == {"detail": "Point of charge does not exist"}
 
 
 def test_read_status_for_non_existing_status(db_session, client_auth):
@@ -420,6 +467,50 @@ def test_read_status_for_superuser(db_session, client_auth):
     assert expected_status.etat_prise_type_ef == response_status.etat_prise_type_ef
 
 
+def test_read_status_get_pdc_id_cache(db_session, client_auth):
+    """Test the /status/{id_pdc_itinerance} endpoint's get_pdc_id cache usage."""
+    StatusFactory.__session__ = db_session
+
+    # Create the PointDeCharge
+    id_pdc_itinerance = "FR911E1111ER1"
+    save_statique(
+        db_session, StatiqueFactory.build(id_pdc_itinerance=id_pdc_itinerance)
+    )
+    pdc = db_session.exec(
+        select(PointDeCharge).where(
+            PointDeCharge.id_pdc_itinerance == id_pdc_itinerance
+        )
+    ).one()
+
+    # Create 20 attached statuses
+    n_statuses = 20
+    StatusFactory.create_batch_sync(n_statuses, point_de_charge_id=pdc.id)
+
+    # Count queries while getting the latest status
+    with SAQueryCounter(db_session.connection()) as counter:
+        client_auth.get(f"/dynamique/status/{id_pdc_itinerance}")
+    cache_info = get_pdc_id.cache_info()  # type: ignore[attr-defined]
+    assert cache_info.hits == 0
+    assert cache_info.currsize == 1
+    # We expect the following db request:
+    #   1. User authentication
+    #   2. get_user injection
+    #   3. get_pdc_id
+    #   4. latest db status (sub) queries
+    #   5. get_pdc_id
+    expected = 5
+    assert counter.count == expected
+
+    for hit in range(1, 10):
+        # Count queries while getting the latest status
+        with SAQueryCounter(db_session.connection()) as counter:
+            client_auth.get(f"/dynamique/status/{id_pdc_itinerance}")
+        cache_info = get_pdc_id.cache_info()  # type: ignore[attr-defined]
+        assert cache_info.hits == hit
+        assert cache_info.currsize == 1
+        assert counter.count == 1
+
+
 @pytest.mark.parametrize(
     "client_auth",
     (
@@ -489,7 +580,7 @@ def test_read_status_history_for_non_existing_point_of_charge(client_auth):
     """Test the /status/{id_pdc_itinerance}/history endpoint for unknown PDC."""
     response = client_auth.get("/dynamique/status/FR911E1111ER1/history")
     assert response.status_code == status.HTTP_404_NOT_FOUND
-    assert response.json() == {"detail": "Selected point of charge does not exist"}
+    assert response.json() == {"detail": "Point of charge does not exist"}
 
 
 def test_read_status_history_for_non_existing_status(db_session, client_auth):
@@ -709,7 +800,7 @@ def test_create_status_for_non_existing_point_of_charge(client_auth):
         "/dynamique/status/", json=json.loads(qc_status.model_dump_json())
     )
     assert response.status_code == status.HTTP_404_NOT_FOUND
-    assert response.json() == {"detail": "Attached point of charge does not exist"}
+    assert response.json() == {"detail": "Point of charge does not exist"}
 
 
 @pytest.mark.parametrize(
@@ -1180,7 +1271,7 @@ def test_create_session_for_non_existing_point_of_charge(client_auth):
         "/dynamique/session/", json=json.loads(qc_session.model_dump_json())
     )
     assert response.status_code == status.HTTP_404_NOT_FOUND
-    assert response.json() == {"detail": "Attached point of charge does not exist"}
+    assert response.json() == {"detail": "Point of charge does not exist"}
 
 
 @pytest.mark.parametrize(

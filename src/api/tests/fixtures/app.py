@@ -5,6 +5,7 @@ from fastapi.testclient import TestClient
 from sqlmodel import Session
 
 from qualicharge.api.v1 import app
+from qualicharge.api.v1.routers.dynamic import get_pdc_id
 from qualicharge.auth.factories import GroupFactory, IDTokenFactory, UserFactory
 from qualicharge.auth.oidc import get_token, get_user_from_db
 from qualicharge.auth.schemas import UserGroup
@@ -67,3 +68,4 @@ def clear_lru_cache():
 
     # Clear the LRU cache.
     get_user_from_db.cache_clear()
+    get_pdc_id.cache_clear()
