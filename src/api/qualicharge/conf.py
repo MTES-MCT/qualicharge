@@ -133,6 +133,8 @@ class Settings(BaseSettings):
     API_GET_USER_CACHE_MAXSIZE: int = 256
     API_GET_USER_CACHE_TTL: int = 1800
     API_GET_USER_CACHE_INFO: bool = False
+    API_GET_PDC_ID_CACHE_MAXSIZE: int = 5000
+    API_GET_PDC_ID_CACHE_INFO: bool = False
 
     model_config = SettingsConfigDict(
         case_sensitive=True, env_nested_delimiter="__", env_prefix="QUALICHARGE_"

@@ -1,9 +1,12 @@
 """QualiCharge API v1 dynamique router."""
 
 import logging
+from threading import Lock
 from typing import Annotated, List, cast
+from uuid import UUID
 
 from annotated_types import Len
+from cachetools import LRUCache, cached
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, Security
 from fastapi import status as fa_status
 from pydantic import UUID4, BaseModel, PastDatetime, StringConstraints
@@ -57,6 +60,31 @@ class DynamiqueItemsCreatedResponse(BaseModel):
 
     size: int
     items: List[UUID4]
+
+
+@cached(
+    LRUCache(
+        maxsize=settings.API_GET_PDC_ID_CACHE_MAXSIZE,
+    ),
+    lock=Lock(),
+    key=lambda id_pdc_itinerance, session: id_pdc_itinerance,
+    info=settings.API_GET_PDC_ID_CACHE_INFO,
+)
+def get_pdc_id(id_pdc_itinerance: str, session: Session) -> UUID | None:
+    """Get PointDeCharge.id from an `id_pdc_itinerance`."""
+    pdc_id = session.exec(
+        select(PointDeCharge.id).where(
+            PointDeCharge.id_pdc_itinerance == id_pdc_itinerance
+        )
+    ).one_or_none()
+
+    if pdc_id is not None:
+        return pdc_id
+
+    raise HTTPException(
+        status_code=fa_status.HTTP_404_NOT_FOUND,
+        detail="Point of charge does not exist",
+    )
 
 
 @router.get("/status/", tags=["Status"])
@@ -196,16 +224,7 @@ async def read_status(
         raise PermissionDenied("You cannot read the status of this point of charge")
 
     # Get target point de charge
-    pdc_id = session.exec(
-        select(PointDeCharge.id).where(
-            PointDeCharge.id_pdc_itinerance == id_pdc_itinerance
-        )
-    ).one_or_none()
-    if pdc_id is None:
-        raise HTTPException(
-            status_code=fa_status.HTTP_404_NOT_FOUND,
-            detail="Selected point of charge does not exist",
-        )
+    pdc_id = get_pdc_id(id_pdc_itinerance, session)
 
     # Get latest status (if any)
     latest_db_status_stmt = (
@@ -264,16 +283,7 @@ async def read_status_history(
     if not is_pdc_allowed_for_user(id_pdc_itinerance, user):
         raise PermissionDenied("You cannot read statuses of this point of charge")
 
-    pdc_id = session.exec(
-        select(PointDeCharge.id).where(
-            PointDeCharge.id_pdc_itinerance == id_pdc_itinerance
-        )
-    ).one_or_none()
-    if pdc_id is None:
-        raise HTTPException(
-            status_code=fa_status.HTTP_404_NOT_FOUND,
-            detail="Selected point of charge does not exist",
-        )
+    pdc_id = get_pdc_id(id_pdc_itinerance, session)
 
     # Get latest statuses
     db_statuses_stmt = select(Status).where(Status.point_de_charge_id == pdc_id)
@@ -313,16 +323,8 @@ async def create_status(
     if not is_pdc_allowed_for_user(status.id_pdc_itinerance, user):
         raise PermissionDenied("You cannot create statuses for this point of charge")
 
-    pdc_id = session.exec(
-        select(PointDeCharge.id).where(
-            PointDeCharge.id_pdc_itinerance == status.id_pdc_itinerance
-        )
-    ).one_or_none()
-    if pdc_id is None:
-        raise HTTPException(
-            status_code=fa_status.HTTP_404_NOT_FOUND,
-            detail="Attached point of charge does not exist",
-        )
+    pdc_id = get_pdc_id(status.id_pdc_itinerance, session)
+
     db_status = Status(**status.model_dump(exclude={"id_pdc_itinerance"}))
     # Store status id so that we do not need to perform another request
     db_status_id = db_status.id
@@ -396,16 +398,8 @@ async def create_session(
     #
     # - `db_session` / `Session` refers to the database session, while,
     # - `session` / `QCSession` / `SessionCreate` refers to qualicharge charging session
-    pdc_id = db_session.exec(
-        select(PointDeCharge.id).where(
-            PointDeCharge.id_pdc_itinerance == session.id_pdc_itinerance
-        )
-    ).one_or_none()
-    if pdc_id is None:
-        raise HTTPException(
-            status_code=fa_status.HTTP_404_NOT_FOUND,
-            detail="Attached point of charge does not exist",
-        )
+    pdc_id = get_pdc_id(session.id_pdc_itinerance, db_session)
+
     db_qc_session = QCSession(**session.model_dump(exclude={"id_pdc_itinerance"}))
     # Store session id so that we do not need to perform another request
     db_qc_session_id = db_qc_session.id
