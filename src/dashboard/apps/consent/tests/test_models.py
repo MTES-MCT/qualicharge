@@ -1,39 +1,55 @@
 """Dashboard consent models tests."""
 
-from datetime import timedelta
+import datetime
 
 import pytest
-from django.utils import formats
+from django.db.models import signals
 
-from apps.auth.factories import UserFactory
 from apps.consent import AWAITING, REVOKED, VALIDATED
-from apps.consent.factories import ConsentFactory
+from apps.consent.signals import handle_new_delivery_point
+from apps.consent.utils import consent_end_date
 from apps.core.factories import DeliveryPointFactory
+from apps.core.models import DeliveryPoint
 
 
 @pytest.mark.django_db
-def test_create_consent():
+def test_create_consent(patch_datetime_now):
     """Tests the creation of a consent."""
-    user1 = UserFactory()
-    delivery_point = DeliveryPointFactory()
+    from apps.consent.factories import ConsentFactory
+    from apps.consent.models import Consent
 
-    consent = ConsentFactory(
-        delivery_point=delivery_point,
-        created_by=user1,
+    assert Consent.objects.count() == 0
+
+    # create one `consent`
+    signals.post_save.disconnect(
+        receiver=handle_new_delivery_point,
+        sender=DeliveryPoint,
+        dispatch_uid="handle_new_delivery_point",
     )
 
+    delivery_point = DeliveryPointFactory()
+    consent = ConsentFactory(
+        delivery_point=delivery_point, created_by=delivery_point.entity.users.first()
+    )
+
+    signals.post_save.connect(
+        receiver=handle_new_delivery_point,
+        sender=DeliveryPoint,
+        dispatch_uid="handle_new_delivery_point",
+    )
+
+    assert Consent.objects.count() == 1
+
     assert consent.delivery_point == delivery_point
-    assert consent.created_by == user1
+    assert consent.created_by == delivery_point.entity.users.first()
     assert consent.status == AWAITING
     assert consent.revoked_at is None
     assert consent.start is not None
     assert consent.end is not None
 
-    # test consent.end is 90 days later than the consent.start
-    end_date = consent.start + timedelta(days=90)
-    consent_start = formats.date_format(end_date, "Y/m/d")
-    consent_end = formats.date_format(consent.end, "Y/m/d")
-    assert consent_start == consent_end
+    # test consent.end is the last day of the year
+    expected_end_date = consent_end_date()
+    assert consent.end == expected_end_date
 
     # test created_at and updated_at have been updated.
     assert consent.created_at is not None
@@ -41,23 +57,64 @@ def test_create_consent():
 
 
 @pytest.mark.django_db
-def test_update_consent_status():
-    """Tests updating a consent status."""
-    user1 = UserFactory()
-    delivery_point = DeliveryPointFactory()
+def test_create_consent_with_custom_period_date():
+    """Tests the creation of a consent with a custom period date (`start` / `end`)."""
+    from apps.consent.factories import ConsentFactory
+    from apps.consent.models import Consent
 
-    consent = ConsentFactory(
-        delivery_point=delivery_point,
-        created_by=user1,
+    expected_start_date = datetime.datetime(
+        year=2024,
+        month=12,
+        day=20,
+        hour=17,
+        minute=5,
+        second=2,
+        tzinfo=datetime.timezone.utc,
+    )
+    expected_end_date = expected_start_date + datetime.timedelta(days=2)
+
+    # Create one consent with custom start / end date
+    # we have to disconnect the signals that allow the creation of a consent after the
+    # creation of a delivery point:
+    # `ConsentFactory` creates a new `delivery_point` which itself creates a new
+    # `consent`.
+    assert Consent.objects.count() == 0
+    signals.post_save.disconnect(
+        receiver=handle_new_delivery_point,
+        sender=DeliveryPoint,
+        dispatch_uid="handle_new_delivery_point",
     )
 
-    new_updated_at = consent.updated_at
+    consent = ConsentFactory(start=expected_start_date, end=expected_end_date)
+
+    signals.post_save.connect(
+        receiver=handle_new_delivery_point,
+        sender=DeliveryPoint,
+        dispatch_uid="handle_new_delivery_point",
+    )
+    assert Consent.objects.count() == 1
+
+    assert consent.start == expected_start_date
+    assert consent.end == expected_end_date
+
+
+@pytest.mark.django_db
+def test_update_consent_status():
+    """Tests updating a consent status."""
+    from apps.consent.models import Consent
+
+    # create one `delivery_point` and consequently one `consent`
+    delivery_point = DeliveryPointFactory()
+
+    # get the created consent
+    consent = Consent.objects.get(delivery_point=delivery_point)
+    consent_updated_at = consent.updated_at
 
     # update status to VALIDATED
     consent.status = VALIDATED
     consent.save()
     assert consent.status == VALIDATED
-    assert consent.updated_at > new_updated_at
+    assert consent.updated_at > consent_updated_at
     assert consent.revoked_at is None
     new_updated_at = consent.updated_at
 

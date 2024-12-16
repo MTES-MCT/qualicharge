@@ -20,6 +20,9 @@ and this project adheres to
 - add consent form to manage consents of one or many entities 
 - integration of custom 403, 404 and 500 pages 
 - sentry integration
+- added a signal on the creation of a delivery point. This signal allows the creation 
+of the consent corresponding to the delivery point
+
 
 [unreleased]: https://github.com/MTES-MCT/qualicharge/compare/main...bootstrap-dashboard-project
 

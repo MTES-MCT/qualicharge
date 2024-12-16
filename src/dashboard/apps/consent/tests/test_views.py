@@ -1,5 +1,6 @@
 """Dashboard consent views tests."""
 
+import uuid
 from http import HTTPStatus
 
 import pytest
@@ -10,12 +11,12 @@ from apps.consent import AWAITING, VALIDATED
 from apps.consent.factories import ConsentFactory
 from apps.consent.models import Consent
 from apps.consent.views import ConsentFormView
-from apps.core.factories import EntityFactory
+from apps.core.factories import DeliveryPointFactory, EntityFactory
 
 
 @pytest.mark.django_db
 def test_bulk_update_consent_status_without_ids(rf):
-    """Test that no status is updated if no id is passed."""
+    """Test no status is updated if no ID is passed."""
     request = rf.get(reverse("consent:manage"))
     request.user = UserFactory()
 
@@ -23,7 +24,7 @@ def test_bulk_update_consent_status_without_ids(rf):
     view.setup(request)
 
     size = 4
-    ConsentFactory.create_batch(size)
+    DeliveryPointFactory.create_batch(size)
 
     # check data before update
     assert all(c == AWAITING for c in Consent.objects.values_list("status", flat=True))
@@ -37,7 +38,7 @@ def test_bulk_update_consent_status_without_ids(rf):
 
 @pytest.mark.django_db
 def test_bulk_update_consent_status(rf):
-    """Test that all consents are correctly updated."""
+    """Test all consents are correctly updated."""
     user = UserFactory()
 
     request = rf.get(reverse("consent:manage"))
@@ -49,8 +50,8 @@ def test_bulk_update_consent_status(rf):
     # create entity for the user and consents for the entity
     size = 3
     entity = EntityFactory(users=(user,))
-    consents = ConsentFactory.create_batch(size, delivery_point__entity=entity)
-    ids = [c.id for c in consents]
+    DeliveryPointFactory.create_batch(size, entity=entity)
+    ids = list(Consent.objects.values_list("id", flat=True))
 
     # check data before update
     assert all(c == AWAITING for c in Consent.objects.values_list("status", flat=True))
@@ -64,7 +65,7 @@ def test_bulk_update_consent_status(rf):
 
 @pytest.mark.django_db
 def test_bulk_update_consent_status_with_fake_id(rf):
-    """Test update with wrong ID in list of ids to update."""
+    """Test update with wrong ID in list of IDs to update."""
     user = UserFactory()
 
     request = rf.get(reverse("consent:manage"))
@@ -76,10 +77,10 @@ def test_bulk_update_consent_status_with_fake_id(rf):
     # create entity for the user and consents for the entity
     size = 3
     entity = EntityFactory(users=(user,))
-    consents = ConsentFactory.create_batch(size, delivery_point__entity=entity)
-    ids = [c.id for c in consents]
+    DeliveryPointFactory.create_batch(size, entity=entity)
+    ids = list(Consent.objects.values_list("id", flat=True))
 
-    # add a fake id to the ids to update
+    # add a fake ID to the IDs to update
     ids.append("fa62cf1d-c510-498a-b428-fdf72fa35651")
 
     # check data before update
@@ -107,15 +108,15 @@ def test_bulk_update_consent_without_user_perms(rf):
     # create entity for the user and consents for the entity
     size = 3
     entity = EntityFactory(users=(user,))
-    consents = ConsentFactory.create_batch(size, delivery_point__entity=entity)
-    ids = [c.id for c in consents]
+    DeliveryPointFactory.create_batch(size, entity=entity)
+    ids = list(Consent.objects.values_list("id", flat=True))
 
     # create wrong consent
     wrong_user = UserFactory()
     wrong_entity = EntityFactory(users=(wrong_user,))
     wrong_consent = ConsentFactory(delivery_point__entity=wrong_entity)
 
-    # add wrong_id to ids
+    # add wrong_id to IDs
     ids.append(wrong_consent.id)
     assert len(ids) == size + 1
     assert wrong_consent.id in ids
@@ -124,7 +125,7 @@ def test_bulk_update_consent_without_user_perms(rf):
     assert all(c == AWAITING for c in Consent.objects.values_list("status", flat=True))
 
     # bulk update to VALIDATED,
-    # and check all records have been updated except the wrong id.
+    # and check all records have been updated except the wrong ID.
     assert view._bulk_update_consent(ids, VALIDATED) == size
 
     # and checks that the data has changed to VALIDATED after the update.
@@ -153,22 +154,18 @@ def test_get_awaiting_ids_with_bad_parameters(rf):
     view = ConsentFormView()
     view.setup(request)
 
-    # create entity for the user and consents for the entity
-    size = 3
-    entity = EntityFactory(users=(user,))
-    consents = ConsentFactory.create_batch(size, delivery_point__entity=entity)
-    # create a list of QuerySet instead of str
-    ids = [c.id for c in consents]
+    # create a list of UUID instead of str
+    ids = [uuid.uuid4(), uuid.uuid4(), uuid.uuid4()]
 
     # check _get_awaiting_ids() raise exception
-    # (ids must be a list of string not of QuerySet)
+    # (IDs must be a list of string not of UUID)
     with pytest.raises(ValueError):
         view._get_awaiting_ids(validated_ids=ids)
 
 
 @pytest.mark.django_db
 def test_get_awaiting_ids(rf):
-    """Test getting of awaiting ids inferred from validated consents."""
+    """Test getting of awaiting IDs inferred from validated consents."""
     user = UserFactory()
 
     request = rf.get(reverse("consent:manage"))
@@ -180,8 +177,10 @@ def test_get_awaiting_ids(rf):
     # create entity for the user and consents for the entity
     size = 3
     entity = EntityFactory(users=(user,))
-    consents = ConsentFactory.create_batch(size, delivery_point__entity=entity)
-    ids = [str(c.id) for c in consents]
+    DeliveryPointFactory.create_batch(size, entity=entity)
+    ids = [
+        str(c.id) for c in Consent.active_objects.filter(delivery_point__entity=entity)
+    ]
 
     # removes one `id` from the list `ids`,
     # this is the one we must find with _get_awaiting_ids()
@@ -196,7 +195,7 @@ def test_get_awaiting_ids(rf):
 
 @pytest.mark.django_db
 def test_templates_render_without_entities(rf):
-    """Test the templates are rendered without entities."""
+    """Test the templates are rendered without entities, and with expected content."""
     user = UserFactory()
 
     request = rf.get(reverse("consent:manage"))
@@ -213,20 +212,7 @@ def test_templates_render_without_entities(rf):
     response = view.dispatch(request)
     assert response.status_code == HTTPStatus.OK
 
-
-@pytest.mark.django_db
-def test_templates_render_html_content_without_entities(rf):
-    """Test the html content of the templates without entities."""
-    user = UserFactory()
-
-    request = rf.get(reverse("consent:manage"))
-    request.user = user
-
-    view = ConsentFormView()
-    view.setup(request)
-
-    # Get response object and force template rendering
-    response = view.dispatch(request)
+    # force template rendering
     rendered = response.render()
     html = rendered.content.decode()
 
@@ -240,8 +226,8 @@ def test_templates_render_html_content_without_entities(rf):
 
 
 @pytest.mark.django_db
-def test_templates_render_with_entities(rf):
-    """Test the templates are rendered."""
+def test_templates_render_with_entities_without_consents(rf):
+    """Test the templates without consents are rendered with expected content."""
     user = UserFactory()
 
     request = rf.get(reverse("consent:manage"))
@@ -257,27 +243,11 @@ def test_templates_render_with_entities(rf):
     context = view.get_context_data()
     assert context["entities"] == [entity]
 
-    # Get response object
+    # get response object
     response = view.dispatch(request)
     assert response.status_code == HTTPStatus.OK
 
-
-@pytest.mark.django_db
-def test_templates_render_html_content_with_entities(rf):
-    """Test the html content of the templates with entities but no consents."""
-    user = UserFactory()
-
-    request = rf.get(reverse("consent:manage"))
-    request.user = user
-
-    view = ConsentFormView()
-    view.setup(request)
-
-    # create entity
-    EntityFactory(users=(user,))
-
-    # Get response object and force template rendering
-    response = view.dispatch(request)
+    # force template rendering
     rendered = response.render()
     html = rendered.content.decode()
 
@@ -307,7 +277,7 @@ def test_templates_render_with_slug(rf):
     context = view.get_context_data()
     assert context["entities"] == [entity]
 
-    # Get response object
+    # get response object
     response = view.dispatch(request)
     assert response.status_code == HTTPStatus.OK
 
@@ -326,15 +296,16 @@ def test_templates_render_html_content_with_consents(rf):
     # create entity
     size = 3
     entity = EntityFactory(users=(user,))
-    consents = ConsentFactory.create_batch(size, delivery_point__entity=entity)
+    DeliveryPointFactory.create_batch(size, entity=entity)
+    consents = Consent.objects.filter(delivery_point__entity=entity)
 
-    # Get response object and force template rendering
+    # get response object and force template rendering
     response = view.dispatch(request)
     rendered = response.render()
     html = rendered.content.decode()
 
     assert (entity.name in html) is True
-    assert all(str(c.id) in html for c in consents)
+    assert all(str(dl.id) in html for dl in consents)
 
 
 @pytest.mark.django_db

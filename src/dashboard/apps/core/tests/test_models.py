@@ -12,7 +12,7 @@ from apps.consent import AWAITING, VALIDATED
 from apps.consent.factories import ConsentFactory
 from apps.consent.models import Consent
 from apps.core.factories import DeliveryPointFactory, EntityFactory
-from apps.core.models import DeliveryPoint, Entity
+from apps.core.models import Entity
 
 
 @pytest.mark.django_db
@@ -173,26 +173,22 @@ def test_count_validated_consents():
         DeliveryPointFactory(provider_assigned_id=f"entity2_{i}", entity=entity2)
         DeliveryPointFactory(provider_assigned_id=f"entity3_{i}", entity=entity3)
 
-    # create awaiting consent for each delivery points
-    for delivery_point in DeliveryPoint.objects.all():
-        ConsentFactory(delivery_point=delivery_point, created_by=user1, status=AWAITING)
-
     # create validated consent for entity1
     dl = DeliveryPointFactory(provider_assigned_id="entity3_validated", entity=entity1)
-    ConsentFactory(delivery_point=dl, created_by=user1, status=VALIDATED)
+    ConsentFactory(delivery_point=dl, status=VALIDATED)
 
-    # create awainting consents for entity1 in past period
-    dl = DeliveryPointFactory(provider_assigned_id="entity3_past", entity=entity1)
+    # create awaiting consents for entity1 in past period
     ConsentFactory(
         delivery_point=dl,
-        created_by=user1,
         status=AWAITING,
         start=timezone.now() - timedelta(days=300),
         end=timezone.now() - timedelta(days=270),
     )
 
     assert (
-        Consent.objects.filter(status=AWAITING, delivery_point__entity=entity1).count()
+        Consent.active_objects.filter(
+            status=AWAITING, delivery_point__entity=entity1
+        ).count()
         == 4  # noqa: PLR2004
     )
     assert entity1.count_validated_consents() == 1
@@ -217,22 +213,20 @@ def test_count_awaiting_consents():
         DeliveryPointFactory(provider_assigned_id=f"entity2_{i}", entity=entity2)
         DeliveryPointFactory(provider_assigned_id=f"entity3_{i}", entity=entity3)
 
-    # create awaiting consent for each delivery points
-    for delivery_point in DeliveryPoint.objects.all():
-        ConsentFactory(delivery_point=delivery_point, created_by=user1, status=AWAITING)
-
     # create validated consent for entity1
     dl = DeliveryPointFactory(provider_assigned_id="entity3_validated", entity=entity1)
-    ConsentFactory(delivery_point=dl, created_by=user1, status=VALIDATED)
+    Consent.objects.filter(delivery_point=dl).update(status=VALIDATED)
 
     # create awainting consents for entity1 in past period
     dl = DeliveryPointFactory(provider_assigned_id="entity3_past", entity=entity1)
-    ConsentFactory(
-        delivery_point=dl,
-        created_by=user1,
-        status=AWAITING,
-        start=timezone.now() - timedelta(days=300),
-        end=timezone.now() - timedelta(days=270),
+    (
+        Consent.objects.filter(
+            delivery_point=dl,
+            status=AWAITING,
+        ).update(
+            start=timezone.now() - timedelta(days=300),
+            end=timezone.now() - timedelta(days=270),
+        )
     )
 
     assert (
@@ -265,16 +259,18 @@ def test_get_consents():
     dl3_1 = DeliveryPointFactory(provider_assigned_id="entity3_1", entity=entity3)
     dl3_2 = DeliveryPointFactory(provider_assigned_id="entity3_2", entity=entity3)
 
-    # create awaiting consents
-    c1_1 = ConsentFactory(delivery_point=dl1_1, created_by=user1, status=AWAITING)
-    c1_2 = ConsentFactory(delivery_point=dl1_2, created_by=user1, status=AWAITING)
-    c2_1 = ConsentFactory(delivery_point=dl2_1, created_by=user2, status=AWAITING)
-    c2_2 = ConsentFactory(delivery_point=dl2_2, created_by=user2, status=AWAITING)
-    c3_1 = ConsentFactory(delivery_point=dl3_1, created_by=user3, status=AWAITING)
-    c3_2 = ConsentFactory(delivery_point=dl3_2, created_by=user3, status=AWAITING)
+    # get awaiting consents
+    c1_1 = Consent.objects.get(delivery_point=dl1_1, status=AWAITING)
+    c1_2 = Consent.objects.get(delivery_point=dl1_2, status=AWAITING)
+    c2_1 = Consent.objects.get(delivery_point=dl2_1, status=AWAITING)
+    c2_2 = Consent.objects.get(delivery_point=dl2_2, status=AWAITING)
+    c3_1 = Consent.objects.get(delivery_point=dl3_1, status=AWAITING)
+    c3_2 = Consent.objects.get(delivery_point=dl3_2, status=AWAITING)
 
-    # create validated consent for entity1
-    c1_3 = ConsentFactory(delivery_point=dl1_3, created_by=user1, status=VALIDATED)
+    # update consent c1_3 to validated
+    c1_3 = Consent.objects.get(delivery_point=dl1_3)
+    c1_3.status = VALIDATED
+    c1_3.save()
 
     # create awaiting consents for entity1 in past period
     ConsentFactory(
@@ -285,7 +281,9 @@ def test_get_consents():
         end=timezone.now() - timedelta(days=270),
     )
 
-    assertQuerySetEqual(entity1.get_consents(), [c1_1, c1_2, c1_3])
+    assertQuerySetEqual(
+        entity1.get_consents().order_by("delivery_point"), [c1_1, c1_2, c1_3]
+    )
     assertQuerySetEqual(entity2.get_consents(), [c2_1, c2_2])
     assertQuerySetEqual(entity3.get_consents(), [c3_1, c3_2])
 
@@ -311,16 +309,18 @@ def test_get_awaiting_consents():
     dl3_1 = DeliveryPointFactory(provider_assigned_id="entity3_1", entity=entity3)
     dl3_2 = DeliveryPointFactory(provider_assigned_id="entity3_2", entity=entity3)
 
-    # create awaiting consents
-    c1_1 = ConsentFactory(delivery_point=dl1_1, created_by=user1, status=AWAITING)
-    c1_2 = ConsentFactory(delivery_point=dl1_2, created_by=user1, status=AWAITING)
-    c2_1 = ConsentFactory(delivery_point=dl2_1, created_by=user2, status=AWAITING)
-    c2_2 = ConsentFactory(delivery_point=dl2_2, created_by=user2, status=AWAITING)
-    c3_1 = ConsentFactory(delivery_point=dl3_1, created_by=user3, status=AWAITING)
-    c3_2 = ConsentFactory(delivery_point=dl3_2, created_by=user3, status=AWAITING)
+    # get awaiting consents
+    c1_1 = Consent.objects.get(delivery_point=dl1_1, status=AWAITING)
+    c1_2 = Consent.objects.get(delivery_point=dl1_2, status=AWAITING)
+    c2_1 = Consent.objects.get(delivery_point=dl2_1, status=AWAITING)
+    c2_2 = Consent.objects.get(delivery_point=dl2_2, status=AWAITING)
+    c3_1 = Consent.objects.get(delivery_point=dl3_1, status=AWAITING)
+    c3_2 = Consent.objects.get(delivery_point=dl3_2, status=AWAITING)
 
-    # create validated consent for entity1
-    ConsentFactory(delivery_point=dl1_3, created_by=user1, status=VALIDATED)
+    # update consent c1_3 to validated
+    c1_3 = Consent.objects.get(delivery_point=dl1_3)
+    c1_3.status = VALIDATED
+    c1_3.save()
 
     # create awaiting consents for entity1 in past period
     ConsentFactory(

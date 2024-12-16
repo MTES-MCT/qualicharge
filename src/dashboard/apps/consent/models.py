@@ -8,6 +8,7 @@ from apps.core.abstract_models import DashboardBase
 
 from . import AWAITING, CONSENT_STATUS_CHOICE, REVOKED
 from .managers import ConsentManager
+from .utils import consent_end_date
 
 
 class Consent(DashboardBase):
@@ -42,8 +43,8 @@ class Consent(DashboardBase):
     )
 
     # Validity period
-    start = models.DateTimeField(_("start date"))
-    end = models.DateTimeField(_("end date"))
+    start = models.DateTimeField(_("start date"), default=timezone.now)
+    end = models.DateTimeField(_("end date"), default=consent_end_date)
     revoked_at = models.DateTimeField(_("revoked at"), null=True, blank=True)
 
     # models.Manager() must be in first place to ensure django admin expectations.
@@ -57,7 +58,11 @@ class Consent(DashboardBase):
         return f"{self.delivery_point} - {self.updated_at}: {self.status}"
 
     def save(self, *args, **kwargs):
-        """Update the revoked_at timestamps if the consent is revoked."""
+        """Saves with custom logic.
+
+        If the consent status is `REVOKED`, `revoked_at` is updated to the current time.
+        """
         if self.status == REVOKED:
             self.revoked_at = timezone.now()
+
         return super(Consent, self).save(*args, **kwargs)
