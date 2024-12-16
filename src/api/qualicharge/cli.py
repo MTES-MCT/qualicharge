@@ -38,7 +38,7 @@ def list_groups(ctx: typer.Context):
     """List API groups."""
     session: SMSession = ctx.obj
 
-    groups = session.exec(select(Group)).all()
+    groups = session.exec(select(Group).order_by(Group.name)).all()
 
     table = Table(title="QualiCharge API groups")
     table.add_column("Name", justify="right", style="cyan", no_wrap=True)
@@ -49,7 +49,7 @@ def list_groups(ctx: typer.Context):
         table.add_row(
             group.name,
             ",".join(sorted(user.username for user in group.users)),
-            ",".join(ou.code for ou in group.operational_units),
+            ",".join(sorted(ou.code for ou in group.operational_units)),
         )
     console.print(table)
 
