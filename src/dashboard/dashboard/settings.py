@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 import os
 from pathlib import Path
 
+import django.db.models.signals
 import environ
 import sentry_sdk
 from django.utils.translation import gettext_lazy as _
@@ -164,7 +165,19 @@ AUTH_USER_MODEL = "qcd_auth.DashboardUser"
 # Sentry
 sentry_sdk.init(
     dsn=env.str("SENTRY_DSN"),
-    integrations=[DjangoIntegration()],
+    integrations=[
+        DjangoIntegration(
+            transaction_style='url',
+            middleware_spans=True,
+            signals_spans=True,
+            signals_denylist=[
+                django.db.models.signals.pre_init,
+                django.db.models.signals.post_init,
+            ],
+            cache_spans=False,
+            http_methods_to_capture=("GET",),
+        ),
+    ],
     # Set traces_sample_rate to 1.0 to capture 100%
     # of transactions for performance monitoring.
     # We recommend adjusting this value in production.
