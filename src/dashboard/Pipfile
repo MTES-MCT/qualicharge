@@ -8,6 +8,7 @@ Django = "==5.1.4"
 django-dsfr = "==1.4.3"
 django-environ = "==0.11.2"
 django-extensions = "==3.2.3"
+django-stubs = {extras = ["compatible-mypy"], version = "==5.1.1"}
 gunicorn = "==23.0.0"
 psycopg = {extras = ["pool", "binary"], version = "==3.2.3"}
 sentry-sdk = {extras = ["django"], version = "==2.19.2"}
@@ -16,7 +17,6 @@ whitenoise = "==6.8.2"
 [dev-packages]
 black = "==24.10.0"
 django-debug-toolbar = "==4.4.6"
-django-stubs = {extras = ["compatible-mypy"], version = "==5.1.1"}
 djlint = "==1.36.3"
 factory-boy = "==3.3.1"
 honcho = "==2.0.0"
