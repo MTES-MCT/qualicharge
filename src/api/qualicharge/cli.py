@@ -14,6 +14,7 @@ from rich.logging import RichHandler
 from rich.table import Table
 from sqlalchemy import Column as SAColumn
 from sqlalchemy.exc import IntegrityError, OperationalError, ProgrammingError
+from sqlalchemy_utils import refresh_materialized_view
 from sqlmodel import Session as SMSession
 from sqlmodel import select
 
@@ -23,7 +24,7 @@ from .conf import settings
 from .db import get_session
 from .exceptions import IntegrityError as QCIntegrityError
 from .fixtures.operational_units import prefixes
-from .schemas.core import OperationalUnit
+from .schemas.core import STATIQUE_MV_TABLE_NAME, OperationalUnit
 from .schemas.sql import StatiqueImporter
 
 logging.basicConfig(
@@ -454,6 +455,18 @@ def import_static(ctx: typer.Context, input_file: Path):
         raise QCIntegrityError("Input file importation failed. Rolling back.") from err
     session.commit()
     console.log("Saved (or updated) all entries successfully.")
+
+
+@app.command()
+def refresh_static(ctx: typer.Context, concurrently: bool = False):
+    """Refresh the Statique materialized view."""
+    session: SMSession = ctx.obj
+
+    # Refresh the database
+    console.log("Refreshing database…")
+    refresh_materialized_view(
+        session, STATIQUE_MV_TABLE_NAME, concurrently=concurrently
+    )
 
 
 @app.callback()

@@ -74,5 +74,6 @@ exclude = [
 [[tool.mypy.overrides]]
 module = [
   "shapely.*",
+  "sqlalchemy_utils.*"
 ]
 ignore_missing_imports = true

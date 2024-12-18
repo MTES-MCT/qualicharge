@@ -14,6 +14,7 @@ and this project adheres to
   `SENTRY_PROFILES_SAMPLE_RATE` configuration
 - Set request's user (`username`) in Sentry's context
 - Add `Localisation.coordonneesXY` unique contraint [BC] 💥
+- Implement `Statique` materialized view
 
 ### Changed
 
