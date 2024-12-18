@@ -261,7 +261,7 @@ services:
       - env.d/metabase
 
   terraform:
-    image: hashicorp/terraform:1.10.2
+    image: hashicorp/terraform:1.10.3
     env_file:
       - env.d/terraform
     user: ${DOCKER_USER:-1000}
