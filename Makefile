@@ -3,7 +3,7 @@ SHELL := /bin/bash
 
 # -- Docker
 COMPOSE                    	 = bin/compose
-COMPOSE_UP                 	 = $(COMPOSE) up -d
+COMPOSE_UP                 	 = $(COMPOSE) up -d --remove-orphans
 COMPOSE_RUN                	 = $(COMPOSE) run --rm --no-deps
 COMPOSE_RUN_API            	 = $(COMPOSE_RUN) api
 COMPOSE_RUN_API_PIPENV     	 = $(COMPOSE_RUN_API) pipenv run
@@ -332,6 +332,10 @@ reset-db: \
   migrate-prefect \
   reset-dashboard-db
 .PHONY: reset-db
+
+refresh-api-static: ## Refresh the API Statique Materialized View
+	$(COMPOSE) exec api pipenv run python -m qualicharge refresh-static
+.PHONY: refresh-api-static
 
 reset-api-db: ## Reset the PostgreSQL API database
 	$(COMPOSE) stop

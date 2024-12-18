@@ -1,7 +1,8 @@
 """QualiCharge core statique and dynamique schemas."""
 
+from datetime import datetime
 from enum import IntEnum
-from typing import TYPE_CHECKING, List, Optional, Union, cast
+from typing import TYPE_CHECKING, ClassVar, List, Optional, Union, cast
 from uuid import UUID, uuid4
 
 from geoalchemy2.shape import to_shape
@@ -19,11 +20,15 @@ from pydantic import (
 )
 from pydantic_extra_types.coordinate import Coordinate
 from shapely.geometry import mapping
-from sqlalchemy import event
+from sqlalchemy import Select, event
+from sqlalchemy import cast as SA_cast
 from sqlalchemy.dialects.postgresql import ENUM as PgEnum
+from sqlalchemy.orm import registry
 from sqlalchemy.schema import Column as SAColumn
+from sqlalchemy.schema import Index
 from sqlalchemy.types import Date, DateTime, String
-from sqlmodel import Field, Relationship, UniqueConstraint, select
+from sqlalchemy_utils import create_materialized_view
+from sqlmodel import Field, Relationship, SQLModel, UniqueConstraint, select
 from sqlmodel import Session as SMSession
 from sqlmodel.main import SQLModelConfig
 
@@ -44,11 +49,16 @@ from ..models.static import (
     ImplantationStationEnum,
     NotFutureDate,
     RaccordementEnum,
+    Statique,
 )
 from . import BaseTimestampedSQLModel
 
 if TYPE_CHECKING:
     from qualicharge.auth.schemas import Group
+
+mapper_registry = registry()
+
+STATIQUE_MV_TABLE_NAME: str = "statique"
 
 
 class OperationalUnitTypeEnum(IntEnum):
@@ -472,3 +482,98 @@ class Status(BaseTimestampedSQLModel, StatusBase, table=True):
     def id_pdc_itinerance(self) -> str:
         """Return the PointDeCharge.id_pdc_itinerance (used for serialization only)."""
         return self.point_de_charge.id_pdc_itinerance
+
+
+class StatiqueMV(Statique, SQLModel):
+    """Statique Materialized View."""
+
+    __tablename__ = STATIQUE_MV_TABLE_NAME
+
+    model_config = SQLModel.model_config
+
+    pdc_id: UUID
+    pdc_updated_at: datetime
+
+
+class _StatiqueMV(SQLModel):
+    """Statique Materialized view.
+
+    NOTE: This is an internal model used **ONLY** for creating the materialized view.
+    """
+
+    selectable: ClassVar[Select] = (
+        select(  # type: ignore[call-overload, misc]
+            cast(SAColumn, PointDeCharge.id).label("pdc_id"),
+            cast(SAColumn, PointDeCharge.updated_at).label("pdc_updated_at"),
+            Amenageur.nom_amenageur,
+            Amenageur.siren_amenageur,
+            Amenageur.contact_amenageur,
+            Operateur.nom_operateur,
+            Operateur.contact_operateur,
+            Operateur.telephone_operateur,
+            Enseigne.nom_enseigne,
+            Station.id_station_itinerance,
+            Station.id_station_local,
+            Station.nom_station,
+            Station.implantation_station,
+            Localisation.adresse_station,
+            Localisation.code_insee_commune,
+            SA_cast(
+                Localisation.coordonneesXY,
+                Geometry(
+                    geometry_type="POINT",
+                    # WGS84 coordinates system
+                    srid=4326,
+                    spatial_index=False,
+                ),
+            ).label("coordonneesXY"),
+            Station.nbre_pdc,
+            PointDeCharge.id_pdc_itinerance,
+            PointDeCharge.id_pdc_local,
+            PointDeCharge.puissance_nominale,
+            PointDeCharge.prise_type_ef,
+            PointDeCharge.prise_type_2,
+            PointDeCharge.prise_type_combo_ccs,
+            PointDeCharge.prise_type_chademo,
+            PointDeCharge.prise_type_autre,
+            PointDeCharge.gratuit,
+            PointDeCharge.paiement_acte,
+            PointDeCharge.paiement_cb,
+            PointDeCharge.paiement_autre,
+            PointDeCharge.tarification,
+            Station.condition_acces,
+            PointDeCharge.reservation,
+            Station.horaires,
+            PointDeCharge.accessibilite_pmr,
+            PointDeCharge.restriction_gabarit,
+            Station.station_deux_roues,
+            Station.raccordement,
+            Station.num_pdl,
+            Station.date_mise_en_service,
+            PointDeCharge.observations,
+            Station.date_maj,
+            PointDeCharge.cable_t2_attache,
+        )
+        .select_from(PointDeCharge)
+        .join(Station)
+        .join(Amenageur)
+        .join(Operateur)
+        .join(Enseigne)
+        .join(Localisation)
+    )
+
+    __table__ = create_materialized_view(
+        name=STATIQUE_MV_TABLE_NAME,
+        selectable=selectable,
+        metadata=SQLModel.metadata,
+        indexes=[
+            Index("idx_statique_id_pdc_itinerance", "id_pdc_itinerance", unique=True),
+            Index(
+                "idx_statique_code_insee_commune",
+                "code_insee_commune",
+            ),
+        ],
+    )
+
+
+mapper_registry.map_imperatively(StatiqueMV, _StatiqueMV.__table__)

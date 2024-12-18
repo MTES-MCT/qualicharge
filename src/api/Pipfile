@@ -26,6 +26,7 @@ questionary = "==2.1.0"
 sentry-sdk = {extras = ["fastapi"], version = "==2.20.0"}
 setuptools = "==75.8.0"
 sqlalchemy-timescaledb = "==0.4.1"
+sqlalchemy-utils = "==0.41.2"
 sqlmodel = "==0.0.22"
 typer = "==0.15.1"
 uvicorn = {extras = ["standard"] }

@@ -3,8 +3,10 @@
 from logging.config import fileConfig
 
 from alembic import context
+from geoalchemy2.alembic_helpers import create_geospatial_index
 from sqlalchemy import engine_from_config, pool
 from sqlmodel import SQLModel
+
 
 from qualicharge.conf import settings
 

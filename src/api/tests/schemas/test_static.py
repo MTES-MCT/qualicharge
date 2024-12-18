@@ -2,12 +2,15 @@
 
 import re
 from datetime import datetime, timedelta, timezone
+from uuid import UUID
 
 import pytest
 from geoalchemy2.shape import to_shape
+from geoalchemy2.types import WKBElement
 from pydantic_extra_types.coordinate import Coordinate
 from shapely.geometry import mapping
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy_utils import refresh_materialized_view
 from sqlmodel import select
 
 from qualicharge.factories.static import (
@@ -18,8 +21,16 @@ from qualicharge.factories.static import (
     OperationalUnitFactory,
     PointDeChargeFactory,
     StationFactory,
+    StatiqueFactory,
 )
-from qualicharge.schemas.core import Amenageur, Localisation, OperationalUnit, Station
+from qualicharge.schemas.core import (
+    Amenageur,
+    Localisation,
+    OperationalUnit,
+    Station,
+    StatiqueMV,
+)
+from qualicharge.schemas.utils import save_statiques
 
 
 @pytest.mark.parametrize(
@@ -392,3 +403,21 @@ def test_operational_unit_create_stations_fk(db_session):
         select(Station).where(Station.operational_unit_id == operational_unit.id)
     ).all()
     assert len(stations) == n_stations + extra_stations
+
+
+def test_statique_materialized_view(db_session):
+    """Test the StatiqueMV schema."""
+    n_pdc = 4
+    statiques = StatiqueFactory.batch(n_pdc)
+    save_statiques(db_session, statiques)
+    refresh_materialized_view(db_session, "statique")
+
+    db_statiques = db_session.exec(select(StatiqueMV)).all()
+    assert len(db_statiques) == n_pdc
+
+    assert {s.id_pdc_itinerance for s in statiques} == {
+        s.id_pdc_itinerance for s in db_statiques
+    }
+    assert isinstance(db_statiques[0].coordonneesXY, WKBElement)
+    assert isinstance(db_statiques[0].pdc_id, UUID)
+    assert isinstance(db_statiques[0].pdc_updated_at, datetime)
