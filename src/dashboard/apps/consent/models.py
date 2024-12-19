@@ -46,8 +46,9 @@ class Consent(DashboardBase):
     end = models.DateTimeField(_("end date"))
     revoked_at = models.DateTimeField(_("revoked at"), null=True, blank=True)
 
-    active_objects = ConsentManager()
+    # models.Manager() must be in first place to ensure django admin expectations.
     objects = models.Manager()
+    active_objects = ConsentManager()
 
     class Meta:  # noqa: D106
         ordering = ["delivery_point"]
