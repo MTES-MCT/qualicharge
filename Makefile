@@ -72,6 +72,12 @@ bootstrap: \
   seed-api
 .PHONY: bootstrap
 
+bootstrap-dashboard: ## bootstrap the dashboard project for development
+bootstrap-dashboard: \
+  build-dashboard \
+  reset-dashboard-db
+.PHONY: bootstrap-dashboard
+
 build: ## build services image
 	$(COMPOSE) build
 .PHONY: build
@@ -221,6 +227,8 @@ create-prefect-db: ## create prefect database
 .PHONY: create-prefect-db
 
 create-dashboard-db: ## create dashboard database
+	@echo "Running dashboard service database engine…"
+	@$(COMPOSE_UP) --wait postgresql
 	@echo "Creating dashboard service database…"
 	@$(COMPOSE) exec postgresql bash -c 'psql "postgresql://$${POSTGRES_USER}:$${POSTGRES_PASSWORD}@$${QUALICHARGE_DB_HOST}:$${QUALICHARGE_DB_PORT}/postgres" -c "create database \"$${DASHBOARD_DB_NAME}\";"' || echo "Duly noted, skipping database creation."
 .PHONY: create-dashboard-db
@@ -328,6 +336,13 @@ reset-db: ## Reset the PostgreSQL database
 	$(MAKE) create-dashboard-superuser
 	$(MAKE) seed-dashboard
 .PHONY: reset-db
+
+reset-dashboard-db: ## Reset the PostgreSQL dashboard database
+	$(MAKE) create-dashboard-db
+	$(MAKE) migrate-dashboard
+	$(MAKE) create-dashboard-superuser
+	$(MAKE) seed-dashboard
+.PHONY: reset-dashboard-db
 
 seed-api: ## seed the API database (static data)
 seed-api: run
