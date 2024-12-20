@@ -15,13 +15,20 @@ The qualicharge dashboard is available from the url:
 
 ## Useful commands
 
-Perform a Django migration *(manage.py migrate)* :
+Bootstrap dashboard project:
+
+```
+make bootstrap-dashboard
+make run-dashboard
+```
+
+Perform a Django migration *(manage.py migrate)*:
 
 ```
 make migrate-dashboard-db
 ```
 
-Create superuser.
+Create superuser:
 
 You can connect with **username: admin** / **password: admin**.
 *(The credentials are defined in env.d/dashboard.)*
@@ -30,10 +37,17 @@ You can connect with **username: admin** / **password: admin**.
 make create-dashboard-superuser
 ```
 
-Display dashboard logs
+Display dashboard logs:
 
 ```
 make logs-dashboard
+```
+
+Reset dashboard db:
+
+```
+make drop-dashboard-db
+make reset-dashboard-db
 ```
 
 ## Project specific naming convention
