@@ -18,6 +18,8 @@ and this project adheres to
 - add internationalization and language switcher
 - add dashboard homepage
 - add consent form to manage consents of one or many entities 
+- add admin integration for Entity, DeliveryPoint and Consent
+- add mass admin action (make revoked and make awaiting) for consents
 - integration of custom 403, 404 and 500 pages 
 - sentry integration
 - added a signal on the creation of a delivery point. This signal allows the creation 
