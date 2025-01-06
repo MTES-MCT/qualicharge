@@ -12,6 +12,7 @@ and this project adheres to
 
 - Activate and configure Sentry profiling by setting the
   `SENTRY_PROFILES_SAMPLE_RATE` configuration
+- Set request's user (`username`) in Sentry's context
 
 ### Changed
 
