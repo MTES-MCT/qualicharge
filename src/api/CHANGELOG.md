@@ -23,6 +23,10 @@ and this project adheres to
   command
 - Decrease the number of database queries for dynamic endpoints
 - Cache the "get PointDeCharge id from its `id_pdc_itinerance`" database query
+- Upgrade pydantic to `2.10.4`
+- Upgrade pydantic-settings to `2.7.1`
+- Upgrade python-multipart to `0.0.20`
+- Upgrade questionary to `2.1.0`
 
 ## [0.16.0] - 2024-12-12
 
