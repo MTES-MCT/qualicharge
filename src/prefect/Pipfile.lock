@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "7eda05c5e289a327983ac7fd624190068eef6266e5fa4edef610a69d031e28ec"
+            "sha256": "2fd344f2ca8b58465a2f3f70a7e952eb4186d7c9ae2f4af4836c7c78051f0820"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -1085,12 +1085,12 @@
         },
         "prefect": {
             "hashes": [
-                "sha256:21ae99a780a74a4e977429208816d7dfe4874e8c323917667e4744cb8c3d36f3",
-                "sha256:ab909b73856d9875eb1034d8125281b5267483645089d85dee9f7c57c07482ef"
+                "sha256:3872a6a8441c62ebb56d2cf209480317a692d22f879e921a7bca2d93ec68d444",
+                "sha256:c0f50328060a3b5d530ad5f16381c65984ba4e16c0cb7a2da7fda79f78f62310"
             ],
             "index": "pypi",
             "markers": "python_version >= '3.9'",
-            "version": "==3.1.11"
+            "version": "==3.1.5"
         },
         "prometheus-client": {
             "hashes": [
@@ -1476,17 +1476,6 @@
             ],
             "markers": "python_version >= '3.7'",
             "version": "==8.0.4"
-        },
-        "python-socks": {
-            "extras": [
-                "asyncio"
-            ],
-            "hashes": [
-                "sha256:7fe9324c1834bb9cdce46ddb6721cf42a05a00da5f1fb87f8507ac0c6f305e1d",
-                "sha256:9743929aab6ffe0bab640ecfbbee7130af92408ad86e4aa2984789f742f3ec9e"
-            ],
-            "markers": "python_full_version >= '3.8.0'",
-            "version": "==2.6.1"
         },
         "pytz": {
             "hashes": [
