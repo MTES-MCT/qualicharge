@@ -18,9 +18,7 @@ class Settings(BaseSettings):
     DEBUG: bool = False
 
     # Security
-    ALLOWED_HOSTS: List[str] = [
-        "http://localhost:8010",
-    ]
+    ALLOWED_HOSTS: List[str]
 
     # Middlewares
     GZIP_MIDDLEWARE_MINIMUM_SIZE: int = 1000
@@ -35,10 +33,10 @@ class Settings(BaseSettings):
 
     # Database
     DB_ENGINE: str = "postgresql"
-    DB_HOST: str = "postgresql"
-    DB_NAME: str = "qualicharge-api"
-    DB_USER: str = "qualicharge"
-    DB_PASSWORD: str = "pass"
+    DB_HOST: str
+    DB_NAME: str
+    DB_USER: str
+    DB_PASSWORD: str
     DB_PORT: int = 5432
     DB_CONNECTION_POOL_SIZE: int = 5
     DB_CONNECTION_MAX_OVERFLOW: int = 10
@@ -85,7 +83,7 @@ class Settings(BaseSettings):
     OAUTH2_TOKEN_ENCODING_KEY: str
     OAUTH2_TOKEN_ISSUER: AnyHttpUrl
     OAUTH2_TOKEN_LIFETIME: int = 30 * 60  # in seconds
-    OAUTH2_TOKEN_URL: str = "/api/v1/auth/token"
+    OAUTH2_TOKEN_URL: str = "/api/v1/auth/token"  # noqa: S105
 
     @computed_field  # type: ignore[misc]
     @property
