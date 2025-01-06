@@ -21,6 +21,7 @@ from jwt.exceptions import (
     InvalidTokenError,
 )
 from pydantic import AnyHttpUrl
+from sentry_sdk import set_user
 from sqlalchemy.orm import joinedload
 from sqlmodel import Session as SMSession
 from sqlmodel import select
@@ -199,6 +200,9 @@ def get_user(
     if not user.is_active:
         logger.error(f"User {token.email} tried to login but is not active")
         raise AuthenticationError("User is not active")
+
+    # Add username to sentry's context
+    set_user({"username": user.username})
 
     # We do not check scopes for admin users
     if user.is_superuser:
