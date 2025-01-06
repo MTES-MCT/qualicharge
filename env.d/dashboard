@@ -9,10 +9,13 @@ DASHBOARD_SECRET_KEY=the_secret_key
 DASHBOARD_DB_NAME=qualicharge-dashboard
 DASHBOARD_DATABASE_URL=psql://qualicharge:pass@postgresql:5432/qualicharge-dashboard
 
-# tools
+# Third-party integrations
 DASHBOARD_SENTRY_DSN=
+DASHBOARD_SENTRY_TRACES_SAMPLE_RATE=1.0
+DASHBOARD_SENTRY_PROFILES_SAMPLE_RATE=1.0
 
 # superuser
 DJANGO_SUPERUSER_PASSWORD=admin
 DJANGO_SUPERUSER_USERNAME=admin
 DJANGO_SUPERUSER_EMAIL=admin@example.com
+
