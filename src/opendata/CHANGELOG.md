@@ -19,6 +19,6 @@ and this project adheres to
 
 ### Added
 
-- Configured Data7 0.8.0
+- Configured Data7 0.9.0
 
 [unreleased]: https://github.com/MTES-MCT/qualicharge/

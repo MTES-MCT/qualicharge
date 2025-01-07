@@ -27,7 +27,9 @@ default:
 
   # Sentry
   sentry_dsn: null
+  sentry_enable_tracing: true
   sentry_traces_sample_rate: 1.0
+  sentry_profiles_sample_rate: 1.0
 
   # Pyinstrument
   profiling: false
