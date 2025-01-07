@@ -7,6 +7,16 @@ default:
   datasets:
     - basename: statuses
       query: >-
+        WITH
+          pdc_status AS (
+            SELECT
+              LAST (Status.id, Status.horodatage) AS latest_id
+            FROM
+              PointDeCharge
+              INNER JOIN Status ON Status.point_de_charge_id = PointDeCharge.id
+            GROUP BY
+              PointDeCharge.id_pdc_itinerance
+          )
         SELECT
           PointDeCharge.id_pdc_itinerance,
           Status.etat_pdc,
@@ -19,6 +29,14 @@ default:
         FROM
           Status
           INNER JOIN PointDeCharge ON Status.point_de_charge_id = PointDeCharge.id
+        WHERE
+          Status.id IN (
+            SELECT
+              latest_id
+            FROM
+              pdc_status
+          )
+        ORDER BY Status.horodatage DESC
     - basename: statiques
       query: >-
         WITH
