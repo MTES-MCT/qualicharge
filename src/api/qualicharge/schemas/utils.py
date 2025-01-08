@@ -2,7 +2,7 @@
 
 import logging
 from enum import IntEnum
-from io import StringIO
+from io import BytesIO
 from typing import Generator, List, Optional, Set, Tuple, Type, cast
 
 import pandas as pd
@@ -215,8 +215,12 @@ def update_statique(
 def save_statiques(db_session: Session, statiques: List[Statique]):
     """Save input statiques to database."""
     df = pd.read_json(
-        StringIO(f"{'\n'.join([s.model_dump_json() for s in statiques])}"),
+        BytesIO(
+            bytes(f"{'\n'.join([s.model_dump_json() for s in statiques])}", "utf-8")
+        ),
         lines=True,
+        orient="records",
+        engine="pyarrow",
         dtype_backend="pyarrow",
     )
     importer = StatiqueImporter(df, db_session.connection())

@@ -1,7 +1,7 @@
 """QualiCharge API v1 statique router."""
 
 import logging
-from io import StringIO
+from io import BytesIO
 from typing import Annotated, List, Optional, cast
 
 import pandas as pd
@@ -285,8 +285,12 @@ async def bulk(
 
     # Convert statiques to a Pandas DataFrame
     df = pd.read_json(
-        StringIO(f"{'\n'.join([s.model_dump_json() for s in statiques])}"),
+        BytesIO(
+            bytes(f"{'\n'.join([s.model_dump_json() for s in statiques])}", "utf-8")
+        ),
         lines=True,
+        orient="records",
+        engine="pyarrow",
         dtype_backend="pyarrow",
     )
 
