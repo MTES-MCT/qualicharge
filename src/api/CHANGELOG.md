@@ -25,6 +25,7 @@ and this project adheres to
 - Decrease the number of database queries for dynamic endpoints
 - Cache the "get PointDeCharge id from its `id_pdc_itinerance`" database query
 - Improve JSON string parsing using pyarrow engine
+- Add default values for optional Statique model fields
 - Upgrade pydantic to `2.10.4`
 - Upgrade pydantic-settings to `2.7.1`
 - Upgrade python-multipart to `0.0.20`
