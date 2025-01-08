@@ -16,6 +16,7 @@ from qualicharge.auth.factories import GroupFactory
 from qualicharge.auth.schemas import GroupOperationalUnit, ScopesEnum, User, UserGroup
 from qualicharge.conf import settings
 from qualicharge.factories.static import StatiqueFactory
+from qualicharge.models.static import Statique
 from qualicharge.schemas.core import (
     OperationalUnit,
     PointDeCharge,
@@ -383,6 +384,43 @@ def test_create_for_superuser(client_auth):
     assert json_response["items"][0] == id_pdc_itinerance
 
 
+def test_create_without_optional_fields(client_auth):
+    """Test the /statique/ create endpoint when optional fields are not provided."""
+    id_pdc_itinerance = "FR911E1111ER1"
+    data = Statique(
+        **StatiqueFactory.build(
+            id_pdc_itinerance=id_pdc_itinerance,
+        ).model_dump(
+            exclude={
+                "nom_amenageur",
+                "siren_amenageur",
+                "contact_amenageur",
+                "nom_operateur",
+                "telephone_operateur",
+            }
+        )
+    )
+
+    # Create the Statique without optional fields
+    response = client_auth.post("/statique/", json=json.loads(data.model_dump_json()))
+    assert response.status_code == status.HTTP_201_CREATED
+    json_response = response.json()
+    assert json_response["message"] == "Statique items created"
+    assert json_response["size"] == 1
+    assert json_response["items"][0] == id_pdc_itinerance
+
+    # Get created Statique and check defaults
+    response = client_auth.get(f"/statique/{id_pdc_itinerance}")
+    assert response.status_code == status.HTTP_200_OK
+    json_response = response.json()
+    statique = Statique(**json_response)
+    assert statique.nom_amenageur == "NA"
+    assert statique.siren_amenageur == "123456789"
+    assert statique.contact_amenageur == "na@example.org"
+    assert statique.nom_operateur == "NA"
+    assert statique.telephone_operateur == "tel:+33-1-23-45-67-89"
+
+
 def test_create_twice(client_auth):
     """Test the /statique/ create endpoint with the same payload twice."""
     id_pdc_itinerance = "FR911E1111ER1"
@@ -654,6 +692,48 @@ def test_bulk_for_superuser(client_auth):
     assert json_response["size"] == len(payload)
     assert json_response["items"][0] == data[0].id_pdc_itinerance
     assert json_response["items"][1] == data[1].id_pdc_itinerance
+
+
+def test_bulk_without_optional_fields(client_auth):
+    """Test the /statique/bulk create endpoint when optional fields are not provided."""
+    data = StatiqueFactory.batch(
+        size=2,
+    )
+
+    payload = [
+        json.loads(
+            d.model_dump_json(
+                exclude={
+                    "nom_amenageur",
+                    "siren_amenageur",
+                    "contact_amenageur",
+                    "nom_operateur",
+                    "telephone_operateur",
+                }
+            )
+        )
+        for d in data
+    ]
+    response = client_auth.post("/statique/bulk", json=payload)
+
+    assert response.status_code == status.HTTP_201_CREATED
+    json_response = response.json()
+    assert json_response["message"] == "Statique items created"
+    assert json_response["size"] == len(payload)
+    assert json_response["items"][0] == data[0].id_pdc_itinerance
+    assert json_response["items"][1] == data[1].id_pdc_itinerance
+
+    # Get created Statique and check defaults
+    response = client_auth.get("/statique/")
+    assert response.status_code == status.HTTP_200_OK
+    json_response = response.json()
+    for item in json_response["items"]:
+        statique = Statique(**item)
+        assert statique.nom_amenageur == "NA"
+        assert statique.siren_amenageur == "123456789"
+        assert statique.contact_amenageur == "na@example.org"
+        assert statique.nom_operateur == "NA"
+        assert statique.telephone_operateur == "tel:+33-1-23-45-67-89"
 
 
 @pytest.mark.parametrize(

@@ -120,11 +120,17 @@ def not_future(value: date):
 # A date not in the future (today or in the past)
 NotFutureDate = Annotated[date, AfterValidator(not_future)]
 
+# Default values (if not provided)
+DEFAULT_CHAR_VALUE: str = "NA"
+DEFAULT_EMAIL_ADDRESS: str = "na@example.org"
+DEFAULT_PHONE_NUMBER: FrenchPhoneNumber = FrenchPhoneNumber("+33.123456789")
+DEFAULT_SIREN_NUMBER: str = "123456789"
+
 
 class Statique(ModelSchemaMixin, BaseModel):
     """IRVE static model."""
 
-    nom_amenageur: Optional[str]
+    nom_amenageur: Optional[str] = DEFAULT_CHAR_VALUE
     siren_amenageur: Optional[
         Annotated[
             str,
@@ -135,11 +141,11 @@ class Statique(ModelSchemaMixin, BaseModel):
                 ],
             ),
         ]
-    ]
-    contact_amenageur: Optional[EmailStr]
-    nom_operateur: Optional[str]
+    ] = DEFAULT_SIREN_NUMBER
+    contact_amenageur: Optional[EmailStr] = DEFAULT_EMAIL_ADDRESS
+    nom_operateur: Optional[str] = DEFAULT_CHAR_VALUE
     contact_operateur: EmailStr
-    telephone_operateur: Optional[FrenchPhoneNumber]
+    telephone_operateur: Optional[FrenchPhoneNumber] = DEFAULT_PHONE_NUMBER
     nom_enseigne: str
     id_station_itinerance: Annotated[
         str, Field(pattern="(?:(?:^|,)(^[A-Z]{2}[A-Z0-9]{4,33}$|Non concerné))+$")

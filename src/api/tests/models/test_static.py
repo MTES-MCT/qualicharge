@@ -123,3 +123,25 @@ def test_statique_model_date_maj():
     tomorrow = today + timedelta(days=1)
     with pytest.raises(ValueError, match=f"{tomorrow} is in the future"):
         StatiqueFactory.build(date_maj=tomorrow)
+
+
+def test_statique_model_defaults():
+    """Test the Statique model defaut values (when not provided)."""
+    example = StatiqueFactory.build()
+    statique = Statique(
+        **example.model_dump(
+            exclude={
+                "nom_amenageur",
+                "siren_amenageur",
+                "contact_amenageur",
+                "nom_operateur",
+                "telephone_operateur",
+            }
+        )
+    )
+
+    assert statique.nom_amenageur == "NA"
+    assert statique.siren_amenageur == "123456789"
+    assert statique.contact_amenageur == "na@example.org"
+    assert statique.nom_operateur == "NA"
+    assert statique.telephone_operateur == "+33.123456789"
