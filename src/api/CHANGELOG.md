@@ -24,6 +24,8 @@ and this project adheres to
   command
 - Decrease the number of database queries for dynamic endpoints
 - Cache the "get PointDeCharge id from its `id_pdc_itinerance`" database query
+- Updated `Localisation` table constraint: `adresse_station` is no longer
+  unique, but the `adresse_station`/`coordonneesXY` couple should be
 - Upgrade pydantic to `2.10.4`
 - Upgrade pydantic-settings to `2.7.1`
 - Upgrade python-multipart to `0.0.20`

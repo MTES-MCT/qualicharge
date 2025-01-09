@@ -117,12 +117,16 @@ class Enseigne(BaseTimestampedSQLModel, table=True):
 class Localisation(BaseTimestampedSQLModel, table=True):
     """Localisation table."""
 
+    __table_args__ = BaseTimestampedSQLModel.__table_args__ + (
+        UniqueConstraint("adresse_station", "coordonneesXY"),
+    )
+
     model_config = SQLModelConfig(
         validate_assignment=True, arbitrary_types_allowed=True
     )
 
     id: UUID = Field(default_factory=uuid4, primary_key=True)
-    adresse_station: str = Field(unique=True)
+    adresse_station: str
     code_insee_commune: str = Field(regex=r"^([013-9]\d|2[AB1-9])\d{3}$")
     coordonneesXY: DataGouvCoordinate = Field(
         sa_type=Geometry(
