@@ -62,6 +62,12 @@ class StatiqueFactory(ModelFactory[Statique]):
         lambda: DataclassFactory.__random__.choice(prefixes)
         + FrenchDataclassFactory.__faker__.pystr_format("E######")
     )
+    coordonneesXY = Use(
+        lambda: (
+            f"[{round(DataclassFactory.__random__.uniform(-180,180), 6)}, "  # longitude
+            f"{round(DataclassFactory.__random__.uniform(-90,90), 6)}]"  # latitude
+        )
+    )
 
     @post_generated
     @classmethod

@@ -13,6 +13,7 @@ and this project adheres to
 - Activate and configure Sentry profiling by setting the
   `SENTRY_PROFILES_SAMPLE_RATE` configuration
 - Set request's user (`username`) in Sentry's context
+- Add `Localisation.coordonneesXY` unique contraint [BC] 💥
 
 ### Changed
 
@@ -36,6 +37,10 @@ and this project adheres to
 ### Fixed
 
 - Renamed database `raccordementemum` to `raccordementenum`
+
+### Removed
+
+- Remove `Localisation.adresse_station` unique constraint
 
 ## [0.16.0] - 2024-12-12
 

@@ -122,7 +122,7 @@ class Localisation(BaseTimestampedSQLModel, table=True):
     )
 
     id: UUID = Field(default_factory=uuid4, primary_key=True)
-    adresse_station: str = Field(unique=True)
+    adresse_station: str
     code_insee_commune: str = Field(regex=r"^([013-9]\d|2[AB1-9])\d{3}$")
     coordonneesXY: DataGouvCoordinate = Field(
         sa_type=Geometry(
@@ -131,6 +131,7 @@ class Localisation(BaseTimestampedSQLModel, table=True):
             srid=4326,
             spatial_index=True,
         ),
+        unique=True,
     )  # type: ignore
 
     # Relationships

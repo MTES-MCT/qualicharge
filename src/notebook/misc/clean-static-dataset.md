@@ -101,6 +101,52 @@ fixed.to_json("../../data/irve-statique.json.gz", orient="records", lines=True, 
 fixed.to_parquet("../../data/irve-statique.parquet", compression="gzip")
 ```
 
-```python
+## Clean duplicated coordinates
 
+```python
+import pandas as pd
+
+static = pd.read_parquet("../../../data/irve-statique.parquet")
+static
+```
+
+Get a list of unique `coordonneesxy`/`adresse_station` couples.
+
+```python
+addr_crds = static[~static.duplicated(["coordonneesxy", "adresse_station"], keep='first')][["adresse_station", "coordonneesxy"]]
+addr_crds
+```
+
+Remove duplicated coordinates, as it's supposed to be unique in the database (two different addresses are not supposed to have the same coordinates).
+
+```python
+pd.set_option('display.max_rows', 50)
+selected_addr_crds = addr_crds[~addr_crds.duplicated(["coordonneesxy"], keep="first")]
+selected_addr_crds
+```
+
+Perform rows selection.
+
+```python
+cleaned_static = static[static["adresse_station"].isin(selected_addr_crds["adresse_station"]) & static["coordonneesxy"].isin(selected_addr_crds["coordonneesxy"])]
+cleaned_static[["id_pdc_itinerance", "coordonneesxy", "adresse_station"]]
+```
+
+Clean column names and Enums.
+
+```python
+cleaned_static = cleaned_static.rename(columns={"coordonneesxy": "coordonneesXY"})
+cleaned_static = cleaned_static.replace(to_replace=enum_to_replace, value=enum_value)
+
+cleaned_static
+```
+
+Export to json + parquet
+
+```python
+cleaned_static.to_json("../../../data/irve-statique.json.gz", orient="records", lines=True, compression="gzip")
+```
+
+```python
+cleaned_static.to_parquet("../../../data/irve-statique.parquet")
 ```
