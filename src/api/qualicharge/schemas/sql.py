@@ -289,7 +289,7 @@ class StatiqueImporter:
         self._save_schema(
             self.localisation,
             Localisation,
-            constraint="localisation_adresse_station_key",
+            constraint="localisation_coordonneesXY_key",
         )
         self._save_schema(
             self.station,
