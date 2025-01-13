@@ -3,9 +3,11 @@
 import datetime
 
 import pytest
+from django.core.exceptions import ValidationError
 from django.db.models import signals
 
 from apps.consent import AWAITING, REVOKED, VALIDATED
+from apps.consent.factories import ConsentFactory
 from apps.consent.signals import handle_new_delivery_point
 from apps.consent.utils import consent_end_date
 from apps.core.factories import DeliveryPointFactory
@@ -100,27 +102,86 @@ def test_create_consent_with_custom_period_date():
 
 @pytest.mark.django_db
 def test_update_consent_status():
-    """Tests updating a consent status."""
+    """Tests updating a consent status.
+
+    Test that consents can no longer be modified once their status is passed to
+    `VALIDATED` (raise ValidationError).
+    """
     from apps.consent.models import Consent
 
     # create one `delivery_point` and consequently one `consent`
+    assert Consent.objects.count() == 0
     delivery_point = DeliveryPointFactory()
+    assert Consent.objects.count() == 1
 
     # get the created consent
     consent = Consent.objects.get(delivery_point=delivery_point)
     consent_updated_at = consent.updated_at
-
-    # update status to VALIDATED
-    consent.status = VALIDATED
-    consent.save()
-    assert consent.status == VALIDATED
-    assert consent.updated_at > consent_updated_at
+    assert consent.status == AWAITING
     assert consent.revoked_at is None
-    new_updated_at = consent.updated_at
 
     # update status to REVOKED
     consent.status = REVOKED
     consent.save()
     assert consent.status == REVOKED
-    assert consent.updated_at > new_updated_at
+    assert consent.updated_at > consent_updated_at
     assert consent.revoked_at is not None
+    new_updated_at = consent.updated_at
+    # refresh the state in memory
+    consent = Consent.objects.get(delivery_point=delivery_point)
+
+    # Update the consent to AWAITING
+    consent.status = AWAITING
+    consent.revoked_at = None
+    consent.save()
+    assert consent.status == AWAITING
+    assert consent.updated_at > new_updated_at
+    assert consent.revoked_at is None
+    new_updated_at = consent.updated_at
+    # refresh the state in memory
+    consent = Consent.objects.get(delivery_point=delivery_point)
+
+    # update status to VALIDATED
+    consent.status = VALIDATED
+    consent.revoked_at = None
+    consent.save()
+    assert consent.status == VALIDATED
+    assert consent.updated_at > new_updated_at
+    assert consent.revoked_at is None
+    # refresh the state in memory
+    consent = Consent.objects.get(delivery_point=delivery_point)
+
+    # The consent status is `VALIDATED`, so it cannot be changed anymore.
+    with pytest.raises(ValidationError):
+        consent.status = AWAITING
+        consent.save()
+
+
+@pytest.mark.django_db
+def test_delete_consent():
+    """Tests deleting a consent.
+
+    Consents can no longer be deleted once their status is passed to
+    `VALIDATED` (raise ValidationError).
+    """
+    from apps.consent.models import Consent
+
+    # create one `delivery_point` and consequently one `consent`
+    assert Consent.objects.count() == 0
+    delivery_point = DeliveryPointFactory()
+    assert Consent.objects.count() == 1
+
+    # get the created consent and delete it
+    consent = Consent.objects.get(delivery_point=delivery_point)
+    assert consent.status != VALIDATED
+    consent.delete()
+    assert Consent.objects.count() == 0
+
+    # create a new content with status VALIDATED
+    ConsentFactory(delivery_point=delivery_point, status=VALIDATED)
+    consent = Consent.objects.get(delivery_point=delivery_point)
+    assert consent.status == VALIDATED
+    # the consent status is `VALIDATED`, so it cannot be deleted.
+    with pytest.raises(ValidationError):
+        consent.delete()
+    assert Consent.objects.count() == 1
