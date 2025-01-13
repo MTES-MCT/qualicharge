@@ -395,7 +395,7 @@ seed-oidc: ## seed the OIDC provider
 seed-dashboard: ## seed dashboard
 	@echo "Running dashboard service database engine…"
 	@$(COMPOSE_UP) --wait postgresql
-	@echo "Seeding dashboard…"#
+	@echo "Seeding dashboard…"
 	@bin/manage loaddata dashboard/fixtures/dsfr_fixtures.json
 	@bin/manage seed_consent
 .PHONY: seed-dashboard
