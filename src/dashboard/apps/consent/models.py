@@ -1,12 +1,13 @@
 """Dashboard consent app models."""
 
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 from apps.core.abstract_models import DashboardBase
 
-from . import AWAITING, CONSENT_STATUS_CHOICE, REVOKED
+from . import AWAITING, CONSENT_STATUS_CHOICE, REVOKED, VALIDATED
 from .managers import ConsentManager
 from .utils import consent_end_date
 
@@ -28,6 +29,8 @@ class Consent(DashboardBase):
     - end (DateTimeField): representing the end date of the consent validity.
     - revoked_at (DateTimeField): recording the revoked date of the consent, if any.
     """
+
+    VALIDATION_ERROR_MESSAGE = _("Validated consent cannot be modified once defined.")
 
     delivery_point = models.ForeignKey(
         "qcd_core.DeliveryPoint", on_delete=models.CASCADE, related_name="consents"
@@ -57,12 +60,48 @@ class Consent(DashboardBase):
     def __str__(self):  # noqa: D105
         return f"{self.delivery_point} - {self.updated_at}: {self.status}"
 
+    @classmethod
+    def from_db(cls, db, field_names, values):
+        """Store the original values when an instance is loaded from the database."""
+        instance = super().from_db(db, field_names, values)
+        instance._loaded_values = dict(zip(field_names, values, strict=False))
+        return instance
+
+    def clean(self):
+        """Custom validation logic.
+
+        Validates and restricts updates to the Consent object if its status is set
+        to `VALIDATED`. This ensures that validated consents cannot be modified
+        after their status are defined to `VALIDATED` (We prevent this update
+        for contractual reasons).
+
+        Raises:
+        ------
+        ValidationError
+            If the Consent object's status is `VALIDATED`.
+        """
+        if self._is_validated_and_modified():
+            raise ValidationError(message=self.VALIDATION_ERROR_MESSAGE)
+
     def save(self, *args, **kwargs):
         """Saves with custom logic.
 
         If the consent status is `REVOKED`, `revoked_at` is updated to the current time.
         """
+        if self._is_validated_and_modified():
+            raise ValidationError(message=self.VALIDATION_ERROR_MESSAGE)
+
         if self.status == REVOKED:
             self.revoked_at = timezone.now()
 
         return super(Consent, self).save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        """Restrict the deletion of a consent if its status is `VALIDATED`."""
+        if self._loaded_values.get("status") == VALIDATED:
+            raise ValidationError(message=self.VALIDATION_ERROR_MESSAGE)
+        super().delete(*args, **kwargs)
+
+    def _is_validated_and_modified(self):
+        """Checks if the validated 'Consent' object is trying to be modified."""
+        return not self._state.adding and self._loaded_values.get("status") == VALIDATED
