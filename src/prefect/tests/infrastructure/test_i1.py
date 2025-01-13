@@ -10,57 +10,60 @@ from sqlalchemy import text
 from indicators.infrastructure import i1  # type: ignore
 from indicators.models import IndicatorPeriod, Level  # type: ignore
 
+# expected result
+N_LEVEL = [212, 2257, 1493, 8734]
+N_DPTS = 109
+
+PERIOD = IndicatorPeriod.DAY
+PARAMETERS_CHUNK = [10, 50, 100, 500]
 PARAMETERS_FLOW = [
     (
         Level.CITY,
         "SELECT COUNT(*) FROM City",
         ["75056", "13055", "69123"],
-        212,
+        N_LEVEL[0],
     ),
     (
         Level.EPCI,
         "SELECT COUNT(*) FROM EPCI",
         ["200054781", "200054807", "200046977"],
-        2257,
+        N_LEVEL[1],
     ),
     (
         Level.DEPARTMENT,
         "SELECT COUNT(*) FROM Department",
         ["59", "75", "13"],
-        1493,
+        N_LEVEL[2],
     ),
     (
         Level.REGION,
         "SELECT COUNT(*) FROM Region",
         ["11", "84", "75"],
-        8734,
+        N_LEVEL[3],
     ),
 ]
 PARAMETERS_GET_VALUES = [
     (
         Level.CITY,
         "SELECT id FROM City WHERE name IN ('Paris', 'Marseille', 'Lyon')",
-        212,
+        N_LEVEL[0],
     ),
     (
         Level.EPCI,
         "SELECT id FROM EPCI WHERE code IN ('200054781', '200054807', '200046977')",
-        2257,
+        N_LEVEL[1],
     ),
     (
         Level.DEPARTMENT,
         "SELECT id FROM Department WHERE code IN ('59', '75', '13')",
-        1493,
+        N_LEVEL[2],
     ),
     (
         Level.REGION,
         "SELECT id FROM Region WHERE code IN ('11', '84', '75')",
-        8734,
+        N_LEVEL[3],
     ),
 ]
-PARAMETERS_CHUNK = [10, 50, 100, 500]
-PERIOD = IndicatorPeriod.DAY
-N_DPTS = 109
 
 
 @pytest.mark.parametrize("level,query,expected", PARAMETERS_GET_VALUES)

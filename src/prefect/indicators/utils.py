@@ -14,12 +14,12 @@ from .models import Level
 POWER_RANGE_CTE = """
     puissance(category, p_cat) AS (
         VALUES
-            (numrange(0, 15.0), 1),
-            (numrange(15.0, 26.0), 2),
-            (numrange(26, 65.0), 3),
-            (numrange(65, 175.0), 4),
-            (numrange(175, 360.0), 5),
-            (numrange(360, NULL), 6)
+            (numrange(0.0, 7.4), 1),
+            (numrange(7.4, 22.0), 2),
+            (numrange(22.0, 50.0), 3),
+            (numrange(50, 150.0), 4),
+            (numrange(150, 350.0), 5),
+            (numrange(350, NULL), 6)
     )"""
 
 
