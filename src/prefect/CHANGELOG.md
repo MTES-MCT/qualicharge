@@ -10,7 +10,20 @@ and this project adheres to
 
 ### Added
 
-- Implement t1 workflow
-- Implement i1 workflow
+- Implement i4 workflow
+- Implement i7 workflow
+- Implement c1 workflow
+- Implement c2 workflow
+- Implement u5 workflow
+- Implement u6 workflow
+- Implement u9 workflow
+- Implement u10 workflow
+- Implement u11 workflow
+- Implement u12 workflow
+- Implement u13 workflow
+
+### Updated
+
+- use Statique table instead of PointDeCharge table
 
 [unreleased]: https://github.com/MTES-MCT/qualicharge/
