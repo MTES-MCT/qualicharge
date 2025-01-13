@@ -31,6 +31,20 @@ deployments:
     work_pool:
       name: indicators
       work_queue_name: default
+  - name: i7-daily
+    entrypoint: indicators/run.py:i7_calculate
+    concurrency_limit: 10
+    schedules:
+      - cron: "4 14 * * *"
+        timezone: "Europe/Paris"
+        active: true
+    parameters:
+      period: d
+      create_artifact: true
+      chunk_size: 1000
+    work_pool:
+      name: indicators
+      work_queue_name: default
   - name: t1-daily
     entrypoint: indicators/run.py:t1_calculate
     concurrency_limit: 10

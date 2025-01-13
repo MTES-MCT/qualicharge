@@ -11,5 +11,6 @@ and this project adheres to
 ### Added
 
 - Implement i4 workflow
+- Implement i7 workflow
 
 [unreleased]: https://github.com/MTES-MCT/qualicharge/
