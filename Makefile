@@ -69,6 +69,7 @@ bootstrap: \
   create-dashboard-superuser \
   seed-dashboard \
   jupytext--to-ipynb \
+  run \
   seed-api
 .PHONY: bootstrap
 
@@ -344,10 +345,29 @@ reset-dashboard-db: ## Reset the PostgreSQL dashboard database
 	$(MAKE) seed-dashboard
 .PHONY: reset-dashboard-db
 
-seed-api: ## seed the API database (static data)
-seed-api: run
+seed-api-static: ## seed the API database (static data)
+	@echo "Creating statique database entries …"
 	zcat data/irve-statique.json.gz | \
 		bin/qcc static bulk --chunk-size 1000
+.PHONY: seed-api-static
+
+seed-api-statuses: ## seed the API database (status data)
+	@echo "Creating status database entries …"
+	zcat data/irve-dynamique-statuses.json.gz | \
+		bin/qcc status bulk --chunk-size 1000
+.PHONY: seed-api-statuses
+
+seed-api-sessions: ## seed the API database (sessions data)
+	@echo "Creating session database entries …"
+	zcat data/irve-dynamique-sessions.json.gz | \
+		bin/qcc session bulk --chunk-size 1000
+.PHONY: seed-api-sessions
+
+seed-api: ## seed the API database (static + dynamic data)
+seed-api: \
+  seed-api-static \
+  seed-api-sessions \
+  seed-api-statuses
 .PHONY: seed-api
 
 seed-metabase: ## seed the Metabase server
