@@ -84,9 +84,12 @@ class ConsentFormView(BreadcrumbContextMixin, FormView):
             return list(user.get_entities())
 
     def _bulk_update_consent(self, ids: list[str], status: str) -> int:
-        """Bulk update of the consent status for a given status and list of entities."""
+        """Bulk update of the consent status for a given status and list of entities.
+
+        Only `AWAITING` consents can be updated by users.
+        """
         return (
-            Consent.objects.filter(id__in=ids)
+            Consent.objects.filter(id__in=ids, status=AWAITING)
             .filter(
                 Q(delivery_point__entity__users=self.request.user)
                 | Q(delivery_point__entity__proxies__users=self.request.user)

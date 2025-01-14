@@ -18,7 +18,7 @@
       <ul class="fr-nav__list">
         {% if request.user.is_authenticated %}
           <li class="fr-nav__item">
-            {% url 'index' as home_url %}
+            {% url 'home:index' as home_url %}
             <a class="fr-nav__link"
                href="{{ home_url }}"
                target="_self"
