@@ -43,11 +43,18 @@
                        name="status"
                        value="{{ consent.id }}"
                        id="{{ consent.id }}"
-                       {% if consent.status == 'VALIDATED' %} checked{% endif %}
+                       {% if consent.status == 'VALIDATED' %} checked="checked" disabled="disabled"{% endif %}
                        aria-describedby="{{ consent.id }}-messages"
                        data-fr-js-checkbox-input="true"
                        data-fr-js-checkbox-actionee="true" />
-                <label class="fr-label" for="{{ consent.id }}">{{ consent.delivery_point.provider_assigned_id }} </label>
+                <label class="fr-label" for="{{ consent.id }}"
+                       {% if consent.status == 'VALIDATED' %}
+                         title="{% trans "Delivery point is already validated" %}"
+                       {% elif consent.status == 'AWAITING' %}
+                         title="{% trans "Delivery point awaiting consent" %}"
+                       {% endif %}>
+                  {{ consent.delivery_point.provider_assigned_id }}
+                </label>
                 <div class="fr-messages-group" id="{{ consent.id }}-messages" aria-live="assertive"></div>
               </div>
             </div>

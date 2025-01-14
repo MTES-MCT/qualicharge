@@ -7,7 +7,7 @@ import pytest
 from django.urls import reverse
 
 from apps.auth.factories import UserFactory
-from apps.consent import AWAITING, VALIDATED
+from apps.consent import AWAITING, REVOKED, VALIDATED
 from apps.consent.factories import ConsentFactory
 from apps.consent.models import Consent
 from apps.consent.views import ConsentFormView
@@ -60,6 +60,16 @@ def test_bulk_update_consent_status(rf):
     assert view._bulk_update_consent(ids, VALIDATED) == size
 
     # and checks that the data has changed to VALIDATED after the update.
+    assert all(c == VALIDATED for c in Consent.objects.values_list("status", flat=True))
+
+    # bulk update from VALIDATED to AWAITING: no data must be updated
+    assert view._bulk_update_consent(ids, AWAITING) == 0
+    # and checks that the status has not changed after the update.
+    assert all(c == VALIDATED for c in Consent.objects.values_list("status", flat=True))
+
+    # bulk update from VALIDATED to REVOKED: no data must be updated
+    assert view._bulk_update_consent(ids, REVOKED) == 0
+    # and checks that the status has not changed after the update.
     assert all(c == VALIDATED for c in Consent.objects.values_list("status", flat=True))
 
 
