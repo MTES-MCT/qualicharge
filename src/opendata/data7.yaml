@@ -125,4 +125,4 @@ default:
           INNER JOIN ImplantationStation ON Station.implantation_station::TEXT = ImplantationStation.reference
           INNER JOIN ConditionAccess ON Station.condition_acces::TEXT = ConditionAccess.reference
           INNER JOIN AccessibilitePMR ON PointDeCharge.accessibilite_pmr::TEXT = AccessibilitePMR.reference
-          INNER JOIN Raccordement ON Station.raccordement::TEXT = Raccordement.reference
+          LEFT JOIN Raccordement ON Station.raccordement::TEXT = Raccordement.reference
