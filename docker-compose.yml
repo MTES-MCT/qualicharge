@@ -81,7 +81,7 @@ services:
         condition: service_healthy
 
   keycloak:
-    image: quay.io/keycloak/keycloak:26.0
+    image: quay.io/keycloak/keycloak:26.1
     env_file:
       - env.d/keycloak
     command: start-dev
