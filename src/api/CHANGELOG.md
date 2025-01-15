@@ -33,6 +33,10 @@ and this project adheres to
 - Upgrade questionary to `2.1.0`
 - Upgrade sentry-sdk to `2.20.0`
 
+### Fixed
+
+- Renamed database `raccordementemum` to `raccordementenum`
+
 ## [0.16.0] - 2024-12-12
 
 ### Changed
