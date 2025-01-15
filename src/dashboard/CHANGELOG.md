@@ -21,7 +21,8 @@ and this project adheres to
 - add admin integration for Entity, DeliveryPoint and Consent
 - add mass admin action (make revoked) for consents
 - block the updates of all new data if a consent has the status `VALIDATED`
-- block the deletion of consent if it has the status `VALIDATED`
+- allow selected consent fields update if status changes from `VALIDATED` to  `REVOKED`
+- block the deletion of consent if it has the status `VALIDATED` or `REVOKED` 
 - block consent updates (via the consent form) if the consent status is not `AWAITING`
 - integration of custom 403, 404 and 500 pages 
 - sentry integration

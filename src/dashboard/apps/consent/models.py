@@ -1,6 +1,5 @@
 """Dashboard consent app models."""
 
-from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
@@ -8,6 +7,7 @@ from django.utils.translation import gettext_lazy as _
 from apps.core.abstract_models import DashboardBase
 
 from . import AWAITING, CONSENT_STATUS_CHOICE, REVOKED, VALIDATED
+from .exceptions import ConsentWorkflowError
 from .managers import ConsentManager
 from .utils import consent_end_date
 
@@ -29,8 +29,6 @@ class Consent(DashboardBase):
     - end (DateTimeField): representing the end date of the consent validity.
     - revoked_at (DateTimeField): recording the revoked date of the consent, if any.
     """
-
-    VALIDATION_ERROR_MESSAGE = _("Validated consent cannot be modified once defined.")
 
     delivery_point = models.ForeignKey(
         "qcd_core.DeliveryPoint", on_delete=models.CASCADE, related_name="consents"
@@ -80,16 +78,18 @@ class Consent(DashboardBase):
         ValidationError
             If the Consent object's status is `VALIDATED`.
         """
-        if self._is_validated_and_modified():
-            raise ValidationError(message=self.VALIDATION_ERROR_MESSAGE)
+        if self._is_update_allowed():
+            return
 
     def save(self, *args, **kwargs):
         """Saves with custom logic.
 
-        If the consent status is `REVOKED`, `revoked_at` is updated to the current time.
+        - Validates and restricts updates to the consent based on its status and
+        modified fields.
+        - Updates `revoked_at` with the current date if the consent status is `REVOKED`.
         """
-        if self._is_validated_and_modified():
-            raise ValidationError(message=self.VALIDATION_ERROR_MESSAGE)
+        if not self._is_update_allowed():
+            return
 
         if self.status == REVOKED:
             self.revoked_at = timezone.now()
@@ -97,11 +97,71 @@ class Consent(DashboardBase):
         return super(Consent, self).save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
-        """Restrict the deletion of a consent if its status is `VALIDATED`."""
-        if self._loaded_values.get("status") == VALIDATED:
-            raise ValidationError(message=self.VALIDATION_ERROR_MESSAGE)
-        super().delete(*args, **kwargs)
+        """Restrict the deletion of a consent.
 
-    def _is_validated_and_modified(self):
-        """Checks if the validated 'Consent' object is trying to be modified."""
-        return not self._state.adding and self._loaded_values.get("status") == VALIDATED
+        Consents cannot be deleted if status is `VALIDATED` or `REVOKED`.
+        """
+        if self._is_deletion_allowed():
+            super().delete(*args, **kwargs)
+
+    def _is_update_allowed(self) -> bool:
+        """Check if consent can be updated.
+
+        Workflow according to consent status:
+        - AWAITING:
+            - can be updated without restriction
+
+        - VALIDATED
+            - if the status is updated to something other than REVOKED, an exception is
+            raised,
+            - if the status is updated to REVOKED, we check the updated fields are
+             allowed to be updated.
+
+        - REVOKED
+            - can be updated without restriction
+            todo: add restriction: REVOKED consent cannot be modified
+        """
+        ALLOWED_UPDATE_FIELDS = {"status", "revoked_at", "updated_at"}
+
+        if self._state.adding:
+            return True
+
+        loaded_status = self._loaded_values.get("status")  # type: ignore[attr-defined]
+        updated_status = self.status
+
+        if loaded_status == VALIDATED:
+            if updated_status != REVOKED:
+                raise ConsentWorkflowError(
+                    _('Validated consent can only be changed to the status "revoked".')
+                )
+
+            # Update the consent status from VALIDATED to REVOKED
+            # we check the updated fields are allowed to be updated.
+            updated_fields = {
+                field
+                for field, loaded_value in self._loaded_values.items()  # type: ignore[attr-defined]
+                if getattr(self, field) != loaded_value
+            }
+
+            if not updated_fields.issubset(ALLOWED_UPDATE_FIELDS):
+                raise ConsentWorkflowError(
+                    _(
+                        f"Only the authorized fields "
+                        f"({', '.join(sorted(ALLOWED_UPDATE_FIELDS))}) can be modified."
+                    )
+                )
+
+        return True
+
+    def _is_deletion_allowed(self) -> bool:
+        """Check if a consent can be deleted.
+
+        Consent cannot be deleted if his loaded status is `VALIDATED` or `REVOKED`.
+        """
+        if self._loaded_values.get("status") == VALIDATED:  # type: ignore[attr-defined]
+            raise ConsentWorkflowError(_("Validated consent cannot be deleted."))
+
+        elif self._loaded_values.get("status") == REVOKED:  # type: ignore[attr-defined]
+            raise ConsentWorkflowError(_("Revoked consent cannot be deleted."))
+
+        return True

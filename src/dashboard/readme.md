@@ -72,6 +72,35 @@ There is a signal on the creation of a `delivery point` (`apps.core.models.Deliv
 This signal allows the creation of a `consent` (`apps.consent.models.Consent`) 
 corresponding to the `delivery_point`.
 
+## Business logic
+
+### Consent management
+
+3 different status types exist for consents with different management rules:
+
+#### AWAITING
+
+Consent awaiting validation by the user.  
+- [x] Users can change consent without restriction.
+
+#### VALIDATED: 
+
+Consent validated by the user.   
+It can only be modified under conditions:
+-  [x] users cannot modify validated consents,
+-  [x] administrators can change a validated consent to `REVOKED`,
+-  [x] the updated values are restricted to the `status`, `revoked_date` and 
+   `updated_at` 
+  fields,
+-  [x] validated consent cannot be deleted.
+
+#### REVOKED:
+
+Consent revoked.  
+- [ ] It cannot be modified.
+- [x] It cannot be deleted.
+
 ## License
 
 This work is released under the MIT License (see LICENSE).
+
