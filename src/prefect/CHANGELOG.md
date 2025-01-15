@@ -12,5 +12,6 @@ and this project adheres to
 
 - Implement i4 workflow
 - Implement i7 workflow
+- Implement u10 workflow
 
 [unreleased]: https://github.com/MTES-MCT/qualicharge/
