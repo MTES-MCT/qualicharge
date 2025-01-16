@@ -3,13 +3,15 @@
 Common indicators functions and constants.
 """
 
+from string import Template
+
 import pandas as pd  # type: ignore
 from prefect import task
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Connection, Engine
 
 from .conf import settings
-from .models import Level
+from .models import IndicatorTimeSpan, Level, PeriodDuration
 
 POWER_RANGE_CTE = """
     puissance(category, p_cat) AS (
@@ -23,7 +25,17 @@ POWER_RANGE_CTE = """
     )"""
 
 
-def get_num_for_level_query_params(level):
+def get_timespan_filter_query_params(timespan: IndicatorTimeSpan):
+    """Get timespan query parameters."""
+    date_end = timespan.start + PeriodDuration[timespan.period.name].value
+    sql_start = "'" + timespan.start.isoformat(sep=" ") + "'"
+    sql_end = "'" + date_end.isoformat(sep=" ") + "'"
+    interval = "START >= timestamp $start AND START < timestamp $end"
+    query_params = {"start": sql_start, "end": sql_end}
+    return {"timespan": Template(interval).substitute(query_params)}
+
+
+def get_num_for_level_query_params(level: Level):
     """Get level_id and join_extras query parameters."""
     match level:
         case Level.CITY:

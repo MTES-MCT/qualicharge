@@ -18,7 +18,7 @@ from sqlalchemy import text
 from sqlalchemy.engine import Connection
 
 from ..conf import settings
-from ..models import Indicator, IndicatorPeriod, Level
+from ..models import Indicator, IndicatorTimeSpan, Level
 from ..utils import (
     get_database_engine,
     get_num_for_level_query_params,
@@ -52,12 +52,11 @@ def get_values_for_targets(
 
 @flow(
     task_runner=ThreadPoolTaskRunner(max_workers=settings.THREAD_POOL_MAX_WORKERS),
-    flow_run_name="i4-{period.value}-{level:02d}-{at:%y-%m-%d}",
+    flow_run_name="i4-{timespan.period.value}-{level:02d}-{timespan.start:%y-%m-%d}",
 )
 def i4_for_level(
     level: Level,
-    period: IndicatorPeriod,
-    at: datetime,
+    timespan: IndicatorTimeSpan,
     chunk_size=settings.DEFAULT_CHUNK_SIZE,
 ) -> pd.DataFrame:
     """Calculate i4 for a level."""
@@ -86,8 +85,8 @@ def i4_for_level(
         "value": merged["value"].fillna(0),
         "code": "i4",
         "level": level,
-        "period": period,
-        "timestamp": at.isoformat(),
+        "period": timespan.period,
+        "timestamp": timespan.start.isoformat(),
         "category": None,
         "extras": None,
     }
@@ -96,9 +95,9 @@ def i4_for_level(
 
 @flow(
     task_runner=ThreadPoolTaskRunner(max_workers=settings.THREAD_POOL_MAX_WORKERS),
-    flow_run_name="i4-{period.value}-00-{at:%y-%m-%d}",
+    flow_run_name="i4-{timespan.period.value}-00-{timespan.start:%y-%m-%d}",
 )
-def i4_national(period: IndicatorPeriod, at: datetime) -> pd.DataFrame:
+def i4_national(timespan: IndicatorTimeSpan) -> pd.DataFrame:
     """Calculate i4 at the national level."""
     engine = get_database_engine()
     with engine.connect() as connection:
@@ -110,9 +109,9 @@ def i4_national(period: IndicatorPeriod, at: datetime) -> pd.DataFrame:
             Indicator(
                 code="i4",
                 level=Level.NATIONAL,
-                period=period,
+                period=timespan.period,
                 value=count,
-                timestamp=at.isoformat(),
+                timestamp=timespan.start.isoformat(),
             ).model_dump(),
         ]
     )
@@ -120,19 +119,18 @@ def i4_national(period: IndicatorPeriod, at: datetime) -> pd.DataFrame:
 
 @flow(
     task_runner=ThreadPoolTaskRunner(max_workers=settings.THREAD_POOL_MAX_WORKERS),
-    flow_run_name="meta-i4-{period.value}",
+    flow_run_name="meta-i4-{timespan.period.value}",
 )
 def calculate(
-    period: IndicatorPeriod, create_artifact: bool = False, chunk_size: int = 1000
+    timespan: IndicatorTimeSpan, create_artifact: bool = False, chunk_size: int = 1000
 ) -> List[Indicator]:
     """Run all i4 subflows."""
-    now = pd.Timestamp.now()
     subflows_results = [
-        i4_national(period, now),
-        i4_for_level(Level.REGION, period, now, chunk_size=chunk_size),
-        i4_for_level(Level.DEPARTMENT, period, now, chunk_size=chunk_size),
-        i4_for_level(Level.EPCI, period, now, chunk_size=chunk_size),
-        i4_for_level(Level.CITY, period, now, chunk_size=chunk_size),
+        i4_national(timespan),
+        i4_for_level(Level.REGION, timespan, chunk_size=chunk_size),
+        i4_for_level(Level.DEPARTMENT, timespan, chunk_size=chunk_size),
+        i4_for_level(Level.EPCI, timespan, chunk_size=chunk_size),
+        i4_for_level(Level.CITY, timespan, chunk_size=chunk_size),
     ]
     indicators = pd.concat(subflows_results, ignore_index=True)
 
@@ -140,7 +138,7 @@ def calculate(
         create_markdown_artifact(
             key=runtime.flow_run.name,
             markdown=indicators.to_markdown(),
-            description=f"i4 report at {now} (period: {period.value})",
+            description=f"i4 report at {timespan.start} (period: {timespan.period.value})",  # noqa: E501
         )
 
     return [Indicator(**record) for record in indicators.to_dict(orient="records")]  # type: ignore[misc]

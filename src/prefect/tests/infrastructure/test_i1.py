@@ -3,18 +3,20 @@
 I1: the number of publicly open points of charge.
 """
 
+from datetime import datetime
+
 import pandas as pd  # type: ignore
 import pytest  # type: ignore
 from sqlalchemy import text
 
 from indicators.infrastructure import i1  # type: ignore
-from indicators.models import IndicatorPeriod, Level  # type: ignore
+from indicators.models import IndicatorPeriod, IndicatorTimeSpan, Level  # type: ignore
 
-# expected result
+# expected result for level [city, epci, dpt, reg]
 N_LEVEL = [212, 2257, 1493, 8734]
 N_DPTS = 109
+TIMESPAN = IndicatorTimeSpan(start=datetime.now(), period=IndicatorPeriod.DAY)
 
-PERIOD = IndicatorPeriod.DAY
 PARAMETERS_CHUNK = [10, 50, 100, 500]
 PARAMETERS_FLOW = [
     (
@@ -86,7 +88,7 @@ def test_task_get_values_for_target_unexpected_level(db_connection):
 def test_flow_i1_for_level(db_connection, level, query, targets, expected):
     """Test the `i1_for_level` flow."""
     now = pd.Timestamp.now()
-    indicators = i1.i1_for_level(level, PERIOD, now, chunk_size=1000)
+    indicators = i1.i1_for_level(level, TIMESPAN, chunk_size=1000)
     assert len(indicators) == db_connection.execute(text(query)).scalars().one()
     assert indicators.loc[indicators["target"].isin(targets), "value"].sum() == expected
 
@@ -94,9 +96,8 @@ def test_flow_i1_for_level(db_connection, level, query, targets, expected):
 @pytest.mark.parametrize("chunk_size", PARAMETERS_CHUNK)
 def test_flow_i1_for_level_with_various_chunk_sizes(chunk_size):
     """Test the `i1_for_level` flow with various chunk sizes."""
-    now = pd.Timestamp.now()
     level, query, targets, expected = PARAMETERS_FLOW[2]
-    indicators = i1.i1_for_level(level, PERIOD, now, chunk_size=chunk_size)
+    indicators = i1.i1_for_level(level, TIMESPAN, chunk_size=chunk_size)
     assert len(indicators) == N_DPTS
     assert indicators.loc[indicators["target"].isin(targets), "value"].sum() == expected
 
@@ -105,7 +106,7 @@ def test_flow_i1_national(db_connection):
     """Test the `i1_national` flow."""
     result = db_connection.execute(text("SELECT COUNT(id) FROM PointDeCharge"))
     expected = result.scalars().one()
-    indicators = i1.i1_national(PERIOD, pd.Timestamp.now())
+    indicators = i1.i1_national(TIMESPAN)
     assert indicators.at[0, "value"] == expected
 
 
@@ -123,5 +124,5 @@ def test_flow_i1_calculate(db_connection):
         )
     )
     expected = sum(result.one()) + 1
-    indicators = i1.calculate(PERIOD, create_artifact=True)
+    indicators = i1.calculate(TIMESPAN, create_artifact=True)
     assert len(indicators) == expected

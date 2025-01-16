@@ -3,7 +3,6 @@
 U10: the number of sessions.
 """
 
-from datetime import datetime
 from string import Template
 from typing import List
 from uuid import UUID
@@ -14,15 +13,15 @@ from prefect import flow, runtime, task
 from prefect.artifacts import create_markdown_artifact
 from prefect.futures import wait
 from prefect.task_runners import ThreadPoolTaskRunner
-from sqlalchemy import text
 from sqlalchemy.engine import Connection
 
 from ..conf import settings
-from ..models import Indicator, IndicatorPeriod, Level
+from ..models import Indicator, IndicatorTimeSpan, Level
 from ..utils import (
     get_database_engine,
     get_num_for_level_query_params,
     get_targets_for_level,
+    get_timespan_filter_query_params,
 )
 
 NUM_SESSIONS_FOR_LEVEL_QUERY_TEMPLATE = """
@@ -37,8 +36,7 @@ NUM_SESSIONS_FOR_LEVEL_QUERY_TEMPLATE = """
             LEFT JOIN city ON city.code = code_insee_commune
             $join_extras
         WHERE
-            START >= timestamp $start
-            AND START < timestamp $start + interval '1 day'
+            $timespan
             AND $level_id IN ($indexes)
         GROUP BY $level_id
         """
@@ -49,33 +47,32 @@ QUERY_NATIONAL_TEMPLATE = """
         FROM
             SESSION
         WHERE
-            START >= timestamp $start
-            AND START < timestamp $start + interval '1 day'
+            $timespan
         """
 
 
 @task(task_run_name="values-for-target-{level:02d}")
 def get_values_for_targets(
-    connection: Connection, level: Level, at: datetime, indexes: List[UUID]
+    connection: Connection,
+    level: Level,
+    timespan: IndicatorTimeSpan,
+    indexes: List[UUID],
 ) -> pd.DataFrame:
     """Fetch sessions given input level, timestamp and target index."""
     query_template = Template(NUM_SESSIONS_FOR_LEVEL_QUERY_TEMPLATE)
-    query_params: dict = {
-        "indexes": ",".join(f"'{i}'" for i in map(str, indexes)),
-        "start": "'" + at.isoformat(sep=" ") + "'",
-    }
+    query_params = {"indexes": ",".join(f"'{i}'" for i in map(str, indexes))}
     query_params |= get_num_for_level_query_params(level)
+    query_params |= get_timespan_filter_query_params(timespan)
     return pd.read_sql_query(query_template.substitute(query_params), con=connection)
 
 
 @flow(
     task_runner=ThreadPoolTaskRunner(max_workers=settings.THREAD_POOL_MAX_WORKERS),
-    flow_run_name="u10-{period.value}-{level:02d}-{at:%y-%m-%d}",
+    flow_run_name="u10-{timespan.period.value}-{level:02d}-{timespan.start:%y-%m-%d}",
 )
 def u10_for_level(
     level: Level,
-    period: IndicatorPeriod,
-    at: datetime,
+    timespan: IndicatorTimeSpan,
     chunk_size=settings.DEFAULT_CHUNK_SIZE,
 ) -> pd.DataFrame:
     """Calculate u10 for a level and a timestamp."""
@@ -89,7 +86,7 @@ def u10_for_level(
             else [ids.to_numpy()]
         )
         futures = [
-            get_values_for_targets.submit(connection, level, at, chunk)  # type: ignore[call-overload]
+            get_values_for_targets.submit(connection, level, timespan, chunk)  # type: ignore[call-overload]
             for chunk in chunks
         ]
         wait(futures)
@@ -104,8 +101,8 @@ def u10_for_level(
         "value": merged["value"].fillna(0),
         "code": "u10",
         "level": level,
-        "period": period,
-        "timestamp": at.isoformat(),
+        "period": timespan.period,
+        "timestamp": timespan.start.isoformat(),
         "category": None,
         "extras": None,
     }
@@ -114,13 +111,13 @@ def u10_for_level(
 
 @flow(
     task_runner=ThreadPoolTaskRunner(max_workers=settings.THREAD_POOL_MAX_WORKERS),
-    flow_run_name="u10-{period.value}-00-{at:%y-%m-%d}",
+    flow_run_name="u10-{timespan.period.value}-00-{timespan.start:%y-%m-%d}",
 )
-def u10_national(period: IndicatorPeriod, at: datetime) -> pd.DataFrame:
+def u10_national(timespan: IndicatorTimeSpan) -> pd.DataFrame:
     """Calculate u10 at the national level."""
     engine = get_database_engine()
     query_template = Template(QUERY_NATIONAL_TEMPLATE)
-    query_params = {"start": "'" + at.isoformat(sep=" ") + "'"}
+    query_params = get_timespan_filter_query_params(timespan)
     with engine.connect() as connection:
         res = pd.read_sql_query(query_template.substitute(query_params), con=connection)
     indicators = {
@@ -128,8 +125,8 @@ def u10_national(period: IndicatorPeriod, at: datetime) -> pd.DataFrame:
         "value": res["value"].fillna(0),
         "code": "u10",
         "level": Level.NATIONAL,
-        "period": period,
-        "timestamp": at.isoformat(),
+        "period": timespan.period,
+        "timestamp": timespan.start.isoformat(),
         "category": None,
         "extras": None,
     }
@@ -138,22 +135,20 @@ def u10_national(period: IndicatorPeriod, at: datetime) -> pd.DataFrame:
 
 @flow(
     task_runner=ThreadPoolTaskRunner(max_workers=settings.THREAD_POOL_MAX_WORKERS),
-    flow_run_name="meta-u10-{period.value}",
+    flow_run_name="meta-u10-{timespan.period.value}",
 )
 def calculate(
-    period: IndicatorPeriod,
-    timestp: datetime,
+    timespan: IndicatorTimeSpan,
     create_artifact: bool = False,
     chunk_size: int = 1000,
 ) -> List[Indicator]:
     """Run all u10 subflows."""
-    # now = pd.Timestamp.now()
     subflows_results = [
-        u10_national(period, timestp),
-        u10_for_level(Level.REGION, period, timestp, chunk_size=chunk_size),
-        u10_for_level(Level.DEPARTMENT, period, timestp, chunk_size=chunk_size),
-        u10_for_level(Level.EPCI, period, timestp, chunk_size=chunk_size),
-        u10_for_level(Level.CITY, period, timestp, chunk_size=chunk_size),
+        u10_national(timespan),
+        u10_for_level(Level.REGION, timespan, chunk_size=chunk_size),
+        u10_for_level(Level.DEPARTMENT, timespan, chunk_size=chunk_size),
+        u10_for_level(Level.EPCI, timespan, chunk_size=chunk_size),
+        u10_for_level(Level.CITY, timespan, chunk_size=chunk_size),
     ]
     indicators = pd.concat(subflows_results, ignore_index=True)
 
@@ -161,7 +156,7 @@ def calculate(
         create_markdown_artifact(
             key=runtime.flow_run.name,
             markdown=indicators.to_markdown(),
-            description=f"u10 report at {timestp} (period: {period.value})",
+            description=f"u10 report at {timespan.start} (period: {timespan.period.value})",  # noqa: E501
         )
 
     return [Indicator(**record) for record in indicators.to_dict(orient="records")]  # type: ignore[misc]
