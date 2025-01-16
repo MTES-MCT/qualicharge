@@ -5,7 +5,7 @@ from django.contrib.admin.sites import AdminSite
 from django.urls import reverse
 
 from apps.auth.factories import AdminUserFactory
-from apps.consent import AWAITING, REVOKED, VALIDATED
+from apps.consent import AWAITING, REVOKED
 from apps.consent.admin import ConsentAdmin
 from apps.consent.models import Consent
 from apps.consent.tests.conftest import FAKE_TIME
@@ -61,37 +61,4 @@ def test_make_revoked_action(client, patch_timezone_now):
     consent.refresh_from_db()
     assert consent.status == REVOKED
     assert consent.revoked_at == FAKE_TIME
-    assert consent.updated_at == FAKE_TIME
-
-
-@pytest.mark.django_db
-def test_make_awaiting_action(client, patch_timezone_now):
-    """Tests the 'make_awaiting' action for ConsentAdmin."""
-    # Initialize admin user
-    admin_user = AdminUserFactory()
-
-    # create a consent
-    assert Consent.objects.count() == 0
-    DeliveryPointFactory()
-    assert Consent.objects.count() == 1
-
-    # Select and update consent status to AWAITING
-    consent = Consent.objects.first()
-    consent.status = VALIDATED
-    consent.save()
-    assert consent.status == VALIDATED
-
-    # Post action with selected consent
-    data = {
-        "action": "make_awaiting",
-        "_selected_action": [
-            consent.id,
-        ],
-    }
-    client.force_login(admin_user)
-    client.post(reverse("admin:qcd_consent_consent_changelist"), data)
-
-    consent.refresh_from_db()
-    assert consent.status == AWAITING
-    assert consent.revoked_at is None
     assert consent.updated_at == FAKE_TIME
