@@ -43,6 +43,16 @@ NUM_SESSIONS_FOR_LEVEL_QUERY_TEMPLATE = """
         GROUP BY $level_id
         """
 
+QUERY_NATIONAL_TEMPLATE = """
+        SELECT
+            count(*) AS value
+        FROM
+            SESSION
+        WHERE
+            START >= $start
+            AND START < $start + interval '1 day'
+        """
+
 
 @task(task_run_name="values-for-target-{level:02d}")
 def get_values_for_targets(
@@ -92,7 +102,7 @@ def u10_for_level(
     indicators = {
         "target": merged["code"],
         "value": merged["value"].fillna(0),
-        "code": "i1",
+        "code": "u10",
         "level": level,
         "period": period,
         "timestamp": at,
@@ -109,40 +119,38 @@ def u10_for_level(
 def u10_national(period: IndicatorPeriod, at: datetime) -> pd.DataFrame:
     """Calculate u10 at the national level."""
     engine = get_database_engine()
+    query_template = Template(QUERY_NATIONAL_TEMPLATE)
+    query_params = {"start": at}
     with engine.connect() as connection:
-        result = connection.execute(
-            text("SELECT COUNT(*) FROM PointDeCharge xxxxxxxxxxxxx")
-        )
-        count = result.one()[0]
-
-    return pd.DataFrame.from_records(
-        [
-            Indicator(
-                code="i1",
-                level=Level.NATIONAL,
-                period=period,
-                value=count,
-                timestamp=at,
-            ).model_dump(),
-        ]
-    )
+        res = pd.read_sql_query(query_template.substitute(query_params), con=connection)
+    indicators = {
+        "target": None,
+        "value": res["value"].fillna(0),
+        "code": "u10",
+        "level": Level.NATIONAL,
+        "period": period,
+        "timestamp": at,
+        "category": None,
+        "extras": None,
+    }
+    return pd.DataFrame(indicators)
 
 
 @flow(
     task_runner=ThreadPoolTaskRunner(max_workers=settings.THREAD_POOL_MAX_WORKERS),
-    flow_run_name="meta-i1-{period.value}",
+    flow_run_name="meta-u10-{period.value}",
 )
 def calculate(
     period: IndicatorPeriod, create_artifact: bool = False, chunk_size: int = 1000
 ) -> List[Indicator]:
-    """Run all i1 subflows."""
+    """Run all u10 subflows."""
     now = pd.Timestamp.now()
     subflows_results = [
-        i1_national(period, now),
-        i1_for_level(Level.REGION, period, now, chunk_size=chunk_size),
-        i1_for_level(Level.DEPARTMENT, period, now, chunk_size=chunk_size),
-        i1_for_level(Level.EPCI, period, now, chunk_size=chunk_size),
-        i1_for_level(Level.CITY, period, now, chunk_size=chunk_size),
+        u10_national(period, now),
+        u10_for_level(Level.REGION, period, now, chunk_size=chunk_size),
+        u10_for_level(Level.DEPARTMENT, period, now, chunk_size=chunk_size),
+        u10_for_level(Level.EPCI, period, now, chunk_size=chunk_size),
+        u10_for_level(Level.CITY, period, now, chunk_size=chunk_size),
     ]
     indicators = pd.concat(subflows_results, ignore_index=True)
 
@@ -150,7 +158,7 @@ def calculate(
         create_markdown_artifact(
             key=runtime.flow_run.name,
             markdown=indicators.to_markdown(),
-            description=f"i1 report at {now} (period: {period.value})",
+            description=f"u10 report at {now} (period: {period.value})",
         )
 
     return [Indicator(**record) for record in indicators.to_dict(orient="records")]  # type: ignore[misc]
