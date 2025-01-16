@@ -4,7 +4,7 @@ from django.contrib import admin, messages
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
-from . import AWAITING, REVOKED
+from . import REVOKED
 from .models import Consent
 
 
@@ -26,7 +26,7 @@ class ConsentAdmin(admin.ModelAdmin):
     ]
     list_filter = ["status"]
     date_hierarchy = "start"
-    actions = ["make_revoked", "make_awaiting"]
+    actions = ["make_revoked"]
 
     @admin.action(description=_("Mark selected consents as revoked"))
     def make_revoked(self, request, queryset):
@@ -36,15 +36,5 @@ class ConsentAdmin(admin.ModelAdmin):
         self.message_user(
             request,
             _("Selected consents have been marked as revoked."),
-            messages.SUCCESS,
-        )
-
-    @admin.action(description=_("Mark selected consents as awaiting"))
-    def make_awaiting(self, request, queryset):
-        """Mark selected consents as awaiting."""
-        queryset.update(status=AWAITING, updated_at=timezone.now(), revoked_at=None)
-        self.message_user(
-            request,
-            _("Selected consents have been marked as awaiting."),
             messages.SUCCESS,
         )

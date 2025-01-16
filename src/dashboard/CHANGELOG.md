@@ -19,7 +19,7 @@ and this project adheres to
 - add dashboard homepage
 - add consent form to manage consents of one or many entities 
 - add admin integration for Entity, DeliveryPoint and Consent
-- add mass admin action (make revoked and make awaiting) for consents
+- add mass admin action (make revoked) for consents
 - block the updates of all new data if a consent has the status `VALIDATED`
 - block the deletion of consent if it has the status `VALIDATED`
 - block consent updates (via the consent form) if the consent status is not `AWAITING`
