@@ -109,7 +109,7 @@ def test_flow_i4_national(db_connection):
     assert indicators.at[0, "value"] == expected
 
 
-def test_flow_calculate(db_connection):
+def test_flow_i4_calculate(db_connection):
     """Test the `calculate` flow."""
     result = db_connection.execute(
         text(

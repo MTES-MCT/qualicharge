@@ -11,8 +11,8 @@ from sqlalchemy import text
 from indicators.models import IndicatorPeriod, Level  # type: ignore
 from indicators.usage import u10  # type: ignore
 
-# expected result
-N_LEVEL = [25, 247, 170, 926]
+# expected result for level [city, epci, dpt, reg, nat]
+N_LEVEL = [25, 247, 170, 926, 2630]
 N_DPTS = 109
 TIMESTP = datetime.datetime(2024, 12, 24)
 
@@ -112,13 +112,11 @@ def test_flow_u10_for_level_with_various_chunk_sizes(chunk_size):
 
 def test_flow_u10_national(db_connection):
     """Test the `u10_national` flow."""
-    result = db_connection.execute(text(QUERY_NATIONAL_TEMPLATE))
-    expected = result.scalars().one()
     indicators = u10.u10_national(PERIOD, TIMESTP)
-    assert indicators.at[0, "value"] == expected
+    assert indicators.at[0, "value"] == N_LEVEL[4]
 
 
-def test_flow_calculate(db_connection):
+def test_flow_u10_calculate(db_connection):
     """Test the `calculate` flow."""
     result = db_connection.execute(
         text(

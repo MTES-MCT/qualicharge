@@ -108,7 +108,7 @@ def test_flow_t1_national(db_connection):
     assert indicators["value"].sum() == expected
 
 
-def test_flow_calculate(db_connection):
+def test_flow_t1_calculate(db_connection):
     """Test the `calculate` flow."""
     now = pd.Timestamp.now()
     expected = sum(
