@@ -87,7 +87,7 @@ def i4_for_level(
         "code": "i4",
         "level": level,
         "period": period,
-        "timestamp": at,
+        "timestamp": at.isoformat(),
         "category": None,
         "extras": None,
     }
@@ -112,7 +112,7 @@ def i4_national(period: IndicatorPeriod, at: datetime) -> pd.DataFrame:
                 level=Level.NATIONAL,
                 period=period,
                 value=count,
-                timestamp=at,
+                timestamp=at.isoformat(),
             ).model_dump(),
         ]
     )

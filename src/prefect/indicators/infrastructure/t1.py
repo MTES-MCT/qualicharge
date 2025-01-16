@@ -114,7 +114,7 @@ def t1_for_level(
         "code": "t1",
         "level": level,
         "period": period,
-        "timestamp": at,
+        "timestamp": at.isoformat(),
         "category": merged["category"].astype("str"),
         "extras": None,
     }
@@ -139,7 +139,7 @@ def t1_national(period: IndicatorPeriod, at: datetime) -> pd.DataFrame:
         "code": "t1",
         "level": Level.NATIONAL,
         "period": period,
-        "timestamp": at,
+        "timestamp": at.isoformat(),
         "category": res["category"].astype("str"),
         "extras": None,
     }

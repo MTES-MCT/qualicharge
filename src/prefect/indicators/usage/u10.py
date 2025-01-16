@@ -27,7 +27,7 @@ from ..utils import (
 
 NUM_SESSIONS_FOR_LEVEL_QUERY_TEMPLATE = """
         SELECT
-            count(*) AS value
+            count(*) AS value,
             $level_id AS level_id
         FROM
             SESSION
@@ -37,8 +37,8 @@ NUM_SESSIONS_FOR_LEVEL_QUERY_TEMPLATE = """
             LEFT JOIN city ON city.code = code_insee_commune
             $join_extras
         WHERE
-            START >= $start
-            AND START < $start + interval '1 day'
+            START >= timestamp $start
+            AND START < timestamp $start + interval '1 day'
             AND $level_id IN ($indexes)
         GROUP BY $level_id
         """
@@ -49,8 +49,8 @@ QUERY_NATIONAL_TEMPLATE = """
         FROM
             SESSION
         WHERE
-            START >= $start
-            AND START < $start + interval '1 day'
+            START >= timestamp $start
+            AND START < timestamp $start + interval '1 day'
         """
 
 
@@ -62,7 +62,7 @@ def get_values_for_targets(
     query_template = Template(NUM_SESSIONS_FOR_LEVEL_QUERY_TEMPLATE)
     query_params: dict = {
         "indexes": ",".join(f"'{i}'" for i in map(str, indexes)),
-        "start": at,
+        "start": "'" + at.isoformat(sep=" ") + "'",
     }
     query_params |= get_num_for_level_query_params(level)
     return pd.read_sql_query(query_template.substitute(query_params), con=connection)
@@ -105,7 +105,7 @@ def u10_for_level(
         "code": "u10",
         "level": level,
         "period": period,
-        "timestamp": at,
+        "timestamp": at.isoformat(),
         "category": None,
         "extras": None,
     }
@@ -120,7 +120,7 @@ def u10_national(period: IndicatorPeriod, at: datetime) -> pd.DataFrame:
     """Calculate u10 at the national level."""
     engine = get_database_engine()
     query_template = Template(QUERY_NATIONAL_TEMPLATE)
-    query_params = {"start": at}
+    query_params = {"start": "'" + at.isoformat(sep=" ") + "'"}
     with engine.connect() as connection:
         res = pd.read_sql_query(query_template.substitute(query_params), con=connection)
     indicators = {
@@ -129,7 +129,7 @@ def u10_national(period: IndicatorPeriod, at: datetime) -> pd.DataFrame:
         "code": "u10",
         "level": Level.NATIONAL,
         "period": period,
-        "timestamp": at,
+        "timestamp": at.isoformat(),
         "category": None,
         "extras": None,
     }
@@ -141,16 +141,19 @@ def u10_national(period: IndicatorPeriod, at: datetime) -> pd.DataFrame:
     flow_run_name="meta-u10-{period.value}",
 )
 def calculate(
-    period: IndicatorPeriod, create_artifact: bool = False, chunk_size: int = 1000
+    period: IndicatorPeriod,
+    timestp: datetime,
+    create_artifact: bool = False,
+    chunk_size: int = 1000,
 ) -> List[Indicator]:
     """Run all u10 subflows."""
-    now = pd.Timestamp.now()
+    # now = pd.Timestamp.now()
     subflows_results = [
-        u10_national(period, now),
-        u10_for_level(Level.REGION, period, now, chunk_size=chunk_size),
-        u10_for_level(Level.DEPARTMENT, period, now, chunk_size=chunk_size),
-        u10_for_level(Level.EPCI, period, now, chunk_size=chunk_size),
-        u10_for_level(Level.CITY, period, now, chunk_size=chunk_size),
+        u10_national(period, timestp),
+        u10_for_level(Level.REGION, period, timestp, chunk_size=chunk_size),
+        u10_for_level(Level.DEPARTMENT, period, timestp, chunk_size=chunk_size),
+        u10_for_level(Level.EPCI, period, timestp, chunk_size=chunk_size),
+        u10_for_level(Level.CITY, period, timestp, chunk_size=chunk_size),
     ]
     indicators = pd.concat(subflows_results, ignore_index=True)
 
@@ -158,7 +161,7 @@ def calculate(
         create_markdown_artifact(
             key=runtime.flow_run.name,
             markdown=indicators.to_markdown(),
-            description=f"u10 report at {now} (period: {period.value})",
+            description=f"u10 report at {timestp} (period: {period.value})",
         )
 
     return [Indicator(**record) for record in indicators.to_dict(orient="records")]  # type: ignore[misc]

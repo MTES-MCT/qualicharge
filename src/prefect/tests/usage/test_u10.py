@@ -5,15 +5,14 @@ U10: the number of sessions.
 
 import datetime
 
-import pandas as pd  # type: ignore
 import pytest  # type: ignore
 from sqlalchemy import text
 
-from indicators.infrastructure import u10  # type: ignore
 from indicators.models import IndicatorPeriod, Level  # type: ignore
+from indicators.usage import u10  # type: ignore
 
 # expected result
-N_LEVEL = [212, 2257, 1493, 8734]
+N_LEVEL = [25, 247, 170, 926]
 N_DPTS = 109
 TIMESTP = datetime.datetime(2024, 12, 24)
 
@@ -67,6 +66,15 @@ PARAMETERS_GET_VALUES = [
         N_LEVEL[3],
     ),
 ]
+QUERY_NATIONAL_TEMPLATE = """
+        SELECT
+            count(*) AS value
+        FROM
+            SESSION
+        WHERE
+            START >= timestamp $start
+            AND START < timestamp $start + interval '1 day'
+        """
 
 
 @pytest.mark.parametrize("level,query,expected", PARAMETERS_GET_VALUES)
@@ -104,11 +112,9 @@ def test_flow_u10_for_level_with_various_chunk_sizes(chunk_size):
 
 def test_flow_u10_national(db_connection):
     """Test the `u10_national` flow."""
-    result = db_connection.execute(
-        text("SELECT COUNT(id) FROM PointDeCharge xxxxxxxxxxx")
-    )
+    result = db_connection.execute(text(QUERY_NATIONAL_TEMPLATE))
     expected = result.scalars().one()
-    indicators = i1.i1_national(PERIOD, pd.Timestamp.now())
+    indicators = u10.u10_national(PERIOD, TIMESTP)
     assert indicators.at[0, "value"] == expected
 
 
@@ -126,5 +132,5 @@ def test_flow_calculate(db_connection):
         )
     )
     expected = sum(result.one()) + 1
-    indicators = i1.calculate(PERIOD, create_artifact=True)
+    indicators = u10.calculate(PERIOD, TIMESTP, create_artifact=True)
     assert len(indicators) == expected
