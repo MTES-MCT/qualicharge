@@ -324,19 +324,23 @@ jupytext--to-ipynb: ## convert remote md files into ipynb
 .PHONY: jupytext--to-ipynb
 
 reset-db: ## Reset the PostgreSQL database
+reset-db: \
+  reset-api-db \
+  create-metabase-db \
+  seed-metabase \
+  create-prefect-db \
+  migrate-prefect \
+  reset-dashboard-db
+.PHONY: reset-db
+
+reset-api-db: ## Reset the PostgreSQL API database
 	$(COMPOSE) stop
+	$(COMPOSE) down postgresql
+	$(COMPOSE_UP) --wait --force-recreate -d api
 	$(MAKE) migrate-api
 	$(MAKE) create-api-superuser
 	$(MAKE) create-api-test-db
-	$(MAKE) create-metabase-db
-	$(MAKE) seed-metabase
-	$(MAKE) create-prefect-db
-	$(MAKE) migrate-prefect
-	$(MAKE) create-dashboard-db
-	$(MAKE) migrate-dashboard
-	$(MAKE) create-dashboard-superuser
-	$(MAKE) seed-dashboard
-.PHONY: reset-db
+.PHONY: reset-api-db
 
 reset-dashboard-db: ## Reset the PostgreSQL dashboard database
 	$(MAKE) create-dashboard-db
@@ -372,7 +376,7 @@ seed-api: \
 
 seed-metabase: ## seed the Metabase server
 	@echo "Running metabase service …"
-	@$(COMPOSE_UP) --wait metabase
+	@$(COMPOSE_UP) --wait --force-recreate metabase
 	@echo "Create metabase initial admin user…"
 	bin/metabase-init
 	@echo "Create API data source…"
