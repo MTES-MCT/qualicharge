@@ -16,6 +16,13 @@ Values have been cleaned manually (trimmed and fixed encoding issues).
 
 from collections import namedtuple
 
+# Nota bene: we import the GroupOperationalUnit schema so that the MetaData registry
+# is aware of the GroupOperationalUnit table and allows to use this secondary
+# (intermediate) relationship.
+#
+# For reference, see:
+# https://docs.sqlalchemy.org/en/20/orm/basic_relationships.html#orm-declarative-relationship-secondary-eval
+from qualicharge.auth.schemas import GroupOperationalUnit  # noqa: F401
 from qualicharge.schemas.core import OperationalUnit, OperationalUnitTypeEnum
 
 # Operational units
