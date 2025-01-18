@@ -7,13 +7,15 @@ from string import Template
 
 import pandas as pd  # type: ignore
 from prefect import task
+from prefect.artifacts import create_markdown_artifact
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Connection, Engine
 
 from .conf import settings
-from .models import IndicatorTimeSpan, Level, PeriodDuration
+from .models import Indicator, IndicatorTimeSpan, Level, PeriodDuration
 
-POWER_RANGE_CTE = """
+POWER_RANGE_CTE = {
+    "power_range": """
     puissance(category, p_cat) AS (
         VALUES
             (numrange(0.0, 7.4), 1),
@@ -23,6 +25,7 @@ POWER_RANGE_CTE = """
             (numrange(150, 350.0), 5),
             (numrange(350, NULL), 6)
     )"""
+}
 
 
 def get_timespan_filter_query_params(timespan: IndicatorTimeSpan):
@@ -76,3 +79,12 @@ def get_targets_for_level(connection: Connection, level: Level) -> pd.DataFrame:
     if level == Level.NATIONAL:
         raise NotImplementedError("Unsupported level %d", level)
     return pd.read_sql_table(level.name.lower(), con=connection)
+
+
+def export_indicators(indicators, create_artifact, flow_name, description):
+    """Export indicators."""
+    if create_artifact:
+        create_markdown_artifact(
+            key=flow_name, markdown=indicators.to_markdown(), description=description
+        )
+    return [Indicator(**record) for record in indicators.to_dict(orient="records")]  # type: ignore[misc]

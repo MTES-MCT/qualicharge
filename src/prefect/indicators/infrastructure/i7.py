@@ -3,7 +3,6 @@
 I7: installed power.
 """
 
-from datetime import datetime
 from string import Template
 from typing import List
 from uuid import UUID
@@ -11,15 +10,15 @@ from uuid import UUID
 import numpy as np
 import pandas as pd  # type: ignore
 from prefect import flow, runtime, task
-from prefect.artifacts import create_markdown_artifact
 from prefect.futures import wait
 from prefect.task_runners import ThreadPoolTaskRunner
 from sqlalchemy import text
 from sqlalchemy.engine import Connection
 
 from ..conf import settings
-from ..models import Indicator, IndicatorPeriod, Level
+from ..models import Indicator, IndicatorTimeSpan, Level
 from ..utils import (
+    export_indicators,
     get_database_engine,
     get_num_for_level_query_params,
     get_targets_for_level,
@@ -47,19 +46,18 @@ def get_values_for_targets(
 ) -> pd.DataFrame:
     """Fetch pdc given input level and target index."""
     query_template = Template(SUM_POWER_FOR_LEVEL_QUERY_TEMPLATE)
-    query_params: dict = {"indexes": ",".join(f"'{i}'" for i in map(str, indexes))}
+    query_params = {"indexes": ",".join(f"'{i}'" for i in map(str, indexes))}
     query_params |= get_num_for_level_query_params(level)
     return pd.read_sql_query(query_template.substitute(query_params), con=connection)
 
 
 @flow(
     task_runner=ThreadPoolTaskRunner(max_workers=settings.THREAD_POOL_MAX_WORKERS),
-    flow_run_name="i7-{period.value}-{level:02d}-{at:%y-%m-%d}",
+    flow_run_name="i7-{timespan.period.value}-{level:02d}-{timespan.start:%y-%m-%d}",
 )
 def i7_for_level(
     level: Level,
-    period: IndicatorPeriod,
-    at: datetime,
+    timespan: IndicatorTimeSpan,
     chunk_size=settings.DEFAULT_CHUNK_SIZE,
 ) -> pd.DataFrame:
     """Calculate i7 for a level."""
@@ -88,8 +86,8 @@ def i7_for_level(
         "value": merged["value"].fillna(0),
         "code": "i7",
         "level": level,
-        "period": period,
-        "timestamp": at.isoformat(),
+        "period": timespan.period,
+        "timestamp": timespan.start.isoformat(),
         "category": None,
         "extras": None,
     }
@@ -98,9 +96,9 @@ def i7_for_level(
 
 @flow(
     task_runner=ThreadPoolTaskRunner(max_workers=settings.THREAD_POOL_MAX_WORKERS),
-    flow_run_name="i7-{period.value}-00-{at:%y-%m-%d}",
+    flow_run_name="i7-{timespan.period.value}-00-{timespan.start:%y-%m-%d}",
 )
-def i7_national(period: IndicatorPeriod, at: datetime) -> pd.DataFrame:
+def i7_national(timespan: IndicatorTimeSpan) -> pd.DataFrame:
     """Calculate i7 at the national level."""
     engine = get_database_engine()
     with engine.connect() as connection:
@@ -113,9 +111,9 @@ def i7_national(period: IndicatorPeriod, at: datetime) -> pd.DataFrame:
             Indicator(
                 code="i7",
                 level=Level.NATIONAL,
-                period=period,
+                period=timespan.period,
                 value=count,
-                timestamp=at.isoformat(),
+                timestamp=timespan.start.isoformat(),
             ).model_dump(),
         ]
     )
@@ -123,27 +121,20 @@ def i7_national(period: IndicatorPeriod, at: datetime) -> pd.DataFrame:
 
 @flow(
     task_runner=ThreadPoolTaskRunner(max_workers=settings.THREAD_POOL_MAX_WORKERS),
-    flow_run_name="meta-i7-{period.value}",
+    flow_run_name="meta-i7-{timespan.period.value}",
 )
 def calculate(
-    period: IndicatorPeriod, create_artifact: bool = False, chunk_size: int = 1000
+    timespan: IndicatorTimeSpan, create_artifact: bool = False, chunk_size: int = 1000
 ) -> List[Indicator]:
     """Run all i7 subflows."""
-    now = pd.Timestamp.now()
     subflows_results = [
-        i7_national(period, now),
-        i7_for_level(Level.REGION, period, now, chunk_size=chunk_size),
-        i7_for_level(Level.DEPARTMENT, period, now, chunk_size=chunk_size),
-        i7_for_level(Level.EPCI, period, now, chunk_size=chunk_size),
-        i7_for_level(Level.CITY, period, now, chunk_size=chunk_size),
+        i7_national(timespan),
+        i7_for_level(Level.REGION, timespan, chunk_size=chunk_size),
+        i7_for_level(Level.DEPARTMENT, timespan, chunk_size=chunk_size),
+        i7_for_level(Level.EPCI, timespan, chunk_size=chunk_size),
+        i7_for_level(Level.CITY, timespan, chunk_size=chunk_size),
     ]
     indicators = pd.concat(subflows_results, ignore_index=True)
-
-    if create_artifact:
-        create_markdown_artifact(
-            key=runtime.flow_run.name,
-            markdown=indicators.to_markdown(),
-            description=f"i7 report at {now} (period: {period.value})",
-        )
-
-    return [Indicator(**record) for record in indicators.to_dict(orient="records")]  # type: ignore[misc]
+    description = f"i7 report at {timespan.start} (period: {timespan.period.value})"
+    flow_name = runtime.flow_run.name
+    return export_indicators(indicators, create_artifact, flow_name, description)

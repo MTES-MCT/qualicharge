@@ -3,7 +3,6 @@
 I1: the number of publicly open points of charge.
 """
 
-from datetime import datetime
 from string import Template
 from typing import List
 from uuid import UUID
@@ -11,7 +10,6 @@ from uuid import UUID
 import numpy as np
 import pandas as pd  # type: ignore
 from prefect import flow, runtime, task
-from prefect.artifacts import create_markdown_artifact
 from prefect.futures import wait
 from prefect.task_runners import ThreadPoolTaskRunner
 from sqlalchemy import text
@@ -20,6 +18,7 @@ from sqlalchemy.engine import Connection
 from ..conf import settings
 from ..models import Indicator, IndicatorTimeSpan, Level
 from ..utils import (
+    export_indicators,
     get_database_engine,
     get_num_for_level_query_params,
     get_targets_for_level,
@@ -46,7 +45,7 @@ def get_values_for_targets(
 ) -> pd.DataFrame:
     """Fetch points of charge given input level and target index."""
     query_template = Template(NUM_POCS_FOR_LEVEL_QUERY_TEMPLATE)
-    query_params: dict = {"indexes": ",".join(f"'{i}'" for i in map(str, indexes))}
+    query_params = {"indexes": ",".join(f"'{i}'" for i in map(str, indexes))}
     query_params |= get_num_for_level_query_params(level)
     return pd.read_sql_query(query_template.substitute(query_params), con=connection)
 
@@ -134,12 +133,6 @@ def calculate(
         i1_for_level(Level.CITY, timespan, chunk_size=chunk_size),
     ]
     indicators = pd.concat(subflows_results, ignore_index=True)
-
-    if create_artifact:
-        create_markdown_artifact(
-            key=runtime.flow_run.name,
-            markdown=indicators.to_markdown(),
-            description=f"i1 report at {timespan.start} (period: {timespan.period.value})",  # noqa: E501
-        )
-
-    return [Indicator(**record) for record in indicators.to_dict(orient="records")]  # type: ignore[misc]
+    description = f"i1 report at {timespan.start} (period: {timespan.period.value})"
+    flow_name = runtime.flow_run.name
+    return export_indicators(indicators, create_artifact, flow_name, description)

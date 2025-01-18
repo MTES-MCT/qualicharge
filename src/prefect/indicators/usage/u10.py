@@ -10,7 +10,6 @@ from uuid import UUID
 import numpy as np
 import pandas as pd  # type: ignore
 from prefect import flow, runtime, task
-from prefect.artifacts import create_markdown_artifact
 from prefect.futures import wait
 from prefect.task_runners import ThreadPoolTaskRunner
 from sqlalchemy.engine import Connection
@@ -18,6 +17,7 @@ from sqlalchemy.engine import Connection
 from ..conf import settings
 from ..models import Indicator, IndicatorTimeSpan, Level
 from ..utils import (
+    export_indicators,
     get_database_engine,
     get_num_for_level_query_params,
     get_targets_for_level,
@@ -138,9 +138,7 @@ def u10_national(timespan: IndicatorTimeSpan) -> pd.DataFrame:
     flow_run_name="meta-u10-{timespan.period.value}",
 )
 def calculate(
-    timespan: IndicatorTimeSpan,
-    create_artifact: bool = False,
-    chunk_size: int = 1000,
+    timespan: IndicatorTimeSpan, create_artifact: bool = False, chunk_size: int = 1000
 ) -> List[Indicator]:
     """Run all u10 subflows."""
     subflows_results = [
@@ -151,12 +149,6 @@ def calculate(
         u10_for_level(Level.CITY, timespan, chunk_size=chunk_size),
     ]
     indicators = pd.concat(subflows_results, ignore_index=True)
-
-    if create_artifact:
-        create_markdown_artifact(
-            key=runtime.flow_run.name,
-            markdown=indicators.to_markdown(),
-            description=f"u10 report at {timespan.start} (period: {timespan.period.value})",  # noqa: E501
-        )
-
-    return [Indicator(**record) for record in indicators.to_dict(orient="records")]  # type: ignore[misc]
+    description = f"u10 report at {timespan.start} (period: {timespan.period.value})"
+    flow_name = runtime.flow_run.name
+    return export_indicators(indicators, create_artifact, flow_name, description)

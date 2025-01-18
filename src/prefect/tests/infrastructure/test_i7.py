@@ -3,18 +3,20 @@
 I7: installed power.
 """
 
-import pandas as pd  # type: ignore
+from datetime import datetime
+
 import pytest  # type: ignore
 from sqlalchemy import text
 
 from indicators.infrastructure import i7  # type: ignore
-from indicators.models import IndicatorPeriod, Level  # type: ignore
+from indicators.models import IndicatorPeriod, IndicatorTimeSpan, Level  # type: ignore
 
 # expected result
 N_LEVEL = [18998, 137776, 132634, 664890]
 N_DPTS = 109
+TIMESPAN = IndicatorTimeSpan(start=datetime.now(), period=IndicatorPeriod.DAY)
 
-PERIOD = IndicatorPeriod.DAY
+
 PARAMETERS_CHUNK = [10, 50, 100, 500]
 PARAMETERS_FLOW = [
     (
@@ -85,8 +87,7 @@ def test_task_get_values_for_target_unexpected_level(db_connection):
 @pytest.mark.parametrize("level,query,targets,expected", PARAMETERS_FLOW)
 def test_flow_i7_for_level(db_connection, level, query, targets, expected):
     """Test the `i7_for_level` flow."""
-    now = pd.Timestamp.now()
-    indicators = i7.i7_for_level(level, PERIOD, now, chunk_size=1000)
+    indicators = i7.i7_for_level(level, TIMESPAN, chunk_size=1000)
     assert len(indicators) == db_connection.execute(text(query)).scalars().one()
     assert (
         int(indicators.loc[indicators["target"].isin(targets), "value"].sum())
@@ -97,9 +98,8 @@ def test_flow_i7_for_level(db_connection, level, query, targets, expected):
 @pytest.mark.parametrize("chunk_size", PARAMETERS_CHUNK)
 def test_flow_i7_for_level_with_various_chunk_sizes(chunk_size):
     """Test the `i7_for_level` flow with various chunk sizes."""
-    now = pd.Timestamp.now()
     level, query, targets, expected = PARAMETERS_FLOW[2]
-    indicators = i7.i7_for_level(level, PERIOD, now, chunk_size=chunk_size)
+    indicators = i7.i7_for_level(level, TIMESPAN, chunk_size=chunk_size)
     assert len(indicators) == N_DPTS
     assert (
         int(indicators.loc[indicators["target"].isin(targets), "value"].sum())
@@ -113,7 +113,7 @@ def test_flow_i7_national(db_connection):
         text("SELECT sum(puissance_nominale) FROM pointdecharge")
     )
     expected = int(result.scalars().one())
-    indicators = i7.i7_national(PERIOD, pd.Timestamp.now())
+    indicators = i7.i7_national(TIMESPAN)
     assert int(indicators.at[0, "value"]) == expected
 
 
@@ -131,5 +131,5 @@ def test_flow_i7_calculate(db_connection):
         )
     )
     expected = sum(result.one()) + 1
-    indicators = i7.calculate(PERIOD, create_artifact=True)
+    indicators = i7.calculate(TIMESPAN, create_artifact=True)
     assert len(indicators) == expected
