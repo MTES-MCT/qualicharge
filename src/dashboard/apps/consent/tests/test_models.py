@@ -110,8 +110,8 @@ def test_is_update_allowed():
     - VALIDATED to AWAITING is not allowed.
     - VALIDATED to REVOKED with not-allowed fields is not allowed.
     - VALIDATED to REVOKED with allowed fields is allowed.
-    - REVOKED to AWAITING is allowed.
-    - REVOKED to VALIDATED is allowed.
+    - REVOKED to AWAITING is not allowed.
+    - REVOKED to VALIDATED is not allowed.
     - Create new consent is allowed.
     """
     from apps.consent.models import Consent
@@ -167,15 +167,23 @@ def test_is_update_allowed():
     consent = ConsentFactory(status=REVOKED)
     consent = Consent.objects.get(id=consent.id)  # refresh the state in memory
     consent.status = AWAITING
-    assert consent._is_update_allowed() is True
+    with pytest.raises(
+        ConsentWorkflowError,
+        match="Revoked consent cannot be modified.",
+    ):
+        consent._is_update_allowed()
 
     # update from REVOKED to VALIDATED
     consent = ConsentFactory(status=REVOKED)
     consent = Consent.objects.get(id=consent.id)  # refresh the state in memory
     consent.status = VALIDATED
-    assert consent._is_update_allowed() is True
+    with pytest.raises(
+        ConsentWorkflowError,
+        match="Revoked consent cannot be modified.",
+    ):
+        consent._is_update_allowed()
 
-    # create a new consent
+    # create new consent is allowed.
     dl = DeliveryPointFactory()
     consent = Consent(delivery_point=dl, status=AWAITING)
     assert consent._state.adding is True
@@ -281,9 +289,9 @@ def test_update_validated_consent_status():
 def test_update_revoked_consent_status():
     """Tests updating a revoked consent status.
 
-    - REVOKED to AWAITING is authorized.
-    - REVOKED to VALIDATED is authorized.
-    - REVOKED with mixed fields is authorized.
+    - REVOKED to AWAITING is not authorized.
+    - REVOKED to VALIDATED is not authorized.
+    - REVOKED with mixed fields is not authorized.
     """
     from apps.consent.models import Consent
 
@@ -291,23 +299,37 @@ def test_update_revoked_consent_status():
     consent = ConsentFactory(status=REVOKED)
     consent = Consent.objects.get(id=consent.id)  # refresh the state in memory
     consent.status = AWAITING
-    consent.save()
-    assert consent.status == AWAITING
+    with pytest.raises(
+        ConsentWorkflowError,
+        match="Revoked consent cannot be modified.",
+    ):
+        consent.save()
+
+    consent.refresh_from_db()
+    assert consent.status == REVOKED
 
     # update the status from REVOKED to VALIDATED
-    consent = ConsentFactory(status=REVOKED)
-    consent = Consent.objects.get(id=consent.id)  # refresh the state in memory
     consent.status = VALIDATED
-    consent.save()
-    assert consent.status == VALIDATED
+    with pytest.raises(
+        ConsentWorkflowError,
+        match="Revoked consent cannot be modified.",
+    ):
+        consent.save()
+
+    consent.refresh_from_db()
+    assert consent.status == REVOKED
 
     # update status with mixed fields
-    consent = ConsentFactory(status=REVOKED)
-    consent = Consent.objects.get(id=consent.id)  # refresh the state in memory
-    consent.end = FAKE_TIME
-    consent.save()
+    consent.end = None
+    with pytest.raises(
+        ConsentWorkflowError,
+        match="Revoked consent cannot be modified.",
+    ):
+        consent.save()
+
+    consent.refresh_from_db()
     assert consent.status == REVOKED
-    assert consent.end == FAKE_TIME
+    assert consent.end is not None
 
 
 @pytest.mark.django_db
@@ -379,27 +401,42 @@ def test_clean_revoked_consent_status():
     # update the status from REVOKED to AWAITING
     consent = ConsentFactory(status=REVOKED)
     consent = Consent.objects.get(id=consent.id)  # refresh the state in memory
+    assert consent.status == REVOKED
     consent.status = AWAITING
-    consent.clean()
-    consent.save()
-    assert consent.status == AWAITING
+    with pytest.raises(
+        ConsentWorkflowError,
+        match="Revoked consent cannot be modified.",
+    ):
+        consent.save()
+        consent.clean()
+
+    consent.refresh_from_db()
+    assert consent.status == REVOKED
 
     # update the status from REVOKED to VALIDATED
-    consent = ConsentFactory(status=REVOKED)
-    consent = Consent.objects.get(id=consent.id)  # refresh the state in memory
     consent.status = VALIDATED
-    consent.clean()
-    consent.save()
-    assert consent.status == VALIDATED
+    with pytest.raises(
+        ConsentWorkflowError,
+        match="Revoked consent cannot be modified.",
+    ):
+        consent.save()
+        consent.clean()
+
+    consent.refresh_from_db()
+    assert consent.status == REVOKED
 
     # update status with mixed fields
-    consent = ConsentFactory(status=REVOKED)
-    consent = Consent.objects.get(id=consent.id)  # refresh the state in memory
-    consent.end = FAKE_TIME
-    consent.clean()
-    consent.save()
+    consent.end = None
+    with pytest.raises(
+        ConsentWorkflowError,
+        match="Revoked consent cannot be modified.",
+    ):
+        consent.save()
+        consent.clean()
+
+    consent.refresh_from_db()
     assert consent.status == REVOKED
-    assert consent.end == FAKE_TIME
+    assert consent.end is not None
 
 
 @pytest.mark.django_db
