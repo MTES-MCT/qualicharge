@@ -119,7 +119,6 @@ class Consent(DashboardBase):
 
         - REVOKED
             - can be updated without restriction
-            todo: add restriction: REVOKED consent cannot be modified
         """
         ALLOWED_UPDATE_FIELDS = {"status", "revoked_at", "updated_at"}
 
@@ -129,7 +128,10 @@ class Consent(DashboardBase):
         loaded_status = self._loaded_values.get("status")  # type: ignore[attr-defined]
         updated_status = self.status
 
-        if loaded_status == VALIDATED:
+        if loaded_status == REVOKED:
+            raise ConsentWorkflowError(_("Revoked consent cannot be modified."))
+
+        elif loaded_status == VALIDATED:
             if updated_status != REVOKED:
                 raise ConsentWorkflowError(
                     _('Validated consent can only be changed to the status "revoked".')

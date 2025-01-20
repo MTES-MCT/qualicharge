@@ -20,6 +20,7 @@ and this project adheres to
 - add consent form to manage consents of one or many entities 
 - add admin integration for Entity, DeliveryPoint and Consent
 - add mass admin action (make revoked) for consents
+- block the updates of all new data if a consent has the status `REVOKED`
 - block the updates of all new data if a consent has the status `VALIDATED`
 - allow selected consent fields update if status changes from `VALIDATED` to  `REVOKED`
 - block the deletion of consent if it has the status `VALIDATED` or `REVOKED` 
