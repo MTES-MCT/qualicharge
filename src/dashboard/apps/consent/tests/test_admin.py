@@ -62,3 +62,28 @@ def test_make_revoked_action(client, patch_timezone_now):
     assert consent.status == REVOKED
     assert consent.revoked_at == FAKE_TIME
     assert consent.updated_at == FAKE_TIME
+
+
+@pytest.mark.django_db
+def test_has_delete_permission_false_for_existing_object(rf):
+    """Test that the has_delete_permission disallows deletion of an existing object."""
+    # Initialize admin
+    admin = ConsentAdmin(Consent, AdminSite())
+    request = rf.get(reverse("admin:qcd_consent_consent_changelist"))
+
+    # create a consent
+    assert Consent.objects.count() == 0
+    DeliveryPointFactory()
+    assert Consent.objects.count() == 1
+
+    consent = Consent.objects.first()
+    assert admin.has_delete_permission(request, obj=consent) is False
+
+
+@pytest.mark.django_db
+def test_has_delete_permission_false_for_none_object(rf):
+    """Test has_delete_permission disallows deletion when no object is passed (None)."""
+    # Initialize admin
+    admin = ConsentAdmin(Consent, AdminSite())
+    request = rf.get(reverse("admin:qcd_consent_consent_changelist"))
+    assert admin.has_delete_permission(request, obj=None) is False
