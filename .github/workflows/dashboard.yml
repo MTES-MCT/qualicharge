@@ -38,6 +38,13 @@ jobs:
     env:
       DASHBOARD_DATABASE_URL: psql://qualicharge:pass@postgresql:5432/qualicharge-dashboard
       DASHBOARD_SECRET_KEY: the_secret_key
+      DASHBOARD_CONTROL_AUTHORITY_NAME: QualiCharge
+      DASHBOARD_CONTROL_AUTHORITY_ADDRESS_1: 1 rue de test
+      DASHBOARD_CONTROL_AUTHORITY_ZIP_CODE: 75000
+      DASHBOARD_CONTROL_AUTHORITY_CITY: Paris
+      DASHBOARD_CONTROL_AUTHORITY_REPRESENTED_BY: John Doe
+      DASHBOARD_CONTROL_AUTHORITY_EMAIL: jdoe@exemple.com
+      DASHBOARD_CONSENT_DONE_AT: Paris
     steps:
       - uses: actions/checkout@v4
       - name: Install pipenv
@@ -95,3 +102,10 @@ jobs:
           DASHBOARD_DB_NAME: test-qualicharge-dashboard
           DASHBOARD_DATABASE_URL: psql://qualicharge:pass@localhost:5432/test-qualicharge-dashboard
           DASHBOARD_SECRET_KEY: the_secret_key
+          DASHBOARD_CONTROL_AUTHORITY_NAME: QualiCharge
+          DASHBOARD_CONTROL_AUTHORITY_ADDRESS_1: 1 rue de test
+          DASHBOARD_CONTROL_AUTHORITY_ZIP_CODE: 75000
+          DASHBOARD_CONTROL_AUTHORITY_CITY: Paris
+          DASHBOARD_CONTROL_AUTHORITY_REPRESENTED_BY: John Doe
+          DASHBOARD_CONTROL_AUTHORITY_EMAIL: jdoe@exemple.com
+          DASHBOARD_CONSENT_DONE_AT: Paris
