@@ -28,6 +28,10 @@ class ConsentAdmin(admin.ModelAdmin):
     date_hierarchy = "start"
     actions = ["make_revoked"]
 
+    def has_delete_permission(self, request, obj=None):
+        """Disable delete action permission for all users."""
+        return False
+
     @admin.action(description=_("Mark selected consents as revoked"))
     def make_revoked(self, request, queryset):
         """Mark selected consents as revoked."""
