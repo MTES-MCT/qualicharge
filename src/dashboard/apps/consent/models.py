@@ -10,10 +10,18 @@ from . import AWAITING, CONSENT_STATUS_CHOICE, REVOKED, VALIDATED
 from .exceptions import ConsentWorkflowError
 from .managers import ConsentManager
 from .utils import consent_end_date
+from .validators import (
+    validate_company_schema,
+    validate_control_authority_schema,
+    validate_representative_schema,
+)
 
 
 class Consent(DashboardBase):
     """Represents the consent status for a given delivery point and user.
+
+    For contractual reason, a consent cannot be modified after it has the status
+    `VALIDATED` or `REVOKED`.
 
     Attributes:
     - AWAITING: Status indicating that the consent is awaiting validation.
@@ -47,6 +55,56 @@ class Consent(DashboardBase):
     start = models.DateTimeField(_("start date"), default=timezone.now)
     end = models.DateTimeField(_("end date"), default=consent_end_date)
     revoked_at = models.DateTimeField(_("revoked at"), null=True, blank=True)
+
+    # Contractual field of the company
+    company = models.JSONField(
+        _("company informations"),
+        blank=True,
+        null=True,
+        default=None,
+        validators=[validate_company_schema],
+    )
+
+    # Contractual field of the company representative
+    company_representative = models.JSONField(
+        _("company representative informations"),
+        blank=True,
+        null=True,
+        default=None,
+        validators=[validate_representative_schema],
+    )
+
+    # Contractual field of the control authority
+    control_authority = models.JSONField(
+        _("control authority informations"),
+        blank=True,
+        null=True,
+        default=None,
+        validators=[validate_control_authority_schema],
+    )
+
+    # specific authorization fields
+    is_authorized_signatory = models.BooleanField(
+        _("the signatory is authorized"), default=False
+    )
+    allows_measurements = models.BooleanField(
+        _("allows historical measurements in kWh"), default=False
+    )
+    allows_daily_index_readings = models.BooleanField(
+        _("allow history of daily index readings in kWh"), default=False
+    )
+    allows_max_daily_power = models.BooleanField(
+        _("allows historical maximum daily power in kVa or kWh "), default=False
+    )
+    allows_load_curve = models.BooleanField(
+        _("allows history of load curve, at steps returned by Enedis"), default=False
+    )
+    allows_technical_contractual_data = models.BooleanField(
+        _("allows the technical and contractual data available"), default=False
+    )
+
+    signed_at = models.DateTimeField(_("signature date"), blank=True, null=True)
+    done_at = models.CharField(_("done at"), max_length=255, blank=True, null=True)
 
     # models.Manager() must be in first place to ensure django admin expectations.
     objects = models.Manager()
@@ -109,7 +167,7 @@ class Consent(DashboardBase):
 
         Workflow according to consent status:
         - AWAITING:
-            - can be updated without restriction
+            - can be updated without restriction.
 
         - VALIDATED
             - if the status is updated to something other than REVOKED, an exception is

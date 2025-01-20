@@ -194,6 +194,19 @@ sentry_sdk.init(
 # during the year 2024).
 CONSENT_NUMBER_DAYS_END_DATE = None
 
+# `Control authority` contact for consent validation.
+CONSENT_CONTROL_AUTHORITY = {
+    "name": env.str("CONTROL_AUTHORITY_NAME"),
+    "address_1": env.str("CONTROL_AUTHORITY_ADDRESS_1"),
+    "address_2": env.str("CONTROL_AUTHORITY_ADDRESS_2", default=""),
+    "zip_code": env.str("CONTROL_AUTHORITY_ZIP_CODE"),
+    "city": env.str("CONTROL_AUTHORITY_CITY"),
+    "represented_by": env.str("CONTROL_AUTHORITY_REPRESENTED_BY"),
+    "email": env.str("CONTROL_AUTHORITY_EMAIL"),
+}
+
+CONSENT_DONE_AT = env.str("CONSENT_DONE_AT")
+
 
 ## Debug-toolbar
 

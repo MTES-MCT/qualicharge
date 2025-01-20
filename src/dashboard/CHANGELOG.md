@@ -20,6 +20,7 @@ and this project adheres to
 - add consent form to manage consents of one or many entities 
 - add admin integration for Entity, DeliveryPoint and Consent
 - add mass admin action (make revoked) for consents
+- add validators for SIRET, NAF code and Zip code 
 - disallow mass action "delete" for consents in admin
 - block the updates of all new data if a consent has the status `REVOKED`
 - block the updates of all new data if a consent has the status `VALIDATED`
