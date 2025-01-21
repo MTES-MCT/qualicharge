@@ -131,5 +131,6 @@ def test_flow_i7_calculate(db_connection):
         )
     )
     expected = sum(result.one()) + 1
-    indicators = i7.calculate(TIMESPAN, create_artifact=True)
+    all_levels = [Level.NATIONAL, Level.REGION, Level.DEPARTMENT, Level.CITY, Level.EPCI]
+    indicators = i7.calculate(TIMESPAN, all_levels, create_artifact=True)
     assert len(indicators) == expected

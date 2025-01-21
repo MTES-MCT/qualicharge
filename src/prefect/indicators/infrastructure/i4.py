@@ -59,6 +59,8 @@ def i4_for_level(
     chunk_size=settings.DEFAULT_CHUNK_SIZE,
 ) -> pd.DataFrame:
     """Calculate i4 for a level."""
+    if level == Level.NATIONAL:
+        return i4_national(timespan)
     engine = get_database_engine()
     with engine.connect() as connection:
         targets = get_targets_for_level(connection, level)
@@ -121,16 +123,10 @@ def i4_national(timespan: IndicatorTimeSpan) -> pd.DataFrame:
     flow_run_name="meta-i4-{timespan.period.value}",
 )
 def calculate(
-    timespan: IndicatorTimeSpan, create_artifact: bool = False, chunk_size: int = 1000
+    timespan: IndicatorTimeSpan, levels: List[Level] = [Level.NATIONAL, Level.REGION], create_artifact: bool = False, chunk_size: int = 1000
 ) -> List[Indicator]:
     """Run all i4 subflows."""
-    subflows_results = [
-        i4_national(timespan),
-        i4_for_level(Level.REGION, timespan, chunk_size=chunk_size),
-        i4_for_level(Level.DEPARTMENT, timespan, chunk_size=chunk_size),
-        i4_for_level(Level.EPCI, timespan, chunk_size=chunk_size),
-        i4_for_level(Level.CITY, timespan, chunk_size=chunk_size),
-    ]
+    subflows_results = [i4_for_level(level, timespan, chunk_size=chunk_size) for level in levels]
     indicators = pd.concat(subflows_results, ignore_index=True)
     description = f"i4 report at {timespan.start} (period: {timespan.period.value})"
     flow_name = runtime.flow_run.name

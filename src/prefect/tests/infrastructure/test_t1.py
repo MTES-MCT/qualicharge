@@ -118,5 +118,6 @@ def test_flow_t1_calculate(db_connection):
             t1.t1_national(TIMESPAN)["value"].sum(),
         ]
     )
-    indicators = t1.calculate(TIMESPAN, create_artifact=True, format_pd=True)
+    all_levels = [Level.NATIONAL, Level.REGION, Level.DEPARTMENT, Level.CITY, Level.EPCI]
+    indicators = t1.calculate(TIMESPAN, all_levels, create_artifact=True, format_pd=True)
     assert indicators["value"].sum() == expected

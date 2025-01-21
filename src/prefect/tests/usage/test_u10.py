@@ -120,5 +120,6 @@ def test_flow_u10_calculate(db_connection):
         )
     )
     expected = sum(result.one()) + 1
-    indicators = u10.calculate(TIMESPAN, create_artifact=True)
+    all_levels = [Level.NATIONAL, Level.REGION, Level.DEPARTMENT, Level.CITY, Level.EPCI]
+    indicators = u10.calculate(TIMESPAN, all_levels, create_artifact=True)
     assert len(indicators) == expected

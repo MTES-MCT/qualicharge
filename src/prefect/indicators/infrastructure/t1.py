@@ -84,6 +84,8 @@ def t1_for_level(
     chunk_size=settings.DEFAULT_CHUNK_SIZE,
 ) -> pd.DataFrame:
     """Calculate t1 for a level."""
+    if level == Level.NATIONAL:
+        return t1_national(timespan)
     engine = get_database_engine()
     with engine.connect() as connection:
         targets = get_targets_for_level(connection, level)
@@ -147,20 +149,15 @@ def t1_national(timespan: IndicatorTimeSpan) -> pd.DataFrame:
     flow_run_name="meta-t1-{timespan.period.value}",
 )
 def calculate(
-    timespan: IndicatorTimeSpan,
-    create_artifact: bool = False,
+    timespan: IndicatorTimeSpan, 
+    levels: List[Level] = [Level.NATIONAL, Level.REGION], 
+    create_artifact: bool = False, 
     chunk_size: int = 1000,
     format_pd: bool = False,
 ) -> List[Indicator]:
     """Run all t1 subflows."""
-    subflows_res = [
-        t1_national(timespan),
-        t1_for_level(Level.REGION, timespan, chunk_size=chunk_size),
-        t1_for_level(Level.DEPARTMENT, timespan, chunk_size=chunk_size),
-        t1_for_level(Level.EPCI, timespan, chunk_size=chunk_size),
-        t1_for_level(Level.CITY, timespan, chunk_size=chunk_size),
-    ]
-    indicators = pd.concat(subflows_res, ignore_index=True)
+    subflows_results = [t1_for_level(level, timespan, chunk_size=chunk_size) for level in levels]
+    indicators = pd.concat(subflows_results, ignore_index=True)
     if format_pd:
         return indicators
     description = f"t1 report at {timespan.start} (period: {timespan.period.value})"
