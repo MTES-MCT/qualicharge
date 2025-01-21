@@ -25,12 +25,16 @@ from ..utils import (
 )
 
 NUM_POC_IN_OPERATION_FOR_LEVEL_QUERY_TEMPLATE = """
+        WITH
+            $power_range
         SELECT
             count(*) AS value,
+            category,
             level_id
         FROM (
             SELECT 
                 point_de_charge_id,
+                category,
                 $level_id AS level_id
             FROM
                 SESSION
@@ -44,10 +48,12 @@ NUM_POC_IN_OPERATION_FOR_LEVEL_QUERY_TEMPLATE = """
                 AND $level_id IN ($indexes)
             GROUP BY 
                 point_de_charge_id,
+                category,
                 $level_id
             ) AS liste_pdc
         GROUP BY 
-            level_id
+            level_id,
+            category
         """
 
 QUERY_NATIONAL_TEMPLATE = """
@@ -120,7 +126,7 @@ def u12_for_level(
         "level": level,
         "period": timespan.period,
         "timestamp": timespan.start.isoformat(),
-        "category": None,
+        "category": merged["category"].astype("str"),
         "extras": None,
     }
     return pd.DataFrame(indicators)
@@ -144,7 +150,7 @@ def u12_national(timespan: IndicatorTimeSpan) -> pd.DataFrame:
         "level": Level.NATIONAL,
         "period": timespan.period,
         "timestamp": timespan.start.isoformat(),
-        "category": None,
+        "category": res["category"].astype("str"),,
         "extras": None,
     }
     return pd.DataFrame(indicators)

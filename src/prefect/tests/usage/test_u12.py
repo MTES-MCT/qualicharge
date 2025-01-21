@@ -121,6 +121,11 @@ def test_flow_u12_calculate(db_connection):
     )
     expected = sum(result.one()) + 1
     all_levels = [Level.NATIONAL, Level.REGION, Level.DEPARTMENT, Level.CITY, Level.EPCI]
+    indicators = test_flow_u12_for_level_with_various_chunk_sizes.calculate(TIMESPAN, all_levels, create_artifact=True, format_pd=True)
+    assert indicators["value"].sum() == expected
+
+    
+    
     indicators = u12.calculate(TIMESPAN, all_levels, create_artifact=True)
     assert len(indicators) == expected
 
