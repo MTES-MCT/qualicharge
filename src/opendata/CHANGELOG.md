@@ -10,7 +10,7 @@ and this project adheres to
 
 ### Changed
 
-- Upgrade Psycopg to `3.2.3`
+- Upgrade Psycopg to `3.2.4`
 
 ### Fixed
 
