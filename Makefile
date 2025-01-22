@@ -336,8 +336,9 @@ reset-db: \
 reset-api-db: ## Reset the PostgreSQL API database
 	$(COMPOSE) stop
 	$(COMPOSE) down postgresql
-	$(COMPOSE_UP) --wait --force-recreate -d api
+	$(COMPOSE_UP) --wait --force-recreate -d postgresql
 	$(MAKE) migrate-api
+	$(COMPOSE_UP) --wait --force-recreate -d api
 	$(MAKE) create-api-superuser
 	$(MAKE) create-api-test-db
 .PHONY: reset-api-db
