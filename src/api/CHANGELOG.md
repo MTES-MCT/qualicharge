@@ -27,8 +27,12 @@ and this project adheres to
 - Cache the "get PointDeCharge id from its `id_pdc_itinerance`" database query
 - Improve JSON string parsing using pyarrow engine
 - Add default values for optional Statique model fields
+- Upgrade alembic to `1.14.1`
 - Upgrade geoalchemy2 to `0.17.0`
+- Upgrade psycopg to `3.2.4`
+- Upgrade pyarrow to `19.0.0`
 - Upgrade pydantic to `2.10.5`
+- Upgrade pydantic-extra-types to `2.10.2`
 - Upgrade pydantic-settings to `2.7.1`
 - Upgrade python-multipart to `0.0.20`
 - Upgrade questionary to `2.1.0`
