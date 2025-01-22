@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "d600d986c36a33bffaf35bf4e37e7ad361d56b1e5308deba2770f48b5f1723f4"
+            "sha256": "40c7651c67cc9e43d368b69ab69aeb82231b6b322f9b643fefef59e6a372ac75"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -347,11 +347,11 @@
         },
         "croniter": {
             "hashes": [
-                "sha256:2f878c3856f17896979b2a4379ba1f09c83e374931ea15cc835c5dd2eee9b368",
-                "sha256:37c504b313956114a983ece2c2b07790b1f1094fe9d81cc94739214748255577"
+                "sha256:7d9b1ef25b10eece48fdf29d8ac52f9b6252abff983ac614ade4f3276294019e",
+                "sha256:eb28439742291f6c10b181df1a5ecf421208b1fc62ef44501daec1780a0b09e9"
             ],
             "markers": "python_version >= '2.6' and python_version not in '3.0, 3.1, 3.2, 3.3'",
-            "version": "==6.0.0"
+            "version": "==5.0.1"
         },
         "cryptography": {
             "hashes": [
@@ -1089,12 +1089,12 @@
         },
         "prefect": {
             "hashes": [
-                "sha256:06b7cf6e6a0f2c8a0db03c45af080bbd44db63400a9722f6212696c8963d54fe",
-                "sha256:3b5651d230dcd89cd1b45005394197f7d9f055b0707af1a6235466e44a1be1a9"
+                "sha256:3872a6a8441c62ebb56d2cf209480317a692d22f879e921a7bca2d93ec68d444",
+                "sha256:c0f50328060a3b5d530ad5f16381c65984ba4e16c0cb7a2da7fda79f78f62310"
             ],
             "index": "pypi",
             "markers": "python_version >= '3.9'",
-            "version": "==3.1.13"
+            "version": "==3.1.5"
         },
         "prometheus-client": {
             "hashes": [
@@ -1481,17 +1481,6 @@
             ],
             "markers": "python_version >= '3.7'",
             "version": "==8.0.4"
-        },
-        "python-socks": {
-            "extras": [
-                "asyncio"
-            ],
-            "hashes": [
-                "sha256:7fe9324c1834bb9cdce46ddb6721cf42a05a00da5f1fb87f8507ac0c6f305e1d",
-                "sha256:9743929aab6ffe0bab640ecfbbee7130af92408ad86e4aa2984789f742f3ec9e"
-            ],
-            "markers": "python_full_version >= '3.8.0'",
-            "version": "==2.6.1"
         },
         "pytz": {
             "hashes": [
