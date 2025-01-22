@@ -21,15 +21,11 @@ from ..exceptions import ObjectDoesNotExist, ProgrammingError
 from ..models.static import Statique
 from . import BaseTimestampedSQLModel
 from .core import (
-    AccessibilitePMREnum,
     Amenageur,
-    ConditionAccesEnum,
     Enseigne,
-    ImplantationStationEnum,
     Localisation,
     Operateur,
     PointDeCharge,
-    RaccordementEnum,
     Station,
 )
 
@@ -43,7 +39,7 @@ class StatiqueImporter:
         """Add table cache keys."""
         logger.info("Loading input dataframe containing %d rows", len(df))
 
-        self._statique: pd.DataFrame = self._fix_enums(df)
+        self._statique: pd.DataFrame = df
         self._statique_with_fk: pd.DataFrame = self._statique.copy()
         self._saved_schemas: list[type[BaseTimestampedSQLModel]] = []
 
@@ -83,24 +79,6 @@ class StatiqueImporter:
             fk.parent.name
             for fk in schema.metadata.tables[schema.__tablename__].foreign_keys  # type: ignore[index]
         ]
-
-    def _fix_enums(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Fix enums representation in dataframe."""
-        logger.debug("Fixing enum columns representation")
-        target = []
-        src = []
-
-        for enum_ in (
-            ImplantationStationEnum,
-            ConditionAccesEnum,
-            AccessibilitePMREnum,
-            RaccordementEnum,
-        ):
-            for entry in enum_:
-                target.append(str(entry.name))
-                src.append(entry.value)
-
-        return df.replace(to_replace=src, value=target)
 
     def _get_fields_for_schema(
         self, schema: type[BaseTimestampedSQLModel], with_fk: bool = False

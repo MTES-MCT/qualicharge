@@ -20,6 +20,7 @@ from pydantic import (
 from pydantic_extra_types.coordinate import Coordinate
 from shapely.geometry import mapping
 from sqlalchemy import event
+from sqlalchemy.dialects.postgresql import ENUM as PgEnum
 from sqlalchemy.schema import Column as SAColumn
 from sqlalchemy.types import Date, DateTime, String
 from sqlmodel import Field, Relationship, UniqueConstraint, select
@@ -28,7 +29,13 @@ from sqlmodel.main import SQLModelConfig
 
 from qualicharge.exceptions import ObjectDoesNotExist
 
-from ..models.dynamic import SessionBase, StatusBase
+from ..models.dynamic import (
+    EtatPDCEnum,
+    EtatPriseEnum,
+    OccupationPDCEnum,
+    SessionBase,
+    StatusBase,
+)
 from ..models.static import (
     AccessibilitePMREnum,
     ConditionAccesEnum,
@@ -49,6 +56,56 @@ class OperationalUnitTypeEnum(IntEnum):
 
     CHARGING = 1
     MOBILITY = 2
+
+
+# Enum definition for database: we want to store Enum values instead of keys (this is
+# the default behavior).
+def get_enum_values(enum_):
+    """Get enum values."""
+    return [m.value for m in enum_]
+
+
+ImplantationStationDBEnum: PgEnum = PgEnum(
+    ImplantationStationEnum,
+    name="implantation_station_enum",
+    values_callable=get_enum_values,
+)
+
+ConditionAccesDBEnum: PgEnum = PgEnum(
+    ConditionAccesEnum,
+    name="condition_acces_enum",
+    values_callable=get_enum_values,
+)
+
+AccessibilitePMRDBEnum: PgEnum = PgEnum(
+    AccessibilitePMREnum,
+    name="accessibilite_pmr_enum",
+    values_callable=get_enum_values,
+)
+
+RaccordementDBEnum: PgEnum = PgEnum(
+    RaccordementEnum,
+    name="raccordement_enum",
+    values_callable=get_enum_values,
+)
+
+EtatPDCDBEnum: PgEnum = PgEnum(
+    EtatPDCEnum,
+    name="etat_pdc_enum",
+    values_callable=get_enum_values,
+)
+
+EtatPriseDBEnum: PgEnum = PgEnum(
+    EtatPriseEnum,
+    name="etat_prise_enum",
+    values_callable=get_enum_values,
+)
+
+OccupationPDCDBEnum: PgEnum = PgEnum(
+    OccupationPDCEnum,
+    name="occupation_pdc_enum",
+    values_callable=get_enum_values,
+)
 
 
 class Amenageur(BaseTimestampedSQLModel, table=True):
@@ -232,12 +289,18 @@ class Station(BaseTimestampedSQLModel, table=True):
     )
     id_station_local: Optional[str]
     nom_station: str
-    implantation_station: ImplantationStationEnum
+    implantation_station: ImplantationStationEnum = Field(
+        sa_column=SAColumn(ImplantationStationDBEnum, nullable=False)
+    )
     nbre_pdc: PositiveInt
-    condition_acces: ConditionAccesEnum
+    condition_acces: ConditionAccesEnum = Field(
+        sa_column=SAColumn(ConditionAccesDBEnum, nullable=False)
+    )
     horaires: str = Field(regex=r"(.*?)((\d{1,2}:\d{2})-(\d{1,2}:\d{2})|24/7)")
     station_deux_roues: bool
-    raccordement: Optional[RaccordementEnum]
+    raccordement: Optional[RaccordementEnum] = Field(
+        sa_column=SAColumn(RaccordementDBEnum, nullable=True)
+    )
     num_pdl: Optional[str] = Field(max_length=64)
     date_maj: NotFutureDate = Field(sa_type=Date)
     date_mise_en_service: Optional[PastDate] = Field(sa_type=Date)
@@ -325,7 +388,9 @@ class PointDeCharge(BaseTimestampedSQLModel, table=True):
     paiement_autre: Optional[bool]
     tarification: Optional[str]
     reservation: bool
-    accessibilite_pmr: AccessibilitePMREnum
+    accessibilite_pmr: AccessibilitePMREnum = Field(
+        sa_column=SAColumn(AccessibilitePMRDBEnum, nullable=False)
+    )
     restriction_gabarit: str
     observations: Optional[str]
     cable_t2_attache: Optional[bool]
@@ -378,6 +443,23 @@ class Status(BaseTimestampedSQLModel, StatusBase, table=True):
         sa_type=DateTime(timezone=True),
         description="The timestamp indicating when the status changed.",
     )  # type: ignore
+
+    etat_pdc: EtatPDCEnum = Field(sa_column=SAColumn(EtatPDCDBEnum, nullable=False))
+    occupation_pdc: OccupationPDCEnum = Field(
+        sa_column=SAColumn(OccupationPDCDBEnum, nullable=False)
+    )
+    etat_prise_type_2: Optional[EtatPriseEnum] = Field(
+        sa_column=SAColumn(EtatPriseDBEnum, nullable=True)
+    )
+    etat_prise_type_combo_ccs: Optional[EtatPriseEnum] = Field(
+        sa_column=SAColumn(EtatPriseDBEnum, nullable=True)
+    )
+    etat_prise_type_chademo: Optional[EtatPriseEnum] = Field(
+        sa_column=SAColumn(EtatPriseDBEnum, nullable=True)
+    )
+    etat_prise_type_ef: Optional[EtatPriseEnum] = Field(
+        sa_column=SAColumn(EtatPriseDBEnum, nullable=True)
+    )
 
     # Relationships
     point_de_charge_id: Optional[UUID] = Field(
