@@ -6,3 +6,5 @@ from .infrastructure.i4 import calculate as i4_calculate
 from .infrastructure.i7 import calculate as i7_calculate
 from .infrastructure.t1 import calculate as t1_calculate
 from .usage.u10 import calculate as u10_calculate
+from .usage.u11 import calculate as u11_calculate
+from .usage.u12 import calculate as u12_calculate

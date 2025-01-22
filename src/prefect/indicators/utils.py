@@ -28,12 +28,14 @@ POWER_RANGE_CTE = {
 }
 
 
-def get_timespan_filter_query_params(timespan: IndicatorTimeSpan):
+def get_timespan_filter_query_params(timespan: IndicatorTimeSpan, session: bool = True):
     """Get timespan query parameters."""
     date_end = timespan.start + PeriodDuration[timespan.period.name].value
     sql_start = "'" + timespan.start.isoformat(sep=" ") + "'"
     sql_end = "'" + date_end.isoformat(sep=" ") + "'"
-    interval = "START >= timestamp $start AND START < timestamp $end"
+    interval_session = "start >= timestamp $start AND start < timestamp $end"
+    interval_status = "horodatage >= timestamp $start AND horodatage < timestamp $end"
+    interval = interval_session if session else interval_status
     query_params = {"start": sql_start, "end": sql_end}
     return {"timespan": Template(interval).substitute(query_params)}
 
