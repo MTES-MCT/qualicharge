@@ -10,6 +10,7 @@ from apps.consent.models import Consent
 
 from .abstract_models import DashboardBase
 from .managers import DeliveryPointManager
+from .validators import validate_naf_code, validate_siret, validate_zip_code
 
 
 class Entity(DashboardBase):
@@ -34,6 +35,51 @@ class Entity(DashboardBase):
         symmetrical=False,
         related_name="proxies",
     )
+    company_type = models.CharField(
+        _("type"),
+        max_length=255,
+        help_text=_(
+            "entreprise/ collectivité locale, ECPI, Association, copropriété, ..."
+        ),
+        blank=True,
+        null=True,
+    )
+    legal_form = models.CharField(
+        _("legal form"),
+        max_length=50,
+        help_text=_("SA, SARL …"),
+        blank=True,
+        null=True,
+    )
+    trade_name = models.CharField(
+        _("trade name"), max_length=255, blank=True, null=True
+    )
+    siret = models.CharField(
+        _("SIRET"),
+        max_length=14,
+        validators=[validate_siret],
+        blank=True,
+        null=True,
+    )
+    naf = models.CharField(
+        _("NAF code"),
+        validators=[validate_naf_code],
+        max_length=5,
+        blank=True,
+        null=True,
+    )
+    address_1 = models.CharField(_("address"), max_length=255, blank=True, null=True)
+    address_2 = models.CharField(
+        _("address complement"), max_length=255, blank=True, null=True
+    )
+    address_zip_code = models.CharField(
+        _("zip code"),
+        max_length=5,
+        validators=[validate_zip_code],
+        blank=True,
+        null=True,
+    )
+    address_city = models.CharField(_("city"), max_length=255, blank=True, null=True)
 
     class Meta:  # noqa: D106
         verbose_name = "entity"
