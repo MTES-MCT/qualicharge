@@ -1,1 +1,2 @@
 web: bash ./start.sh
+postdeploy: bash ./postdeploy.sh
