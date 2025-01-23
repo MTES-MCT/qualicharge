@@ -59,33 +59,71 @@ class RaccordementEnum(StrEnum):
     INDIRECT = "Indirect"
 
 
-def enum_to_dict(enum_: Type[Enum], revert: bool = False) -> Dict[str, Any]:
+def enum_to_dict(enum_: Type[Enum]) -> Dict[str, Any]:
     """Convert enum to dict."""
-    if revert:
-        return {member.value: member.name for member in enum_}
     return {member.name: member.value for member in enum_}
 
 
-def migrate_db_enum(
+FIELDS_PARAMS = [
+    {
+        "enum_": ImplantationStationEnum,
+        "existing_enum_db_name": "implantationstationenum",
+        "schema": Station,
+        "column_names": ["implantation_station"],
+    },
+    {
+        "enum_": ConditionAccesEnum,
+        "existing_enum_db_name": "conditionaccesenum",
+        "schema": Station,
+        "column_names": ["condition_acces"],
+    },
+    {
+        "enum_": RaccordementEnum,
+        "existing_enum_db_name": "raccordementenum",
+        "schema": Station,
+        "column_names": ["raccordement"],
+    },
+    {
+        "enum_": AccessibilitePMREnum,
+        "existing_enum_db_name": "accessibilitepmrenum",
+        "schema": PointDeCharge,
+        "column_names": ["accessibilite_pmr"],
+    },
+    {
+        "enum_": EtatPDCEnum,
+        "existing_enum_db_name": "etatpdcenum",
+        "schema": Status,
+        "column_names": ["etat_pdc"],
+    },
+    {
+        "enum_": OccupationPDCEnum,
+        "existing_enum_db_name": "occupationpdcenum",
+        "schema": Status,
+        "column_names": ["occupation_pdc"],
+    },
+    {
+        "enum_": EtatPriseEnum,
+        "existing_enum_db_name": "etatpriseenum",
+        "schema": Status,
+        "column_names": [
+            "etat_prise_type_2",
+            "etat_prise_type_combo_ccs",
+            "etat_prise_type_chademo",
+            "etat_prise_type_ef",
+        ],
+    },
+]
+
+
+def upgrade_db_enum(
     connection: Connection,
     enum_: Type[Enum],
     existing_enum_db_name: str,
-    new_enum_db_name: str,
     schema: SQLModel,
     column_names: List[str],
-    revert: bool = False,
 ):
-    """Migrate database Enum from keys to values (if revert if False).
-
-    When revert is True, it migrates values to keys.
-    """
-    print(f"Will migrate {enum_.__name__} for table {schema.__tablename__} ({revert=})")
-
-    # Create the new ENUM database type
-    postgresql.ENUM(
-        *enum_to_dict(enum_, revert).values(),
-        name=new_enum_db_name,
-    ).create(connection, checkfirst=True)
+    """Upgrade database Enums from keys to VARCHAR."""
+    print(f"Will upgrade {enum_.__name__} for table {schema.__tablename__}")
 
     for column_name in column_names:
         print(f"{column_name=}")
@@ -95,7 +133,7 @@ def migrate_db_enum(
             schema.__tablename__,
             column_name,
             existing_type=postgresql.ENUM(
-                *enum_to_dict(enum_, revert).keys(),
+                *enum_to_dict(enum_).keys(),
                 name=existing_enum_db_name,
             ),
             type_=VARCHAR,
@@ -103,130 +141,55 @@ def migrate_db_enum(
             postgresql_using=f"{column_name}::VARCHAR",
         )
 
+    # Delete the old ENUM database type
+    postgresql.ENUM(
+        *enum_to_dict(enum_).keys(),
+        name=existing_enum_db_name,
+    ).drop(connection, checkfirst=True)
+
+
+def downgrade_db_enum(
+    connection: Connection,
+    enum_: Type[Enum],
+    existing_enum_db_name: str,
+    schema: SQLModel,
+    column_names: List[str],
+):
+    """Downgrade database Enums from VARCHAR to keys."""
+    print(f"Will downgrade {enum_.__name__} for table {schema.__tablename__}")
+
+    # (re)create the old ENUM database type
+    postgresql.ENUM(
+        *enum_to_dict(enum_).keys(),
+        name=existing_enum_db_name,
+    ).create(connection, checkfirst=True)
+
+    for column_name in column_names:
+        print(f"{column_name=}")
+
+        # Alter table column to a generic VARCHAR
+        op.alter_column(
+            schema.__tablename__,
+            column_name,
+            existing_type=VARCHAR,
+            type_=postgresql.ENUM(
+                *enum_to_dict(enum_).keys(),
+                name=existing_enum_db_name,
+            ),
+            existing_nullable=False,
+            postgresql_using=f"{column_name}::{existing_enum_db_name}",
+        )
+
 
 def upgrade() -> None:
     # Alembic connection to the database
     connection = op.get_bind()
-
-    fields_params = [
-        {
-            "enum_": ImplantationStationEnum,
-            "existing_enum_db_name": "implantationstationenum",
-            "new_enum_db_name": "implantation_station_enum",
-            "schema": Station,
-            "column_names": ["implantation_station"],
-        },
-        {
-            "enum_": ConditionAccesEnum,
-            "existing_enum_db_name": "conditionaccesenum",
-            "new_enum_db_name": "condition_acces_enum",
-            "schema": Station,
-            "column_names": ["condition_acces"],
-        },
-        {
-            "enum_": RaccordementEnum,
-            "existing_enum_db_name": "raccordementenum",
-            "new_enum_db_name": "raccordement_enum",
-            "schema": Station,
-            "column_names": ["raccordement"],
-        },
-        {
-            "enum_": AccessibilitePMREnum,
-            "existing_enum_db_name": "accessibilitepmrenum",
-            "new_enum_db_name": "accessibilite_pmr_enum",
-            "schema": PointDeCharge,
-            "column_names": ["accessibilite_pmr"],
-        },
-        {
-            "enum_": EtatPDCEnum,
-            "existing_enum_db_name": "etatpdcenum",
-            "new_enum_db_name": "etat_pdc_enum",
-            "schema": Status,
-            "column_names": ["etat_pdc"],
-        },
-        {
-            "enum_": OccupationPDCEnum,
-            "existing_enum_db_name": "occupationpdcenum",
-            "new_enum_db_name": "occupation_pdc_enum",
-            "schema": Status,
-            "column_names": ["occupation_pdc"],
-        },
-        {
-            "enum_": EtatPriseEnum,
-            "existing_enum_db_name": "etatpriseenum",
-            "new_enum_db_name": "etat_prise_enum",
-            "schema": Status,
-            "column_names": [
-                "etat_prise_type_2",
-                "etat_prise_type_combo_ccs",
-                "etat_prise_type_chademo",
-                "etat_prise_type_ef",
-            ],
-        },
-    ]
-    for field_params in fields_params:
-        migrate_db_enum(connection, **field_params)
+    for field_params in FIELDS_PARAMS:
+        upgrade_db_enum(connection, **field_params)
 
 
 def downgrade() -> None:
     # Alembic connection to the database
     connection = op.get_bind()
-
-    fields_params = [
-        {
-            "enum_": ImplantationStationEnum,
-            "existing_enum_db_name": "implantation_station_enum",
-            "new_enum_db_name": "implantationstationenum",
-            "schema": Station,
-            "column_names": ["implantation_station"],
-        },
-        {
-            "enum_": ConditionAccesEnum,
-            "existing_enum_db_name": "condition_acces_enum",
-            "new_enum_db_name": "conditionaccesenum",
-            "schema": Station,
-            "column_names": ["condition_acces"],
-        },
-        {
-            "enum_": RaccordementEnum,
-            "existing_enum_db_name": "raccordement_enum",
-            "new_enum_db_name": "raccordementenum",
-            "schema": Station,
-            "column_names": ["raccordement"],
-        },
-        {
-            "enum_": AccessibilitePMREnum,
-            "existing_enum_db_name": "accessibilite_pmr_enum",
-            "new_enum_db_name": "accessibilitepmrenum",
-            "schema": PointDeCharge,
-            "column_names": ["accessibilite_pmr"],
-        },
-        {
-            "enum_": EtatPDCEnum,
-            "existing_enum_db_name": "etat_pdc_enum",
-            "new_enum_db_name": "etatpdcenum",
-            "schema": Status,
-            "column_names": ["etat_pdc"],
-        },
-        {
-            "enum_": OccupationPDCEnum,
-            "existing_enum_db_name": "occupation_pdc_enum",
-            "new_enum_db_name": "occupationpdcenum",
-            "schema": Status,
-            "column_names": ["occupation_pdc"],
-        },
-        {
-            "enum_": EtatPriseEnum,
-            "existing_enum_db_name": "etat_prise_enum",
-            "new_enum_db_name": "etatpriseenum",
-            "schema": Status,
-            "column_names": [
-                "etat_prise_type_2",
-                "etat_prise_type_combo_ccs",
-                "etat_prise_type_chademo",
-                "etat_prise_type_ef",
-            ],
-        },
-    ]
-    for field_params in fields_params:
-        migrate_db_enum(connection, **field_params, revert=True)
+    for field_params in FIELDS_PARAMS:
+        downgrade_db_enum(connection, **field_params)
