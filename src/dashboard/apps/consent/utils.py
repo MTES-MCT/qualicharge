@@ -2,7 +2,11 @@
 
 import datetime
 
-from .settings import CONSENT_NUMBER_DAYS_END_DATE
+from .settings import CONSENT_CONTROL_AUTHORITY, CONSENT_NUMBER_DAYS_END_DATE
+from .validators import (
+    validate_control_authority_schema,
+    validate_representative_schema,
+)
 
 
 def consent_end_date(
@@ -25,3 +29,33 @@ def consent_end_date(
     return datetime.datetime.now(datetime.timezone.utc).replace(
         month=12, day=31, hour=23, minute=59, second=59, microsecond=0
     )
+
+def get_validate_control_authority():
+    """Get the validate control authority."""
+    control_authority = {
+        "name": CONSENT_CONTROL_AUTHORITY.get("name"),
+        "represented_by": CONSENT_CONTROL_AUTHORITY.get("represented_by"),
+        "email": CONSENT_CONTROL_AUTHORITY.get("email"),
+        "address": {
+            "line_1": CONSENT_CONTROL_AUTHORITY.get("line_1"),
+            "line_2": CONSENT_CONTROL_AUTHORITY.get("line_2"),
+            "zip_code": CONSENT_CONTROL_AUTHORITY.get("zip_code"),
+            "city": CONSENT_CONTROL_AUTHORITY.get("city"),
+        }
+    }
+    validate_control_authority_schema(control_authority)
+
+    return control_authority
+
+def get_validate_company_representative(user):
+    """Get the validate company representative."""
+    company_representative = {
+        "firstname": user.first_name,
+        "lastname": user.last_name,
+        "email": user.email,
+        "phone": None,
+    }
+
+    validate_representative_schema(company_representative)
+
+    return company_representative
