@@ -41,7 +41,8 @@ and this project adheres to
 
 ### Fixed
 
-- Renamed database `raccordementemum` to `raccordementenum`
+- Rename database `raccordementemum` to `raccordementenum`
+- Run database migrations in a post-deploy hook
 
 ### Removed
 

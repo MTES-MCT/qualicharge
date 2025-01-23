@@ -154,7 +154,7 @@ jobs:
       - name: Seed API database
         run: |
           pipenv install -d --skip-lock qualicharge-client
-          pipenv run honcho start &
+          pipenv run honcho start -f Procfile.dev &
           sleep 10
           zcat ../../data/irve-statique.json.gz | \
             head -n 500 | \
