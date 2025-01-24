@@ -39,90 +39,46 @@ default:
         ORDER BY Status.horodatage DESC
     - basename: statiques
       query: >-
-        WITH
-        ImplantationStation (reference, output) AS (
-          VALUES
-            ('VOIRIE', 'Voirie'),
-            ('PARKING_PUBLIC', 'Parking public'),
-            (
-              'PARKING_PRIVE_USAGE_PUBLIC',
-              'Parking privé à usage public'
-            ),
-            (
-              'PARKING_PRIVE_CLIENTELE',
-              'Parking privé réservé à la clientèle'
-            ),
-            (
-              'STATION_RECHARGE_RAPIDE',
-              'Station dédiée à la recharge rapide'
-            )
-        ),
-        ConditionAccess (reference, output) AS (
-          VALUES
-            ('ACCESS_LIBRE', 'Accès libre'),
-            ('ACCESS_RESERVE', 'Accès réservé')
-        ),
-        AccessibilitePMR (reference, output) AS (
-          VALUES
-            ('RESERVE_PMR', 'Réservé PMR'),
-            ('NON_RESERVE', 'Accessible mais non réservé PMR'),
-            ('NON_ACCESSIBLE', 'Non accessible'),
-            ('INCONNUE', 'Accessibilité inconnue')
-        ),
-          Raccordement (reference, output) AS (
-            VALUES
-              ('DIRECT', 'Direct'),
-              ('INDIRECT', 'Indirect')
-          )
         SELECT
-          Amenageur.nom_amenageur,
-          Amenageur.siren_amenageur,
-          Amenageur.contact_amenageur,
-          Operateur.nom_operateur,
-          Operateur.contact_operateur,
-          Operateur.telephone_operateur,
-          Enseigne.nom_enseigne,
-          Station.id_station_itinerance,
-          Station.id_station_local,
-          Station.nom_station,
-          ImplantationStation.output AS implantation_station,
-          Localisation.adresse_station,
-          Localisation.code_insee_commune,
-          ST_AsGeoJSON (Localisation."coordonneesXY")::json -> 'coordinates' AS "coordonneesXY",
-          Station.nbre_pdc,
-          PointDeCharge.id_pdc_itinerance,
-          PointDeCharge.id_pdc_local,
-          PointDeCharge.puissance_nominale,
-          PointDeCharge.prise_type_ef,
-          PointDeCharge.prise_type_2,
-          PointDeCharge.prise_type_combo_ccs,
-          PointDeCharge.prise_type_chademo,
-          PointDeCharge.prise_type_autre,
-          PointDeCharge.gratuit,
-          PointDeCharge.paiement_acte,
-          PointDeCharge.paiement_cb,
-          PointDeCharge.paiement_autre,
-          PointDeCharge.tarification,
-          ConditionAccess.output AS condition_acces,
-          PointDeCharge.reservation,
-          Station.horaires,
-          AccessibilitePMR.output AS accessibilite_pmr,
-          PointDeCharge.restriction_gabarit,
-          Station.station_deux_roues,
-          Raccordement.output AS raccordement,
-          Station.num_pdl,
-          Station.date_mise_en_service,
-          PointDeCharge.observations,
-          Station.date_maj,
-          PointDeCharge.cable_t2_attache
+          nom_amenageur,
+          siren_amenageur,
+          contact_amenageur,
+          nom_operateur,
+          contact_operateur,
+          telephone_operateur,
+          nom_enseigne,
+          id_station_itinerance,
+          id_station_local,
+          nom_station,
+          implantation_station,
+          adresse_station,
+          code_insee_commune,
+          ST_AsGeoJSON ("coordonneesXY")::json -> 'coordinates' AS "coordonneesXY",
+          nbre_pdc,
+          id_pdc_itinerance,
+          id_pdc_local,
+          puissance_nominale,
+          prise_type_ef,
+          prise_type_2,
+          prise_type_combo_ccs,
+          prise_type_chademo,
+          prise_type_autre,
+          gratuit,
+          paiement_acte,
+          paiement_cb,
+          paiement_autre,
+          tarification,
+          condition_acces,
+          reservation,
+          horaires,
+          accessibilite_pmr,
+          restriction_gabarit,
+          station_deux_roues,
+          raccordement,
+          num_pdl,
+          date_mise_en_service,
+          observations,
+          date_maj,
+          cable_t2_attache
         FROM
-          PointDeCharge
-          INNER JOIN Station ON PointDeCharge.station_id = Station.id
-          INNER JOIN Amenageur ON Station.amenageur_id = Amenageur.id
-          INNER JOIN Operateur ON Station.operateur_id = Operateur.id
-          INNER JOIN Enseigne ON Station.enseigne_id = Enseigne.id
-          INNER JOIN Localisation ON Station.localisation_id = Localisation.id
-          INNER JOIN ImplantationStation ON Station.implantation_station::TEXT = ImplantationStation.reference
-          INNER JOIN ConditionAccess ON Station.condition_acces::TEXT = ConditionAccess.reference
-          INNER JOIN AccessibilitePMR ON PointDeCharge.accessibilite_pmr::TEXT = AccessibilitePMR.reference
-          LEFT JOIN Raccordement ON Station.raccordement::TEXT = Raccordement.reference
+          Statique

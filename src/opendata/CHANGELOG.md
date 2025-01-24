@@ -8,17 +8,13 @@ and this project adheres to
 
 ## [Unreleased]
 
-### Changed
-
-- Upgrade Psycopg to `3.2.4`
-
-### Fixed
-
-- Improve Enum representation to fit with the statique schema
-- Force `coordonneesXY` case in export
-
 ### Added
 
 - Configured Data7 0.9.0
+- Use the `Statique` materialized view for the `statiques` dataset
+
+### Changed
+
+- Upgrade Psycopg to `3.2.4`
 
 [unreleased]: https://github.com/MTES-MCT/qualicharge/
