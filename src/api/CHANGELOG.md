@@ -29,6 +29,7 @@ and this project adheres to
 - Improve JSON string parsing using pyarrow engine
 - Add default values for optional Statique model fields
 - Migrate database enum types from names to values
+- Improve API performance by integrating the `Statique` materialized view
 - Upgrade alembic to `1.14.1`
 - Upgrade geoalchemy2 to `0.17.0`
 - Upgrade psycopg to `3.2.4`

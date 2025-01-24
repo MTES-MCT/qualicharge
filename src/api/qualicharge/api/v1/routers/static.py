@@ -18,8 +18,14 @@ from fastapi import (
 )
 from psycopg import Error as PGError
 from pydantic import AnyHttpUrl, BaseModel, computed_field
-from sqlalchemy import func
-from sqlalchemy.exc import IntegrityError, OperationalError, ProgrammingError
+from sqlalchemy import any_, func
+from sqlalchemy.dialects.postgresql import array
+from sqlalchemy.exc import (
+    IntegrityError,
+    NoResultFound,
+    OperationalError,
+    ProgrammingError,
+)
 from sqlalchemy.schema import Column as SAColumn
 from sqlmodel import Session, select
 
@@ -36,13 +42,11 @@ from qualicharge.exceptions import (
     PermissionDenied,
 )
 from qualicharge.models.static import Statique
-from qualicharge.schemas.core import OperationalUnit, PointDeCharge, Station
+from qualicharge.schemas.core import PointDeCharge, StatiqueMV
 from qualicharge.schemas.sql import StatiqueImporter
 from qualicharge.schemas.utils import (
     are_pdcs_allowed_for_user,
-    build_statique,
     is_pdc_allowed_for_user,
-    list_statique,
     save_statique,
     update_statique,
 )
@@ -115,34 +119,38 @@ async def list(
     ),
     session: Session = Depends(get_session),
 ) -> PaginatedStatiqueListResponse:
-    """List statique items."""
+    """List statique items.
+
+    Note that it can take up to 10 minutes for a created Statique item to appear in
+    this endpoint response.
+    """
     current_url = request.url
     previous_url = next_url = None
-    total_statement = select(func.count(cast(SAColumn, PointDeCharge.id)))
-    operational_units = None
+
+    total_statement = select(func.count(cast(SAColumn, StatiqueMV.pdc_id)))
+
+    ou_filter: array | None = None
     if not user.is_superuser:
-        operational_units = user.operational_units
-        total_statement = (
-            total_statement.join_from(
-                PointDeCharge,
-                Station,
-                PointDeCharge.station_id == Station.id,  # type: ignore[arg-type]
-            )
-            .join_from(
-                Station,
-                OperationalUnit,
-                Station.operational_unit_id == OperationalUnit.id,  # type: ignore[arg-type]
-            )
-            .where(
-                cast(SAColumn, OperationalUnit.id).in_(
-                    ou.id for ou in user.operational_units
-                )
-            )
+        # If user has no assigned operational units, we filter on an empty VARCHAR array
+        ou_filter = array([f"{ou.code}%" for ou in user.operational_units] or [""])
+
+    if ou_filter is not None:
+        total_statement = total_statement.where(
+            cast(SAColumn, StatiqueMV.id_pdc_itinerance).like(any_(ou_filter))
         )
     total = session.exec(total_statement).one()
+
+    statement = select(StatiqueMV)
+    if ou_filter is not None:
+        statement = statement.where(
+            cast(SAColumn, StatiqueMV.id_pdc_itinerance).like(any_(ou_filter))
+        )
+    statement = (
+        statement.order_by(StatiqueMV.id_pdc_itinerance).offset(offset).limit(limit)
+    )
     statiques = [
-        statique
-        for statique in list_statique(session, offset, limit, operational_units)
+        Statique(**s.model_dump(exclude={"pdc_id", "pdc_updated_at"}))
+        for s in session.exec(statement).all()
     ]
 
     previous_offset = offset - limit if offset > limit else 0
@@ -176,18 +184,27 @@ async def read(
     ],
     session: Session = Depends(get_session),
 ) -> Statique:
-    """Read statique item (point de charge)."""
+    """Read statique item (point de charge).
+
+    Note that it can take up to 10 minutes for a created Statique item to appear in
+    this endpoint response.
+    """
     if not is_pdc_allowed_for_user(id_pdc_itinerance, user):
         raise PermissionDenied("You don't manage this point of charge")
 
     try:
-        statique = build_statique(session, id_pdc_itinerance)
-    except ObjectDoesNotExist as err:
+        statique_mv = session.exec(
+            select(StatiqueMV).where(StatiqueMV.id_pdc_itinerance == id_pdc_itinerance)
+        ).one()
+    except NoResultFound as err:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Requested statique does not exist",
+            detail=(
+                "Requested statique does not exist yet. You should wait up to "
+                "10 minutes for a newly created entry."
+            ),
         ) from err
-    return statique
+    return Statique(**statique_mv.model_dump(exclude={"pdc_id", "pdc_updated_at"}))
 
 
 @router.put("/{id_pdc_itinerance}", status_code=status.HTTP_200_OK)

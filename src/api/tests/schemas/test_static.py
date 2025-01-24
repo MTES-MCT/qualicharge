@@ -24,6 +24,7 @@ from qualicharge.factories.static import (
     StatiqueFactory,
 )
 from qualicharge.schemas.core import (
+    STATIQUE_MV_TABLE_NAME,
     Amenageur,
     Localisation,
     OperationalUnit,
@@ -410,7 +411,7 @@ def test_statique_materialized_view(db_session):
     n_pdc = 4
     statiques = StatiqueFactory.batch(n_pdc)
     save_statiques(db_session, statiques)
-    refresh_materialized_view(db_session, "statique")
+    refresh_materialized_view(db_session, STATIQUE_MV_TABLE_NAME)
 
     db_statiques = db_session.exec(select(StatiqueMV)).all()
     assert len(db_statiques) == n_pdc
@@ -421,3 +422,17 @@ def test_statique_materialized_view(db_session):
     assert isinstance(db_statiques[0].coordonneesXY, WKBElement)
     assert isinstance(db_statiques[0].pdc_id, UUID)
     assert isinstance(db_statiques[0].pdc_updated_at, datetime)
+
+
+def test_statique_materialized_view_coordonneesXY_field(db_session):
+    """Test the coordonneesXY field from the Statique schema."""
+    n_pdc = 1
+    statiques = StatiqueFactory.batch(n_pdc)
+    save_statiques(db_session, statiques)
+    refresh_materialized_view(db_session, STATIQUE_MV_TABLE_NAME)
+
+    db_statique = db_session.exec(select(StatiqueMV)).one()
+    assert isinstance(db_statique.coordonneesXY, WKBElement)
+    crds = Coordinate(**db_statique.model_dump()["coordonneesXY"])
+    assert hasattr(crds, "latitude")
+    assert hasattr(crds, "longitude")

@@ -494,6 +494,13 @@ class StatiqueMV(Statique, SQLModel):
     pdc_id: UUID
     pdc_updated_at: datetime
 
+    # WKBElement to Coordinate
+    @field_serializer("coordonneesXY")
+    @staticmethod
+    def _wkb_to_coordinates(value: WKBElement):
+        """Convert WKB to Coordinate."""
+        return Localisation._wkb_to_coordinates(value)
+
 
 class _StatiqueMV(SQLModel):
     """Statique Materialized view.

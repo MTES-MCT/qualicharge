@@ -10,6 +10,7 @@ from fastapi import status
 from pydantic_extra_types.coordinate import Coordinate
 from sqlalchemy import Column as SAColumn
 from sqlalchemy import func
+from sqlalchemy_utils import refresh_materialized_view
 from sqlmodel import select
 
 from qualicharge.auth.factories import GroupFactory
@@ -18,6 +19,7 @@ from qualicharge.conf import settings
 from qualicharge.factories.static import StatiqueFactory
 from qualicharge.models.static import Statique
 from qualicharge.schemas.core import (
+    STATIQUE_MV_TABLE_NAME,
     OperationalUnit,
     PointDeCharge,
     Station,
@@ -63,6 +65,7 @@ def test_list_for_superuser(client_auth, db_session):
     n_statiques = 3
     statiques = StatiqueFactory.batch(n_statiques)
     save_statiques(db_session, statiques)
+    refresh_materialized_view(db_session, STATIQUE_MV_TABLE_NAME)
     db_statiques = sorted(
         statiques,
         key=lambda s: s.id_pdc_itinerance,
@@ -113,6 +116,7 @@ def test_list_for_user(client_auth, db_session):
     # Create statiques
     n_statiques = 20
     save_statiques(db_session, StatiqueFactory.batch(n_statiques))
+    refresh_materialized_view(db_session, STATIQUE_MV_TABLE_NAME)
 
     # Select operational units linked to stations
     operational_units = db_session.exec(
@@ -221,6 +225,7 @@ def test_list_pagination(client_auth, db_session):
     """Test the /statique/ list endpoint results pagination."""
     n_statiques = 3
     save_statiques(db_session, StatiqueFactory.batch(n_statiques))
+    refresh_materialized_view(db_session, STATIQUE_MV_TABLE_NAME)
 
     offset = 0
     limit = 2
@@ -288,6 +293,7 @@ def test_read_for_superuser(client_auth, db_session):
     db_statique = save_statique(
         db_session, StatiqueFactory.build(id_pdc_itinerance=id_pdc_itinerance)
     )
+    refresh_materialized_view(db_session, STATIQUE_MV_TABLE_NAME)
 
     response = client_auth.get(f"/statique/{id_pdc_itinerance}")
     assert response.status_code == status.HTTP_200_OK
@@ -318,6 +324,7 @@ def test_read_for_user(client_auth, db_session):
     db_statique = save_statique(
         db_session, StatiqueFactory.build(id_pdc_itinerance=id_pdc_itinerance)
     )
+    refresh_materialized_view(db_session, STATIQUE_MV_TABLE_NAME)
 
     # User has no assigned operational units
     response = client_auth.get(f"/statique/{id_pdc_itinerance}")
@@ -343,7 +350,12 @@ def test_read_when_statique_does_not_exist(client_auth):
     response = client_auth.get(f"/statique/{id_pdc_itinerance}")
     assert response.status_code == status.HTTP_404_NOT_FOUND
     json_response = response.json()
-    assert json_response == {"detail": "Requested statique does not exist"}
+    assert json_response == {
+        "detail": (
+            "Requested statique does not exist yet. You should wait up to "
+            "10 minutes for a newly created entry."
+        )
+    }
 
 
 @pytest.mark.parametrize(
@@ -384,7 +396,7 @@ def test_create_for_superuser(client_auth):
     assert json_response["items"][0] == id_pdc_itinerance
 
 
-def test_create_without_optional_fields(client_auth):
+def test_create_without_optional_fields(client_auth, db_session):
     """Test the /statique/ create endpoint when optional fields are not provided."""
     id_pdc_itinerance = "FR911E1111ER1"
     data = Statique(
@@ -410,6 +422,7 @@ def test_create_without_optional_fields(client_auth):
     assert json_response["items"][0] == id_pdc_itinerance
 
     # Get created Statique and check defaults
+    refresh_materialized_view(db_session, STATIQUE_MV_TABLE_NAME)
     response = client_auth.get(f"/statique/{id_pdc_itinerance}")
     assert response.status_code == status.HTTP_200_OK
     json_response = response.json()
