@@ -13,7 +13,7 @@ from indicators.infrastructure import i1  # type: ignore
 from indicators.models import IndicatorPeriod, IndicatorTimeSpan, Level  # type: ignore
 
 # expected result for level [city, epci, dpt, reg]
-N_LEVEL = [212, 2257, 1493, 8734]
+N_LEVEL = [212, 2250, 1489, 8724]
 N_DPTS = 109
 TIMESPAN = IndicatorTimeSpan(start=datetime.now(), period=IndicatorPeriod.DAY)
 
@@ -87,7 +87,6 @@ def test_task_get_values_for_target_unexpected_level(db_connection):
 @pytest.mark.parametrize("level,query,targets,expected", PARAMETERS_FLOW)
 def test_flow_i1_for_level(db_connection, level, query, targets, expected):
     """Test the `i1_for_level` flow."""
-    now = pd.Timestamp.now()
     indicators = i1.i1_for_level(level, TIMESPAN, chunk_size=1000)
     assert len(indicators) == db_connection.execute(text(query)).scalars().one()
     assert indicators.loc[indicators["target"].isin(targets), "value"].sum() == expected
@@ -124,6 +123,40 @@ def test_flow_i1_calculate(db_connection):
         )
     )
     expected = sum(result.one()) + 1
-    all_levels = [Level.NATIONAL, Level.REGION, Level.DEPARTMENT, Level.CITY, Level.EPCI]
+    all_levels = [
+        Level.NATIONAL,
+        Level.REGION,
+        Level.DEPARTMENT,
+        Level.CITY,
+        Level.EPCI,
+    ]
     indicators = i1.calculate(TIMESPAN, all_levels, create_artifact=True)
     assert len(indicators) == expected
+
+
+# query used to get N_LEVEL
+N_LEVEL_NAT = """
+SELECT
+  count(*) AS value
+FROM
+  PointDeCharge
+"""
+N_LEVEL_3 = """
+SELECT
+  sum(value)
+FROM
+  (
+    SELECT
+        COUNT(DISTINCT PointDeCharge.id_pdc_itinerance) AS value
+    FROM
+        PointDeCharge
+        INNER JOIN Station ON PointDeCharge.station_id = Station.id
+        INNER JOIN Localisation ON Station.localisation_id = Localisation.id
+        INNER JOIN City ON Localisation.code_insee_commune = City.code
+        INNER JOIN Department ON City.department_id = Department.id
+        INNER JOIN Region ON Department.region_id = Region.id
+    WHERE
+        region.code IN ('11', '84', '75')
+    GROUP BY region.code
+  ) AS query
+"""

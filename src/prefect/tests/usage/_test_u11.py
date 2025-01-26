@@ -120,12 +120,19 @@ def test_flow_u11_calculate(db_connection):
         )
     )
     expected = sum(result.one()) + 1
-    all_levels = [Level.NATIONAL, Level.REGION, Level.DEPARTMENT, Level.CITY, Level.EPCI]
+    all_levels = [
+        Level.NATIONAL,
+        Level.REGION,
+        Level.DEPARTMENT,
+        Level.CITY,
+        Level.EPCI,
+    ]
     indicators = u11.calculate(TIMESPAN, all_levels, create_artifact=True)
     assert len(indicators) == expected
 
+
 # query used to get N_LEVEL
-N_LEVEL_4 = """
+N_LEVEL_NAT = """
 SELECT
   count(*) AS VALUE
 FROM
