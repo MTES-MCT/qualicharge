@@ -1,0 +1,13 @@
+{% load i18n %}
+
+<div class="fr-input-group">
+  <label class="fr-label" for="text-input-entity-name">{% trans "Done at" %}</label>
+  <input class="fr-input" type="text" id="text-input-entity-name"
+         name="text-input-entity-name" value="Paris" readonly="readonly">
+</div>
+
+<div class="fr-input-group">
+  <label class="fr-label" for="text-input-entity-name">{% trans "Date" %}</label>
+  <input class="fr-input" type="text" id="text-input-entity-name"
+         name="text-input-entity-name" value="{% now "SHORT_DATETIME_FORMAT" %}" readonly="readonly">
+</div>

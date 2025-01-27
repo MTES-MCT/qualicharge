@@ -1,0 +1,91 @@
+{% load i18n %}
+
+{% for entity in entities %}
+  <div class="fr-fieldset__element fr-my-4w">
+    <legend class="fr-fieldset__legend" id="text-legend">
+      {% trans "Company informations" %}
+    </legend>
+
+    <div class="fr-input-group">
+        <label class="fr-label" for="text-input-entity-name">
+          {% trans "Name" %}
+        </label>
+        <input class="fr-input" type="text" id="text-input-entity-name"
+               name="text-input-entity-name" value="{{ entity.name }}" readonly="readonly">
+    </div>
+
+    <div class="fr-input-group">
+        <label class="fr-label" for="text-input-entity-type">
+          {% trans "Company type" %}
+        </label>
+        <input class="fr-input" type="text" id="text-input-entity-type"
+               name="text-input-entity-type" value="{{ entity.company_type }}" readonly="readonly">
+    </div>
+
+    <div class="fr-input-group">
+        <label class="fr-label" for="text-input-entity-legal-form">
+          {% trans " Legal form" %}
+        </label>
+        <input class="fr-input" type="text" id="text-input-entity-legal-form"
+               name="text-input-entity-legal-form" value="{{ entity.legal_form }}"
+               readonly="readonly">
+    </div>
+
+    <div class="fr-input-group">
+        <label class="fr-label" for="text-input-entity-trade-name">
+          {% trans "Trade name" %}
+        </label>
+        <input class="fr-input" type="text" id="text-input-entity-trade-name"
+               name="text-input-entity-trade-name" value="{{ entity.trade_name }}"
+               readonly="readonly">
+    </div>
+    <div class="fr-input-group">
+        <label class="fr-label" for="text-input-entity-siret">{% trans "siret" %}</label>
+        <input class="fr-input" type="text" id="text-input-entity-siret"
+               name="text-input-entity-siret" value="{{ entity.siret }}" readonly="readonly">
+    </div>
+
+    <div class="fr-input-group">
+        <label class="fr-label" for="text-input-entity-naf">
+          {% trans "NAF Code" %}
+        </label>
+        <input class="fr-input" type="text" id="text-input-entity-naf"
+               name="text-input-entity-naf" value="{{ entity.naf }}" readonly="readonly">
+    </div>
+
+    <div class="fr-input-group">
+        <label class="fr-label" for="text-input-entity-address-1">
+          {% trans "Address" %}
+        </label>
+        <input class="fr-input" type="text" id="text-input-entity-address-1"
+               name="text-input-entity-address-1" value="{{ entity.address_1 }}"
+               readonly="readonly">
+    </div>
+
+    <div class="fr-input-group">
+        <label class="fr-label" for="text-input-entity-address-2">
+          {% trans "Address complement" %}
+        </label>
+        <input class="fr-input" type="text" id="text-input-entity-address-2"
+               name="text-input-entity-address-2" value="{{ entity.address_2 }}"
+               readonly="readonly">
+    </div>
+
+    <div class="fr-input-group">
+        <label class="fr-label" for="text-input-entity-zip-code">
+          {% trans "Zip code" %}
+        </label>
+        <input class="fr-input" type="text" id="text-input-entity-zip-code"
+               name="text-input-entity-zip-code"
+               value="{{ entity.address_zip_code }}"
+               readonly="readonly">
+    </div>
+
+    <div class="fr-input-group">
+        <label class="fr-label" for="text-input-entity-city">{% trans "City" %}</label>
+        <input class="fr-input" type="text" id="text-input-entity-city"
+               name="text-input-entity-city" value="{{ entity.address_city }}" readonly="readonly">
+    </div>
+
+  </div>
+  {% endfor %}

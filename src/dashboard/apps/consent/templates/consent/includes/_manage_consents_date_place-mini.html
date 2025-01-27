@@ -1,0 +1,20 @@
+{% load i18n %}
+
+<p>{% trans "Done at:" %} </p>
+<p>{% trans "Date:" %} {% now "SHORT_DATETIME_FORMAT" %}</p>
+
+<input class="fr-input"
+       type="hidden"
+       id="text-input-entity-name"
+       name="text-input-entity-name"
+       value="Paris"
+       readonly="readonly">
+
+<input class="fr-input"
+       type="hidden"
+       id="text-input-entity-name"
+       name="text-input-entity-name"
+       value="{% now "SHORT_DATETIME_FORMAT" %}"
+       readonly="readonly">
+
+

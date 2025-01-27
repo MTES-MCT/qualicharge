@@ -1,0 +1,43 @@
+{% load i18n %}
+
+<div class="fr-fieldset__element fr-my-4w">
+    <legend class="fr-fieldset__legend" id="text-legend">
+      {% trans "Representative informations" %}
+    </legend>
+
+    <div class="fr-table fr-table--bordered" id="table-bordered-component">
+      <div class="fr-table__wrapper">
+        <div class="fr-table__container">
+            <div class="fr-table__content">
+              <table>
+                <thead>
+                   <tr>
+                      <th scope="col">
+                        {% trans "Label" %}
+                      </th>
+                      <th scope="col">
+                        {% trans "Representative values" %}
+                      </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>{% trans "Last name" %}</td>
+                    <td>{{ request.user.last_name }}</td>
+                  </tr>
+                  <tr>
+                    <td>{% trans "First name" %}</td>
+                    <td>{{ request.user.first_name }}</td>
+                  </tr>
+                  <tr>
+                    <td>{% trans "Email" %}</td>
+                    <td>{{ request.user.email }}</td>
+                  </tr>
+                 </tbody>
+              </table>
+            </div>
+        </div>
+      </div>
+    </div>
+
+</div>

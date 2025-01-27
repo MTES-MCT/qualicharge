@@ -1,0 +1,43 @@
+{% load i18n %}
+
+<div class="fr-fieldset__element fr-my-4w">
+  <legend class="fr-fieldset__legend" id="text-legend">
+    {% trans "Authorisations" %}
+  </legend>
+
+  {% for field in form %}
+    <div class="{% if field.errors %}fr-pl-3v{% endif %} fr-mb-6v">
+    <div class="fr-checkbox-group {% if field.errors %}fr-checkbox-group--error{% endif %}">
+      {{ field }}
+      <div class="fr-messages-group" id="consent_agreed-messages" aria-live="assertive">
+          {% if field.errors %}
+            {% for error in field.errors %}
+            <p class="fr-message fr-message--error" id="checkboxes-error-message-error">
+            {{ error }}
+            </p>
+            {% endfor %}
+          {% endif %}
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+
+  {% comment %}
+  {# checkbox to apply the consent globally #}
+  <div class="{% if form.consent_agreed.errors %}fr-pl-3v{% endif %} fr-mb-6v">
+    <div class="fr-checkbox-group {% if form.consent_agreed.errors %}fr-checkbox-group--error{% endif %}">
+      {{ form.consent_agreed }}
+      <div class="fr-messages-group" id="consent_agreed-messages" aria-live="assertive">
+          {% if form.consent_agreed.errors %}
+            {% for error in form.consent_agreed.errors %}
+            <p class="fr-message fr-message--error" id="checkboxes-error-message-error">
+            {{ error }}
+            </p>
+            {% endfor %}
+          {% endif %}
+      </div>
+    </div>
+  </div>
+  {% endcomment %}
+
+</div>

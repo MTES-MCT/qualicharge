@@ -1,0 +1,33 @@
+{% load i18n %}
+
+<div class="fr-fieldset__element fr-my-4w">
+    <legend class="fr-fieldset__legend" id="text-legend">
+      {% trans "Representative informations" %}
+    </legend>
+
+    <div class="fr-input-group">
+        <label class="fr-label" for="text-input-entity-name">
+          {% trans "Last name" %}
+        </label>
+        <input class="fr-input" type="text" id="text-input-entity-name"
+               name="text-input-entity-name" value="{{ request.user.last_name }}"
+               readonly="readonly">
+    </div>
+
+    <div class="fr-input-group">
+        <label class="fr-label" for="text-input-entity-name">
+          {% trans "First name" %}
+        </label>
+        <input class="fr-input" type="text" id="text-input-entity-name"
+               name="text-input-entity-name" value="{{ request.user.first_name }}"
+               readonly="readonly">
+    </div>
+
+    <div class="fr-input-group">
+        <label class="fr-label" for="text-input-entity-name">
+          {% trans "Email" %}
+        </label>
+        <input class="fr-input" type="text" id="text-input-entity-name"
+               name="text-input-entity-name" value="{{ request.user.email }}" readonly="readonly">
+    </div>
+</div>

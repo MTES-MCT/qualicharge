@@ -1,0 +1,74 @@
+
+{% load i18n %}
+
+{% for entity in entities %}
+  <div class="fr-fieldset__element fr-my-4w">
+    <legend class="fr-fieldset__legend" id="text-legend">
+      {% trans "Company informations" %}
+    </legend>
+
+<div class="fr-table fr-table--bordered" id="table-bordered-component">
+    <div class="fr-table__wrapper">
+        <div class="fr-table__container">
+            <div class="fr-table__content">
+              <table>
+                <thead>
+                   <tr>
+                      <th scope="col">
+                        {% trans "Label" %}
+                      </th>
+                      <th scope="col">
+                        {% trans "Company values" %}
+                      </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>{% trans "Name" %}</td>
+                    <td>{{ entity.name }}</td>
+                  </tr>
+                  <tr>
+                    <td>{% trans "Company type" %}</td>
+                    <td>{{ entity.company_type }}</td>
+                  </tr>
+                  <tr>
+                    <td>{% trans "Legal form" %}</td>
+                    <td>{{ entity.legal_form }}</td>
+                  </tr>
+                  <tr>
+                    <td>{% trans "Trade name" %}</td>
+                    <td>{{ entity.trade_name }}</td>
+                  </tr>
+                  <tr>
+                    <td>{% trans "Siret" %}</td>
+                    <td>{{ entity.siret }}</td>
+                  </tr>
+                  <tr>
+                    <td>{% trans "NAF Code" %}</td>
+                    <td>{{ entity.naf }}</td>
+                  </tr>
+                  <tr>
+                    <td>{% trans "Address" %}</td>
+                    <td>{{ entity.address_1 }}</td>
+                  </tr>
+                  <tr>
+                    <td>{% trans "Address complement" %}</td>
+                    <td>{{ entity.address_2 }}</td>
+                  </tr>
+                  <tr>
+                    <td>{% trans "Zip code" %}</td>
+                    <td>{{ entity.address_zip_code }}</td>
+                  </tr>
+                  <tr>
+                    <td>{% trans "City" %}</td>
+                    <td>{{ entity.address_city }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+  {% endfor %}
