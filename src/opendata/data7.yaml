@@ -53,7 +53,7 @@ default:
           implantation_station,
           adresse_station,
           code_insee_commune,
-          ST_AsGeoJSON ("coordonneesXY")::json -> 'coordinates' AS "coordonneesXY",
+          ST_AsGeoJSON ("coordonneesXY"::geometry)::json -> 'coordinates' AS "coordonneesXY",
           nbre_pdc,
           id_pdc_itinerance,
           id_pdc_local,
