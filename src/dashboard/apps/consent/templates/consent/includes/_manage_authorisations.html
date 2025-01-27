@@ -1,0 +1,75 @@
+{% load i18n %}
+
+{% comment %}
+    Note: all texts of this page are intended to appear in a contract and must
+    therefore be in French and non-translatable.
+{% endcomment %}
+
+<div class="fr-fieldset__element fr-my-4w">
+  <legend class="fr-fieldset__legend" id="text-legend">
+    D. Données à transmettre à la DGEC
+  </legend>
+
+  <p>Par la signature de ce document, <strong>le Client autorise expressément le Tiers à
+    demander et à recevoir communication auprès d'Enedis</strong>, SA à directoire et à
+    conseil de surveillance, au capital de 270 037 000 euros, immatriculés au R.C.S
+    de Nanterre sous le numéro 444 608 442 et dont le siège social est situé Tour
+    Enedis, 34 place des Corolles, 92070 Paris La Défense Cedex, <strong>des données
+    cochées ci-dessous, sous réserve de disponibilité</strong> :
+  </p>
+
+  {% for field in form %}
+
+    {% if forloop.last %}
+      {% comment %}
+        These paragraphs are located just before the `global consent checkbox`.
+        Attention: the `consent_agreed` checkbox must always be positioned last in the corresponding forms.py.
+      {% endcomment %}
+      <p>
+      Usage des données : Suivi de la mise en œuvre de la politique énergétique.
+      </p>
+      <p>
+        La présente autorisation ne peut être cédée et pourra être retirée à tout moment.
+        Elle est consentie pour toute la période du contrat ou à défaut pour la durée de
+        12 mois à compter de la date de signature. Les données ainsi acquises sont
+        détruites dès la fin de validité de la présente autorisation.
+        <br />
+        La présente autorisation est conservée pendant <strong>5 ans</strong> à compter
+        de sa signature conformément à l’article 2224 du code civil et sont destinées à
+        Enedis qui s’engage à ne pas communiquer ces informations à des tiers sauf
+        obligation réglementaire.
+        <br />
+        Conformément à la loi n°78-17 du 6 janvier 1978 modifiée et au règlement (UE)
+        n°2016/679 du 27 avril 2016, les informations recueillies sont enregistrées dans
+        un fichier informatisé par ENEDIS en sa qualité de responsable du traitement à
+        des fins de gestion et de traçabilité des demandes.
+        <br />
+        Vous disposez d’un droit d’accès à vos données, de rectification, d’opposition et
+        d’effacement pour motifs légitimes.
+        Vous disposez, également, d’un droit à la limitation du traitement et à la
+        portabilité des données à caractère personnel vous concernant.
+        Vous pouvez exercer vos droits à l’adresse suivante : Enedis, 34 place des
+        Corolles, 92079 Paris La Défense Cedex.
+        Conformément à la loi "informatique et libertés", vous disposez de la faculté
+        d’introduire une réclamation auprès de la CNIL.
+      </p>
+
+      {% include "consent/includes/_manage_consents_date_place.html" %}
+    {% endif %}
+
+    <div class="{% if field.errors %}fr-pl-3v{% endif %} fr-mb-6v">
+    <div class="fr-checkbox-group {% if field.errors %}fr-checkbox-group--error{% endif %}">
+      {{ field }}
+      <div class="fr-messages-group" id="consent_agreed-messages" aria-live="assertive">
+          {% if field.errors %}
+            {% for error in field.errors %}
+            <p class="fr-message fr-message--error" id="checkboxes-error-message-error">
+            {{ error }}
+            </p>
+            {% endfor %}
+          {% endif %}
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>

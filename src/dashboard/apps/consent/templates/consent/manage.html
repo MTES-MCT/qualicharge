@@ -1,89 +1,43 @@
 {% extends "consent/base.html" %}
 
+{% comment %}
+    Note: all texts of this page are intended to appear in a contract and must
+    therefore be in French and non-translatable.
+{% endcomment %}
+
 {% load i18n static %}
 
 {% block dashboard_content %}
-<h2>{% trans "Manage consents" %}</h2>
+  <h2>Gérer les autorisations</h2>
 
-{% if entities %}
-  <form action="" method="post">
-    {% csrf_token %}
-    
-    <div class="fr-messages-group" id="error-messages" aria-live="assertive">
-      {% if form.errors %}          
-        <div class="{% if form.consent_agreed.errors %}fr-pl-3v{% endif %} fr-mb-6v">
-        <p class="fr-message fr-message--error" id="message-error">
-          {% trans "The form contains errors" %}
-        </p>          
-        </div>
-      {% endif %}
-    </div>   
-  
-      {# toggle button #}
-      <div class="fr-fieldset__element">
-        <div class="fr-checkbox-group">
-          <input type="checkbox" id="toggle-all" name="toggle-all" 
-                 aria-describedby="toggle-all-messages" 
-                 data-fr-js-checkbox-input="true" 
-                 data-fr-js-checkbox-actionee="true">
-          <label class="fr-label" for="toggle-all"><strong>{% trans "Toggle All" %}</strong></label>
-        </div>
+  <p>
+    Indiquez les points de livraison pour lesquels vous autorisez la DGEC à interroger
+    le gestionnaire du réseau de distribution.
+  </p>
+
+  {% if entities %}
+    <form action="" method="post">
+      {% csrf_token %}
+
+      <div class="fr-messages-group" id="error-messages" aria-live="assertive">
+        {% if form.errors %}
+          <div class="{% if form.consent_agreed.errors %}fr-pl-3v{% endif %} fr-mb-6v">
+          <p class="fr-message fr-message--error" id="message-error">
+            {% trans "The form contains errors" %}
+          </p>
+          </div>
+        {% endif %}
       </div>
 
-      <div class="consent-wrapper fr-py-6v fr-mb-6v">
-        <div class="consent-wrapper__inner">
-          {% for entity in entities %}
-          <fieldset class="fr-fieldset" id="checkboxes" aria-labelledby="checkboxes-legend checkboxes-messages">
-            <legend class="fr-fieldset__legend--regular fr-fieldset__legend" id="checkboxes-legend">{{ entity.name }}</legend>
+      {% include "consent/includes/_manage_consents.html" %}
+      {% include "consent/includes/_manage_company_informations.html" %}
+      {% include "consent/includes/_manage_consents_control_authority.html" %}
+      {% include "consent/includes/_manage_authorisations.html" %}
 
-            {% for consent in entity.get_consents %}
-            <div class="fr-fieldset__element">
-              <div class="fr-checkbox-group">
-                <input type="checkbox"
-                       name="status"
-                       value="{{ consent.id }}"
-                       id="{{ consent.id }}"
-                       {% if consent.status == 'VALIDATED' %} checked="checked" disabled="disabled"{% endif %}
-                       aria-describedby="{{ consent.id }}-messages"
-                       data-fr-js-checkbox-input="true"
-                       data-fr-js-checkbox-actionee="true" />
-                <label class="fr-label" for="{{ consent.id }}"
-                       {% if consent.status == 'VALIDATED' %}
-                         title="{% trans "Delivery point is already validated" %}"
-                       {% elif consent.status == 'AWAITING' %}
-                         title="{% trans "Delivery point awaiting consent" %}"
-                       {% endif %}>
-                  {{ consent.delivery_point.provider_assigned_id }}
-                </label>
-                <div class="fr-messages-group" id="{{ consent.id }}-messages" aria-live="assertive"></div>
-              </div>
-            </div>
-            {% endfor %}
-
-          </fieldset>
-          {% endfor %}
-        </div>
-      </div>
-
-      {# checkbox to apply the consent globally #}      
-      <div class="{% if form.consent_agreed.errors %}fr-pl-3v{% endif %} fr-mb-6v">
-        <div class="fr-checkbox-group {% if form.consent_agreed.errors %}fr-checkbox-group--error{% endif %}">
-          {{ form.consent_agreed }}          
-          <div class="fr-messages-group" id="{{ consent.id }}-messages" aria-live="assertive">
-              {% if form.consent_agreed.errors %}
-                {% for error in form.consent_agreed.errors %}
-                <p class="fr-message fr-message--error" id="checkboxes-error-message-error">
-                {{ error }}
-                </p>
-                {% endfor %}
-              {% endif %}
-          </div>          
-        </div>
-      </div>
-
-      <button class="fr-btn" type="submit" name="submit"> {% trans "submit" %} </button>
-  </form>
-  
+      <button type="submit" class="fr-btn" title="{% trans "submit" %}" name="submit">
+        {% trans "submit" %}
+      </button>
+    </form>
   {% else %}
     <p>{% trans "No consents to validate" %}</p>
   {% endif %}
@@ -91,6 +45,6 @@
 
 {% block dashboard_extra_js %}
   {% if entities %}
-  <script src="{% static 'apps/consent/js/app.js' %}"></script>
+    <script src="{% static 'apps/consent/js/app.js' %}"></script>
   {% endif %}
 {% endblock dashboard_extra_js %}
