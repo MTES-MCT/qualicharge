@@ -44,7 +44,8 @@ jobs:
       DASHBOARD_CONTROL_AUTHORITY_CITY: Paris
       DASHBOARD_CONTROL_AUTHORITY_REPRESENTED_BY: John Doe
       DASHBOARD_CONTROL_AUTHORITY_EMAIL: jdoe@exemple.com
-      DASHBOARD_CONSENT_DONE_AT: Paris
+      DASHBOARD_CONSENT_SIGNATURE_LOCATION: Paris
+      DASHBOARD_CONTACT_EMAIL: contact@exemple.com
     steps:
       - uses: actions/checkout@v4
       - name: Install pipenv
@@ -108,4 +109,5 @@ jobs:
           DASHBOARD_CONTROL_AUTHORITY_CITY: Paris
           DASHBOARD_CONTROL_AUTHORITY_REPRESENTED_BY: John Doe
           DASHBOARD_CONTROL_AUTHORITY_EMAIL: jdoe@exemple.com
-          DASHBOARD_CONSENT_DONE_AT: Paris
+          DASHBOARD_CONSENT_SIGNATURE_LOCATION: Paris
+          DASHBOARD_CONTACT_EMAIL: contact@exemple.com

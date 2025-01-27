@@ -181,6 +181,10 @@ sentry_sdk.init(
     send_default_pii=True,
 )
 
+## Dashboard
+# Email to contact the QualiCharge team
+CONTACT_EMAIL = env.str("CONTACT_EMAIL")
+
 ## Consent app
 
 # CONSENT_NUMBER_DAYS_END_DATE allows to calculate the end date of a consent period by
@@ -205,7 +209,7 @@ CONSENT_CONTROL_AUTHORITY = {
     "email": env.str("CONTROL_AUTHORITY_EMAIL"),
 }
 
-CONSENT_DONE_AT = env.str("CONSENT_DONE_AT")
+CONSENT_SIGNATURE_LOCATION = env.str("CONSENT_SIGNATURE_LOCATION")
 
 
 ## Debug-toolbar

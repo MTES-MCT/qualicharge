@@ -1,0 +1,79 @@
+{% load i18n %}
+
+{% comment %}
+    Note: all texts of this page are intended to appear in a contract and must
+    therefore be in French and non-translatable.
+{% endcomment %}
+
+{% for entity in entities %}
+  <div class="fr-fieldset__element fr-my-4w">
+
+    <legend class="fr-fieldset__legend">
+      B. Client raccordé
+    </legend>
+
+    <p>
+      Merci de vérifier l’exactitude des informations concernant votre structure et le
+      signataire du présent formulaire.
+      <br />
+      En cas d'informations erronées, merci de nous contacter :
+      <a class="fr-link fr-link--icon-left fr-icon-mail-line"
+         href="mailto:{{ mailto }}?subject=[QualiCharge] Informations erronées dans le formulaire de gestion des autorisations">
+        {{ mailto }}
+      </a>
+    </p>
+
+    <div class="fr-table fr-table--bordered" id="table-bordered-component">
+      <div class="fr-table__wrapper">
+        <div class="fr-table__container">
+          <div class="fr-table__content">
+            <table>
+              <caption class="fr-text--md">
+                Informations sur l'entreprise et le représentant
+              </caption>
+              <thead>
+               <tr>
+                <th scope="col">
+                  Libellé
+                </th>
+                <th scope="col">
+                  Valeur
+                </th>
+              </tr>
+              </thead>
+              <tbody>
+                {% with row_number=0 %}
+                  <tr class="fr-table__section">
+                    <td colspan="2"><strong>Informations sur la structure</strong></td>
+                  </tr>
+                  {% include "consent/includes/_table_row.html" with label="Dénomination sociale" value=entity.name row_number=row_number|add:"1" %}
+                  {% include "consent/includes/_table_row.html" with label="Type de structure" value=entity.company_type row_number=row_number|add:"1" %}
+                  {% include "consent/includes/_table_row.html" with label="Forme juridique" value=entity.legal_form row_number=row_number|add:"1" %}
+                  {% include "consent/includes/_table_row.html" with label="Nom commercial" value=entity.trade_name row_number=row_number|add:"1" %}
+                  {% include "consent/includes/_table_row.html" with label="N° d'identification SIRET" value=entity.siret row_number=row_number|add:"1" %}
+                  {% include "consent/includes/_table_row.html" with label="Activité NAF" value=entity.naf row_number=row_number|add:"1" %}
+                  {% include "consent/includes/_table_row.html" with label="Adresse" value=entity.address_1 row_number=row_number|add:"1" %}
+                  {% include "consent/includes/_table_row.html" with label="Complément d'adresse" value=entity.address_2 row_number=row_number|add:"1" %}
+                  {% include "consent/includes/_table_row.html" with label="Code Postale" value=entity.address_zip_code row_number=row_number|add:"1" %}
+                  {% include "consent/includes/_table_row.html" with label="Commune" value=entity.address_city row_number=row_number|add:"1" %}
+                  {# todo: add a field to retrieve this information (+ email and phone) if it doesn't exist #}
+                  {% include "consent/includes/_table_row.html" with label="Nom du titulaire du contrat" value="-" row_number=row_number|add:"1" %}
+
+                  <tr class="fr-table__section">
+                    <td colspan="2">
+                      <strong>Informations sur le signataire du présent formulaire</strong>
+                    </td>
+                  </tr>
+                  {% include "consent/includes/_table_row.html" with label="Nom" value=request.user.last_name row_number=row_number|add:"1" %}
+                  {% include "consent/includes/_table_row.html" with label="Prénom" value=request.user.first_name row_number=row_number|add:"1" %}
+                  {% include "consent/includes/_table_row.html" with label="E-mail" value=request.user.email row_number=row_number|add:"1" %}
+                {% endwith %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+{% endfor %}

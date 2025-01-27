@@ -10,12 +10,14 @@ from django.utils.translation import gettext_lazy as _
 from django.views.generic import FormView, TemplateView
 
 from apps.core.models import Entity
+from dashboard.settings import CONTACT_EMAIL
 
 from ..auth.models import DashboardUser
 from . import AWAITING, VALIDATED
 from .forms import ConsentForm
 from .mixins import BreadcrumbContextMixin
 from .models import Consent
+from .settings import CONSENT_CONTROL_AUTHORITY, CONSENT_SIGNATURE_LOCATION
 
 
 class IndexView(BreadcrumbContextMixin, TemplateView):
@@ -67,7 +69,10 @@ class ConsentFormView(BreadcrumbContextMixin, FormView):
         If a slug is provided, adds the entity corresponding to the slug.
         """
         context = super().get_context_data(**kwargs)
+        context["control_authority"] = CONSENT_CONTROL_AUTHORITY
         context["entities"] = self._get_entities()
+        context["signature_location"] = CONSENT_SIGNATURE_LOCATION
+        context["mailto"] = CONTACT_EMAIL
         return context
 
     def _get_entities(self) -> list:

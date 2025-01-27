@@ -1,0 +1,49 @@
+{% load i18n %}
+
+{% comment %}
+    Note: all texts of this page are intended to appear in a contract and must
+    therefore be in French and non-translatable.
+{% endcomment %}
+
+<div class="fr-fieldset__element fr-my-4w">
+
+  <legend class="fr-fieldset__legend">
+    C. Tiers
+  </legend>
+
+  <div class="fr-table fr-table--bordered" id="table-bordered-component">
+    <div class="fr-table__wrapper">
+      <div class="fr-table__container">
+        <div class="fr-table__content">
+          <table>
+            <caption class="fr-text--md">
+              Informations sur le tiers
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col">
+                  Libellé
+                </th>
+                <th scope="col">
+                  Valeur
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {% with row_number=0 %}
+                {% include "consent/includes/_table_row.html" with label="Dénomination sociale" value=control_authority.name row_number=row_number|add:"1" %}
+                {% with control_authority.address_1|add:"<br />"|add:control_authority.address_2|add:"<br />"|add:control_authority.zip_code|add:" "|add:control_authority.city as control_authority_address %}
+                  {% include "consent/includes/_table_row.html" with label="Adresse" value=control_authority_address|safe row_number=row_number|add:"1" %}
+                {% endwith %}
+                {% include "consent/includes/_table_row.html" with label="Représenté par" value=control_authority.represented_by row_number=row_number|add:"1" %}
+                {% include "consent/includes/_table_row.html" with label="E-mail" value=control_authority.email row_number=row_number|add:"1" %}
+              {% endwith %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+

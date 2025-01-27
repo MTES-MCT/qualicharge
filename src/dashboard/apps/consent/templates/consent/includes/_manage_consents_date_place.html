@@ -1,0 +1,19 @@
+{% load i18n %}
+
+{% comment %}
+    Note: all texts of this page are intended to appear in a contract and must
+    therefore be in French and non-translatable.
+{% endcomment %}
+
+<p>
+  <strong>Fait à : </strong>{{ signature_location }}
+  <br />
+  <strong>Le :</strong> {% now "d/m/Y" %}
+</p>
+
+<input class="fr-input"
+       type="hidden"
+       id="text-input-entity-name"
+       name="text-input-entity-name"
+       value="{% now "d/m/Y" %}"
+       readonly="readonly">
