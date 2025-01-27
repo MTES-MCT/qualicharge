@@ -11,6 +11,16 @@ class EntityFactory(factory.django.DjangoModelFactory):
     """Factory class for creating instances of the Entity model."""
 
     name = factory.Faker("company")
+    legal_form = factory.Faker(
+        "random_element", elements=["SA", "SARL", "SAS", "SCOP", "EI"]
+    )
+    trade_name = factory.Faker("company")
+    siret = factory.Faker("numerify", text="##############")
+    naf = factory.Faker("bothify", text="####?", letters="ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+    address_1 = factory.Faker("street_address")
+    address_2 = factory.Faker("secondary_address")
+    address_zip_code = factory.Faker("postcode")
+    address_city = factory.Faker("city")
 
     class Meta:  # noqa: D106
         model = Entity
