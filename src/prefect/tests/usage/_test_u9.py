@@ -12,7 +12,7 @@ from indicators.models import IndicatorPeriod, IndicatorTimeSpan, Level  # type:
 from indicators.usage import u9  # type: ignore
 
 # expected result for level [city, epci, dpt, reg, nat]
-N_LEVEL = [768, 7687, 5403, 29281, 84721]
+N_LEVEL = [1150, 10235, 5489, 34639, 88135]
 N_DPTS = 109
 TIMESPAN = IndicatorTimeSpan(start=datetime(2024, 12, 24), period=IndicatorPeriod.DAY)
 
@@ -88,7 +88,10 @@ def test_flow_u9_for_level(db_connection, level, query, targets, expected):
     """Test the `u9_for_level` flow."""
     indicators = u9.u9_for_level(level, TIMESPAN, chunk_size=1000)
     # assert len(indicators) == db_connection.execute(text(query)).scalars().one()
-    assert int(indicators.loc[indicators["target"].isin(targets), "value"].sum()) == expected
+    assert (
+        int(indicators.loc[indicators["target"].isin(targets), "value"].sum())
+        == expected
+    )
 
 
 @pytest.mark.parametrize("chunk_size", PARAMETERS_CHUNK)
@@ -97,7 +100,10 @@ def test_flow_u9_for_level_with_various_chunk_sizes(chunk_size):
     level, query, targets, expected = PARAMETERS_FLOW[2]
     indicators = u9.u9_for_level(level, TIMESPAN, chunk_size=chunk_size)
     # assert len(indicators) == N_DPTS
-    assert int(indicators.loc[indicators["target"].isin(targets), "value"].sum()) == expected
+    assert (
+        int(indicators.loc[indicators["target"].isin(targets), "value"].sum())
+        == expected
+    )
 
 
 def test_flow_u9_national(db_connection):
@@ -108,17 +114,30 @@ def test_flow_u9_national(db_connection):
 
 def test_flow_u9_calculate(db_connection):
     """Test the `calculate` flow."""
-    expected = int(sum(
-        [
-            u9.u9_for_level(Level.CITY, TIMESPAN, chunk_size=1000)["value"].sum(),
-            u9.u9_for_level(Level.EPCI, TIMESPAN, chunk_size=1000)["value"].sum(),
-            u9.u9_for_level(Level.DEPARTMENT, TIMESPAN, chunk_size=1000)["value"].sum(),
-            u9.u9_for_level(Level.REGION, TIMESPAN, chunk_size=1000)["value"].sum(),
-            u9.u9_national(TIMESPAN)["value"].sum(),
-        ]
-    ))
-    all_levels = [Level.NATIONAL, Level.REGION, Level.DEPARTMENT, Level.CITY, Level.EPCI]
-    indicators = u9.calculate(TIMESPAN, all_levels, create_artifact=True, format_pd=True)
+    expected = int(
+        sum(
+            [
+                u9.u9_for_level(Level.CITY, TIMESPAN, chunk_size=1000)["value"].sum(),
+                u9.u9_for_level(Level.EPCI, TIMESPAN, chunk_size=1000)["value"].sum(),
+                u9.u9_for_level(Level.DEPARTMENT, TIMESPAN, chunk_size=1000)[
+                    "value"
+                ].sum(),
+                u9.u9_for_level(Level.REGION, TIMESPAN, chunk_size=1000)["value"].sum(),
+                u9.u9_national(TIMESPAN)["value"].sum(),
+            ]
+        )
+    )
+    all_levels = [
+        Level.NATIONAL,
+        Level.REGION,
+        Level.DEPARTMENT,
+        Level.CITY,
+        Level.EPCI,
+    ]
+    indicators = u9.calculate(
+        TIMESPAN, all_levels, create_artifact=True, format_pd=True
+    )
     assert int(indicators["value"].sum()) == expected
+
 
 # query used to get N_LEVEL

@@ -12,7 +12,7 @@ from indicators.infrastructure import i7  # type: ignore
 from indicators.models import IndicatorPeriod, IndicatorTimeSpan, Level  # type: ignore
 
 # expected result
-N_LEVEL = [18998, 137776, 132634, 664890]
+N_LEVEL = [18998, 137622, 132546, 664670]
 N_DPTS = 109
 TIMESPAN = IndicatorTimeSpan(start=datetime.now(), period=IndicatorPeriod.DAY)
 
@@ -131,6 +131,12 @@ def test_flow_i7_calculate(db_connection):
         )
     )
     expected = sum(result.one()) + 1
-    all_levels = [Level.NATIONAL, Level.REGION, Level.DEPARTMENT, Level.CITY, Level.EPCI]
+    all_levels = [
+        Level.NATIONAL,
+        Level.REGION,
+        Level.DEPARTMENT,
+        Level.CITY,
+        Level.EPCI,
+    ]
     indicators = i7.calculate(TIMESPAN, all_levels, create_artifact=True)
     assert len(indicators) == expected

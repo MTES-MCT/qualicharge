@@ -17,7 +17,7 @@ from sqlalchemy.engine import Connection
 from ..conf import settings
 from ..models import Indicator, IndicatorTimeSpan, Level
 from ..utils import (
-    export_indicators,
+    export_indic,
     get_database_engine,
     get_num_for_level_query_params,
     get_targets_for_level,
@@ -140,11 +140,17 @@ def u10_national(timespan: IndicatorTimeSpan) -> pd.DataFrame:
     flow_run_name="meta-u10-{timespan.period.value}",
 )
 def calculate(
-    timespan: IndicatorTimeSpan, levels: List[Level] = [Level.NATIONAL, Level.REGION], create_artifact: bool = False, chunk_size: int = 1000
+    timespan: IndicatorTimeSpan,
+    levels: List[Level],
+    create_artifact: bool = False,
+    chunk_size: int = 1000,
+    format_pd: bool = False,
 ) -> List[Indicator]:
     """Run all u10 subflows."""
-    subflows_results = [u10_for_level(level, timespan, chunk_size=chunk_size) for level in levels]
+    subflows_results = [
+        u10_for_level(level, timespan, chunk_size=chunk_size) for level in levels
+    ]
     indicators = pd.concat(subflows_results, ignore_index=True)
     description = f"u10 report at {timespan.start} (period: {timespan.period.value})"
     flow_name = runtime.flow_run.name
-    return export_indicators(indicators, create_artifact, flow_name, description)
+    return export_indic(indicators, create_artifact, flow_name, description, format_pd)

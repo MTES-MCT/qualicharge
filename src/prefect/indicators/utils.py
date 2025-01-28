@@ -83,8 +83,16 @@ def get_targets_for_level(connection: Connection, level: Level) -> pd.DataFrame:
     return pd.read_sql_table(level.name.lower(), con=connection)
 
 
-def export_indicators(indicators, create_artifact, flow_name, description):
+def export_indic(
+    indicators: pd.DataFrame,
+    create_artifact: bool,
+    flow_name: str,
+    description: str,
+    format_pd: bool,
+):
     """Export indicators."""
+    if format_pd:
+        return indicators
     if create_artifact:
         create_markdown_artifact(
             key=flow_name, markdown=indicators.to_markdown(), description=description

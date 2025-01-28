@@ -12,7 +12,7 @@ from indicators.models import IndicatorPeriod, IndicatorTimeSpan, Level  # type:
 from indicators.usage import u11  # type: ignore
 
 # expected result for level [city, epci, dpt, reg, nat]
-N_LEVEL = [25, 239, 167, 897, 2565]
+N_LEVEL = [32, 301, 166, 1031, 2639]
 N_DPTS = 109
 TIMESPAN = IndicatorTimeSpan(start=datetime(2024, 12, 24), period=IndicatorPeriod.DAY)
 

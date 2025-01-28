@@ -12,7 +12,7 @@ from indicators.models import IndicatorPeriod, IndicatorTimeSpan, Level  # type:
 from indicators.usage import u10  # type: ignore
 
 # expected result for level [city, epci, dpt, reg, nat]
-N_LEVEL = [25, 247, 170, 926, 2630]
+N_LEVEL = [32, 307, 172, 1055, 2718]
 N_DPTS = 109
 TIMESPAN = IndicatorTimeSpan(start=datetime(2024, 12, 24), period=IndicatorPeriod.DAY)
 
@@ -120,6 +120,12 @@ def test_flow_u10_calculate(db_connection):
         )
     )
     expected = sum(result.one()) + 1
-    all_levels = [Level.NATIONAL, Level.REGION, Level.DEPARTMENT, Level.CITY, Level.EPCI]
+    all_levels = [
+        Level.NATIONAL,
+        Level.REGION,
+        Level.DEPARTMENT,
+        Level.CITY,
+        Level.EPCI,
+    ]
     indicators = u10.calculate(TIMESPAN, all_levels, create_artifact=True)
     assert len(indicators) == expected

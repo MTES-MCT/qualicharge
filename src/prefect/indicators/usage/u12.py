@@ -18,7 +18,7 @@ from ..conf import settings
 from ..models import Indicator, IndicatorTimeSpan, Level
 from ..utils import (
     POWER_RANGE_CTE,
-    export_indicators,
+    export_indic,
     get_database_engine,
     get_num_for_level_query_params,
     get_targets_for_level,
@@ -42,7 +42,7 @@ NUM_POC_IN_OPERATION_FOR_LEVEL_QUERY_TEMPLATE = """
             count(*) AS value,
             category,
             $level_id AS level_id
-        FROM 
+        FROM
             statusf
             INNER JOIN PointDeCharge ON statusf.point_de_charge_id = PointDeCharge.id
             LEFT JOIN Station ON station_id = Station.id
@@ -52,7 +52,7 @@ NUM_POC_IN_OPERATION_FOR_LEVEL_QUERY_TEMPLATE = """
             $join_extras
         WHERE
             $level_id IN ($indexes)
-        GROUP BY 
+        GROUP BY
             $level_id,
             category
         """
@@ -72,13 +72,14 @@ QUERY_NATIONAL_TEMPLATE = """
         SELECT
             count(*) AS value,
             category
-        FROM 
+        FROM
             statusf
             INNER JOIN PointDeCharge ON statusf.point_de_charge_id = PointDeCharge.id
             LEFT JOIN puissance ON puissance_nominale::numeric <@ category
-        GROUP BY 
+        GROUP BY
             category
          """
+
 
 @task(task_run_name="values-for-target-{level:02d}")
 def get_values_for_targets(
@@ -171,17 +172,17 @@ def u12_national(timespan: IndicatorTimeSpan) -> pd.DataFrame:
     flow_run_name="meta-u12-{timespan.period.value}",
 )
 def calculate(
-    timespan: IndicatorTimeSpan, 
-    levels: List[Level] = [Level.NATIONAL, Level.REGION], 
-    create_artifact: bool = False, 
+    timespan: IndicatorTimeSpan,
+    levels: List[Level] = [Level.NATIONAL, Level.REGION],
+    create_artifact: bool = False,
     chunk_size: int = 1000,
     format_pd: bool = False,
 ) -> List[Indicator]:
     """Run all u12 subflows."""
-    subflows_results = [u12_for_level(level, timespan, chunk_size=chunk_size) for level in levels]
+    subflows_results = [
+        u12_for_level(level, timespan, chunk_size=chunk_size) for level in levels
+    ]
     indicators = pd.concat(subflows_results, ignore_index=True)
-    if format_pd:
-        return indicators
     description = f"u12 report at {timespan.start} (period: {timespan.period.value})"
     flow_name = runtime.flow_run.name
-    return export_indicators(indicators, create_artifact, flow_name, description)
+    return export_indic(indicators, create_artifact, flow_name, description, format_pd)
