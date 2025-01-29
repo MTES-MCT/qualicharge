@@ -8,7 +8,7 @@ alembic = "==1.14.1"
 annotated-types = "==0.7.0"
 cachetools = "==5.5.1"
 email-validator = "==2.2.0"
-fastapi = "==0.115.6"
+fastapi = "==0.115.7"
 geoalchemy2 = {extras = ["shapely"], version = "==0.17.0"}
 geopandas = "==1.0.1"
 httpx = {extras = ["cli"], version = "==0.28.1"}
@@ -16,10 +16,10 @@ pandas = "==2.2.3"
 passlib = {extras = ["bcrypt"], version = "==1.7.4"}
 psycopg = {extras = ["pool", "binary"], version = "==3.2.4"}
 pyarrow = "==19.0.0"
-pydantic = "==2.10.5"
+pydantic = "==2.10.6"
 pydantic-extra-types = {extras = ["all"], version = "==2.10.2"}
 pydantic-settings = "==2.7.1"
-pyinstrument = "==5.0.0"
+pyinstrument = "==5.0.1"
 pyjwt = "==2.10.1"
 python-multipart = "==0.0.20"
 questionary = "==2.1.0"
@@ -32,18 +32,18 @@ typer = "==0.15.1"
 uvicorn = {extras = ["standard"] }
 
 [dev-packages]
-black = "==24.10.0"
+black = "==25.1.0"
 csvkit = "==2.0.1"
 honcho = "==2.0.0"
 locust = "==2.32.6"
 mypy = "==1.14.1"
 pandas-stubs = "==2.2.3.241126"
-polyfactory = "==2.18.1"
+polyfactory = "==2.19.0"
 pytest = "==8.3.4"
 pytest-cov = "==6.0.0"
 pytest-httpx = "==0.35.0"
 qualicharge = {path = ".", editable = true}
-ruff = "==0.9.2"
+ruff = "==0.9.3"
 types-cachetools = "==5.5.0.20240820"
 types-passlib = "==1.7.7.20241221"
 types-python-jose = "==3.3.4.20240106"
