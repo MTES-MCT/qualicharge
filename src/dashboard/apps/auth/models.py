@@ -1,7 +1,9 @@
 """Dashboard auth models."""
 
 from django.contrib.auth.models import AbstractUser
+from django.db import models
 from django.db.models import Q, QuerySet
+from django.utils.translation import gettext_lazy as _
 
 from apps.core.models import Entity
 
@@ -13,6 +15,8 @@ class DashboardUser(AbstractUser):
     management functionality, incorporating the fields and methods provided by the
     AbstractUser model in Django.
     """
+
+    siret = models.CharField(_("SIRET"), max_length=14, default="", blank=True)
 
     def get_entities(self) -> QuerySet[Entity]:
         """Get a list of entities, and their proxies associated."""

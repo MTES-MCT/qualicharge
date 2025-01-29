@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django_extensions",
+    "mozilla_django_oidc",
     "widget_tweaks",
     "dsfr",
     "dashboard",
@@ -72,7 +73,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
-    "django.contrib.auth.middleware.LoginRequiredMiddleware",
+    "apps.auth.middleware.DashboardLoginRequiredMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
@@ -157,11 +158,34 @@ STATIC_ROOT = BASE_DIR.parent / "static"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+
 # Authentication
+AUTH_USER_MODEL = "qcd_auth.DashboardUser"
+
+AUTHENTICATION_BACKENDS = (
+    "apps.auth.backends.OIDCAuthenticationBackend",
+    "django.contrib.auth.backends.ModelBackend",
+)
+LOGIN_URL = "/accounts/login/"
 LOGIN_REDIRECT_URL = "/"
 LOGOUT_REDIRECT_URL = "/"
 
-AUTH_USER_MODEL = "qcd_auth.DashboardUser"
+
+# Connection to “Pro Connect” (OIDC)
+OIDC_RP_SIGN_ALGO = "RS256"
+OIDC_RP_CLIENT_ID = env.str("PROCONNECT_CLIENT_ID")
+OIDC_RP_CLIENT_SECRET = env.str("PROCONNECT_CLIENT_SECRET")
+
+OIDC_OP_AUTHORIZATION_ENDPOINT = env.str("PROCONNECT_AUTHORIZATION_ENDPOINT")
+OIDC_OP_TOKEN_ENDPOINT = env.str("PROCONNECT_TOKEN_ENDPOINT")
+OIDC_OP_USER_ENDPOINT = env.str("PROCONNECT_USER_ENDPOINT")
+OIDC_OP_JWKS_ENDPOINT = env.str("PROCONNECT_JWKS_ENDPOINT")
+OIDC_OP_LOGOUT_ENDPOINT = env.str("PROCONNECT_SESSION_END")
+
+OIDC_RP_SCOPES = "openid email given_name usual_name uid siret"
+OIDC_RENEW_ID_TOKEN_EXPIRY_SECONDS = 60 * 60
+OIDC_STORE_ID_TOKEN = True
+ALLOW_LOGOUT_GET_METHOD = True
 
 # Sentry
 sentry_sdk.init(
