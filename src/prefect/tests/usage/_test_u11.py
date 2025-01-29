@@ -14,6 +14,8 @@ from indicators.usage import u11  # type: ignore
 # expected result for level [city, epci, dpt, reg, nat]
 N_LEVEL = [32, 301, 166, 1031, 2639]
 N_DPTS = 109
+N_NAT_REG_DPT_EPCI_CITY = 36465
+
 TIMESPAN = IndicatorTimeSpan(start=datetime(2024, 12, 24), period=IndicatorPeriod.DAY)
 
 PARAMETERS_CHUNK = [10, 50, 100, 500]
@@ -108,18 +110,7 @@ def test_flow_u11_national(db_connection):
 
 def test_flow_u11_calculate(db_connection):
     """Test the `calculate` flow."""
-    result = db_connection.execute(
-        text(
-            """
-            SELECT
-                (SELECT COUNT(*) AS region_count FROM Region),
-                (SELECT COUNT(*) AS department_count FROM Department),
-                (SELECT COUNT(*) AS epci_count FROM EPCI),
-                (SELECT COUNT(*) AS city_count FROM City)
-            """
-        )
-    )
-    expected = sum(result.one()) + 1
+    expected = N_NAT_REG_DPT_EPCI_CITY
     all_levels = [
         Level.NATIONAL,
         Level.REGION,

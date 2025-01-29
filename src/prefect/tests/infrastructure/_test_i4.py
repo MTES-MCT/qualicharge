@@ -15,6 +15,8 @@ from indicators.models import IndicatorPeriod, IndicatorTimeSpan, Level  # type:
 # expected result
 N_LEVEL = [65, 1068, 419, 3786]
 N_DPTS = 109
+N_NAT_REG_DPT_EPCI_CITY = 36465
+
 TIMESPAN = IndicatorTimeSpan(start=datetime.now(), period=IndicatorPeriod.DAY)
 
 PARAMETERS_CHUNK = [10, 50, 100, 500]
@@ -111,18 +113,7 @@ def test_flow_i4_national(db_connection):
 
 def test_flow_i4_calculate(db_connection):
     """Test the `calculate` flow."""
-    result = db_connection.execute(
-        text(
-            """
-            SELECT
-                (SELECT COUNT(*) AS region_count FROM Region),
-                (SELECT COUNT(*) AS department_count FROM Department),
-                (SELECT COUNT(*) AS epci_count FROM EPCI),
-                (SELECT COUNT(*) AS city_count FROM City)
-            """
-        )
-    )
-    expected = sum(result.one()) + 1
+    expected = N_NAT_REG_DPT_EPCI_CITY
     all_levels = [
         Level.NATIONAL,
         Level.REGION,

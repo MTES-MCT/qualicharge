@@ -14,6 +14,8 @@ from indicators.usage import u12  # type: ignore
 # expected result for level [city, epci, dpt, reg, nat]
 N_LEVEL = [42, 352, 229, 1379, 3853]
 N_DPTS = 109
+N_NAT_REG_DPT_EPCI_CITY = 36465
+
 TIMESPAN = IndicatorTimeSpan(start=datetime(2024, 12, 24), period=IndicatorPeriod.DAY)
 
 PARAMETERS_CHUNK = [10, 50, 100, 500]
@@ -72,7 +74,9 @@ def test_task_get_values_for_target(db_connection, level, query, expected):
     """Test the `get_values_for_target` task."""
     result = db_connection.execute(text(query))
     indexes = list(result.scalars().all())
-    poc_by_power = u12.get_values_for_targets.fn(db_connection, level, TIMESPAN, indexes)
+    poc_by_power = u12.get_values_for_targets.fn(
+        db_connection, level, TIMESPAN, indexes
+    )
     assert len(set(poc_by_power["level_id"])) == len(indexes)
     assert poc_by_power["value"].sum() == expected
 
@@ -112,13 +116,24 @@ def test_flow_u12_calculate(db_connection):
         [
             u12.u12_for_level(Level.CITY, TIMESPAN, chunk_size=1000)["value"].sum(),
             u12.u12_for_level(Level.EPCI, TIMESPAN, chunk_size=1000)["value"].sum(),
-            u12.u12_for_level(Level.DEPARTMENT, TIMESPAN, chunk_size=1000)["value"].sum(),
+            u12.u12_for_level(Level.DEPARTMENT, TIMESPAN, chunk_size=1000)[
+                "value"
+            ].sum(),
             u12.u12_for_level(Level.REGION, TIMESPAN, chunk_size=1000)["value"].sum(),
             u12.u12_national(TIMESPAN)["value"].sum(),
         ]
     )
-    all_levels = [Level.NATIONAL, Level.REGION, Level.DEPARTMENT, Level.CITY, Level.EPCI]
-    indicators = u12.calculate(TIMESPAN, all_levels, create_artifact=True, format_pd=True)
+    all_levels = [
+        Level.NATIONAL,
+        Level.REGION,
+        Level.DEPARTMENT,
+        Level.CITY,
+        Level.EPCI,
+    ]
+    indicators = u12.calculate(
+        TIMESPAN, all_levels, create_artifact=True, format_pd=True
+    )
     assert indicators["value"].sum() == expected
+
 
 # query used to get N_LEVEL

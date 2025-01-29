@@ -12,9 +12,11 @@ and this project adheres to
 
 - Implement i4 workflow
 - Implement i7 workflow
+- Implement u5 workflow
 - Implement u9 workflow
 - Implement u10 workflow
 - Implement u11 workflow
 - Implement u12 workflow
+- Implement u13 workflow
 
 [unreleased]: https://github.com/MTES-MCT/qualicharge/
