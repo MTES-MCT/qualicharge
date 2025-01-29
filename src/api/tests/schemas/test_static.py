@@ -9,6 +9,7 @@ from geoalchemy2.shape import to_shape
 from geoalchemy2.types import WKBElement
 from pydantic_extra_types.coordinate import Coordinate
 from shapely.geometry import mapping
+from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy_utils import refresh_materialized_view
 from sqlmodel import select
@@ -28,6 +29,7 @@ from qualicharge.schemas.core import (
     Amenageur,
     Localisation,
     OperationalUnit,
+    PointDeCharge,
     Station,
     StatiqueMV,
 )
@@ -411,8 +413,11 @@ def test_statique_materialized_view(db_session):
     n_pdc = 4
     statiques = StatiqueFactory.batch(n_pdc)
     save_statiques(db_session, statiques)
-    refresh_materialized_view(db_session, STATIQUE_MV_TABLE_NAME)
 
+    db_statiques = db_session.exec(select(StatiqueMV)).all()
+    assert len(db_statiques) == 0
+
+    refresh_materialized_view(db_session, STATIQUE_MV_TABLE_NAME)
     db_statiques = db_session.exec(select(StatiqueMV)).all()
     assert len(db_statiques) == n_pdc
 
@@ -422,6 +427,65 @@ def test_statique_materialized_view(db_session):
     assert isinstance(db_statiques[0].coordonneesXY, WKBElement)
     assert isinstance(db_statiques[0].pdc_id, UUID)
     assert isinstance(db_statiques[0].pdc_updated_at, datetime)
+
+
+def test_statique_materialized_view_refresh(db_session):
+    """Test the StatiqueMV schema."""
+    # Create points of charge
+    n_pdc = 4
+    statiques = StatiqueFactory.batch(n_pdc)
+    save_statiques(db_session, statiques)
+    refresh_materialized_view(db_session, STATIQUE_MV_TABLE_NAME)
+
+    # Get statique MV entries
+    db_statiques = db_session.exec(select(StatiqueMV)).all()
+    assert len(db_statiques) == n_pdc
+
+    # Work on the first entry
+    db_statique = db_statiques[0]
+
+    # Set the original updated_at field value (from the MV)
+    original_updated_at = db_statique.pdc_updated_at
+
+    # Get the corresponding PDC
+    pdc = db_session.exec(
+        select(PointDeCharge).where(
+            PointDeCharge.id_pdc_itinerance == db_statique.id_pdc_itinerance
+        )
+    ).one()
+
+    # Original PDC updated_at field should match MV pdc_updated_at field
+    assert pdc.updated_at == original_updated_at
+
+    # Update the PDC
+    pdc.observations = "I've been modified."
+    db_session.add(pdc)
+    db_session.commit()
+
+    # Before refreshing the MV we should have a mismatch
+    assert pdc.updated_at > original_updated_at
+
+    # Refresh the MV (concurrently to ensure we have the latest state)
+    refresh_materialized_view(db_session, STATIQUE_MV_TABLE_NAME, concurrently=True)
+
+    # Get the up-to-date statique entry
+    db_statique = db_session.exec(
+        select(StatiqueMV).where(StatiqueMV.id_pdc_itinerance == pdc.id_pdc_itinerance)
+    ).one()
+
+    # The pdc_updated_at field should have been updated with the updated PDC fields
+    assert db_statique.pdc_updated_at == pdc.updated_at
+    assert db_statique.pdc_updated_at > original_updated_at
+
+    # Create new statiques
+    new = 2
+    save_statiques(db_session, StatiqueFactory.batch(new))
+    # Get statique MV entries
+    assert db_session.exec(select(func.count(StatiqueMV.pdc_id))).one() == n_pdc
+
+    # Refresh the MV (concurrently to ensure we have the latest state)
+    refresh_materialized_view(db_session, STATIQUE_MV_TABLE_NAME, concurrently=True)
+    assert db_session.exec(select(func.count(StatiqueMV.pdc_id))).one() == n_pdc + new
 
 
 def test_statique_materialized_view_coordonneesXY_field(db_session):
