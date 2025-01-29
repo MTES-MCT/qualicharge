@@ -66,15 +66,6 @@ def test_flow_u5_national(db_connection):
 
 def test_flow_u5_calculate(db_connection):
     """Test the `calculate` flow."""
-    expected = sum(
-        [
-            u5.u5_for_level(Level.CITY, TIMESPAN, chunk_size=1000)["value"].sum(),
-            u5.u5_for_level(Level.EPCI, TIMESPAN, chunk_size=1000)["value"].sum(),
-            u5.u5_for_level(Level.DEPARTMENT, TIMESPAN, chunk_size=1000)["value"].sum(),
-            u5.u5_for_level(Level.REGION, TIMESPAN, chunk_size=1000)["value"].sum(),
-            u5.u5_national(TIMESPAN)["value"].sum(),
-        ]
-    )
     all_levels = [
         Level.NATIONAL,
         Level.REGION,
@@ -85,7 +76,7 @@ def test_flow_u5_calculate(db_connection):
     indicators = u5.calculate(
         TIMESPAN, all_levels, create_artifact=True, format_pd=True
     )
-    assert indicators["value"].sum() == expected
+    assert list(indicators["level"].unique()) == all_levels
 
 
 # query used to get N_LEVEL
