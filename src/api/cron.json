@@ -1,7 +1,7 @@
 {
   "jobs": [
     {
-      "command": "*/10 * * * * python -m qualicharge refresh-static"
+      "command": "*/10 * * * * python -m qualicharge refresh-static --concurrently"
     }
   ]
 }
