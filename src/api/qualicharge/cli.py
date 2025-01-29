@@ -467,6 +467,8 @@ def refresh_static(ctx: typer.Context, concurrently: bool = False):
     refresh_materialized_view(
         session, STATIQUE_MV_TABLE_NAME, concurrently=concurrently
     )
+    session.commit()
+    console.log("Statique Materalized View has been refreshed.")
 
 
 @app.callback()

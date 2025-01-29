@@ -19,7 +19,9 @@ from qualicharge.schemas.core import (
     OperationalUnit,
     PointDeCharge,
     Station,
+    StatiqueMV,
 )
+from qualicharge.schemas.utils import save_statiques
 
 
 def test_list_groups(runner, db_session):
@@ -505,3 +507,16 @@ def test_import_static_with_integrity_exception(runner, db_session):
     assert db_session.exec(select(func.count(Operateur.id))).one() == 0
     assert db_session.exec(select(func.count(PointDeCharge.id))).one() == 0
     assert db_session.exec(select(func.count(Station.id))).one() == 0
+
+
+def test_refresh_static(runner, db_session):
+    """Test the `refresh-static` command."""
+    # Create points of charge
+    n_pdc = 4
+    save_statiques(db_session, StatiqueFactory.batch(n_pdc))
+    assert db_session.exec(select(func.count(StatiqueMV.pdc_id))).one() == 0
+
+    # Proceed
+    result = runner.invoke(app, ["refresh-static", "--concurrently"], obj=db_session)
+    assert result.exit_code == 0
+    assert db_session.exec(select(func.count(StatiqueMV.pdc_id))).one() == n_pdc
