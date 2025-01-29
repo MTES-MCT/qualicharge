@@ -8,6 +8,12 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Changed
+
+- Upgrade fastapi to `0.115.7`
+- Upgrade pydantic to `2.10.6`
+- Upgrade pyinstrument to `5.0.1`
+
 ## [0.17.0] - 2025-01-29
 
 ### Added
