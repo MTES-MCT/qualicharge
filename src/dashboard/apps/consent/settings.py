@@ -27,4 +27,4 @@ CONSENT_CONTROL_AUTHORITY = getattr(
         "email": "<email@gouv.fr>",
     },
 )
-CONSENT_DONE_AT = getattr(settings, "CONSENT_DONE_AT", "<city>")
+CONSENT_SIGNATURE_LOCATION = getattr(settings, "CONSENT_SIGNATURE_LOCATION", "<city>")
