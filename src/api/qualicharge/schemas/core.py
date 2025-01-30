@@ -596,3 +596,5 @@ for auditable_model in (
     PointDeCharge,
 ):
     event.listen(auditable_model, "after_update", track_model_changes)
+
+

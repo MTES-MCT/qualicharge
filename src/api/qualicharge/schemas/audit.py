@@ -6,7 +6,8 @@ from typing import Optional
 from uuid import UUID, uuid4
 
 from pydantic import PastDatetime
-from sqlalchemy import insert, inspect
+from sqlalchemy import and_, event, insert, inspect
+from sqlalchemy.orm import backref, foreign, relationship, remote
 from sqlalchemy.types import JSON, DateTime
 from sqlalchemy_utils import generic_relationship
 from sqlmodel import Field, SQLModel
@@ -47,6 +48,25 @@ class Audit(SQLModel, table=True):
     changes: dict = Field(sa_type=JSON)
 
     _target = generic_relationship(target_table, target_id)
+
+
+@event.listens_for(BaseAuditableSQLModel, "mapper_configured", propagate=True)
+def add_audit_generic_fk(mapper, class_):
+    """Create a generic foreign key to the Audit table for auditable schemas."""
+    name = class_.__name__
+    discriminator = name.lower()
+    class_.audits = relationship(
+        Audit,
+        primaryjoin=and_(
+            class_.id == foreign(remote(Audit.target_id)),
+            Audit.target_table == discriminator,
+        ),
+        overlaps="audits"
+    )
+
+    @event.listens_for(class_.audits, "append")
+    def append_audit(target, value, initiator):
+        value.discriminator = discriminator
 
 
 def track_model_changes(mapper, connection, target):
