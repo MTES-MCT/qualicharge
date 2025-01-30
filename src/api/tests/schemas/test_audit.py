@@ -60,7 +60,7 @@ def test_auditable_schema_changes(db_session):
     assert db_session.exec(select(func.count(Operateur.id))).one() == 1
     assert db_session.exec(select(func.count(Audit.id))).one() == 1
     audit = db_session.exec(select(Audit)).first()
-    assert audit.table == "operateur"
+    assert audit.target_table == "operateur"
     assert audit.author_id == user.id
     assert audit.target_id == operateur.id
     assert audit.updated_at == operateur.updated_at
@@ -80,7 +80,7 @@ def test_auditable_schema_changes(db_session):
     assert db_session.exec(select(func.count(Operateur.id))).one() == 1
     assert db_session.exec(select(func.count(Audit.id))).one() == expected_audits
     audit = db_session.exec(select(Audit).order_by(Audit.updated_at.desc())).first()
-    assert audit.table == "operateur"
+    assert audit.target_table == "operateur"
     assert audit.author_id == user.id
     assert audit.target_id == operateur.id
     assert audit.updated_at == operateur.updated_at
@@ -114,7 +114,7 @@ def test_auditable_schema_audits_dynamic_fk(db_session):
 
     # Test audits dymanic generic FK
     assert len(operateur.audits) == 1
-    assert operateur.audits[0].table == "operateur"
+    assert operateur.audits[0].target_table == "operateur"
     assert operateur.audits[0].author_id == user.id
     assert operateur.audits[0].target_id == operateur.id
     assert operateur.audits[0].updated_at == operateur.updated_at
@@ -133,7 +133,7 @@ def test_auditable_schema_audits_dynamic_fk(db_session):
     # Test audits dymanic generic FK
     expected_audits = 2
     assert len(operateur.audits) == expected_audits
-    assert operateur.audits[1].table == "operateur"
+    assert operateur.audits[1].target_table == "operateur"
     assert operateur.audits[1].author_id == user.id
     assert operateur.audits[1].target_id == operateur.id
     assert operateur.audits[1].updated_at == operateur.updated_at

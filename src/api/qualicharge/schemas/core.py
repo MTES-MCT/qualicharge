@@ -51,6 +51,7 @@ from ..models.static import (
     RaccordementEnum,
     Statique,
 )
+from . import BaseTimestampedSQLModel
 from .audit import BaseAuditableSQLModel, track_model_changes
 
 if TYPE_CHECKING:
@@ -247,7 +248,7 @@ class Localisation(BaseAuditableSQLModel, table=True):
         return self._wkb_to_coordinates(value)
 
 
-class OperationalUnit(BaseAuditableSQLModel, table=True):
+class OperationalUnit(BaseTimestampedSQLModel, table=True):
     """OperationalUnit table."""
 
     id: UUID = Field(default_factory=uuid4, primary_key=True)
