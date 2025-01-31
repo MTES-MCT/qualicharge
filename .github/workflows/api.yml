@@ -131,6 +131,8 @@ jobs:
           ref: ${{ github.head_ref }}
       - name: Create postgis extension
         run: psql "postgresql://qualicharge:pass@localhost:5432/qualicharge-api" -c "create extension postgis;"
+      - name: Create btree_gist extension
+        run: psql "postgresql://qualicharge:pass@localhost:5432/qualicharge-api" -c "create extension btree_gist;"
       - name: Install pipenv
         run: pipx install pipenv
       - name: Set up Python 3.12
@@ -307,6 +309,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: Create postgis extension
         run: psql "postgresql://qualicharge:pass@localhost:5432/test-qualicharge-api" -c "create extension postgis;"
+      - name: Create btree_gist extension
+        run: psql "postgresql://qualicharge:pass@localhost:5432/test-qualicharge-api" -c "create extension btree_gist;"
       - name: Install pipenv
         run: pipx install pipenv
       - name: Set up Python 3.12
@@ -355,6 +359,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: Create postgis extension
         run: psql "postgresql://qualicharge:pass@localhost:5432/test-qualicharge-api" -c "create extension postgis;"
+      - name: Create btree_gist extension
+        run: psql "postgresql://qualicharge:pass@localhost:5432/test-qualicharge-api" -c "create extension btree_gist;"
       - name: Install pipenv
         run: pipx install pipenv
       - name: Set up Python 3.12

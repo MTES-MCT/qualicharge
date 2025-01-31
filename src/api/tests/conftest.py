@@ -11,4 +11,5 @@ from .fixtures.db import (
     db_session,
     load_operational_units,
     override_db_test_session,
+    versioning_manager,
 )

@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "83a9351ed924fafd569c26d5a1145d5bc8736e0b2c1b61118a659cb5090d8d29"
+            "sha256": "80649160a3c5583ae72c3ac487b07640fefe9b24810aec519e32c64b6b214d9b"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -621,6 +621,15 @@
                 "sha256:fa7b93e12b3ac9baa7b056061cfcbe4de406039f720bb539dc240bed9cc43da2"
             ],
             "version": "==8.13.53"
+        },
+        "postgresql-audit": {
+            "hashes": [
+                "sha256:499952dc028b5bb7baaa0262b98c0b26a07fc3e2929ab47a54149d1d333afd7f",
+                "sha256:7816def8826ecd2f6d4b720762829512a00ab4fdd6d3cac266eca7cef5865832"
+            ],
+            "index": "pypi",
+            "markers": "python_version >= '3.8'",
+            "version": "==0.17.1"
         },
         "prompt-toolkit": {
             "hashes": [

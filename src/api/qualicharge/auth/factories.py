@@ -9,7 +9,7 @@ from polyfactory.factories.pydantic_factory import ModelFactory
 from polyfactory.pytest_plugin import register_fixture
 
 from qualicharge.conf import settings
-from qualicharge.factories import FrenchDataclassFactory, TimestampedSQLModelFactory
+from qualicharge.factories import AuditableSQLModelFactory, FrenchDataclassFactory
 
 from .models import IDToken
 from .schemas import Group, ScopesEnum, User
@@ -33,7 +33,7 @@ class IDTokenFactory(ModelFactory[IDToken]):
     email = "john@doe.com"
 
 
-class UserFactory(TimestampedSQLModelFactory[User]):
+class UserFactory(AuditableSQLModelFactory[User]):
     """User schema factory."""
 
     username = Use(
@@ -45,7 +45,7 @@ class UserFactory(TimestampedSQLModelFactory[User]):
     scopes = Use(FrenchDataclassFactory.__random__.sample, list(ScopesEnum), 2)
 
 
-class GroupFactory(TimestampedSQLModelFactory[Group]):
+class GroupFactory(AuditableSQLModelFactory[Group]):
     """Group schema factory."""
 
     name = Use(FrenchDataclassFactory.__faker__.company)

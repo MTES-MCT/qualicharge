@@ -14,6 +14,7 @@ geopandas = "==1.0.1"
 httpx = {extras = ["cli"], version = "==0.28.1"}
 pandas = "==2.2.3"
 passlib = {extras = ["bcrypt"], version = "==1.7.4"}
+postgresql-audit = "==0.17.1"
 psycopg = {extras = ["pool", "binary"], version = "==3.2.4"}
 pyarrow = "==19.0.0"
 pydantic = "==2.10.6"
