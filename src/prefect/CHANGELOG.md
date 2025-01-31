@@ -13,6 +13,7 @@ and this project adheres to
 - Implement i4 workflow
 - Implement i7 workflow
 - Implement u5 workflow
+- Implement u6 workflow
 - Implement u9 workflow
 - Implement u10 workflow
 - Implement u11 workflow

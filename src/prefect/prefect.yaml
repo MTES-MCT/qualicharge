@@ -73,6 +73,20 @@ deployments:
     work_pool:
       name: indicators
       work_queue_name: default  
+  - name: u6-daily
+    entrypoint: indicators/run.py:u6_calculate
+    concurrency_limit: 10
+    schedules:
+      - cron: "5 15 * * *"
+        timezone: "Europe/Paris"
+        active: true
+    parameters:
+      period: d
+      create_artifact: true
+      chunk_size: 1000
+    work_pool:
+      name: indicators
+      work_queue_name: default  
   - name: u9-daily
     entrypoint: indicators/run.py:u9_calculate
     concurrency_limit: 10
@@ -120,6 +134,20 @@ deployments:
     concurrency_limit: 10
     schedules:
       - cron: "12 15 * * *"
+        timezone: "Europe/Paris"
+        active: true
+    parameters:
+      period: d
+      create_artifact: true
+      chunk_size: 1000
+    work_pool:
+      name: indicators
+      work_queue_name: default
+- name: u13-daily
+    entrypoint: indicators/run.py:u13_calculate
+    concurrency_limit: 10
+    schedules:
+      - cron: "14 15 * * *"
         timezone: "Europe/Paris"
         active: true
     parameters:
