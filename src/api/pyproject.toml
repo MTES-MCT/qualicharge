@@ -73,7 +73,8 @@ exclude = [
 
 [[tool.mypy.overrides]]
 module = [
+  "postgresql_audit.*",
   "shapely.*",
-  "sqlalchemy_utils.*"
+  "sqlalchemy_utils.*",
 ]
 ignore_missing_imports = true

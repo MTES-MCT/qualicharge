@@ -34,3 +34,24 @@ class TimestampedSQLModelFactory(Generic[T], SQLAlchemyFactory[T]):
     id = Use(uuid4)
     created_at = Use(lambda: datetime.now(timezone.utc) - timedelta(hours=1))
     updated_at = Use(datetime.now, timezone.utc)
+
+
+class AuditableSQLModelFactory(Generic[T], SQLAlchemyFactory[T]):
+    """A base factory for Auditable SQLModel.
+
+    We expect SQLModel to define the following fields:
+
+    - id: UUID
+    - created_at: datetime
+    - updated_at: datetime
+    - created_by_id: UUID
+    - updated_by_id: UUID
+    """
+
+    __is_base_factory__ = True
+
+    id = Use(uuid4)
+    created_at = Use(lambda: datetime.now(timezone.utc) - timedelta(hours=1))
+    updated_at = Use(datetime.now, timezone.utc)
+    created_by_id = None
+    updated_by_id = None

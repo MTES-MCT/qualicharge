@@ -1,7 +1,8 @@
 """QualiCharge schemas."""
 
 from datetime import datetime, timezone
-from typing import Any
+from typing import Any, Optional
+from uuid import UUID
 
 from pydantic import PastDatetime
 from sqlalchemy import CheckConstraint
@@ -33,3 +34,12 @@ class BaseTimestampedSQLModel(SQLModel):
         default_factory=lambda: datetime.now(timezone.utc),
         description="The timestamp indicating when the record was last updated.",
     )  # type: ignore
+
+
+class BaseAuditableSQLModel(BaseTimestampedSQLModel):
+    """A base class for SQL models for which we track changes making them auditable."""
+
+    __versioned__ = {"exclude": ["created_at", "updated_at"]}
+
+    created_by_id: Optional[UUID] = Field(default=None, foreign_key="user.id")
+    updated_by_id: Optional[UUID] = Field(default=None, foreign_key="user.id")

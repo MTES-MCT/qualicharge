@@ -10,6 +10,7 @@ from fastapi import status
 from pydantic_extra_types.coordinate import Coordinate
 from sqlalchemy import Column as SAColumn
 from sqlalchemy import func
+from sqlalchemy.types import UUID
 from sqlalchemy_utils import refresh_materialized_view
 from sqlmodel import select
 
@@ -984,3 +985,158 @@ def test_bulk_update(client_auth, db_session):
         .one()
         .paiement_cb
     )
+
+
+def test_update_audits(client_auth, db_session, versioning_manager):
+    """Test the /statique/{id_pdc_itinerance} update endpoint audits."""
+    Activity = versioning_manager.activity_cls
+    # We've created two inserts: admin user and group
+    expected_activities = 2
+    assert db_session.exec(select(func.count(Activity.id))).one() == expected_activities
+
+    # The admin user that performs API requests
+    admin = db_session.exec(select(User)).first()
+
+    # Create original statique-related entries
+    id_pdc_itinerance = "FR911E1111ER1"
+    db_statique = save_statique(
+        db_session,
+        StatiqueFactory.build(
+            id_pdc_itinerance=id_pdc_itinerance,
+            nom_amenageur="ACME Inc.",
+            nom_operateur="ACME Inc.",
+            nom_enseigne="ACME Inc.",
+            coordonneesXY=Coordinate(-1.0, 1.0),
+            station_deux_roues=False,
+            cable_t2_attache=False,
+        ),
+    )
+    station = db_session.exec(
+        select(Station).where(
+            Station.id_station_itinerance == db_statique.id_station_itinerance
+        )
+    ).one()
+
+    # Inspect Station activities
+    latest_activities = db_session.exec(
+        select(Activity)
+        .where(
+            Activity.table_name == "station",
+            Activity.data["id"].astext.cast(UUID) == station.id,
+        )
+        .order_by(Activity.issued_at)
+    ).all()
+    # The latest activity relates to foreign keys update, we want the previous update
+    latest_activity = latest_activities[-2]
+    assert latest_activity.verb == "insert"
+    assert "station_deux_roues" in latest_activity.changed_data
+    assert not latest_activity.changed_data["station_deux_roues"]
+    assert latest_activity.data["created_by_id"] is None
+
+    # We have activities generated when inserted statiques
+    pre_activities = db_session.exec(select(func.count(Activity.id))).one()
+    assert pre_activities >= 1
+
+    # Update statique-related entries
+    new_statique = db_statique.model_copy(
+        update={
+            "contact_operateur": "john@doe.com",
+            "nom_amenageur": "Magma Corp.",
+            "nom_operateur": "Magma Corp.",
+            "nom_enseigne": "Magma Corp.",
+            "coordonneesXY": Coordinate(1.0, 2.0),
+            "station_deux_roues": True,
+            "cable_t2_attache": True,
+        },
+        deep=True,
+    )
+    response = client_auth.put(
+        f"/statique/{id_pdc_itinerance}",
+        json=json.loads(new_statique.model_dump_json()),
+    )
+    assert response.status_code == status.HTTP_200_OK
+    db_session.refresh(station)
+
+    # We should have generated more activities
+    post_activities = db_session.exec(select(func.count(Activity.id))).one()
+    assert post_activities > pre_activities
+
+    # Inspect Station activities
+    latest_activities = db_session.exec(
+        select(Activity)
+        .where(
+            Activity.table_name == "station",
+            Activity.data["id"].astext.cast(UUID) == station.id,
+        )
+        .order_by(Activity.issued_at)
+    ).all()
+    # The latest activity relates to foreign keys update, we want the previous update
+    latest_activity = latest_activities[-2]
+    assert latest_activity.verb == "update"
+    assert "station_deux_roues" in latest_activity.changed_data
+    assert latest_activity.changed_data["station_deux_roues"]
+    assert latest_activity.changed_data["updated_by_id"] == str(admin.id)
+    assert latest_activity.data["created_by_id"] is None
+
+
+def test_bulk_update_audits(client_auth, db_session, versioning_manager):
+    """Test that bulk endpoint is audited."""
+    Activity = versioning_manager.activity_cls
+    # We've created two inserts: admin user and group
+    expected_activities = 2
+    assert db_session.exec(select(func.count(Activity.id))).one() == expected_activities
+
+    # The admin user that performs API requests
+    admin = db_session.exec(select(User)).first()
+
+    size = 2
+    statiques = StatiqueFactory.batch(
+        size=size,
+        paiement_cb=False,
+    )
+    save_statiques(db_session, statiques)
+    points_of_charge = db_session.exec(select(PointDeCharge)).all()
+
+    # We have activities generated when inserted statiques
+    pre_activities = db_session.exec(select(func.count(Activity.id))).one()
+    assert pre_activities >= 1
+
+    # Inspect PointDeCharge activities
+    latest_activity = db_session.exec(
+        select(Activity)
+        .where(
+            Activity.table_name == "pointdecharge",
+            Activity.data["id"].astext.cast(UUID) == points_of_charge[0].id,
+        )
+        .order_by(Activity.issued_at.desc())
+    ).first()
+    assert latest_activity.verb == "insert"
+    assert "paiement_cb" in latest_activity.changed_data
+    assert not latest_activity.changed_data["paiement_cb"]
+
+    # Update paiement_cb field
+    statiques[0].paiement_cb = statiques[1].paiement_cb = True
+
+    # Update statiques using the bulk endpoint
+    payload = [json.loads(s.model_dump_json()) for s in statiques]
+    response = client_auth.post("/statique/bulk", json=payload)
+    assert response.status_code == status.HTTP_201_CREATED
+
+    # We should have generated more activities
+    post_activities = db_session.exec(select(func.count(Activity.id))).one()
+    assert post_activities > pre_activities
+
+    # Inspect PointDeCharge changes
+    latest_activity = db_session.exec(
+        select(Activity)
+        .where(
+            Activity.table_name == "pointdecharge",
+            Activity.data["id"].astext.cast(UUID) == points_of_charge[0].id,
+        )
+        .order_by(Activity.issued_at.desc())
+    ).first()
+    assert latest_activity.verb == "update"
+    assert "paiement_cb" in latest_activity.changed_data
+    assert latest_activity.changed_data["paiement_cb"]
+    assert latest_activity.changed_data["updated_by_id"] == str(admin.id)
+    assert latest_activity.data["created_by_id"] is None

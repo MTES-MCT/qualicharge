@@ -9,7 +9,7 @@ from sqlalchemy.types import ARRAY, DateTime, String
 from sqlmodel import Field, Relationship, SQLModel
 
 from qualicharge.conf import settings
-from qualicharge.schemas import BaseTimestampedSQLModel
+from qualicharge.schemas import BaseAuditableSQLModel
 from qualicharge.schemas.core import OperationalUnit
 
 
@@ -53,8 +53,12 @@ class ScopesEnum(StrEnum):
 
 
 # -- Core schemas
-class User(BaseTimestampedSQLModel, table=True):
+class User(BaseAuditableSQLModel, table=True):
     """QualiCharge User."""
+
+    __versioned__ = {
+        "exclude": BaseAuditableSQLModel.__versioned__["exclude"] + ["password"]
+    }
 
     id: UUID = Field(default_factory=uuid4, primary_key=True)
     username: str = Field(unique=True, max_length=150)
@@ -103,7 +107,7 @@ class User(BaseTimestampedSQLModel, table=True):
         return settings.PASSWORD_CONTEXT.verify(password, self.password)
 
 
-class Group(BaseTimestampedSQLModel, table=True):
+class Group(BaseAuditableSQLModel, table=True):
     """QualiCharge Group."""
 
     id: UUID = Field(default_factory=uuid4, primary_key=True)

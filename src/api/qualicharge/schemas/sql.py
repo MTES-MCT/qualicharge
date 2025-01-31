@@ -17,9 +17,10 @@ from sqlalchemy.engine import Connection
 from sqlalchemy.schema import MetaData
 from typing_extensions import Optional
 
+from ..auth.schemas import User
 from ..exceptions import ObjectDoesNotExist, ProgrammingError
 from ..models.static import Statique
-from . import BaseTimestampedSQLModel
+from . import BaseAuditableSQLModel
 from .core import (
     Amenageur,
     Enseigne,
@@ -35,13 +36,15 @@ logger = logging.getLogger(__name__)
 class StatiqueImporter:
     """Statique importer from a Pandas Dataframe."""
 
-    def __init__(self, df: pd.DataFrame, connection: Connection):
+    def __init__(
+        self, df: pd.DataFrame, connection: Connection, author: Optional[User] = None
+    ):
         """Add table cache keys."""
         logger.info("Loading input dataframe containing %d rows", len(df))
 
         self._statique: pd.DataFrame = df
         self._statique_with_fk: pd.DataFrame = self._statique.copy()
-        self._saved_schemas: list[type[BaseTimestampedSQLModel]] = []
+        self._saved_schemas: list[type[BaseAuditableSQLModel]] = []
 
         self._amenageur: Optional[pd.DataFrame] = None
         self._enseigne: Optional[pd.DataFrame] = None
@@ -53,27 +56,29 @@ class StatiqueImporter:
         self._operational_units: Optional[pd.DataFrame] = None
 
         self.connection: Connection = connection
+        self.author: Optional[User] = author
 
     def __len__(self):
         """Object length corresponds to the static dataframe length."""
         return len(self._statique)
 
-    @staticmethod
-    def _add_timestamped_model_fields(df: pd.DataFrame):
-        """Add required fields for a BaseTimestampedSQLModel."""
+    def _add_auditable_model_fields(self, df: pd.DataFrame):
+        """Add required fields for a BaseAuditableSQLModel."""
         df["id"] = df.apply(lambda x: uuid.uuid4(), axis=1)
         now = pd.Timestamp.now(tz="utc")
         df["created_at"] = now
         df["updated_at"] = now
+        df["created_by_id"] = self.author.id if self.author else None
+        df["updated_by_id"] = self.author.id if self.author else None
         return df
 
     @staticmethod
-    def _schema_fk(schema: type[BaseTimestampedSQLModel]) -> str:
+    def _schema_fk(schema: type[BaseAuditableSQLModel]) -> str:
         """Get expected schema foreign key name."""
         return f"{schema.__table__.name}_id"  # type: ignore[attr-defined]
 
     @staticmethod
-    def _get_schema_fks(schema: type[BaseTimestampedSQLModel]) -> list[str]:
+    def _get_schema_fks(schema: type[BaseAuditableSQLModel]) -> list[str]:
         """Get foreign key field names from a schema."""
         return [
             fk.parent.name
@@ -81,19 +86,21 @@ class StatiqueImporter:
         ]
 
     def _get_fields_for_schema(
-        self, schema: type[BaseTimestampedSQLModel], with_fk: bool = False
+        self, schema: type[BaseAuditableSQLModel], with_fk: bool = False
     ) -> list[str]:
         """Get Statique fields from a core schema."""
         fields = list(
             set(Statique.model_fields.keys()) & set(schema.model_fields.keys())
         )
+        # Auditable model fks should be ignored
+        ignored_fks = {"created_by_id", "updated_by_id"}
         if with_fk:
-            fields += self._get_schema_fks(schema)
+            fields += list(set(self._get_schema_fks(schema)) - ignored_fks)
         return fields
 
     def _get_dataframe_for_schema(
         self,
-        schema: type[BaseTimestampedSQLModel],
+        schema: type[BaseAuditableSQLModel],
         subset: Optional[str] = None,
         with_fk: bool = False,
     ):
@@ -101,11 +108,11 @@ class StatiqueImporter:
         src = self._statique_with_fk if with_fk else self._statique
         df = src[self._get_fields_for_schema(schema, with_fk=with_fk)]
         df = df.drop_duplicates(subset)
-        df = self._add_timestamped_model_fields(df)
+        df = self._add_auditable_model_fields(df)
         return df
 
     def _add_fk_from_saved_schema(
-        self, saved: pd.DataFrame, schema: type[BaseTimestampedSQLModel]
+        self, saved: pd.DataFrame, schema: type[BaseAuditableSQLModel]
     ):
         """Add foreign keys to the statique DataFrame using saved schema."""
         fields = self._get_fields_for_schema(schema)
@@ -192,7 +199,7 @@ class StatiqueImporter:
     def _save_schema(
         self,
         df: pd.DataFrame,
-        schema: type[BaseTimestampedSQLModel],
+        schema: type[BaseAuditableSQLModel],
         constraint: Optional[str] = None,
         index_elements: Optional[list[str]] = None,
         chunksize: int = 1000,
@@ -221,7 +228,12 @@ class StatiqueImporter:
                 f: stmt.excluded.get(f)
                 for f in self._get_fields_for_schema(schema, with_fk=True)
             }
-            updates_on_conflict.update({"updated_at": stmt.excluded.updated_at})
+            updates_on_conflict.update(
+                {
+                    "updated_at": stmt.excluded.updated_at,
+                    "updated_by_id": stmt.excluded.updated_by_id,
+                }
+            )
             stmt = stmt.on_conflict_do_update(
                 constraint=constraint,
                 index_elements=index_elements,

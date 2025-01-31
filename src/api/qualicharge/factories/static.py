@@ -20,7 +20,11 @@ from ..schemas.core import (
     PointDeCharge,
     Station,
 )
-from . import FrenchDataclassFactory, TimestampedSQLModelFactory
+from . import (
+    AuditableSQLModelFactory,
+    FrenchDataclassFactory,
+    TimestampedSQLModelFactory,
+)
 
 T = TypeVar("T")
 
@@ -83,13 +87,13 @@ class StatiqueFactory(ModelFactory[Statique]):
         return prefix + FrenchDataclassFactory.__faker__.pystr_format("E######")
 
 
-class AmenageurFactory(TimestampedSQLModelFactory[Amenageur]):
+class AmenageurFactory(AuditableSQLModelFactory[Amenageur]):
     """Amenageur schema factory."""
 
     contact_amenageur = Use(FrenchDataclassFactory.__faker__.ascii_company_email)
 
 
-class EnseigneFactory(TimestampedSQLModelFactory[Enseigne]):
+class EnseigneFactory(AuditableSQLModelFactory[Enseigne]):
     """Enseigne schema factory."""
 
 
@@ -100,7 +104,7 @@ class CoordinateFactory(DataclassFactory[Coordinate]):
     latitude = Use(DataclassFactory.__faker__.pyfloat, min_value=-90, max_value=90)
 
 
-class LocalisationFactory(TimestampedSQLModelFactory[Localisation]):
+class LocalisationFactory(AuditableSQLModelFactory[Localisation]):
     """Localisation schema factory."""
 
     @classmethod
@@ -113,7 +117,7 @@ class LocalisationFactory(TimestampedSQLModelFactory[Localisation]):
         }
 
 
-class OperateurFactory(TimestampedSQLModelFactory[Operateur]):
+class OperateurFactory(AuditableSQLModelFactory[Operateur]):
     """Operateur schema factory."""
 
     contact_operateur = Use(FrenchDataclassFactory.__faker__.ascii_company_email)
@@ -132,7 +136,7 @@ class OperateurFactory(TimestampedSQLModelFactory[Operateur]):
     )
 
 
-class PointDeChargeFactory(TimestampedSQLModelFactory[PointDeCharge]):
+class PointDeChargeFactory(AuditableSQLModelFactory[PointDeCharge]):
     """PointDeCharge schema factory."""
 
     id_pdc_itinerance = Use(
@@ -154,7 +158,7 @@ class OperationalUnitFactory(TimestampedSQLModelFactory[OperationalUnit]):
     name = Use(FrenchDataclassFactory.__faker__.company)
 
 
-class StationFactory(TimestampedSQLModelFactory[Station]):
+class StationFactory(AuditableSQLModelFactory[Station]):
     """Station schema factory."""
 
     id_station_itinerance = Use(

@@ -400,7 +400,10 @@ async def create_session(
     # - `session` / `QCSession` / `SessionCreate` refers to qualicharge charging session
     pdc_id = get_pdc_id(session.id_pdc_itinerance, db_session)
 
-    db_qc_session = QCSession(**session.model_dump(exclude={"id_pdc_itinerance"}))
+    db_qc_session = QCSession(
+        **session.model_dump(exclude={"id_pdc_itinerance"}),
+        created_by_id=user.id,
+    )
     # Store session id so that we do not need to perform another request
     db_qc_session_id = db_qc_session.id
     db_qc_session.point_de_charge_id = pdc_id
@@ -446,7 +449,10 @@ async def create_session_bulk(
     db_qc_sessions = []
     db_qc_session_ids = []
     for session in sessions:
-        db_qc_session = QCSession(**session.model_dump(exclude={"id_pdc_itinerance"}))
+        db_qc_session = QCSession(
+            **session.model_dump(exclude={"id_pdc_itinerance"}),
+            created_by_id=user.id,
+        )
         db_qc_session_ids.append(db_qc_session.id)
         db_qc_session.point_de_charge_id = db_pdcs[session.id_pdc_itinerance]
         db_qc_sessions.append(db_qc_session)

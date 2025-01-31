@@ -8,6 +8,10 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Added
+
+- Integrate `postgresql_audit` for critical database changes versioning
+
 ### Changed
 
 - Upgrade fastapi to `0.115.7`
