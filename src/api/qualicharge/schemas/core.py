@@ -52,6 +52,7 @@ from ..models.static import (
     Statique,
 )
 from . import BaseTimestampedSQLModel
+from .audit import BaseAuditableSQLModel, track_model_changes
 
 if TYPE_CHECKING:
     from qualicharge.auth.schemas import Group
@@ -118,10 +119,10 @@ OccupationPDCDBEnum: PgEnum = PgEnum(
 )
 
 
-class Amenageur(BaseTimestampedSQLModel, table=True):
+class Amenageur(BaseAuditableSQLModel, table=True):
     """Amenageur table."""
 
-    __table_args__ = BaseTimestampedSQLModel.__table_args__ + (
+    __table_args__ = BaseAuditableSQLModel.__table_args__ + (
         UniqueConstraint("nom_amenageur", "siren_amenageur", "contact_amenageur"),
     )
 
@@ -141,10 +142,10 @@ class Amenageur(BaseTimestampedSQLModel, table=True):
         return all(getattr(self, field) == getattr(other, field) for field in fields)
 
 
-class Operateur(BaseTimestampedSQLModel, table=True):
+class Operateur(BaseAuditableSQLModel, table=True):
     """Operateur table."""
 
-    __table_args__ = BaseTimestampedSQLModel.__table_args__ + (
+    __table_args__ = BaseAuditableSQLModel.__table_args__ + (
         UniqueConstraint("nom_operateur", "contact_operateur", "telephone_operateur"),
     )
 
@@ -164,7 +165,7 @@ class Operateur(BaseTimestampedSQLModel, table=True):
         return all(getattr(self, field) == getattr(other, field) for field in fields)
 
 
-class Enseigne(BaseTimestampedSQLModel, table=True):
+class Enseigne(BaseAuditableSQLModel, table=True):
     """Enseigne table."""
 
     model_config = SQLModelConfig(validate_assignment=True)
@@ -181,7 +182,7 @@ class Enseigne(BaseTimestampedSQLModel, table=True):
         return all(getattr(self, field) == getattr(other, field) for field in fields)
 
 
-class Localisation(BaseTimestampedSQLModel, table=True):
+class Localisation(BaseAuditableSQLModel, table=True):
     """Localisation table."""
 
     model_config = SQLModelConfig(
@@ -286,7 +287,7 @@ class OperationalUnit(BaseTimestampedSQLModel, table=True):
         session.commit()
 
 
-class Station(BaseTimestampedSQLModel, table=True):
+class Station(BaseAuditableSQLModel, table=True):
     """Station table."""
 
     model_config = SQLModelConfig(validate_assignment=True)
@@ -374,7 +375,7 @@ def link_station_to_operational_unit(mapper, connection, target):
     target.operational_unit_id = operational_unit.id
 
 
-class PointDeCharge(BaseTimestampedSQLModel, table=True):
+class PointDeCharge(BaseAuditableSQLModel, table=True):
     """PointDeCharge table."""
 
     model_config = SQLModelConfig(validate_assignment=True)
@@ -417,10 +418,10 @@ class PointDeCharge(BaseTimestampedSQLModel, table=True):
     statuses: List["Status"] = Relationship(back_populates="point_de_charge")
 
 
-class Session(BaseTimestampedSQLModel, SessionBase, table=True):
+class Session(BaseAuditableSQLModel, SessionBase, table=True):
     """IRVE recharge session."""
 
-    __table_args__ = BaseTimestampedSQLModel.__table_args__ + (
+    __table_args__ = BaseAuditableSQLModel.__table_args__ + (
         {"timescaledb_hypertable": {"time_column_name": "start"}},
     )
 
@@ -441,10 +442,10 @@ class Session(BaseTimestampedSQLModel, SessionBase, table=True):
     point_de_charge: PointDeCharge = Relationship(back_populates="sessions")
 
 
-class Status(BaseTimestampedSQLModel, StatusBase, table=True):
+class Status(BaseAuditableSQLModel, StatusBase, table=True):
     """IRVE recharge session."""
 
-    __table_args__ = BaseTimestampedSQLModel.__table_args__ + (
+    __table_args__ = BaseAuditableSQLModel.__table_args__ + (
         {"timescaledb_hypertable": {"time_column_name": "horodatage"}},
     )
 
@@ -584,3 +585,16 @@ class _StatiqueMV(SQLModel):
 
 
 mapper_registry.map_imperatively(StatiqueMV, _StatiqueMV.__table__)
+
+# Declare auditable models
+for auditable_model in (
+    Amenageur,
+    Operateur,
+    Enseigne,
+    Localisation,
+    Station,
+    PointDeCharge,
+):
+    event.listen(auditable_model, "after_update", track_model_changes)
+
+

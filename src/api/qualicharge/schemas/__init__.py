@@ -1,5 +1,6 @@
 """QualiCharge schemas."""
 
+import logging
 from datetime import datetime, timezone
 from typing import Any
 
@@ -8,9 +9,11 @@ from sqlalchemy import CheckConstraint
 from sqlalchemy.types import DateTime
 from sqlmodel import Field, SQLModel
 
+logger = logging.getLogger(__name__)
+
 
 class BaseTimestampedSQLModel(SQLModel):
-    """A base class for SQL models with timestamp fields.
+    """A base class for SQL models.
 
     This class provides two timestamp fields, `created_at` and `updated_at`, which are
     automatically managed. The `created_at` field is set to the current UTC time when
