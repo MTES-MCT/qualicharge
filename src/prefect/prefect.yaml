@@ -17,11 +17,177 @@ deployments:
     work_pool:
       name: indicators
       work_queue_name: default
+
+  - name: i4-daily
+    entrypoint: indicators/run.py:i4_calculate
+    concurrency_limit: 10
+    schedules:
+      - cron: "2 14 * * *"
+        timezone: "Europe/Paris"
+        active: true
+    parameters:
+      period: d
+      create_artifact: true
+      chunk_size: 1000
+    work_pool:
+      name: indicators
+      work_queue_name: default
+
+  - name: i7-daily
+    entrypoint: indicators/run.py:i7_calculate
+    concurrency_limit: 10
+    schedules:
+      - cron: "4 14 * * *"
+        timezone: "Europe/Paris"
+        active: true
+    parameters:
+      period: d
+      create_artifact: true
+      chunk_size: 1000
+    work_pool:
+      name: indicators
+      work_queue_name: default
+  
   - name: t1-daily
     entrypoint: indicators/run.py:t1_calculate
     concurrency_limit: 10
     schedules:
       - cron: "10 14 * * *"
+        timezone: "Europe/Paris"
+        active: true
+    parameters:
+      period: d
+      create_artifact: true
+      chunk_size: 1000
+    work_pool:
+      name: indicators
+      work_queue_name: default
+
+  - name: c1-daily
+    entrypoint: indicators/run.py:c1_calculate
+    concurrency_limit: 10
+    schedules:
+      - cron: "0 15 * * *"
+        timezone: "Europe/Paris"
+        active: true
+    parameters:
+      period: d
+      create_artifact: true
+      chunk_size: 1000
+    work_pool:
+      name: indicators
+      work_queue_name: default
+
+  - name: c2-daily
+    entrypoint: indicators/run.py:c2_calculate
+    concurrency_limit: 10
+    schedules:
+      - cron: "0 15 * * *"
+        timezone: "Europe/Paris"
+        active: true
+    parameters:
+      period: d
+      create_artifact: true
+      chunk_size: 1000
+    work_pool:
+      name: indicators
+      work_queue_name: default
+
+  - name: u5-daily
+    entrypoint: indicators/run.py:u5_calculate
+    concurrency_limit: 10
+    schedules:
+      - cron: "4 15 * * *"
+        timezone: "Europe/Paris"
+        active: true
+    parameters:
+      period: d
+      create_artifact: true
+      chunk_size: 1000
+    work_pool:
+      name: indicators
+      work_queue_name: default
+
+  - name: u6-daily
+    entrypoint: indicators/run.py:u6_calculate
+    concurrency_limit: 10
+    schedules:
+      - cron: "5 15 * * *"
+        timezone: "Europe/Paris"
+        active: true
+    parameters:
+      period: d
+      create_artifact: true
+      chunk_size: 1000
+    work_pool:
+      name: indicators
+      work_queue_name: default
+
+  - name: u9-daily
+    entrypoint: indicators/run.py:u9_calculate
+    concurrency_limit: 10
+    schedules:
+      - cron: "6 15 * * *"
+        timezone: "Europe/Paris"
+        active: true
+    parameters:
+      period: d
+      create_artifact: true
+      chunk_size: 1000
+    work_pool:
+      name: indicators
+      work_queue_name: default
+
+  - name: u10-daily
+    entrypoint: indicators/run.py:u10_calculate
+    concurrency_limit: 10
+    schedules:
+      - cron: "8 15 * * *"
+        timezone: "Europe/Paris"
+        active: true
+    parameters:
+      period: d
+      create_artifact: true
+      chunk_size: 1000
+    work_pool:
+      name: indicators
+      work_queue_name: default
+
+- name: u11-daily
+    entrypoint: indicators/run.py:u11_calculate
+    concurrency_limit: 10
+    schedules:
+      - cron: "10 15 * * *"
+        timezone: "Europe/Paris"
+        active: true
+    parameters:
+      period: d
+      create_artifact: true
+      chunk_size: 1000
+    work_pool:
+      name: indicators
+      work_queue_name: default
+
+- name: u12-daily
+    entrypoint: indicators/run.py:u12_calculate
+    concurrency_limit: 10
+    schedules:
+      - cron: "12 15 * * *"
+        timezone: "Europe/Paris"
+        active: true
+    parameters:
+      period: d
+      create_artifact: true
+      chunk_size: 1000
+    work_pool:
+      name: indicators
+      work_queue_name: default
+
+- name: u13-daily
+    entrypoint: indicators/run.py:u13_calculate
+    concurrency_limit: 10
+    schedules:
+      - cron: "14 15 * * *"
         timezone: "Europe/Paris"
         active: true
     parameters:
