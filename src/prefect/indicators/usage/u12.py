@@ -174,7 +174,7 @@ def u12_national(timespan: IndicatorTimeSpan) -> pd.DataFrame:
 )
 def calculate(
     timespan: IndicatorTimeSpan,
-    levels: List[Level] = [Level.NATIONAL, Level.REGION],
+    levels: List[Level],
     create_artifact: bool = False,
     chunk_size: int = 1000,
     format_pd: bool = False,
