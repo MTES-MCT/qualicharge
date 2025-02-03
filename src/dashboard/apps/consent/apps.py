@@ -13,5 +13,8 @@ class ConsentConfig(AppConfig):
     verbose_name = _("Consent")
 
     def ready(self):
-        """Register signals."""
+        """Register signals and validate CONSENT_CONTROL_AUTHORITY on ready."""
         from .signals import handle_new_delivery_point  # noqa: F401
+        from .validators import validate_configured_control_authority
+
+        validate_configured_control_authority()

@@ -1,5 +1,7 @@
 """Dashboard consent app forms."""
 
+from datetime import datetime
+
 from django import forms
 from django.forms.widgets import CheckboxInput
 from django.utils.translation import gettext_lazy as _
@@ -20,7 +22,7 @@ class ConsentForm(forms.Form):
     """
 
     # Specific authorisation checkbox
-    is_authorized_signatory = forms.BooleanField(
+    is_authoritative_signatory = forms.BooleanField(
         required=True,
         initial=False,
         widget=ConsentCheckboxInput(
@@ -99,6 +101,12 @@ class ConsentForm(forms.Form):
                 "souscrite...)",
             },
         ),
+    )
+
+    signed_at = forms.DateField(
+        initial=datetime.now().strftime("%d/%m/%Y"),
+        required=True,
+        widget=forms.HiddenInput(attrs={"readonly": "readonly"}),
     )
 
     # Global authorisation checkbox - this field must be in last position.

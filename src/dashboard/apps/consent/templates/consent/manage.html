@@ -19,15 +19,22 @@
     <form action="" method="post">
       {% csrf_token %}
 
-      <div class="fr-messages-group" id="error-messages" aria-live="assertive">
-        {% if form.errors %}
+      {% if form.errors %}
+        <div class="fr-messages-group" id="error-messages" aria-live="assertive">
           <div class="{% if form.consent_agreed.errors %}fr-pl-3v{% endif %} fr-mb-6v">
-          <p class="fr-message fr-message--error" id="message-error">
-            {% trans "The form contains errors" %}
-          </p>
+            <ul id="message-non-field-error">
+              <li class="fr-message fr-message--error" id="message-error">
+                {% trans "The form contains errors" %}
+              </li>
+              {% if form.non_field_errors %}
+                  {% for error in form.non_field_errors %}
+                  <li class="fr-message fr-message--error">{{ error }}</li>
+                {% endfor %}
+              {% endif %}
+            </ul>
           </div>
-        {% endif %}
       </div>
+      {% endif %}
 
       {% include "consent/includes/_manage_consents.html" %}
       {% include "consent/includes/_manage_company_informations.html" %}
