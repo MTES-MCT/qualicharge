@@ -1,10 +1,11 @@
 """Dashboard consent validators tests."""
 
 import pytest
-from django.core.exceptions import ValidationError
+from django.core.exceptions import ImproperlyConfigured, ValidationError
 
 from apps.consent.validators import (
     validate_company_schema,
+    validate_configured_control_authority,
     validate_control_authority_schema,
     validate_representative_schema,
 )
@@ -16,12 +17,10 @@ VALID_COMPANY_DATA = {
     "trade_name": "The test company",
     "siret": "12345678901234",
     "naf": "1234A",
-    "address": {
-        "line_1": "1 rue Exemple",
-        "line_2": None,
-        "zip_code": "75000",
-        "city": "Paris",
-    },
+    "address_1": "1 rue Exemple",
+    "address_2": None,
+    "zip_code": "75000",
+    "city": "Paris",
 }
 
 VALID_REPRESENTATIVE_DATA = {
@@ -35,12 +34,10 @@ VALID_CONTROL_AUTHORITY_DATA = {
     "name": "QualiCharge",
     "represented_by": "John Doe",
     "email": "mail@test.com",
-    "address": {
-        "line_1": "1 Rue Exemple",
-        "line_2": None,
-        "zip_code": "75000",
-        "city": "Paris",
-    },
+    "address_1": "1 Rue Exemple",
+    "address_2": None,
+    "zip_code": "75000",
+    "city": "Paris",
 }
 
 
@@ -111,11 +108,11 @@ def test_validate_compnay_naf_code_invalid(value):
 def test_validate_zip_code_valid(value):
     """Tests validation of valid zip codes  does not raise an exception."""
     valid_company_data = VALID_COMPANY_DATA
-    valid_company_data["address"]["zip_code"] = value
+    valid_company_data["zip_code"] = value
     assert validate_company_schema(valid_company_data) is None
 
     valid_authority_data = VALID_CONTROL_AUTHORITY_DATA
-    valid_authority_data["address"]["zip_code"] = value
+    valid_authority_data["zip_code"] = value
     assert validate_control_authority_schema(valid_authority_data) is None
 
 
@@ -123,18 +120,18 @@ def test_validate_zip_code_valid(value):
 def test_validate_zip_code_invalid(value):
     """Tests validation of invalid zip codes raise a ValidationError."""
     valid_company_data = VALID_COMPANY_DATA
-    valid_company_data["address"]["zip_code"] = value
+    valid_company_data["zip_code"] = value
     with pytest.raises(ValidationError):
         validate_company_schema(valid_company_data)
     # reset with valid zip
-    VALID_COMPANY_DATA["address"]["zip_code"] = "12345"
+    VALID_COMPANY_DATA["zip_code"] = "12345"
 
     valid_authority_data = VALID_CONTROL_AUTHORITY_DATA
-    valid_authority_data["address"]["zip_code"] = value
+    valid_authority_data["zip_code"] = value
     with pytest.raises(ValidationError):
         validate_control_authority_schema(valid_authority_data)
     # reset with valid zip
-    VALID_CONTROL_AUTHORITY_DATA["address"]["zip_code"] = "12345"
+    VALID_CONTROL_AUTHORITY_DATA["zip_code"] = "12345"
 
 
 def test_validate_company_schema_valid():
@@ -142,7 +139,7 @@ def test_validate_company_schema_valid():
     assert validate_company_schema(VALID_COMPANY_DATA) is None
 
     # valid with specific zip code
-    VALID_COMPANY_DATA["address"]["zip_code"] = "978"
+    VALID_COMPANY_DATA["zip_code"] = "978"
     assert validate_company_schema(VALID_COMPANY_DATA) is None
 
     # test with null values
@@ -153,11 +150,9 @@ def test_validate_company_schema_valid():
         "trade_name": None,
         "siret": None,
         "naf": None,
-        "address": {
-            "line_1": None,
-            "zip_code": None,
-            "city": None,
-        },
+        "address_1": None,
+        "zip_code": None,
+        "city": None,
     }
     assert validate_company_schema(valid_company_data) is None
 
@@ -218,11 +213,9 @@ def test_validate_control_authority_schema_valid():
         "name": None,
         "represented_by": None,
         "email": None,
-        "address": {
-            "line_1": None,
-            "zip_code": None,
-            "city": None,
-        },
+        "address_1": None,
+        "zip_code": None,
+        "city": None,
     }
     assert validate_control_authority_schema(validate_control_authority_data) is None
 
@@ -245,3 +238,42 @@ def test_validate_control_authority_schema_invalid():
     invalid_value["additional_property"] = ""
     with pytest.raises(ValidationError):
         validate_control_authority_schema(invalid_value)
+
+
+def test_validate_configured_control_authority_is_valid(settings):
+    """Test validate_configured_control_authority with valid data."""
+    # Change temporally settings.CONSENT_CONTROL_AUTHORITY.
+    settings.CONSENT_CONTROL_AUTHORITY = {
+        "name": "Control Authority Name",
+        "represented_by": "John Doe",
+        "email": "test@example.com",
+        "address_1": "123 Street Name",
+        "address_2": "",
+        "zip_code": "12345",
+        "city": "City Name",
+    }
+
+    # ImproperlyConfigured should not be raised
+    try:
+        validate_configured_control_authority()
+    except ImproperlyConfigured as e:
+        pytest.fail(f"settings.CONSENT_CONTROL_AUTHORITY validation error: {e.message}")
+
+
+def test_validate_configured_control_authority_raise_error(settings):
+    """Test validate_configured_control_authority with invalid data."""
+    # Change temporally settings.CONSENT_CONTROL_AUTHORITY with invalid data.
+    # invalid: the key 'name' is expected, not 'firstname'
+    settings.CONSENT_CONTROL_AUTHORITY = {
+        "firstname": "Control Authority Name",
+        "represented_by": "John Doe",
+        "email": "jdoe@example.com",
+        "address_1": "",
+        "address_2": "",
+        "zip_code": "12345",
+        "city": "City Name",
+    }
+
+    # must raise ImproperlyConfigured
+    with pytest.raises(ImproperlyConfigured):
+        validate_configured_control_authority()

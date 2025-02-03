@@ -1,6 +1,7 @@
 """Dashboard consent app validators."""
 
-from django.core.exceptions import ValidationError
+from django.conf import settings
+from django.core.exceptions import ImproperlyConfigured, ValidationError
 from jsonschema import ValidationError as JSONSchemaValidationError
 from jsonschema import validate
 
@@ -40,3 +41,17 @@ def validate_control_authority_schema(value):
 
     validator = json_schema_validator(CONTROL_AUTHORITY_SCHEMA)
     return validator(value)
+
+
+def validate_configured_control_authority():
+    """Validates the `settings.CONSENT_CONTROL_AUTHORITY`.
+
+    Check if settings.CONSENT_CONTROL_AUTHORITY is valid,
+    raise ImproperlyConfigured otherwise.
+    """
+    try:
+        validate_control_authority_schema(settings.CONSENT_CONTROL_AUTHORITY)
+    except ValidationError as e:
+        raise ImproperlyConfigured(
+            f"settings.CONSENT_CONTROL_AUTHORITY validation error: {e.message}"
+        ) from e

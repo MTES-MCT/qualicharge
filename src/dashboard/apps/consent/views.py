@@ -1,23 +1,24 @@
 """Dashboard consent app views."""
 
+import sentry_sdk
+from django.conf import settings
 from django.contrib import messages
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.db.models import Q
-from django.shortcuts import get_object_or_404, redirect
+from django.http import HttpResponse
+from django.shortcuts import get_object_or_404
 from django.urls import reverse_lazy as reverse
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from django.views.generic import FormView, TemplateView
 
 from apps.core.models import Entity
-from dashboard.settings import CONTACT_EMAIL
 
 from ..auth.models import DashboardUser
 from . import AWAITING, VALIDATED
 from .forms import ConsentForm
 from .mixins import BreadcrumbContextMixin
 from .models import Consent
-from .settings import CONSENT_CONTROL_AUTHORITY, CONSENT_SIGNATURE_LOCATION
 
 
 class IndexView(BreadcrumbContextMixin, TemplateView):
@@ -36,8 +37,14 @@ class IndexView(BreadcrumbContextMixin, TemplateView):
 class ConsentFormView(BreadcrumbContextMixin, FormView):
     """Updates the status of consents."""
 
+    ERROR_MESSAGE = _(
+        "An error occurred while validating the form. "
+        "Our team has been notified and will get back to you shortly."
+    )
+
     template_name = "consent/manage.html"
     form_class = ConsentForm
+    success_url = reverse("consent:index")
 
     breadcrumb_links = [
         {"url": reverse("consent:index"), "title": _("Consent")},
@@ -54,13 +61,17 @@ class ConsentFormView(BreadcrumbContextMixin, FormView):
         """
         selected_ids: list[str] = self.request.POST.getlist("status")
 
-        self._bulk_update_consent(selected_ids, VALIDATED)  # type: ignore
-        awaiting_ids = self._get_awaiting_ids(selected_ids)
-        self._bulk_update_consent(awaiting_ids, AWAITING)  # type: ignore
+        try:
+            self._bulk_update_consent(selected_ids, VALIDATED, form)  # type: ignore
+            awaiting_ids = self._get_awaiting_ids(selected_ids)
+            self._bulk_update_consent(awaiting_ids, AWAITING, form)  # type: ignore
+        except ValidationError as e:
+            sentry_sdk.capture_exception(e)
+            form.add_error(None, self.ERROR_MESSAGE)
+            return self.form_invalid(form)
 
         messages.success(self.request, _("Consents updated."))
-
-        return redirect(reverse("consent:index"))
+        return super().form_valid(form)
 
     def get_context_data(self, **kwargs):
         """Add the user's entities to the context.
@@ -69,10 +80,10 @@ class ConsentFormView(BreadcrumbContextMixin, FormView):
         If a slug is provided, adds the entity corresponding to the slug.
         """
         context = super().get_context_data(**kwargs)
-        context["control_authority"] = CONSENT_CONTROL_AUTHORITY
+        context["control_authority"] = settings.CONSENT_CONTROL_AUTHORITY
         context["entities"] = self._get_entities()
-        context["signature_location"] = CONSENT_SIGNATURE_LOCATION
-        context["mailto"] = CONTACT_EMAIL
+        context["signature_location"] = settings.CONSENT_SIGNATURE_LOCATION
+        context["mailto"] = settings.CONTACT_EMAIL
         return context
 
     def _get_entities(self) -> list:
@@ -88,22 +99,59 @@ class ConsentFormView(BreadcrumbContextMixin, FormView):
         else:
             return list(user.get_entities())
 
-    def _bulk_update_consent(self, ids: list[str], status: str) -> int:
+    def _bulk_update_consent(
+        self, ids: list[str], status: str, form: ConsentForm
+    ) -> HttpResponse | int:
         """Bulk update of the consent status for a given status and list of entities.
 
-        Only `AWAITING` consents can be updated by users.
+        This method updates the consent statuses, and their related information:
+        - company information,
+        - control authority information,
+        - company representative information,
+        - form data,
+        - date of signature,
+        - signature location,
+
+        Note: Only `AWAITING` consents can be updated by users.
         """
-        return (
-            Consent.objects.filter(id__in=ids, status=AWAITING)
+        # retrieve consents to update
+        consents = (
+            Consent.objects.filter(
+                id__in=ids,
+                status=AWAITING,
+            )
             .filter(
                 Q(delivery_point__entity__users=self.request.user)
                 | Q(delivery_point__entity__proxies__users=self.request.user)
             )
-            .update(
-                status=status,
-                created_by=self.request.user,
-                updated_at=timezone.now(),
-            )
+            .select_related("delivery_point__entity")
+        )
+
+        # build consent object with validated fields to update
+        update_objects = [
+            self._build_consent_object(status, form.cleaned_data, consent)
+            for consent in consents
+        ]
+
+        # and finally, bulk update the consents
+        return Consent.objects.bulk_update(
+            update_objects,
+            fields=[
+                "status",
+                "created_by",
+                "updated_at",
+                "company",
+                "control_authority",
+                "company_representative",
+                "is_authoritative_signatory",
+                "allows_measurements",
+                "allows_daily_index_readings",
+                "allows_max_daily_power",
+                "allows_load_curve",
+                "allows_technical_contractual_data",
+                "signed_at",
+                "signature_location",
+            ],
         )
 
     def _get_awaiting_ids(self, validated_ids: list[str]) -> list[str]:
@@ -117,3 +165,57 @@ class ConsentFormView(BreadcrumbContextMixin, FormView):
             for c in e.get_consents()
             if str(c.id) not in validated_ids
         ]
+
+    def _build_consent_object(
+        self,
+        status: str,
+        form_values: dict,
+        consent: Consent,
+    ) -> Consent:
+        """Builds and returns a `Consent` object with validated data.
+
+        Parameters:
+        - status (str): Consent status (e.g., “AWAITING”, “VALIDATED”).
+        - form_values (dict): Validated data from the consent form.
+        - control_authority (dict): Details about the control authority.
+        - company_representative (dict): Information about the company representative.
+        - consent (dict): Consent data, including the identifier, and the related
+        entity information.
+        """
+        # Get related company data from consent
+        consent_entity = consent.delivery_point.entity
+        company_data = {
+            "name": consent_entity.name,
+            "company_type": consent_entity.company_type,
+            "legal_form": consent_entity.legal_form,
+            "trade_name": consent_entity.trade_name,
+            "siret": consent_entity.siret,
+            "naf": consent_entity.naf,
+            "address_1": consent_entity.address_1,
+            "address_2": consent_entity.address_2,
+            "zip_code": consent_entity.address_zip_code,
+            "city": consent_entity.address_city,
+        }
+
+        company_representative = {
+            "firstname": self.request.user.first_name,  # type: ignore[union-attr]
+            "lastname": self.request.user.last_name,  # type: ignore[union-attr]
+            "email": self.request.user.email,  # type: ignore[union-attr]
+        }
+
+        # remove `consent_agreed` from `form_values`, which is not stored in db
+        form_values_copy = form_values.copy()
+        form_values_copy.pop("consent_agreed", None)
+
+        # build a Consent object with all validated data
+        return Consent(
+            id=consent.id,
+            status=status,
+            created_by=self.request.user,  # type: ignore[misc]
+            updated_at=timezone.now(),
+            company=company_data,
+            control_authority=settings.CONSENT_CONTROL_AUTHORITY,
+            company_representative=company_representative,
+            **form_values_copy,
+            signature_location=settings.CONSENT_SIGNATURE_LOCATION,
+        )

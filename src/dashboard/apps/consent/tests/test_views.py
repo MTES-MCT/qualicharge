@@ -1,9 +1,12 @@
 """Dashboard consent views tests."""
 
+import datetime
 import uuid
 from http import HTTPStatus
+from unittest.mock import MagicMock
 
 import pytest
+from django.conf import settings
 from django.urls import reverse
 
 from apps.auth.factories import UserFactory
@@ -12,6 +15,17 @@ from apps.consent.factories import ConsentFactory
 from apps.consent.models import Consent
 from apps.consent.views import ConsentFormView
 from apps.core.factories import DeliveryPointFactory, EntityFactory
+
+FORM_CLEANED_DATA = {
+    "is_authoritative_signatory": True,
+    "allows_measurements": True,
+    "allows_daily_index_readings": True,
+    "allows_max_daily_power": True,
+    "allows_load_curve": True,
+    "allows_technical_contractual_data": True,
+    "consent_agreed": True,
+    "signed_at": "2025-03-01",
+}
 
 
 @pytest.mark.django_db
@@ -30,7 +44,9 @@ def test_bulk_update_consent_status_without_ids(rf):
     assert all(c == AWAITING for c in Consent.objects.values_list("status", flat=True))
 
     # bulk update to VALIDATED of… nothing, and check 0 record have been updated.
-    assert view._bulk_update_consent([], VALIDATED) == 0
+    mock_form = MagicMock()
+    mock_form.cleaned_data = FORM_CLEANED_DATA
+    assert view._bulk_update_consent([], VALIDATED, mock_form) == 0
 
     # and checks that the data has not changed after the update.
     assert all(c == AWAITING for c in Consent.objects.values_list("status", flat=True))
@@ -56,19 +72,66 @@ def test_bulk_update_consent_status(rf):
     # check data before update
     assert all(c == AWAITING for c in Consent.objects.values_list("status", flat=True))
 
+    mock_form = MagicMock()
+    mock_form.cleaned_data = FORM_CLEANED_DATA
+
     # bulk update to VALIDATED, and check all records have been updated.
-    assert view._bulk_update_consent(ids, VALIDATED) == size
+    assert view._bulk_update_consent(ids, VALIDATED, mock_form) == size
 
     # and checks that the data has changed to VALIDATED after the update.
     assert all(c == VALIDATED for c in Consent.objects.values_list("status", flat=True))
+    for c in Consent.objects.all():
+        assert c.signed_at == datetime.datetime(
+            2025, 3, 1, 0, 0, tzinfo=datetime.timezone.utc
+        )
+        assert c.signature_location == settings.CONSENT_SIGNATURE_LOCATION
 
-    # bulk update from VALIDATED to AWAITING: no data must be updated
-    assert view._bulk_update_consent(ids, AWAITING) == 0
+        # check company data are present in company json field
+        assert c.company is not None
+        assert c.company["company_type"] == entity.company_type
+        assert c.company["name"] == entity.name
+        assert c.company["legal_form"] == entity.legal_form
+        assert c.company["trade_name"] == entity.trade_name
+        assert c.company["siret"] == entity.siret
+        assert c.company["naf"] == entity.naf
+        assert c.company["address_1"] == entity.address_1
+        assert c.company["address_2"] == entity.address_2
+        assert c.company["zip_code"] == entity.address_zip_code
+        assert c.company["city"] == entity.address_city
+
+        # check company representative data are present
+        assert c.company is not None
+        assert c.company_representative["firstname"] == user.first_name
+        assert c.company_representative["lastname"] == user.last_name
+        assert c.company_representative["email"] == user.email
+
+        # check control authority data are presents
+        assert c.control_authority is not None
+        control_authority = settings.CONSENT_CONTROL_AUTHORITY
+        assert c.control_authority["name"] == control_authority["name"]
+        assert (
+            c.control_authority["represented_by"] == control_authority["represented_by"]
+        )
+        assert c.control_authority["email"] == control_authority["email"]
+        assert c.control_authority["address_1"] == control_authority["address_1"]
+        assert c.control_authority["address_2"] == control_authority["address_2"]
+        assert c.control_authority["zip_code"] == control_authority["zip_code"]
+        assert c.control_authority["city"] == control_authority["city"]
+
+        # check authorizations (boolean fields)
+        assert c.is_authoritative_signatory is True
+        assert c.allows_measurements is True
+        assert c.allows_max_daily_power is True
+        assert c.allows_load_curve is True
+        assert c.allows_technical_contractual_data is True
+
+    # bulk update from VALIDATED to AWAITING: no data must be updated.
+    assert view._bulk_update_consent(ids, AWAITING, mock_form) == 0
     # and checks that the status has not changed after the update.
     assert all(c == VALIDATED for c in Consent.objects.values_list("status", flat=True))
 
-    # bulk update from VALIDATED to REVOKED: no data must be updated
-    assert view._bulk_update_consent(ids, REVOKED) == 0
+    # bulk update from VALIDATED to REVOKED: no data must be updated.
+    assert view._bulk_update_consent(ids, REVOKED, mock_form) == 0
     # and checks that the status has not changed after the update.
     assert all(c == VALIDATED for c in Consent.objects.values_list("status", flat=True))
 
@@ -98,7 +161,9 @@ def test_bulk_update_consent_status_with_fake_id(rf):
 
     # bulk update to VALIDATED,
     # and check all records have been updated except the fake id.
-    assert view._bulk_update_consent(ids, VALIDATED) == size
+    mock_form = MagicMock()
+    mock_form.cleaned_data = FORM_CLEANED_DATA
+    assert view._bulk_update_consent(ids, VALIDATED, mock_form) == size
 
     # and checks that the data has changed to VALIDATED after the update.
     assert all(c == VALIDATED for c in Consent.objects.values_list("status", flat=True))
@@ -136,7 +201,9 @@ def test_bulk_update_consent_without_user_perms(rf):
 
     # bulk update to VALIDATED,
     # and check all records have been updated except the wrong ID.
-    assert view._bulk_update_consent(ids, VALIDATED) == size
+    mock_form = MagicMock()
+    mock_form.cleaned_data = FORM_CLEANED_DATA
+    assert view._bulk_update_consent(ids, VALIDATED, mock_form) == size
 
     # and checks that the data has changed to VALIDATED after the update.
     assert all(

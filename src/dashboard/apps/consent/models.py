@@ -33,20 +33,14 @@ COMPANY_SCHEMA = {
             "maxLength": 5,
             "pattern": r"^\d{4}[A-Z]$",
         },
-        "address": {
-            "type": "object",
-            "properties": {
-                "line_1": {"type": ["string", "null"], "maxLength": 255},
-                "line_2": {"type": ["string", "null"], "maxLength": 255},
-                "zip_code": {
-                    "type": ["string", "null"],
-                    "maxLength": 5,
-                    "pattern": "^[0-9]{1,5}$",
-                },
-                "city": {"type": ["string", "null"], "maxLength": 255},
-            },
-            "required": ["line_1", "zip_code", "city"],
+        "address_1": {"type": ["string", "null"], "maxLength": 255},
+        "address_2": {"type": ["string", "null"], "maxLength": 255},
+        "zip_code": {
+            "type": ["string", "null"],
+            "maxLength": 5,
+            "pattern": "^[0-9]{1,5}$",
         },
+        "city": {"type": ["string", "null"], "maxLength": 255},
     },
     "required": [
         "company_type",
@@ -55,7 +49,9 @@ COMPANY_SCHEMA = {
         "trade_name",
         "siret",
         "naf",
-        "address",
+        "address_1",
+        "zip_code",
+        "city",
     ],
     "additionalProperties": False,
 }
@@ -78,22 +74,16 @@ CONTROL_AUTHORITY_SCHEMA = {
         "name": {"type": ["string", "null"], "maxLength": 255},
         "represented_by": {"type": ["string", "null"], "maxLength": 255},
         "email": {"type": ["string", "null"], "format": "email"},
-        "address": {
-            "type": "object",
-            "properties": {
-                "line_1": {"type": ["string", "null"], "maxLength": 255},
-                "line_2": {"type": ["string", "null"], "maxLength": 255},
-                "zip_code": {
-                    "type": ["string", "null"],
-                    "maxLength": 5,
-                    "pattern": "^[0-9]{1,5}$",
-                },
-                "city": {"type": ["string", "null"], "maxLength": 255},
-            },
-            "required": ["line_1", "zip_code", "city"],
+        "address_1": {"type": ["string", "null"], "maxLength": 255},
+        "address_2": {"type": ["string", "null"], "maxLength": 255},
+        "zip_code": {
+            "type": ["string", "null"],
+            "maxLength": 5,
+            "pattern": "^[0-9]{1,5}$",
         },
+        "city": {"type": ["string", "null"], "maxLength": 255},
     },
-    "required": ["name", "represented_by", "email", "address"],
+    "required": ["name", "represented_by", "email", "address_1", "zip_code", "city"],
     "additionalProperties": False,
 }
 
