@@ -4,7 +4,14 @@ set -euo pipefail
 
 # Constants
 declare BREVO_SMTP_EMAIL_ENDPOINT="https://api.brevo.com/v3/smtp/email"
+declare SCALINGO_APP="${SCALINGO_APP:-qualicharge-api-staging}"
+declare ENVIRONMENT="${ENVIRONMENT:-staging}"
 
+if [ "${ENVIRONMENT}" = "production" ]; then
+  SCALINGO_APP="qualicharge-api"
+fi
+
+echo "Environment: ${ENVIRONMENT} - ${SCALINGO_APP}"
 
 # Password generator
 function generate_password() {
@@ -15,7 +22,7 @@ function generate_password() {
 function qualicharge() {
 
   scalingo \
-    --app qualicharge-api \
+    --app "${SCALINGO_APP}" \
     --region osc-fr1 \
     run --silent \
     python -m qualicharge "$@"
@@ -98,6 +105,7 @@ function email_send_link() {
      templateId: 1,
      params:{
         first_name: $firstname,
+        environment: $environment,
         send_url: $url
      }
   }'
@@ -107,6 +115,7 @@ function email_send_link() {
     jq -nc \
       --arg email "${email}" \
       --arg firstname "${firstname}" \
+      --arg environment "${ENVIRONMENT}" \
       --arg url "${url}" \
       -f <(echo "${tpl}")
   )
