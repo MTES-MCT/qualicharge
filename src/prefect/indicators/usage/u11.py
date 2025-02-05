@@ -55,6 +55,7 @@ QUERY_NATIONAL_TEMPLATE = """
             AND Session.end - Session.start > '3 minutes'::interval
         """
 
+
 @task(task_run_name="values-for-target-{level:02d}")
 def get_values_for_targets(
     connection: Connection,
