@@ -14,6 +14,7 @@ and this project adheres to
 
 ### Changed
 
+- Update the list of active operational units
 - Upgrade fastapi to `0.115.7`
 - Upgrade pydantic to `2.10.6`
 - Upgrade pyinstrument to `5.0.1`

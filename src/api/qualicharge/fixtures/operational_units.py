@@ -1,4 +1,4 @@
-"""QualiCharge operational units fixture.
+r"""QualiCharge operational units fixture.
 
 Initial release: 2024/05/17
 
@@ -12,6 +12,16 @@ csvcut -d ';' -K 1 -c 2,3 data/afirev-charging.csv
 ```
 
 Values have been cleaned manually (trimmed and fixed encoding issues).
+
+To update this list:
+
+```
+diff old.csv new.csv | \
+    grep "> FR" | \
+    sed "s/> \(FR.*\),\(.*\)/Item(\"\\1\", \"\\2\",),/g"
+```
+
+And then remove/update Operational units with a new name.
 """
 
 from collections import namedtuple
@@ -148,10 +158,6 @@ data: List[Item] = [
     Item(
         "FRAIR",
         "Airbus",
-    ),
-    Item(
-        "FRALL",
-        "Allego Group",
     ),
     Item(
         "FRALS",
@@ -394,10 +400,6 @@ data: List[Item] = [
         "MEA ENERGIES",
     ),
     Item(
-        "FRECP",
-        "EcoPhi",
-    ),
-    Item(
         "FREDI",
         "EDRI",
     ),
@@ -472,10 +474,6 @@ data: List[Item] = [
     Item(
         "FREVC",
         "EV Cars",
-    ),
-    Item(
-        "FREVE",
-        "EVE CAR PLUG",
     ),
     Item(
         "FREVZ",
@@ -891,10 +889,6 @@ data: List[Item] = [
     Item(
         "FRONE",
         "reev",
-    ),
-    Item(
-        "FRORV",
-        "OBORNES",
     ),
     Item(
         "FROTH",
@@ -1744,9 +1738,158 @@ data: List[Item] = [
         "FRZUN",
         "ZUNDER",
     ),
+    # Update: 2025/02/05
     Item(
-        "FRZWO",
-        "ZE-WATT",
+        "FR0CU",
+        "Charge Unix",
+    ),
+    Item(
+        "FR190",
+        "Watt'up",
+    ),
+    Item(
+        "FRALL",
+        "Allego France",
+    ),
+    Item(
+        "FRALN",
+        "ALDI SARL",
+    ),
+    Item(
+        "FRBCF",
+        "BE CHARGE",
+    ),
+    Item(
+        "FRBEZ",
+        "Ville de Béziers",
+    ),
+    Item(
+        "FRBFC",
+        "Citeos pour le compte du réseau de recharge en Bourgogne-Franche-Comté",
+    ),
+    Item(
+        "FRBLR",
+        "MA BORNE LR",
+    ),
+    Item(
+        "FRBPE",
+        "bp pulse",
+    ),
+    Item(
+        "FRCG1",
+        "ChargeGuru",
+    ),
+    Item(
+        "FRCVT",
+        "Covolt",
+    ),
+    Item(
+        "FRECP",
+        "ProperPhi",
+    ),
+    Item(
+        "FREKL",
+        "EKLEO Montlouis-sur-Loire",
+    ),
+    Item(
+        "FRELE",
+        "Electrip",
+    ),
+    Item(
+        "FRELT",
+        "ELTO",
+    ),
+    Item(
+        "FREMO",
+        "E-MOTUM",
+    ),
+    Item(
+        "FRENT",
+        "Enerstock Charging Station",
+    ),
+    Item(
+        "FRERA",
+        "Eranovum e-Mobility",
+    ),
+    Item(
+        "FREVE",
+        "FAROAD",
+    ),
+    Item(
+        "FRFZD",
+        "Fuzed",
+    ),
+    Item(
+        "FRHDA",
+        "Réseau PL de AS24",
+    ),
+    Item(
+        "FRHDT",
+        "Réseau PL de TotalEnergies",
+    ),
+    Item(
+        "FRHOP",
+        "HOPLA POWER CHARGE",
+    ),
+    Item(
+        "FRJBA",
+        "E-MOTUM",
+    ),
+    Item(
+        "FRMBX",
+        "Mercedes-Benz High Power Charging GmbH",
+    ),
+    Item(
+        "FRMEI",
+        "Mob-Energy",
+    ),
+    Item(
+        "FRORV",
+        "O'TERRE",
+    ),
+    Item(
+        "FRPLM",
+        "Prologis Mobility",
+    ),
+    Item(
+        "FRPY2",
+        "AVIA PICOTY",
+    ),
+    Item(
+        "FRRVE",
+        "REVEO",
+    ),
+    Item(
+        "FRSLM",
+        "SPLM Société Publique Lyonnaise de Mobilités",
+    ),
+    Item(
+        "FRUB2",
+        "ubitricity France",
+    ),
+    Item(
+        "FRUSC",
+        "Voltalia Mobility",
+    ),
+    Item(
+        "FRVAY",
+        "vaylens GmbH",
+    ),
+    Item(
+        "FRVIR",
+        "VIRTA Global France",
+    ),
+    Item(
+        "FRWII",
+        "Bornes W:I",
+    ),
+    Item(
+        "FRYAW",
+        "Yaway",
+    ),
+    Item(
+        "FRZMR",
+        "ZEborne Mobility Service - France",
     ),
 ]
 
