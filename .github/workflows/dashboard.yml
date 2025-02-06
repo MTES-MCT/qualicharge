@@ -46,6 +46,9 @@ jobs:
       DASHBOARD_CONTROL_AUTHORITY_EMAIL: jdoe@exemple.com
       DASHBOARD_CONSENT_SIGNATURE_LOCATION: Paris
       DASHBOARD_CONTACT_EMAIL: contact@exemple.com
+      DASHBOARD_DEFAULT_FROM_EMAIL: contact@exemple.com
+      DASHBOARD_BREVO_API_KEY: the_secret_api_key
+      DASHBOARD_CONSENT_VALIDATION_TEMPLATE_ID: 3
       DASHBOARD_PROCONNECT_CLIENT_ID: the_client_id
       DASHBOARD_PROCONNECT_CLIENT_SECRET: the_secret_key
       DASHBOARD_PROCONNECT_DOMAIN: proconnect_endpoint
@@ -119,6 +122,9 @@ jobs:
           DASHBOARD_CONTROL_AUTHORITY_EMAIL: jdoe@exemple.com
           DASHBOARD_CONSENT_SIGNATURE_LOCATION: Paris
           DASHBOARD_CONTACT_EMAIL: contact@exemple.com
+          DASHBOARD_DEFAULT_FROM_EMAIL: contact@exemple.com
+          DASHBOARD_BREVO_API_KEY: the_secret_api_key
+          DASHBOARD_CONSENT_VALIDATION_TEMPLATE_ID: 3
           DASHBOARD_PROCONNECT_CLIENT_ID: the_client_id
           DASHBOARD_PROCONNECT_CLIENT_SECRET: the_secret_key
           DASHBOARD_PROCONNECT_DOMAIN: proconnect_endpoint
