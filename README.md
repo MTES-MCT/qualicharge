@@ -21,6 +21,7 @@ vous invitons à consulter notre
 Pour travailler sur ce projet, vous aurez besoin d'installer les outils suivants
 sur votre poste de travail :
 
+- [Git-lfs](https://git-lfs.com)
 - [Docker](https://www.docker.com)
 - [Docker compose](https://docs.docker.com/compose/)
 - [GNU Make](https://www.gnu.org/software/make/manual/make.html)
