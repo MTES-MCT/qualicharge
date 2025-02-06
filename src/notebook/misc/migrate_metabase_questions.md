@@ -85,8 +85,7 @@ def migration_questions(
 
 ```python
 
-api_key_local = 'mb_IU9lNajVn3A/s85b8lP8HMqNyk1Bj9quUKhLW/U0iBc='
-api_key_staging = 'mb_L3CJ5MkD3jN0DtulkKzEyscrvvcRZeYPHeT4B8yTUHs='
+
 
 url_staging = 'https://metabase.qualicharge.beta.gouv.fr'
 url_local = 'http://localhost:3000'
