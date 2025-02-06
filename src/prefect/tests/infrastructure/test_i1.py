@@ -21,19 +21,19 @@ PARAMETERS_FLOW = [
         Level.EPCI,
         "SELECT COUNT(*) FROM EPCI",
         ["200054781", "200054807", "200046977"],
-        2257,
+        2250,
     ),
     (
         Level.DEPARTMENT,
         "SELECT COUNT(*) FROM Department",
         ["59", "75", "13"],
-        1493,
+        1489,
     ),
     (
         Level.REGION,
         "SELECT COUNT(*) FROM Region",
         ["11", "84", "75"],
-        8734,
+        8724,
     ),
 ]
 PARAMETERS_GET_VALUES = [
@@ -45,17 +45,17 @@ PARAMETERS_GET_VALUES = [
     (
         Level.EPCI,
         "SELECT id FROM EPCI WHERE code IN ('200054781', '200054807', '200046977')",
-        2257,
+        2250,
     ),
     (
         Level.DEPARTMENT,
         "SELECT id FROM Department WHERE code IN ('59', '75', '13')",
-        1493,
+        1489,
     ),
     (
         Level.REGION,
         "SELECT id FROM Region WHERE code IN ('11', '84', '75')",
-        8734,
+        8724,
     ),
 ]
 PARAMETERS_CHUNK = [10, 50, 100, 500]
