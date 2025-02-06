@@ -57,7 +57,7 @@ def migration_questions(
     id_snippet = {} if not id_snippet else id_snippet
 
     # liste des questions à copier
-    response = requests.get(url_from + api_card,
+    response = requests.get(url_join(url_from, api_card),
                             headers={'x-api-key': key_from}).json()
     questions = [resp_js for resp_js in response]
     
