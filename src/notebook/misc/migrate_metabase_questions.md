@@ -7,13 +7,14 @@ jupyter:
       format_version: '1.3'
       jupytext_version: 1.16.2
   kernelspec:
-    display_name: afir
+    display_name: Python 3
     language: python
     name: python3
 ---
 
 ```python
 import requests # type: ignore
+import os
 ```
 
 ```python
@@ -25,7 +26,8 @@ def migration_questions(
         mapping_col: dict, 
         mapping_db: dict, 
         mapping_field: dict = None,
-        id_snippet: dict = None):
+        id_snippet: dict = None,
+        log: bool = False):
     """migration des questions Metabase de 'from' vers 'to'. 
     
     Seules sont migrées les questions présentes dans les collections 'from' définies dans mapping_col (keys).
@@ -81,13 +83,14 @@ def migration_questions(
                         new_id = id_snippet.get(template_tags[tag]["snippet-name"], template_tags[tag]["snippet-id"])
                         payload["dataset_query"]["native"]["template-tags"][tag]["snippet-id"] = new_id
             response = requests.post(url_to + api_card, headers={'x-api-key': key_to}, json=payload).json()
+            if log:
+                print(response)
 ```
 
 ```python
-
-
-
-url_staging = 'https://metabase.qualicharge.beta.gouv.fr'
+url_staging = os.getenv("URL_STAGING")
+api_key_staging = os.getenv("API_KEY_STAGING")
+api_key_local = os.getenv("API_KEY_LOCAL")
 url_local = 'http://localhost:3000'
 
 # collections sur staging
@@ -97,7 +100,7 @@ url_local = 'http://localhost:3000'
 # 20 : questions internes
 # 17 : questions données dynamiques
 mapping_col = {22: 9,  12: 11, 18: 10, 20: 12, 17: 13}
-mapping_col = {12: 11}
+mapping_col = {12: 5}
 # 2 : 
 mapping_db = {2: 2}
 # fields sur staging
