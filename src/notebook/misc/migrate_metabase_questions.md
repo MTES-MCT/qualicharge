@@ -53,7 +53,7 @@ def migration_questions(
                 "collection_id": None,
                 "collection_position": None,
                 "result_metadata": None}
-    mapping_field = {} if not mapping_field else mapping_field
+    mapping_field = mapping_field or {}
     id_snippet = {} if not id_snippet else id_snippet
 
     # liste des questions à copier
