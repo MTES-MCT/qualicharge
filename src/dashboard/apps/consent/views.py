@@ -1,9 +1,14 @@
 """Dashboard consent app views."""
 
 import sentry_sdk
+from anymail.exceptions import AnymailRequestsAPIError
+from anymail.message import AnymailMessage
 from django.conf import settings
 from django.contrib import messages
-from django.core.exceptions import PermissionDenied, ValidationError
+from django.core.exceptions import (
+    PermissionDenied,
+    ValidationError,
+)
 from django.db.models import Q
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
@@ -30,7 +35,6 @@ class IndexView(BreadcrumbContextMixin, TemplateView):
     def get_context_data(self, **kwargs):  # noqa: D102
         context = super().get_context_data(**kwargs)
         context["entities"] = self.request.user.get_entities()
-
         return context
 
 
@@ -69,6 +73,9 @@ class ConsentFormView(BreadcrumbContextMixin, FormView):
             sentry_sdk.capture_exception(e)
             form.add_error(None, self.ERROR_MESSAGE)
             return self.form_invalid(form)
+
+        # send email notification to the user
+        self._send_email()
 
         messages.success(self.request, _("Consents updated."))
         return super().form_valid(form)
@@ -219,3 +226,40 @@ class ConsentFormView(BreadcrumbContextMixin, FormView):
             **form_values_copy,
             signature_location=settings.CONSENT_SIGNATURE_LOCATION,
         )
+
+    def _send_email(self) -> None:
+        """Send an email to the user for consent validation.
+
+        This method constructs and sends an email using the Anymail library based on
+        predefined configurations.
+        It logs errors with Sentry and fails silently in case of API errors.
+        The email contains user information and a link to return in the dashboard.
+
+        Raises:
+            AnymailRequestsAPIError: If an error occurs while sending the email.
+        """
+        user = self.request.user
+        email_config = settings.DASHBOARD_EMAIL_CONFIGS["consent_validation"]
+
+        email_data = {
+            user.email: {  # type: ignore[union-attr]
+                "last_name": user.last_name,  # type: ignore[union-attr]
+                "first_name": user.first_name,  # type: ignore[union-attr]
+                "link": email_config.get("link"),
+            }
+        }
+
+        email = AnymailMessage(
+            to=[
+                user.email,  # type: ignore[union-attr]
+            ],
+            template_id=email_config.get("template_id"),
+            merge_data=email_data,
+        )
+
+        try:
+            email.send()
+        except AnymailRequestsAPIError as e:
+            # fail silently and send a sentry log
+            sentry_sdk.capture_exception(e)
+            return

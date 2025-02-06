@@ -17,7 +17,8 @@ and this project adheres to
 - add ProConnect authentication system
 - add internationalization and language switcher
 - add dashboard homepage
-- add consent form to manage consents of one or many entities 
+- add consent form to manage consents of one or many entities
+- add an email notification to users (via Brevo) after they have validated their consents.
 - add admin integration for Entity, DeliveryPoint and Consent
 - add mass admin action (make revoked) for consents
 - add validators for SIRET, NAF code and Zip code 

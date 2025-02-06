@@ -3,7 +3,7 @@
 import datetime
 import uuid
 from http import HTTPStatus
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 from django.conf import settings
@@ -404,3 +404,33 @@ def test_form_post_empty(rf):
 
     expected = 'id="checkboxes-error-message-error"'
     assert (expected in html) is True
+
+
+@pytest.mark.django_db
+def test_send_email_notification_populated(rf):
+    """Test `_send_email` is sent."""
+    user = UserFactory()
+
+    request = rf.get(reverse("consent:manage"))
+    request.user = user
+
+    view = ConsentFormView()
+    view.setup(request)
+
+    with patch("apps.consent.views.AnymailMessage") as mock_message:
+        email_send_mock = mock_message.return_value.send
+        view._send_email()
+
+        email_config = settings.DASHBOARD_EMAIL_CONFIGS["consent_validation"]
+        mock_message.assert_called_once_with(
+            to=[user.email],
+            template_id=email_config.get("template_id"),
+            merge_data={
+                user.email: {
+                    "last_name": user.last_name,
+                    "first_name": user.first_name,
+                    "link": email_config.get("link"),
+                }
+            },
+        )
+        email_send_mock.assert_called_once()

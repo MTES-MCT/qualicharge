@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     "mozilla_django_oidc",
     "widget_tweaks",
     "dsfr",
+    "anymail",
     "dashboard",
     "apps",
     "apps.auth",
@@ -205,9 +206,6 @@ sentry_sdk.init(
     send_default_pii=True,
 )
 
-## Dashboard
-# Email to contact the QualiCharge team
-CONTACT_EMAIL = env.str("CONTACT_EMAIL")
 
 ## Consent app
 
@@ -234,6 +232,31 @@ CONSENT_CONTROL_AUTHORITY = {
 }
 
 CONSENT_SIGNATURE_LOCATION = env.str("CONSENT_SIGNATURE_LOCATION")
+
+
+## EMAIL
+
+# Email to contact the QualiCharge team
+CONTACT_EMAIL = env.str("CONTACT_EMAIL")
+
+# Configuration of Anymail for Brevo
+EMAIL_BACKEND = "anymail.backends.sendinblue.EmailBackend"
+ANYMAIL = {
+    "SENDINBLUE_API_KEY": env.str("BREVO_API_KEY"),
+}
+DEFAULT_FROM_EMAIL = env.str("DEFAULT_FROM_EMAIL")
+
+# Email configuration for the dashboard emails.
+# - Please add a configuration for each type of email to be sent.
+# - `template_id` refers to the ID of the template from Brevo.
+DASHBOARD_EMAIL_CONFIGS = {
+    # Configuration for the notification email sent to the user when
+    # they validate their consents.
+    "consent_validation": {
+        "template_id": env.int("CONSENT_VALIDATION_TEMPLATE_ID"),
+        "link": "https://beta.gouv.fr/startups/qualicharge.html",
+    }
+}
 
 
 ## Debug-toolbar

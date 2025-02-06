@@ -43,3 +43,8 @@ DASHBOARD_CONSENT_SIGNATURE_LOCATION=Paris
 
 # Email to contact the QualiCharge team
 DASHBOARD_CONTACT_EMAIL=contact@exemple.com
+DASHBOARD_DEFAULT_FROM_EMAIL=no-reply@qualicharge.beta.gouv.fr
+
+# Brevo Emailing
+DASHBOARD_BREVO_API_KEY=
+DASHBOARD_CONSENT_VALIDATION_TEMPLATE_ID=3
