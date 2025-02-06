@@ -63,26 +63,27 @@ def migration_questions(
     
     # copie des questions
     for question in questions:
-        if question["collection_id"] in mapping_col :
-            
-            payload = template.copy()
-            for item in ["name", "dataset_query", "display", "description", 
-                         "visualization_settings", "parameters", "parameter_mappings"]:
-                payload[item] = question[item]
-                # payload["name"] = "test - " + payload["name"]
-            payload["collection_id"] = mapping_col[question["collection_id"]]
-            payload["dataset_query"]["database"] = mapping_db[question["dataset_query"]["database"]]
-            if "native" in payload["dataset_query"] and "template-tags" in payload["dataset_query"]["native"]:
-                template_tags = payload["dataset_query"]["native"]["template-tags"]
-                for tag in template_tags:
-                    if "dimension" in template_tags[tag]:
-                        id_field = template_tags[tag]["dimension"][1]
-                        new_id = mapping_field.get(id_field, id_field)
-                        payload["dataset_query"]["native"]["template-tags"][tag]["dimension"][1] = new_id
-                    elif "snippet-name" in template_tags[tag]:
-                        new_id = id_snippet.get(template_tags[tag]["snippet-name"], template_tags[tag]["snippet-id"])
-                        payload["dataset_query"]["native"]["template-tags"][tag]["snippet-id"] = new_id
-            response = requests.post(url_to + api_card, headers={'x-api-key': key_to}, json=payload).json()
+        if not question["collection_id"] in mapping_col :
+            continue
+        
+        payload = template.copy()
+        for item in ["name", "dataset_query", "display", "description", 
+                     "visualization_settings", "parameters", "parameter_mappings"]:
+            payload[item] = question[item]
+            # payload["name"] = "test - " + payload["name"]
+        payload["collection_id"] = mapping_col[question["collection_id"]]
+        payload["dataset_query"]["database"] = mapping_db[question["dataset_query"]["database"]]
+        if "native" in payload["dataset_query"] and "template-tags" in payload["dataset_query"]["native"]:
+            template_tags = payload["dataset_query"]["native"]["template-tags"]
+            for tag in template_tags:
+                if "dimension" in template_tags[tag]:
+                    id_field = template_tags[tag]["dimension"][1]
+                    new_id = mapping_field.get(id_field, id_field)
+                    payload["dataset_query"]["native"]["template-tags"][tag]["dimension"][1] = new_id
+                elif "snippet-name" in template_tags[tag]:
+                    new_id = id_snippet.get(template_tags[tag]["snippet-name"], template_tags[tag]["snippet-id"])
+                    payload["dataset_query"]["native"]["template-tags"][tag]["snippet-id"] = new_id
+        response = requests.post(url_to + api_card, headers={'x-api-key': key_to}, json=payload).json()
             if log:
                 print(response)
 ```
