@@ -185,7 +185,7 @@ data/qualicharge-api-schema.sql:
 	$(COMPOSE) exec postgresql pg_dump -s -Z 9 -U qualicharge -F c qualicharge-api > data/qualicharge-api-schema.sql
 
 data/qualicharge-api-data.sql:
-	$(COMPOSE) exec postgresql pg_dump -a -Z 9 -U qualicharge -F c qualicharge-api > data/qualicharge-api-data.sql
+	$(COMPOSE) exec postgresql pg_dump -a -Z 9 -U qualicharge -F c qualicharge-api --exclude-table-data=activity > data/qualicharge-api-data.sql
 
 backup-api-db: ## create API database backup
 backup-api-db: \

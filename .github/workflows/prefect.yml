@@ -80,6 +80,8 @@ jobs:
       QUALICHARGE_DATABASE_URL_NO_DRIVER: "postgresql://qualicharge:pass@localhost:5432/qualicharge-api"
     steps:
       - uses: actions/checkout@v4
+      - name: Fetch & checkout LFS-managed files
+        run: git lfs pull
       - name: Restore database dump
         run: |
           pg_restore -s -F c -d "${QUALICHARGE_DATABASE_URL_NO_DRIVER}" ../../data/qualicharge-api-schema.sql

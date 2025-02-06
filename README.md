@@ -28,6 +28,19 @@ sur votre poste de travail :
 
 ## Démarrage rapide pour les développeurs
 
+Vous devez tout d'abord récupérer les sources du projet :
+
+```sh
+# Cloner le projet avec SSH
+git clone git@github.com:MTES-MCT/qualicharge.git
+
+# Aller dans le repository local du projet
+cd qualicharge
+
+# Récupérer les fichiers gérés par Git-LFS
+git lfs pull
+```
+
 Une fois le projet cloné, vous pouvez l'initialiser en utilisant la commande
 suivante :
 
