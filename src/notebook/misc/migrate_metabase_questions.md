@@ -15,6 +15,7 @@ jupyter:
 ```python
 import requests
 import os
+from urllib.parse import urljoin
 ```
 
 ```python
@@ -54,23 +55,27 @@ def migration_questions(
                 "collection_position": None,
                 "result_metadata": None}
     mapping_field = mapping_field or {}
-    id_snippet = {} if not id_snippet else id_snippet
+    id_snippet = id_snippet or {}
 
     # liste des questions à copier
-    response = requests.get(url_join(url_from, api_card),
+    response = requests.get(urljoin(url_from, api_card),
                             headers={'x-api-key': key_from}).json()
     questions = [resp_js for resp_js in response]
     
     # copie des questions
     for question in questions:
-        if not question["collection_id"] in mapping_col :
+        if question["collection_id"] not in mapping_col :
             continue
         
         payload = template.copy()
-        for item in ["name", "dataset_query", "display", "description", 
-                     "visualization_settings", "parameters", "parameter_mappings"]:
-            payload[item] = question[item]
-            # payload["name"] = "test - " + payload["name"]
+        payload.update(
+                {
+                    k:v for k, v in question.items() if k in [
+                        "name", "dataset_query", "display", "description",
+                        "visualization_settings", "parameters", "parameter_mappings"
+                    ]
+                }
+            )
         payload["collection_id"] = mapping_col[question["collection_id"]]
         payload["dataset_query"]["database"] = mapping_db[question["dataset_query"]["database"]]
         if "native" in payload["dataset_query"] and "template-tags" in payload["dataset_query"]["native"]:
@@ -79,13 +84,13 @@ def migration_questions(
                 if "dimension" in template_tags[tag]:
                     id_field = template_tags[tag]["dimension"][1]
                     new_id = mapping_field.get(id_field, id_field)
-                    payload["dataset_query"]["native"]["template-tags"][tag]["dimension"][1] = new_id
+                    template_tags[tag]["dimension"][1] = new_id
                 elif "snippet-name" in template_tags[tag]:
                     new_id = id_snippet.get(template_tags[tag]["snippet-name"], template_tags[tag]["snippet-id"])
-                    payload["dataset_query"]["native"]["template-tags"][tag]["snippet-id"] = new_id
-        response = requests.post(url_to + api_card, headers={'x-api-key': key_to}, json=payload).json()
-            if log:
-                print(response)
+                    template_tags[tag]["snippet-id"] = new_id
+        response = requests.post(urljoin(url_to, api_card), headers={'x-api-key': key_to}, json=payload).json()
+        if log:
+            print(response)
 ```
 
 ```python
@@ -101,7 +106,7 @@ url_local = 'http://localhost:3000'
 # 20 : questions internes
 # 17 : questions données dynamiques
 mapping_col = {22: 9,  12: 11, 18: 10, 20: 12, 17: 13}
-mapping_col = {12: 5}
+mapping_col = {12: 6}
 # 2 : 
 mapping_db = {2: 2}
 # fields sur staging
