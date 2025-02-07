@@ -84,6 +84,7 @@ jobs:
         run: |
           pg_restore -s -F c -d "${QUALICHARGE_DATABASE_URL_NO_DRIVER}" ../../data/qualicharge-api-schema.sql
           pg_restore -a -F c -d "${QUALICHARGE_DATABASE_URL_NO_DRIVER}" ../../data/qualicharge-api-data.sql
+          psql "postgresql://qualicharge:pass@localhost:5432/qualicharge-api" -c "REFRESH MATERIALIZED VIEW Statique;"
       - name: Install pipenv
         run: pipx install pipenv
       - name: Set up Python 3.12
