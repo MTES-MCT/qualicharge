@@ -27,7 +27,6 @@ fi
 echo "⚙️ Configuring metabase…"
 ${JQ} -n "{ \
   database: null, \
-  invite: null, \
   prefs: { \
     allow_tracking: false, \
     site_locale: \"en\", \
