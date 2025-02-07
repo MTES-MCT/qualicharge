@@ -8,6 +8,11 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Added
+
+- Implement a new `/dynamique/session/check` endpoint to check if a target
+  session exists or not
+
 ## [0.18.0] - 2025-02-10
 
 ### Added

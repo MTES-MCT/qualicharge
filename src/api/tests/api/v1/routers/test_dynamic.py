@@ -19,6 +19,7 @@ from qualicharge.conf import settings
 from qualicharge.db import SAQueryCounter
 from qualicharge.factories.dynamic import (
     SessionCreateFactory,
+    SessionFactory,
     StatusCreateFactory,
     StatusFactory,
 )
@@ -953,8 +954,7 @@ def test_create_status_bulk_for_missing_point_of_charge(db_session, client_auth)
     assert response.status_code == status.HTTP_404_NOT_FOUND
     assert response.json() == {
         "detail": (
-            "Undeclared attached point(s) of charge, "
-            "you should create them all first"
+            "Undeclared attached point(s) of charge, you should create them all first"
         )
     }
 
@@ -975,8 +975,7 @@ def test_create_status_bulk_for_missing_point_of_charge(db_session, client_auth)
     assert response.status_code == status.HTTP_404_NOT_FOUND
     assert response.json() == {
         "detail": (
-            "Undeclared attached point(s) of charge, "
-            "you should create them all first"
+            "Undeclared attached point(s) of charge, you should create them all first"
         )
     }
 
@@ -1423,8 +1422,7 @@ def test_create_session_bulk_for_missing_point_of_charge(db_session, client_auth
     assert response.status_code == status.HTTP_404_NOT_FOUND
     assert response.json() == {
         "detail": (
-            "Undeclared attached point(s) of charge, "
-            "you should create them all first"
+            "Undeclared attached point(s) of charge, you should create them all first"
         )
     }
 
@@ -1445,8 +1443,7 @@ def test_create_session_bulk_for_missing_point_of_charge(db_session, client_auth
     assert response.status_code == status.HTTP_404_NOT_FOUND
     assert response.json() == {
         "detail": (
-            "Undeclared attached point(s) of charge, "
-            "you should create them all first"
+            "Undeclared attached point(s) of charge, you should create them all first"
         )
     }
 
@@ -1725,3 +1722,65 @@ def test_create_session_bulk_with_outbound_sizes(db_session, client_auth):
         ],
     )
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+
+
+def test_check_session(db_session, client_auth):
+    """Test the /session/check endpoint."""
+    SessionFactory.__session__ = db_session
+
+    # Create point of charge
+    id_pdc_itinerance = "FR911E1111ER1"
+    save_statique(
+        db_session, StatiqueFactory.build(id_pdc_itinerance=id_pdc_itinerance)
+    )
+    pdc = db_session.exec(select(PointDeCharge)).one()
+    session = SessionFactory.create_sync(
+        point_de_charge_id=pdc.id,
+        created_by_id=None,
+        updated_by_id=None,
+    )
+
+    # We expect the session to exist
+    response = client_auth.get(
+        "/dynamique/session/check",
+        params={"session_id": session.id},
+    )
+    assert response.status_code == status.HTTP_200_OK
+
+    # Even an uuid without dashes should work
+    response = client_auth.get(
+        "/dynamique/session/check",
+        params={"session_id": str(session.id).replace("-", "")},
+    )
+    assert response.status_code == status.HTTP_200_OK
+
+    # But not this one
+    response = client_auth.get(
+        "/dynamique/session/check",
+        params={"session_id": "560a0363-7dca-474e-a72f-df531ff431ed"},
+    )
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+
+
+def test_check_session_anon(db_session, client):
+    """Test the /session/check endpoint when user is not logged in."""
+    SessionFactory.__session__ = db_session
+
+    # Create point of charge
+    id_pdc_itinerance = "FR911E1111ER1"
+    save_statique(
+        db_session, StatiqueFactory.build(id_pdc_itinerance=id_pdc_itinerance)
+    )
+    pdc = db_session.exec(select(PointDeCharge)).one()
+    session = SessionFactory.create_sync(
+        point_de_charge_id=pdc.id,
+        created_by_id=None,
+        updated_by_id=None,
+    )
+
+    # We expect anonymous user to be rejected
+    response = client.get(
+        "/dynamique/session/check",
+        params={"session_id": session.id},
+    )
+    assert response.status_code == status.HTTP_403_FORBIDDEN

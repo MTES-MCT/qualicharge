@@ -6,7 +6,7 @@ from polyfactory.factories.pydantic_factory import ModelFactory
 
 from ..fixtures.operational_units import prefixes
 from ..models.dynamic import SessionCreate, StatusCreate
-from ..schemas.core import Status
+from ..schemas.core import Session, Status
 from . import FrenchDataclassFactory, TimestampedSQLModelFactory
 
 
@@ -26,6 +26,10 @@ class StatusCreateFactory(ModelFactory[StatusCreate]):
         lambda: DataclassFactory.__random__.choice(prefixes)
         + FrenchDataclassFactory.__faker__.pystr_format("E######")
     )
+
+
+class SessionFactory(TimestampedSQLModelFactory[Session]):
+    """Session schema factory."""
 
 
 class StatusFactory(TimestampedSQLModelFactory[Status]):
