@@ -1,6 +1,7 @@
 """QualiCharge API client CLI: statuc."""
 
 from typing import Annotated, Optional
+from uuid import UUID
 
 import click
 import typer
@@ -57,3 +58,16 @@ def bulk(
     )
 
     print(f"[green]Created {n_created} sessions successfully.[/green]")
+
+
+@app.command()
+def check(
+    ctx: typer.Context,
+    session_id: UUID,
+):
+    """Check if session exists."""
+    client: QCC = ctx.obj
+
+    async_run_api_query(client.session.check, session_id)
+
+    print(f"[green]Session {session_id} exists.[/green]")

@@ -1,6 +1,7 @@
 """Tests for the qcc.endpoints.dynamic module."""
 
 from datetime import datetime
+from uuid import UUID
 
 import pytest
 
@@ -360,3 +361,23 @@ async def test_dynamic_session_bulk_gzip_compression(client, httpx_mock):
 
     sessions = [{"id_pdc_itinerance": f"FRS63E00{x:02d}"} for x in range(total)]
     assert await session.bulk(sessions, chunk_size=10) == total
+
+
+@pytest.mark.anyio
+async def test_dynamic_session_check(client, httpx_mock):
+    """Test the /dynamique/session/check endpoint."""
+    session = Session(client)
+
+    httpx_mock.add_response(
+        method="GET",
+        url="http://example.com/api/v1/dynamique/session/check?session_id=feab81dc-4ff9-4aca-8e1b-f364aec2eae5",
+    )
+    await session.check(UUID("feab81dc-4ff9-4aca-8e1b-f364aec2eae5"))
+
+    httpx_mock.add_response(
+        method="GET",
+        url="http://example.com/api/v1/dynamique/session/check?session_id=feab81dc-4ff9-4aca-8e1b-f364aec2eae3",
+        status_code=404,
+    )
+    with pytest.raises(APIRequestError, match="Session not found."):
+        await session.check(UUID("feab81dc-4ff9-4aca-8e1b-f364aec2eae3"))

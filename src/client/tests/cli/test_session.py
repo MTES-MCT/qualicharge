@@ -142,3 +142,29 @@ def test_cli_session_bulk_chunks(runner, qcc, httpx_mock, chunk_size):
     )
     assert result.exit_code == QCCExitCodes.OK
     assert "Created 30 sessions successfully" in result.stdout
+
+
+def test_cli_session_check(runner, qcc, httpx_mock):
+    """Test the `session bulk` command with different chunk sizes."""
+    # The session exists
+    httpx_mock.add_response(
+        method="GET",
+        url="http://example.com/api/v1/dynamique/session/check?session_id=feab81dc-4ff9-4aca-8e1b-f364aec2eae5",
+    )
+    result = runner.invoke(
+        app, ["check", "feab81dc-4ff9-4aca-8e1b-f364aec2eae5"], obj=qcc
+    )
+    assert result.exit_code == QCCExitCodes.OK
+    assert "Session feab81dc-4ff9-4aca-8e1b-f364aec2eae5 exists." in result.stdout
+
+    # The session does not exist
+    httpx_mock.add_response(
+        method="GET",
+        url="http://example.com/api/v1/dynamique/session/check?session_id=feab81dc-4ff9-4aca-8e1b-f364aec4eae5",
+        status_code=404,
+    )
+    result = runner.invoke(
+        app, ["check", "feab81dc-4ff9-4aca-8e1b-f364aec4eae5"], obj=qcc
+    )
+    assert result.exit_code == QCCExitCodes.API_EXCEPTION
+    assert "Session not found." in result.stdout

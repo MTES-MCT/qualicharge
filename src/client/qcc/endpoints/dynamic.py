@@ -3,6 +3,7 @@
 import logging
 from datetime import datetime
 from typing import AsyncIterator, List, Optional
+from uuid import UUID
 
 import httpx
 
@@ -69,3 +70,12 @@ class Session(BaseCreateEndpoint):
     """/dynamique/session endpoints."""
 
     endpoint: str = "/dynamique/session"
+
+    async def check(self, id_: UUID) -> None:
+        """Check if the target session exists."""
+        params = {"session_id": str(id_)}
+        response = await self.client.get(f"{self.endpoint}/check", params=params)
+        try:
+            response.raise_for_status()
+        except httpx.HTTPStatusError as err:
+            raise APIRequestError("Session not found.") from err

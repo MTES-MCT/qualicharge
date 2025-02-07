@@ -103,8 +103,7 @@ async def list_statuses(
         Query(
             title="Point de charge",
             description=(
-                "Filter status by `id_pdc_itinerance` "
-                "(can be provided multiple times)"
+                "Filter status by `id_pdc_itinerance` (can be provided multiple times)"
             ),
         ),
     ] = None,
@@ -463,3 +462,22 @@ async def create_session_bulk(
         size=len(db_qc_session_ids),
         items=db_qc_session_ids,
     )
+
+
+@router.get("/session/check", status_code=fa_status.HTTP_200_OK, tags=["Session"])
+async def check_session(
+    user: Annotated[User, Security(get_user, scopes=[ScopesEnum.DYNAMIC_READ.value])],
+    session_id: UUID,
+    db_session: Session = Depends(get_session),
+) -> None:
+    """Check if a session exists."""
+    # ⚠️ Please pay attention to the semantic:
+    #
+    # - `db_session` / `Session` refers to the database session, while,
+    # - `session` / `QCSession` / `SessionCreate` refers to qualicharge charging session
+    stmt = select(func.count(cast(SAColumn, QCSession.id))).where(
+        QCSession.id == session_id
+    )
+    counter = db_session.exec(stmt).one()
+    if counter == 0:
+        raise HTTPException(status_code=fa_status.HTTP_404_NOT_FOUND)
