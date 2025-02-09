@@ -16,6 +16,7 @@ jupyter:
 import requests
 import os
 from urllib.parse import urljoin
+from datetime import datetime
 ```
 
 ```python
@@ -26,17 +27,22 @@ def migration_questions(
         key_to: str, 
         mapping_col: dict, 
         mapping_db: dict, 
-        mapping_field: dict = None,
-        id_snippet: dict = None,
-        log: bool = False):
+        mapping_field: dict,
+        mapping_snip: dict,
+        mapping_quest: dict|None = None,
+        log: int = 0) -> dict:
     """migration des questions Metabase de 'from' vers 'to'. 
     
-    Seules sont migrées les questions présentes dans les collections 'from' définies dans mapping_col (keys).
-    Les collections 'to' définies dans mapping_col (values) doivent exister.
-    Mapping_db contient la correspondance des bases utilisées.
-    Mapping_col contient la correspondance des collections d'appartenance des questions.
-    Mapping_field contient la correspondance des id des champs utilisés par les variables.
-    Les 'snippet' utilisés sont à créer au préalable dans 'to' (id_snippet contient le nom et l'id de chaque snippet).
+    La fonction retourne le mapping des id des questions.
+    les questions sont migrées à parir des collections de 'from' vers celles de 'to'.
+    Les dictionnaires mapping_xxx contiennent les id de 'from' (keys) et ceux de 'to' (values)
+    Seules sont migrées les questions présentes dans les collections définies dans mapping_col.
+    
+    Mapping_db contient la correspondance des bases de données.
+    Mapping_col contient la correspondance des collections des questions à migrer.
+    Mapping_field contient la correspondance des id des champs (utilisés pour la migration des variables).
+    Mapping_snip contient la correspondance des id des 'snippet'.
+    Mapping_quest contient la correspondance des questions déja migrées (utiles unquement si les requêtes contiennent des includes '{{question}}')
     """
     api_card = '/api/card'
     template = { "name": "empty", 
@@ -54,76 +60,209 @@ def migration_questions(
                 "collection_id": None,
                 "collection_position": None,
                 "result_metadata": None}
-    mapping_field = mapping_field or {}
-    id_snippet = id_snippet or {}
+    mapping_quest = mapping_quest or {}
+    new_mapping_quest = mapping_quest.copy()
 
-    # liste des questions à copier
-    response = requests.get(urljoin(url_from, api_card),
+    # liste des questions
+    questions = requests.get(urljoin(url_from, api_card),
                             headers={'x-api-key': key_from}).json()
-    questions = [resp_js for resp_js in response]
-    
+
     # copie des questions
     for question in questions:
         if question["collection_id"] not in mapping_col :
             continue
-        
-        payload = template.copy()
-        payload.update(
-                {
-                    k:v for k, v in question.items() if k in [
-                        "name", "dataset_query", "display", "description",
-                        "visualization_settings", "parameters", "parameter_mappings"
-                    ]
-                }
-            )
+        tags = ["name", "dataset_query", "display", "description",
+                "visualization_settings", "parameters", "parameter_mappings"]
+        payload = template.copy() | dict(item for item in question.items() if item[0] in tags)
         payload["collection_id"] = mapping_col[question["collection_id"]]
         payload["dataset_query"]["database"] = mapping_db[question["dataset_query"]["database"]]
         if "native" in payload["dataset_query"] and "template-tags" in payload["dataset_query"]["native"]:
             template_tags = payload["dataset_query"]["native"]["template-tags"]
+            updated_tags = {}
             for tag in template_tags:
-                if "dimension" in template_tags[tag]:
-                    id_field = template_tags[tag]["dimension"][1]
-                    new_id = mapping_field.get(id_field, id_field)
-                    template_tags[tag]["dimension"][1] = new_id
-                elif "snippet-name" in template_tags[tag]:
-                    new_id = id_snippet.get(template_tags[tag]["snippet-name"], template_tags[tag]["snippet-id"])
-                    template_tags[tag]["snippet-id"] = new_id
-        response = requests.post(urljoin(url_to, api_card), headers={'x-api-key': key_to}, json=payload).json()
-        if log:
-            print(response)
+                match template_tags[tag]["type"]:
+                    case "dimension": # variables
+                        new_id = mapping_field[template_tags[tag]["dimension"][1]]
+                        template_tags[tag]["dimension"][1] = new_id
+                    case "snippet": 
+                        new_id = mapping_snip[template_tags[tag]["snippet-id"]]
+                        template_tags[tag]["snippet-id"] = new_id
+                    case "card": # questions incluses
+                        card_id = template_tags[tag]["card-id"]
+                        new_id = mapping_quest[card_id]
+                        template_tags[tag]["card-id"] = new_id
+                        new_tag = template_tags[tag]["name"].replace(str(card_id), str(new_id), 1)
+                        new_display_name = template_tags[tag]["name"].replace(str(card_id), str(new_id), 1)
+                        template_tags[tag]["name"] = new_tag
+                        template_tags[tag]["display-name"] = new_display_name
+                        new_query = payload["dataset_query"]["native"]["query"].replace("#" + str(card_id), "#" + str(new_id), 1)
+                        payload["dataset_query"]["native"]["query"] = new_query
+                        updated_tags[tag] = new_tag
+                    case _: ...
+            for tag in updated_tags:
+                template_tags[new_tag] = template_tags[tag]
+                del template_tags[tag]
+        
+        new_quest_items = requests.post(urljoin(url_to, api_card), headers={'x-api-key': key_to}, json=payload).json()
+        new_mapping_quest[question['id']] = new_quest_items["id"] if "id" in new_quest_items else None # id ?
+        if log == 1:
+            print(f"migrated question {question['id']} {new_mapping_quest[question['id']]} : {question['name']}")
+        if log > 1:
+            print(f"migrated question {question['id']} : {new_quest_items}")
+    return new_mapping_quest
+```
+
+```python
+def migration_collections(
+        url_from: str, 
+        url_to: str, 
+        key_from: str, 
+        key_to: str,
+        list_from: list[int],
+        log:int = 0) -> dict:
+    """migration des collections Metabase de 'from' vers 'to'. 
+    
+    Les collections définies par leurs id dans list_from sont créées dans une collection "migration xxx" (xxx est la date).
+    La collection créée est elle-même incluse dans une collection "migrated collections"
+    La fonction retourne le mapping des id des collections.
+    """
+    api_col = '/api/collection'
+    root_col_name = "migrated collections"
+    migration_col_name = "migration " + datetime.now().isoformat(timespec='seconds')
+    template = {
+                "name": None,
+                "description": None,
+                "parent_id": None,
+                "namespace": None,
+                "authority_level": None
+                }
+    mapping_col = {}
+
+    # root collection
+    list_col = requests.get(urljoin(url_to, api_col), headers={'x-api-key': key_to}).json()
+    root_col_id = None
+    for collec in list_col:
+        if collec['name'] == root_col_name:
+             root_col_id = collec["id"]
+             break
+    if not root_col_id:
+        payload = template.copy() | {"name": root_col_name}
+        root_col_items = requests.post(urljoin(url_to, api_col), headers={'x-api-key': key_to}, json=payload).json()
+        root_col_id = root_col_items["id"]
+        if log >= 1:
+            print("root migrated collection created")
+    
+    # 'migrated collections'
+    payload = template.copy() | {"name": migration_col_name, "parent_id": root_col_id}
+    migration_col_items = requests.post(urljoin(url_to, api_col), headers={'x-api-key': key_to}, json=payload).json()
+    migration_col_id = migration_col_items["id"]
+
+    # 'migration xxx' collections
+    for col_id in list_from:
+        col_items = requests.get(urljoin(url_from, api_col + "/" + str(col_id)), headers={'x-api-key': key_from}).json()
+        tags = ["name", "description"]
+        payload = template.copy() | dict(item for item in col_items.items() if item[0] in tags)
+        payload["parent_id"] = migration_col_id
+        new_col_items = requests.post(urljoin(url_to, api_col), headers={'x-api-key': key_to}, json=payload).json()
+        mapping_col[col_id] = new_col_items["id"]
+        if log == 1:
+            print(f"migrated collection {col_id} - {new_col_items['id']} : {payload['name']}")
+        if log > 1:
+            print(f"migrated collection {col_id} : {new_col_items}")
+    return mapping_col
+```
+
+```python
+def mapping_fields(
+        url_from: str, 
+        url_to: str, 
+        key_from: str, 
+        key_to: str,
+        mapping_db: dict) -> dict:
+    """retourne la correspondance des id des champs de la base de données définie par 'mapping_db'."""
+    api_db = '/api/database/'
+    param = "?include=tables.fields"
+    ext_from = api_db + str(list(mapping_db.keys())[0]) + param
+    ext_to = api_db + str(list(mapping_db.values())[0]) + param
+
+    db_items_from = requests.get(urljoin(url_from, ext_from), headers={'x-api-key': key_from}).json()
+    mapping_from = {table['name'] + '.' + field['name'] : field['id'] 
+                    for table in db_items_from['tables'] 
+                    for field in table['fields']}
+    
+    db_items_to = requests.get(urljoin(url_to, ext_to), headers={'x-api-key': key_to}).json()
+    mapping_to = {table['name'] + '.' + field['name'] : field['id']
+                  for table in db_items_to['tables'] 
+                  for field in table['fields']}
+    
+    inv_mapping_from = {v: k for k,v in mapping_from.items()}
+    return {id_from: mapping_to[inv_mapping_from[id_from]] 
+            for id_from in inv_mapping_from 
+            if inv_mapping_from[id_from] in mapping_to }
+```
+
+```python
+def migration_snippets(
+        url_from: str, 
+        url_to: str, 
+        key_from: str, 
+        key_to: str,
+        log:int = 0) -> dict:
+    """migration des snippets Metabase de 'from' vers 'to'. 
+    
+    Si un snippet existe déjà, il n'est pas mis à jour.
+    La fonction retourne le mapping des id des snippets.
+    """
+    api_snippet = '/api/native-query-snippet'
+    template = {
+                "name": "",
+                "description": None,
+                "collection_id": None,
+                "content": ""}
+    mapping_snip = {}
+
+    # snippets to migrate
+    snippets_from = requests.get(urljoin(url_from, api_snippet), headers={'x-api-key': key_from}).json()
+    snippets_to = requests.get(urljoin(url_to, api_snippet), headers={'x-api-key': key_to}).json()
+    names_to = {snippet['name']: snippet['id'] for snippet in snippets_to}
+
+    # migrated snippets
+    for snippet in snippets_from:
+        if snippet['name'] in names_to:
+            mapping_snip[snippet["id"]] = names_to[snippet['name']]
+            continue
+        tags = ["name", "content", "description"]
+        payload = template.copy() | dict(item for item in snippet.items() if item[0] in tags)
+        new_snip_items = requests.post(urljoin(url_to, api_snippet), headers={'x-api-key': key_to}, json=payload).json()
+        
+        mapping_snip[snippet["id"]] = new_snip_items["id"]
+        if log == 1:
+            print(f"migrated snippet {snippet['id']} - {new_snip_items['id']} : {payload['name']}")
+        if log > 1:
+            print(f"migrated collection {snippet['id']} : {new_snip_items['id']}")
+    return mapping_snip
 ```
 
 ```python
 url_staging = os.getenv("URL_STAGING")
 api_key_staging = os.getenv("API_KEY_STAGING")
-api_key_local = os.getenv("API_KEY_LOCAL")
+api_key_local = "mb_A7YvJEI3Fzlo8oZSThkC6U8Tr9dcPuhXcIzo8KCbv/Y="
 url_local = 'http://localhost:3000'
 
-# collections sur staging
-# 22 : questions bilan hebdo
-# 18 : questions error-tracking
-# 12 : questions open-data
-# 20 : questions internes
-# 17 : questions données dynamiques
-mapping_col = {22: 9,  12: 11, 18: 10, 20: 12, 17: 13}
-mapping_col = {12: 6}
-# 2 : 
-mapping_db = {2: 2}
-# fields sur staging
-# 515 : departement
-# 530 : region
-# 111 : operateur
-# 77  : amenageur
-# 104 : code_commune
-# 125 : pdc
-# 168 : station
-mapping_field = {515: 283, 111: 329, 530: 365}
-id_snippet = {"join city-dep-reg": 2,
-              "join city-dep-reg-nat": 3,
-              "join loc-city-dep-reg": 4,
-              "join stat-loc-city-dep-reg": 1, 
-              "join stat-loc-city-dep-reg_nat": 5}
+mapping_db = {2: 2} # 2 : qualicharge API
+mapping_fld = mapping_fields(url_staging, url_local, api_key_staging, api_key_local, mapping_db)
+mapping_snip = migration_snippets(url_staging, url_local, api_key_staging, api_key_local, log=1)
 
-migration_questions(url_staging, url_local, api_key_staging, api_key_local, 
-                    mapping_col, mapping_db, mapping_field, id_snippet)
+# migration préalable des questions réutilisées dans d'autres questions
+list_col_first = [20]
+mapping_col1 = migration_collections(url_staging, url_local, api_key_staging, api_key_local, list_col_first, log=1)
+mapping_quest = migration_questions(url_staging, url_local, api_key_staging, api_key_local, 
+                                    mapping_col1, mapping_db, mapping_fld, mapping_snip, log=1)
+
+# migration des autres questions
+list_col = [27, 28, 29, 30, 32] # collections philippe
+#list_col = [35] # test
+mapping_col = migration_collections(url_staging, url_local, api_key_staging, api_key_local, list_col, log=1)
+mapping_quest = migration_questions(url_staging, url_local, api_key_staging, api_key_local, 
+                    mapping_col, mapping_db, mapping_fld, mapping_snip, mapping_quest, log=1)
 ```
