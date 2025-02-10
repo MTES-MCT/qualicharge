@@ -8,6 +8,8 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.18.0] - 2025-02-10
+
 ### Added
 
 - Integrate `postgresql_audit` for critical database changes versioning
@@ -313,7 +315,8 @@ and this project adheres to
 
 - Implement base FastAPI app
 
-[unreleased]: https://github.com/MTES-MCT/qualicharge/compare/v0.17.0...main
+[unreleased]: https://github.com/MTES-MCT/qualicharge/compare/v0.18.0...main
+[0.18.0]: https://github.com/MTES-MCT/qualicharge/compare/v0.17.0...v0.18.0
 [0.17.0]: https://github.com/MTES-MCT/qualicharge/compare/v0.16.0...v0.17.0
 [0.16.0]: https://github.com/MTES-MCT/qualicharge/compare/v0.15.0...v0.16.0
 [0.15.0]: https://github.com/MTES-MCT/qualicharge/compare/v0.14.0...v0.15.0
