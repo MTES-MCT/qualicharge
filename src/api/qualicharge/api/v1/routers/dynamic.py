@@ -3,11 +3,19 @@
 import logging
 from threading import Lock
 from typing import Annotated, List, cast
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from annotated_types import Len
 from cachetools import LRUCache, cached
-from fastapi import APIRouter, Depends, HTTPException, Path, Query, Security
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Depends,
+    HTTPException,
+    Path,
+    Query,
+    Security,
+)
 from fastapi import status as fa_status
 from pydantic import UUID4, BaseModel, PastDatetime, StringConstraints
 from sqlalchemy import func
@@ -70,7 +78,7 @@ class DynamiqueItemsCreatedResponse(BaseModel):
     key=lambda id_pdc_itinerance, session: id_pdc_itinerance,
     info=settings.API_GET_PDC_ID_CACHE_INFO,
 )
-def get_pdc_id(id_pdc_itinerance: str, session: Session) -> UUID | None:
+def get_pdc_id(id_pdc_itinerance: str, session: Session) -> UUID:
     """Get PointDeCharge.id from an `id_pdc_itinerance`."""
     pdc_id = session.exec(
         select(PointDeCharge.id).where(
@@ -312,9 +320,20 @@ async def read_status_history(
     ]
 
 
+def _create_status(
+    session: Session, status: StatusCreate, status_id: UUID, pdc_id: UUID
+) -> None:
+    """Background task that creates a POC status."""
+    db_status = Status(id=status_id, **status.model_dump(exclude={"id_pdc_itinerance"}))
+    db_status.point_de_charge_id = pdc_id
+    session.add(db_status)
+    session.commit()
+
+
 @router.post("/status/", status_code=fa_status.HTTP_201_CREATED, tags=["Status"])
 async def create_status(
     user: Annotated[User, Security(get_user, scopes=[ScopesEnum.DYNAMIC_CREATE.value])],
+    background_tasks: BackgroundTasks,
     status: StatusCreate,
     session: Session = Depends(get_session),
 ) -> DynamiqueItemCreatedResponse:
@@ -323,20 +342,34 @@ async def create_status(
         raise PermissionDenied("You cannot create statuses for this point of charge")
 
     pdc_id = get_pdc_id(status.id_pdc_itinerance, session)
+    status_id = uuid4()
+    background_tasks.add_task(_create_status, session, status, status_id, pdc_id)
 
-    db_status = Status(**status.model_dump(exclude={"id_pdc_itinerance"}))
-    # Store status id so that we do not need to perform another request
-    db_status_id = db_status.id
-    db_status.point_de_charge_id = pdc_id
-    session.add(db_status)
+    return DynamiqueItemCreatedResponse(id=status_id)
+
+
+def _create_status_bulk(
+    session: Session,
+    statuses: List[StatusCreate],
+    status_ids: List[UUID],
+    db_pdcs: dict,
+) -> None:
+    """Background task that creates POCs status batch."""
+    db_statuses = []
+    for status, status_id in zip(statuses, status_ids, strict=True):
+        db_status = Status(
+            id=status_id, **status.model_dump(exclude={"id_pdc_itinerance"})
+        )
+        db_status.point_de_charge_id = db_pdcs[status.id_pdc_itinerance]
+        db_statuses.append(db_status)
+    session.add_all(db_statuses)
     session.commit()
-
-    return DynamiqueItemCreatedResponse(id=db_status_id)
 
 
 @router.post("/status/bulk", status_code=fa_status.HTTP_201_CREATED, tags=["Status"])
 async def create_status_bulk(
     user: Annotated[User, Security(get_user, scopes=[ScopesEnum.DYNAMIC_CREATE.value])],
+    background_tasks: BackgroundTasks,
     statuses: BulkStatusCreateList,
     session: Session = Depends(get_session),
 ) -> DynamiqueItemsCreatedResponse:
@@ -370,26 +403,40 @@ async def create_status_bulk(
             ),
         )
 
-    # Create all statuses
-    db_statuses = []
-    db_status_ids = []
-    for status in statuses:
-        db_status = Status(**status.model_dump(exclude={"id_pdc_itinerance"}))
-        db_status_ids.append(db_status.id)
-        db_status.point_de_charge_id = db_pdcs[status.id_pdc_itinerance]
-        db_statuses.append(db_status)
-    session.add_all(db_statuses)
-    session.commit()
+    status_ids = [uuid4() for _ in statuses]
+    background_tasks.add_task(
+        _create_status_bulk, session, statuses, status_ids, db_pdcs
+    )
 
     return DynamiqueItemsCreatedResponse(
-        size=len(db_status_ids),
-        items=db_status_ids,
+        size=len(status_ids),
+        items=status_ids,
     )
+
+
+def _create_session(
+    db_session: Session,
+    session: SessionCreate,
+    session_id: UUID,
+    pdc_id: UUID,
+    user_id: UUID,
+) -> None:
+    """Background task that creates a POC session."""
+    qc_session = QCSession(
+        id=session_id,
+        **session.model_dump(exclude={"id_pdc_itinerance"}),
+        created_by_id=user_id,
+    )
+    # Store session id so that we do not need to perform another request
+    qc_session.point_de_charge_id = pdc_id
+    db_session.add(qc_session)
+    db_session.commit()
 
 
 @router.post("/session/", status_code=fa_status.HTTP_201_CREATED, tags=["Session"])
 async def create_session(
     user: Annotated[User, Security(get_user, scopes=[ScopesEnum.DYNAMIC_CREATE.value])],
+    background_tasks: BackgroundTasks,
     session: SessionCreate,
     db_session: Session = Depends(get_session),
 ) -> DynamiqueItemCreatedResponse:
@@ -403,22 +450,39 @@ async def create_session(
     # - `session` / `QCSession` / `SessionCreate` refers to qualicharge charging session
     pdc_id = get_pdc_id(session.id_pdc_itinerance, db_session)
 
-    db_qc_session = QCSession(
-        **session.model_dump(exclude={"id_pdc_itinerance"}),
-        created_by_id=user.id,
+    qc_session_id = uuid4()
+    background_tasks.add_task(
+        _create_session, db_session, session, qc_session_id, pdc_id, user.id
     )
-    # Store session id so that we do not need to perform another request
-    db_qc_session_id = db_qc_session.id
-    db_qc_session.point_de_charge_id = pdc_id
-    db_session.add(db_qc_session)
-    db_session.commit()
 
-    return DynamiqueItemCreatedResponse(id=db_qc_session_id)
+    return DynamiqueItemCreatedResponse(id=qc_session_id)
+
+
+def _create_session_bulk(
+    db_session: Session,
+    sessions: List[SessionCreate],
+    session_ids: List[UUID],
+    db_pdcs: dict,
+    user_id: UUID,
+):
+    """Background task that creates POCs session batch."""
+    qc_sessions = []
+    for session, session_id in zip(sessions, session_ids, strict=True):
+        qc_session = QCSession(
+            id=session_id,
+            **session.model_dump(exclude={"id_pdc_itinerance"}),
+            created_by_id=user_id,
+        )
+        qc_session.point_de_charge_id = db_pdcs[session.id_pdc_itinerance]
+        qc_sessions.append(qc_session)
+    db_session.add_all(qc_sessions)
+    db_session.commit()
 
 
 @router.post("/session/bulk", status_code=fa_status.HTTP_201_CREATED, tags=["Session"])
 async def create_session_bulk(
     user: Annotated[User, Security(get_user, scopes=[ScopesEnum.DYNAMIC_CREATE.value])],
+    background_tasks: BackgroundTasks,
     sessions: BulkSessionCreateList,
     db_session: Session = Depends(get_session),
 ) -> DynamiqueItemsCreatedResponse:
@@ -452,23 +516,14 @@ async def create_session_bulk(
             ),
         )
 
-    # Create all statuses
-    db_qc_sessions = []
-    db_qc_session_ids = []
-    for session in sessions:
-        db_qc_session = QCSession(
-            **session.model_dump(exclude={"id_pdc_itinerance"}),
-            created_by_id=user.id,
-        )
-        db_qc_session_ids.append(db_qc_session.id)
-        db_qc_session.point_de_charge_id = db_pdcs[session.id_pdc_itinerance]
-        db_qc_sessions.append(db_qc_session)
-    db_session.add_all(db_qc_sessions)
-    db_session.commit()
+    qc_session_ids = [uuid4() for _ in sessions]
+    background_tasks.add_task(
+        _create_session_bulk, db_session, sessions, qc_session_ids, db_pdcs, user.id
+    )
 
     return DynamiqueItemsCreatedResponse(
-        size=len(db_qc_session_ids),
-        items=db_qc_session_ids,
+        size=len(qc_session_ids),
+        items=qc_session_ids,
     )
 
 
