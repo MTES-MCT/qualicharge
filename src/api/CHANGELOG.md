@@ -16,6 +16,8 @@ and this project adheres to
 ### Changed
 
 - Improve bulk endpoints documentation
+- Improve `/dynamique` (bulk) create endpoint performance by using background
+  tasks
 
 ## [0.18.0] - 2025-02-10
 
