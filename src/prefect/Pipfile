@@ -4,7 +4,7 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-prefect = "==3.2.0"
+prefect = "==3.1.5"
 geoalchemy2 = {extras = ["shapely"], version = "==0.17.0"}
 geopandas = "==1.0.1"
 pandas = "==2.2.3"
