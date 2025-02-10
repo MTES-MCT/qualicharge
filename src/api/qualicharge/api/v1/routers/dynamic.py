@@ -340,7 +340,11 @@ async def create_status_bulk(
     statuses: BulkStatusCreateList,
     session: Session = Depends(get_session),
 ) -> DynamiqueItemsCreatedResponse:
-    """Create a statuses batch."""
+    """Create a statuses batch.
+
+    If an error occurs during batch importation, the database session is rolled
+    back, hence none of the submitted statuses is saved.
+    """
     ids_pdc_itinerance = {s.id_pdc_itinerance for s in statuses}
     if not are_pdcs_allowed_for_user(ids_pdc_itinerance, user):
         raise PermissionDenied(
@@ -418,7 +422,11 @@ async def create_session_bulk(
     sessions: BulkSessionCreateList,
     db_session: Session = Depends(get_session),
 ) -> DynamiqueItemsCreatedResponse:
-    """Create a sessions batch."""
+    """Create a sessions batch.
+
+    If an error occurs during batch importation, the database session is rolled
+    back, hence none of the submitted sessions is saved.
+    """
     ids_pdc_itinerance = {s.id_pdc_itinerance for s in sessions}
     if not are_pdcs_allowed_for_user(ids_pdc_itinerance, user):
         raise PermissionDenied(

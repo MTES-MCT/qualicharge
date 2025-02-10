@@ -294,7 +294,11 @@ async def bulk(
     statiques: BulkStatiqueList,
     session: Session = Depends(get_session),
 ) -> StatiqueItemsCreatedResponse:
-    """Create a set of statique items."""
+    """Create or update a set of statique items.
+
+    If an error occurs during batch importation, the database session is rolled
+    back, hence none of the submitted statique is saved.
+    """
     if not are_pdcs_allowed_for_user([s.id_pdc_itinerance for s in statiques], user):
         raise PermissionDenied(
             "You cannot submit data for an organization you are not assigned to"

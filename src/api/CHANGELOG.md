@@ -13,6 +13,10 @@ and this project adheres to
 - Implement a new `/dynamique/session/check` endpoint to check if a target
   session exists or not
 
+### Changed
+
+- Improve bulk endpoints documentation
+
 ## [0.18.0] - 2025-02-10
 
 ### Added
