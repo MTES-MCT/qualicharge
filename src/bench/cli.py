@@ -44,7 +44,8 @@ def diff(database: Path, current: Path, short: bool = True):
     latest_revision = (
         db[["git", "timestamp"]].sort_values(by="timestamp").tail(1)["git"].iloc[0]
     )
-    latest = db.loc[db["git"] == latest_revision]
+    latest = db[db["git"] == latest_revision]
+    latest.reset_index(drop=True, inplace=True)
 
     # Calculate diff
     cols = list(
