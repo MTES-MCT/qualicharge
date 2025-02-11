@@ -161,6 +161,7 @@ jobs:
           zcat ../../data/irve-statique.json.gz | \
             head -n 500 | \
             pipenv run qcc static bulk --chunk-size 100
+          pipenv run python -m qualicharge refresh-static
         env:
           QCC_API_LOGIN_USERNAME: admin
           QCC_API_LOGIN_PASSWORD: admin
@@ -193,6 +194,10 @@ jobs:
         # Only when in PR, not when merged to main
         if: ${{ github.event_name == 'pull_request' }}
         run: |
+          pipenv run csvlook -I ../../data/bench.csv
+          echo "===="
+          pipenv run csvlook -I bench_admin_stats_stamped.csv
+          echo "===="
           echo -e "### Current benchmark\n\n" >> bench_admin_stats.md && \
           pipenv run csvlook -I bench_admin_stats_stamped.csv >> bench_admin_stats.md && \
           echo -e "\n### Comparison with the latest previous benchmark\n\n" >> bench_admin_stats.md && \
