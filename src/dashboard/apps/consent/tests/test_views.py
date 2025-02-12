@@ -31,8 +31,13 @@ FORM_CLEANED_DATA = {
 @pytest.mark.django_db
 def test_bulk_update_consent_status_without_ids(rf):
     """Test no status is updated if no ID is passed."""
-    request = rf.get(reverse("consent:manage"))
-    request.user = UserFactory()
+    user = UserFactory()
+
+    # create entity
+    entity_name = "entity-1"
+    EntityFactory(users=(user,), name=entity_name)
+    request = rf.get(reverse("consent:manage", kwargs={"slug": entity_name}))
+    request.user = user
 
     view = ConsentFormView()
     view.setup(request)
@@ -53,11 +58,14 @@ def test_bulk_update_consent_status_without_ids(rf):
 
 
 @pytest.mark.django_db
-def test_bulk_update_consent_status(rf):
+def test_bulk_update_consent_status(rf):  # noqa: PLR0915
     """Test all consents are correctly updated."""
     user = UserFactory()
 
-    request = rf.get(reverse("consent:manage"))
+    # create entity
+    entity_name = "entity-1"
+    EntityFactory(users=(user,), name=entity_name)
+    request = rf.get(reverse("consent:manage", kwargs={"slug": entity_name}))
     request.user = user
 
     view = ConsentFormView()
@@ -141,7 +149,10 @@ def test_bulk_update_consent_status_with_fake_id(rf):
     """Test update with wrong ID in list of IDs to update."""
     user = UserFactory()
 
-    request = rf.get(reverse("consent:manage"))
+    # create entity
+    entity_name = "entity-1"
+    EntityFactory(users=(user,), name=entity_name)
+    request = rf.get(reverse("consent:manage", kwargs={"slug": entity_name}))
     request.user = user
 
     view = ConsentFormView()
@@ -174,7 +185,10 @@ def test_bulk_update_consent_without_user_perms(rf):
     """Test the update of consents for which the user does not have the rights."""
     user = UserFactory()
 
-    request = rf.get(reverse("consent:manage"))
+    # create entity
+    entity_name = "entity-1"
+    EntityFactory(users=(user,), name=entity_name)
+    request = rf.get(reverse("consent:manage", kwargs={"slug": entity_name}))
     request.user = user
 
     view = ConsentFormView()
@@ -225,7 +239,10 @@ def test_get_awaiting_ids_with_bad_parameters(rf):
     """Test get_awaiting_ids() with bad parameters raise exception."""
     user = UserFactory()
 
-    request = rf.get(reverse("consent:manage"))
+    # create entity
+    entity_name = "entity-1"
+    EntityFactory(users=(user,), name=entity_name)
+    request = rf.get(reverse("consent:manage", kwargs={"slug": entity_name}))
     request.user = user
 
     view = ConsentFormView()
@@ -245,7 +262,10 @@ def test_get_awaiting_ids(rf):
     """Test getting of awaiting IDs inferred from validated consents."""
     user = UserFactory()
 
-    request = rf.get(reverse("consent:manage"))
+    # create entity
+    entity_name = "entity-1"
+    EntityFactory(users=(user,), name=entity_name)
+    request = rf.get(reverse("consent:manage", kwargs={"slug": entity_name}))
     request.user = user
 
     view = ConsentFormView()
@@ -271,50 +291,18 @@ def test_get_awaiting_ids(rf):
 
 
 @pytest.mark.django_db
-def test_templates_render_without_entities(rf):
-    """Test the templates are rendered without entities, and with expected content."""
-    user = UserFactory()
-
-    request = rf.get(reverse("consent:manage"))
-    request.user = user
-
-    view = ConsentFormView()
-    view.setup(request)
-
-    # check the context
-    context = view.get_context_data()
-    assert context["entities"] == []
-
-    # Get response object
-    response = view.dispatch(request)
-    assert response.status_code == HTTPStatus.OK
-
-    # force template rendering
-    rendered = response.render()
-    html = rendered.content.decode()
-
-    # the id of the global consent checkbox shouldn't be present in HTML
-    not_expected = 'id="id_consent_agreed"'
-    assert (not_expected not in html) is True
-
-    # checkbox with name “status” shouldn't be present in the HTML
-    not_expected = '<input type="checkbox" name="status"'
-    assert (not_expected not in html) is True
-
-
-@pytest.mark.django_db
 def test_templates_render_with_entities_without_consents(rf):
     """Test the templates without consents are rendered with expected content."""
     user = UserFactory()
 
-    request = rf.get(reverse("consent:manage"))
+    # create entity
+    entity_name = "entity-1"
+    entity = EntityFactory(users=(user,), name=entity_name)
+    request = rf.get(reverse("consent:manage", kwargs={"slug": entity_name}))
     request.user = user
 
     view = ConsentFormView()
     view.setup(request)
-
-    # create entity
-    entity = EntityFactory(users=(user,))
 
     # check the context
     context = view.get_context_data()
@@ -338,9 +326,10 @@ def test_templates_render_with_entities_without_consents(rf):
 
 
 @pytest.mark.django_db
-def test_templates_render_with_slug(rf):
-    """Accessing the form with a slug must initialize the entity in the context."""
+def test_templates_render_html_content_with_consents(rf):
+    """Test the HTML content of the templates with entities and consents."""
     user = UserFactory()
+
     # create entity
     entity_name = "entity-1"
     entity = EntityFactory(users=(user,), name=entity_name)
@@ -354,30 +343,16 @@ def test_templates_render_with_slug(rf):
     context = view.get_context_data()
     assert context["entities"] == [entity]
 
+    # create consents
+    size = 3
+    DeliveryPointFactory.create_batch(size, entity=entity)
+    consents = Consent.objects.filter(delivery_point__entity=entity)
+
     # get response object
     response = view.dispatch(request)
     assert response.status_code == HTTPStatus.OK
 
-
-@pytest.mark.django_db
-def test_templates_render_html_content_with_consents(rf):
-    """Test the HTML content of the templates with entities and consents."""
-    user = UserFactory()
-
-    request = rf.get(reverse("consent:manage"))
-    request.user = user
-
-    view = ConsentFormView()
-    view.setup(request)
-
-    # create entity
-    size = 3
-    entity = EntityFactory(users=(user,))
-    DeliveryPointFactory.create_batch(size, entity=entity)
-    consents = Consent.objects.filter(delivery_point__entity=entity)
-
-    # get response object and force template rendering
-    response = view.dispatch(request)
+    # and force template rendering
     rendered = response.render()
     html = rendered.content.decode()
 
@@ -389,9 +364,11 @@ def test_templates_render_html_content_with_consents(rf):
 def test_form_post_empty(rf):
     """POST request without required field values will display error."""
     user = UserFactory()
-    EntityFactory(users=(user,))
 
-    request = rf.post(reverse("consent:manage"), {})
+    # create entity
+    entity_name = "entity-1"
+    EntityFactory(users=(user,), name=entity_name)
+    request = rf.post(reverse("consent:manage", kwargs={"slug": entity_name}), {})
     request.user = user
 
     view = ConsentFormView()
@@ -400,10 +377,24 @@ def test_form_post_empty(rf):
     # Get response object and force template rendering
     response = view.dispatch(request)
     rendered = response.render()
-    html = rendered.content.decode()
+    assert response.status_code == HTTPStatus.OK
 
+    html = rendered.content.decode()
     expected = 'id="checkboxes-error-message-error"'
     assert (expected in html) is True
+
+
+@pytest.mark.django_db
+def test_manage_url_redirect(client):
+    """Test direct access to manage page is redirected to consent index page."""
+    # create and connect user
+    user = UserFactory()
+    client.force_login(user)
+
+    # Get response object
+    response = client.get(reverse("consent:manage"))
+    assert response.status_code == HTTPStatus.FOUND
+    assert response.url == reverse("consent:index")
 
 
 @pytest.mark.django_db

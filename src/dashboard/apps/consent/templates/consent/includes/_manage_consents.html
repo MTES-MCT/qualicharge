@@ -7,55 +7,103 @@
 
 <div class="fr-fieldset__element fr-my-4w">
   <legend class="fr-fieldset__legend" id="text-legend">
-    A. Points de livraison à valider
+    A. Points de livraison (PDL) à valider
   </legend>
 
   <p>
-    Cochez les lignes correspondant aux PRMs pour lesquelles vous autorisez expressément
+    Cochez les lignes correspondant aux PDL pour lesquelles vous autorisez expressément
     la DGEC à demander et à recevoir la communication des données mentionnées au point D.
   </p>
 
-  {# toggle button #}
-  <div class="fr-checkbox-group fr-mb-2v">
-    <input type="checkbox" id="toggle-all" name="toggle-all"
-           aria-describedby="toggle-all-messages"
-           data-fr-js-checkbox-input="true"
-           data-fr-js-checkbox-actionee="true">
-    <label class="fr-label" for="toggle-all"><strong>{% trans "Toggle All" %}</strong></label>
-  </div>
+  <div class="fr-table fr-table--no-caption" id="table-prm-component">
+    <div class="fr-table__wrapper">
+      <div class="fr-table__container">
+        <div class="fr-table__content">
 
-  {# delivery points #}
-  <div class="consent-wrapper fr-py-6v fr-mb-6v">
-    <div class="consent-wrapper__inner">
-      {% for entity in entities %}
-      <fieldset class="fr-fieldset" id="checkboxes" aria-labelledby="checkboxes-legend checkboxes-messages">
-        <legend class="fr-fieldset__legend--regular fr-fieldset__legend" id="checkboxes-legend">{{ entity.name }}</legend>
+          <table id="table-prm" aria-labelledby="table-prm-caption">
+            <caption id="table-prm-caption"> Points de livraison à valider </caption>
 
-        {% for consent in entity.get_consents %}
-        <div class="fr-fieldset__element">
-          <div class="fr-checkbox-group">
-            <input type="checkbox"
-                   name="status"
-                   value="{{ consent.id }}"
-                   id="{{ consent.id }}"
-                   {% if consent.status == 'VALIDATED' %} checked="checked" disabled="disabled"{% endif %}
-                   aria-describedby="{{ consent.id }}-messages"
-                   data-fr-js-checkbox-input="true"
-                   data-fr-js-checkbox-actionee="true" />
-            <label class="fr-label" for="{{ consent.id }}"
-                   {% if consent.status == 'VALIDATED' %}
-                     title="{% trans "Point de livraison déjà validé." %}"
-                   {% elif consent.status == 'AWAITING' %}
-                     title="{% trans "Point de livraison en attende de validation." %}"
-                   {% endif %}>
-              {{ consent.delivery_point.provider_assigned_id }}
-            </label>
-            <div class="fr-messages-group" id="{{ consent.id }}-messages" aria-live="assertive"></div>
-          </div>
+            <thead>
+              <tr>
+                <th class="fr-cell--fixed fr-cell--center" role="columnheader" scope="col">
+                  <div class="fr-checkbox-group fr-checkbox-group--sm">
+                    <input type="checkbox" id="toggle-all" name="toggle-all"
+                           aria-describedby="toggle-all-messages"
+                           data-fr-js-checkbox-input="true"
+                           data-fr-js-checkbox-actionee="true"
+                           title="{% trans "Toggle all" %}">
+                    <label class="fr-label" for="toggle-all">
+                      {% trans "Toggle All" %}
+                    </label>
+                  </div>
+                </th>
+                <th scope="col">
+                  <div class="fr-cell__title">Nom de la station</div>
+                </th>
+                <th scope="col">
+                  <div class="fr-cell__title">Identifiant de la station</div>
+                </th>
+                <th scope="col">
+                  <div class="fr-cell__title">Identifiant du PDL</div>
+                </th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {% for entity in entities %}
+                {% for consent in entity.get_consents %}
+                  <tr id="table-prm-row-key-{{ forloop.counter }}"
+                      data-row-key="{{ forloop.counter }}"
+                      aria-labelledby="row-label-{{ forloop.counter }}"
+                      {% if consent.status == "VALIDATED" %}
+                        title="Point de livraison déjà validé."
+                        aria-label="Point de livraison déjà validé."
+                      {% elif consent.status == "AWAITING" %}
+                        title="Point de livraison en attente de validation."
+                        aria-label="Point de livraison en attente de validation."
+                      {% endif %}>
+
+                    <th class="fr-cell--fixed fr-cell--center" scope="row">
+                      <div class="fr-checkbox-group fr-checkbox-group--sm">
+                        <input type="checkbox"
+                         name="status"
+                         value="{{ consent.id }}"
+                         id="{{ consent.id }}"
+                         {% if consent.status == "VALIDATED" %} checked="checked" disabled="disabled"{% endif %}
+                         aria-describedby="{{ consent.id }}-messages"
+                         data-fr-js-checkbox-input="true"
+                         data-fr-js-checkbox-actionee="true"
+                         {% if consent.status == "VALIDATED" %}
+                            title="Point de livraison déjà validé."
+                            aria-label="Point de livraison validé, case à cocher désactivée."
+                         {% elif consent.status == "AWAITING" %}
+                            title="Point de livraison en attente de validation."
+                            aria-label="Point de livraison en attente de validation."
+                         {% endif %}
+                        />
+
+                        <label class="fr-label" for="{{ consent.id }}"
+                          {% if consent.status == "VALIDATED" %}
+                            title="Point de livraison déjà validé."
+                          {% elif consent.status == "AWAITING" %}
+                            title="Point de livraison en attente de validation."
+                          {% endif %}>
+                          Sélectionner le PDL {{ consent.delivery_point.provider_assigned_id }}
+                        </label>
+                      </div>
+                    </th>
+                    {# todo : get station_name, station_id, prm_id #}
+                    <td> -- station name -- </td>
+                    <td> -- station id --  </td>
+                    <td> {{ consent.delivery_point.provider_assigned_id }} </td>
+                  </tr>
+                {% endfor %}
+              {% endfor %}
+            </tbody>
+          </table>
+
         </div>
-        {% endfor %}
-      </fieldset>
-      {% endfor %}
+      </div>
     </div>
   </div>
 
