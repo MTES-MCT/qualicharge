@@ -12,6 +12,7 @@ and this project adheres to
 
 - Configured Data7 0.9.0
 - Use the `Statique` materialized view for the `statiques` dataset
+- Integrate HTTP Basic Authentication using NGINX as a reverse-proxy
 
 ### Changed
 
