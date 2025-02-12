@@ -27,6 +27,26 @@ def validate_siret(value: str | None) -> None:
         raise ValidationError(error_message)
 
 
+def validate_siren(value: str | None) -> None:
+    """Validate a SIREN number.
+
+    SIREN must be a string that contains only numbers and have a fixed length of 9
+    characters.
+    """
+    error_message = _(
+        "The SIREN must be composed only of numbers and must contain exactly 9 digits."
+    )
+
+    if value is None:
+        return
+
+    if not isinstance(value, str):
+        raise ValidationError(error_message)
+
+    if not re.match(r"^\d{9}$", value):
+        raise ValidationError(error_message)
+
+
 def validate_naf_code(value: str | None) -> None:
     """Validate a NAF code.
 

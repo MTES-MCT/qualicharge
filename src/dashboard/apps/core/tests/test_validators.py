@@ -3,7 +3,12 @@
 import pytest
 from django.core.exceptions import ValidationError
 
-from apps.core.validators import validate_naf_code, validate_siret, validate_zip_code
+from apps.core.validators import (
+    validate_naf_code,
+    validate_siren,
+    validate_siret,
+    validate_zip_code,
+)
 
 
 @pytest.mark.parametrize("value", ["12345678901234", "00000000000000", None])
@@ -68,3 +73,26 @@ def test_validate_zip_code_invalid(value):
     """Tests validation of invalid zip codes raise a ValidationError."""
     with pytest.raises(ValidationError):
         validate_zip_code(value)
+
+
+@pytest.mark.parametrize("value", ["123456789", "000000000", None])
+def test_validate_siren_valid(value):
+    """Tests that a valid SIREN does not raise an exception."""
+    assert validate_siren(value) is None
+
+
+@pytest.mark.parametrize(
+    "value",
+    [
+        "1234",  # Too short
+        "123456789012345",  # Too long
+        "1234ABC89",  # Contains non-numeric characters
+        1234,  # Number
+        "",  # Empty string
+        " " * 9,  # Only spaces
+    ],
+)
+def test_validate_siren_invalid(value):
+    """Tests that an invalid SIREN raises a ValidationError."""
+    with pytest.raises(ValidationError):
+        validate_siren(value)

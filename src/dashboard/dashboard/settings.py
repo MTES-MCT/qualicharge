@@ -258,6 +258,23 @@ DASHBOARD_EMAIL_CONFIGS = {
     }
 }
 
+# API Annuaire des Entreprises
+ANNUAIRE_ENTREPRISE_API_ROOT_URL = env.str("ANNUAIRE_ENTREPRISE_API_ROOT_URL")
+ANNUAIRE_ENTREPRISE_API_TOKEN = env.str("ANNUAIRE_ENTREPRISE_API_TOKEN")
+# Request timeout in seconds
+ANNUAIRE_ENTREPRISE_API_TIMEOUT = env.int("ANNUAIRE_ENTREPRISE_API_TIMEOUT")
+
+# Traceability parameters
+# Allows to build the GET parameter of the query. Values must be formatted accordingly.
+# - context: context in which the request is sent
+# - object: the procedure identifier.
+# - recipient: SIRET of the public organization authorized to use the data.
+# https://entreprise.api.gouv.fr/developpeurs#renseigner-les-paramètres-dappel-et-de-traçabilité
+ANNUAIRE_ENTREPRISE_API_CONTEXT = {
+    "context": f"{'test-' if DEBUG else ''}monitoring-energy-policy-implementation",
+    "object": f"{'test-' if DEBUG else ''}QualiCharge-company-infos",
+    "recipient": "12008701000068",  # DGEC Siret
+}
 
 ## Debug-toolbar
 
