@@ -54,6 +54,9 @@ src/api/bench_*.csv
 # Prefect
 src/prefect/.htpasswd
 
+# Opendata
+src/opendata/.htpasswd
+
 # Jupytext: we version converted md files not ipynb sources
 *.ipynb
 
