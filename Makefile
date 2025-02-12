@@ -255,6 +255,11 @@ drop-dashboard-db: ## drop dashboard database
 	@$(COMPOSE) exec postgresql bash -c 'psql "postgresql://$${POSTGRES_USER}:$${POSTGRES_PASSWORD}@$${QUALICHARGE_DB_HOST}:$${QUALICHARGE_DB_PORT}/postgres" -c "drop database \"$${DASHBOARD_DB_NAME}\";"' || echo "Duly noted, skipping database deletion."
 .PHONY: drop-dashboard-db
 
+drop-prefect-db: ## drop prefect database
+	@echo "Droping prefect service database…"
+	@$(COMPOSE) exec postgresql bash -c 'psql "postgresql://$${POSTGRES_USER}:$${POSTGRES_PASSWORD}@$${QUALICHARGE_DB_HOST}:$${QUALICHARGE_DB_PORT}/postgres" -c "drop database \"$${PREFECT_API_DATABASE_NAME}\";"' || echo "Duly noted, skipping database deletion."
+.PHONY: drop-prefect-db
+
 dump-metabase:  ## dump metabase objects
 	bin/pg_dump -a --inserts \
 		-t Report_Card \
