@@ -15,7 +15,6 @@ and this project adheres to
 - add core app with Entity and DeliveryPoint models
 - add consent app with Consent model
 - add ProConnect authentication system
-- add internationalization and language switcher
 - add dashboard homepage
 - add consent form to manage consents of one or many entities
 - add an email notification to users (via Brevo) after they have validated their consents.

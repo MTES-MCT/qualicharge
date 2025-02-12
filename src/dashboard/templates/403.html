@@ -1,12 +1,6 @@
 {% extends "base.html" %}
 {% load static i18n %}
 
-{% comment %}
-todo: revoir le contenu rédactionnel de cette page
-Faut-il ajouter un bouton contact et un formulaire comme préconisé dans le DSFR:
-https://www.systeme-de-design.gouv.fr/composants-et-modeles/modeles/page-d-erreurs/
-{% endcomment %}
-
 {% block page_title %}
   <title>{% trans "Permission denied" %}</title>
 {% endblock page_title %}
@@ -36,10 +30,12 @@ https://www.systeme-de-design.gouv.fr/composants-et-modeles/modeles/page-d-erreu
             <li>
               <a class="fr-btn" href="{% url "home:index" %}"> {% trans "Home page" %}</a>
             </li>
-            {% comment %}
-          <li><a class="fr-btn fr-btn--secondary" href="[À MODIFIER - lien vers un formulaire de contact]">
-            {% trans "Contact us" %} </a></li>
-            {% endcomment %}
+
+            <li>
+              <a class="fr-btn fr-btn--secondary" href="mailto:{{ contact_email }}" target="_blank">
+                {% trans "Contact us" %}
+              </a>
+            </li>
           </ul>
 
         </div>

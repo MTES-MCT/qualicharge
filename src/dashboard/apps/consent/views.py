@@ -35,6 +35,13 @@ class IndexView(BreadcrumbContextMixin, TemplateView):
     def get_context_data(self, **kwargs):  # noqa: D102
         context = super().get_context_data(**kwargs)
         context["entities"] = self.request.user.get_entities()
+        context["has_awaiting_consent"] = any(
+            entity.count_awaiting_consents() for entity in context["entities"]
+        )
+        context["has_validated_consent"] = any(
+            entity.count_validated_consents() for entity in context["entities"]
+        )
+
         return context
 
 
@@ -90,7 +97,7 @@ class ConsentFormView(BreadcrumbContextMixin, FormView):
         context["control_authority"] = settings.CONSENT_CONTROL_AUTHORITY
         context["entities"] = self._get_entities()
         context["signature_location"] = settings.CONSENT_SIGNATURE_LOCATION
-        context["mailto"] = settings.CONTACT_EMAIL
+
         return context
 
     def _get_entities(self) -> list:

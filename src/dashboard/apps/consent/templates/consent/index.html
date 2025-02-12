@@ -3,19 +3,26 @@
 {% load i18n %}
 
 {% block dashboard_content %}
+  {# awaiting consent card #}
   <div class="fr-grid-row fr-grid-row--gutters fr-mb-1w">
-    <div class="fr-col-md-6 fr-col-12">
-      {% trans "Validated entities" as resume_title %}
-      {% trans "Lorem [...] elit ut." as resume_description %}
+    <div class="fr-col-md-12 fr-col-12">
+      {% with resume_title="Autorisations en attente" %}
+      {% with resume_description="Afficher les stations déclarées via l'API et permettre à la DGEC de recevoir les données du gestionnaire du réseau de distribution afin de suivre la consommation." %}
+        {% include "consent/includes/_consent_summary_card.html" with resume_awaiting=True resume_title=resume_title resume_description=resume_description %}
+      {% endwith %}
+      {% endwith %}
 
-      {% include "consent/includes/_consent_summary_card.html" with resume_validated=True resume_title=resume_title resume_description=resume_description %}
     </div>
+  </div>
 
-    <div class="fr-col-md-6 fr-col-12">
-      {% trans "Awaiting consents" as resume_title %}
-      {% trans "Lorem [...] elit ut." as resume_description %}
-
-      {% include "consent/includes/_consent_summary_card.html" with resume_awaiting=True resume_title=resume_title resume_description=resume_description %}
+  {# validated consent card #}
+  <div class="fr-grid-row fr-grid-row--gutters fr-mb-1w">
+    <div class="fr-col-md-12 fr-col-12">
+      {% with resume_title="Stations suivies" %}
+      {% with resume_description="Accéder à la liste des stations pour lesquelles la DGEC consulte le gestionnaire de réseau et émet des certificats." %}
+        {% include "consent/includes/_consent_summary_card.html" with resume_validated=True resume_title=resume_title resume_description=resume_description %}
+      {% endwith %}
+      {% endwith %}
     </div>
   </div>
 {% endblock dashboard_content %}

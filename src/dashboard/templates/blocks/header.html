@@ -32,10 +32,6 @@
     </button>
   </li>
 
-  <li>
-    {% include "blocks/language_selector.html" %}
-  </li>
-
   {% if request.user.is_authenticated %}
     <li>
       {% include "blocks/logout.html" %}
