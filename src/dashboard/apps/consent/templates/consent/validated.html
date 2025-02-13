@@ -1,0 +1,64 @@
+{% extends "consent/base.html" %}
+
+{% load dsfr_tags %}
+
+{% load i18n static %}
+
+{% block dashboard_content %}
+  <h2>Stations suivies</h2>
+
+  <p>
+    Retrouver ici la liste des stations pour lesquelles la DGEC consulte le gestionnaire
+    de réseau et émet des certificats.
+  </p>
+
+  {% if consents %}
+    <div class="fr-table fr-table--no-caption" id="table-pdl-component">
+      <div class="fr-table__wrapper">
+        <div class="fr-table__container">
+          <div class="fr-table__content">
+
+            <table id="table-pdl" aria-labelledby="table-pdl-caption">
+              <caption id="table-pdl-caption"> Points de livraison suivis </caption>
+
+              <thead>
+                <tr>
+                  <th scope="col">
+                    <div class="fr-cell__title">Nom de la station</div>
+                  </th>
+                  <th scope="col">
+                    <div class="fr-cell__title">Identifiant de la station</div>
+                  </th>
+                  <th scope="col">
+                    <div class="fr-cell__title">Identifiant du PDL</div>
+                  </th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {% for consent in consents %}
+                  <tr id="table-pdl-row-key-{{ forloop.counter }}"
+                      data-row-key="{{ forloop.counter }}"
+                      aria-labelledby="row-label-{{ forloop.counter }}">
+
+                    {# todo : get station_name, station_id, prm_id #}
+                    <td> -- station name -- </td>
+                    <td> -- station id --  </td>
+                    <td> {{ consent.delivery_point.provider_assigned_id }} </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {% dsfr_pagination page_obj %}
+
+  {% else %}
+    {% include "consent/includes/_no_data_card.html" with description="Aucune station suivie." %}
+  {% endif %}
+
+{% endblock dashboard_content %}
