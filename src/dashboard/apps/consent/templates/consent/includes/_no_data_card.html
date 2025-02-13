@@ -1,0 +1,16 @@
+{% comment %}
+    Note: all texts of this page are intended to appear in a contract and must
+    therefore be in French and non-translatable.
+{% endcomment %}
+
+<div class="fr-card__desc fr-highlight">
+  <p class="fr-card__desc">
+    {{ description }}
+    <br />
+    Si vous pensez qu'il s'agit d'une erreur, merci de contacter l'équipe QualiCharge.
+    <a class="fr-link fr-card__desc"
+      href="mailto:{{ contact_email }}?subject=[QualiCharge] Aucune station suivie dans le Dashboard." target="_blank">
+      {{ contact_email }}
+    </a>
+  </p>
+</div>

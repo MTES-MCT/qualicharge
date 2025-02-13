@@ -3,7 +3,7 @@
 from django.urls import path
 from django.views.generic.base import RedirectView
 
-from .views import ConsentFormView, IndexView
+from .views import ConsentFormView, IndexView, ValidatedConsentView
 
 app_name = "consent"
 
@@ -17,4 +17,10 @@ urlpatterns = [
         name="manage",
     ),
     path("manage/<slug:slug>", ConsentFormView.as_view(), name="manage"),
+    path(
+        "validated/",
+        RedirectView.as_view(pattern_name="consent:index", permanent=False),
+        name="validated",
+    ),
+    path("validated/<slug:slug>", ValidatedConsentView.as_view(), name="validated"),
 ]

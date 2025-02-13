@@ -9,7 +9,7 @@ from django.core.exceptions import (
     PermissionDenied,
     ValidationError,
 )
-from django.db.models import Q
+from django.db.models import Q, QuerySet
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.urls import reverse_lazy as reverse
@@ -270,3 +270,39 @@ class ConsentFormView(BreadcrumbContextMixin, FormView):
             # fail silently and send a sentry log
             sentry_sdk.capture_exception(e)
             return
+
+
+class ValidatedConsentView(BreadcrumbContextMixin, TemplateView):
+    """Index view of the consent app."""
+
+    template_name = "consent/validated.html"
+    breadcrumb_links = [
+        {"url": reverse("consent:index"), "title": _("Consent")},
+    ]
+    breadcrumb_current = _("Manage Consents")
+
+    def get_context_data(self, **kwargs):  # noqa: D102
+        context = super().get_context_data(**kwargs)
+        context["consents"] = self._get_validated_consents()
+
+        return context
+
+    def _get_validated_consents(self) -> QuerySet:
+        """Return validated consents for the current user.
+
+        Returns:
+            QuerySet: A QuerySet of validated consents if the user has permission,
+            and the slug is valid.
+
+        Raises:
+            PermissionDenied: If the user does not have permission to validate the
+            entity.
+        """
+        slug: str | None = self.kwargs.get("slug", None)
+        user: DashboardUser = self.request.user  # type: ignore
+
+        entity: Entity = get_object_or_404(Entity, slug=slug)
+        if not user.can_validate_entity(entity):
+            raise PermissionDenied
+
+        return entity.get_validated_consents()
