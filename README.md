@@ -21,7 +21,6 @@ vous invitons à consulter notre
 Pour travailler sur ce projet, vous aurez besoin d'installer les outils suivants
 sur votre poste de travail :
 
-- [Git-lfs](https://git-lfs.com)
 - [Docker](https://www.docker.com)
 - [Docker compose](https://docs.docker.com/compose/)
 - [GNU Make](https://www.gnu.org/software/make/manual/make.html)
@@ -36,9 +35,6 @@ git clone git@github.com:MTES-MCT/qualicharge.git
 
 # Aller dans le repository local du projet
 cd qualicharge
-
-# Récupérer les fichiers gérés par Git-LFS
-git lfs pull
 ```
 
 Une fois le projet cloné, vous pouvez l'initialiser en utilisant la commande
