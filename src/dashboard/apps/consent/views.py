@@ -15,7 +15,7 @@ from django.shortcuts import get_object_or_404
 from django.urls import reverse_lazy as reverse
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
-from django.views.generic import FormView, TemplateView
+from django.views.generic import FormView, ListView, TemplateView
 
 from apps.core.models import Entity
 
@@ -270,3 +270,36 @@ class ConsentFormView(BreadcrumbContextMixin, FormView):
             # fail silently and send a sentry log
             sentry_sdk.capture_exception(e)
             return
+
+
+class ValidatedConsentView(BreadcrumbContextMixin, ListView):
+    """Index view of the consent app."""
+
+    context_object_name = "consents"
+    template_name = "consent/validated.html"
+    paginate_by = 50
+
+    breadcrumb_links = [
+        {"url": reverse("consent:index"), "title": _("Consent")},
+    ]
+    breadcrumb_current = _("Manage Consents")
+
+    def get_queryset(self):
+        """Filter queryset to only return validated consents for the current user.
+
+        Returns:
+            QuerySet: A QuerySet of validated consents if the user has permission,
+            and the slug is valid.
+
+        Raises:
+            PermissionDenied: If the user does not have permission to validate the
+            entity.
+        """
+        slug: str | None = self.kwargs.get("slug", None)
+        user: DashboardUser = self.request.user  # type: ignore
+
+        entity: Entity = get_object_or_404(Entity, slug=slug)
+        if not user.can_validate_entity(entity):
+            raise PermissionDenied
+
+        return entity.get_validated_consents()

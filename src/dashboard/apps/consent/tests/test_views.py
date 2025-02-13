@@ -7,13 +7,14 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from django.conf import settings
+from django.core.exceptions import PermissionDenied
 from django.urls import reverse
 
 from apps.auth.factories import UserFactory
 from apps.consent import AWAITING, REVOKED, VALIDATED
 from apps.consent.factories import ConsentFactory
 from apps.consent.models import Consent
-from apps.consent.views import ConsentFormView
+from apps.consent.views import ConsentFormView, ValidatedConsentView
 from apps.core.factories import DeliveryPointFactory, EntityFactory
 
 FORM_CLEANED_DATA = {
@@ -385,7 +386,7 @@ def test_form_post_empty(rf):
 
 
 @pytest.mark.django_db
-def test_manage_url_redirect(client):
+def test_manage_url_without_slug_is_redirected(client):
     """Test direct access to manage page is redirected to consent index page."""
     # create and connect user
     user = UserFactory()
@@ -425,3 +426,76 @@ def test_send_email_notification_populated(rf):
             },
         )
         email_send_mock.assert_called_once()
+
+
+@pytest.mark.django_db
+def test_get_validated_consents_raises_permission_denied(rf):
+    """Test PermissionDenied is raised when the user does not have permission."""
+    user = UserFactory()
+
+    # create a consent without the declared user
+    entity = EntityFactory()
+    DeliveryPointFactory(entity=entity)
+
+    request = rf.get(reverse("consent:validated", kwargs={"slug": entity.slug}))
+    request.user = user
+
+    view = ValidatedConsentView()
+    view.request = request
+    view.kwargs = {"slug": entity.slug}
+
+    # the user has no perms to this consent
+    with pytest.raises(PermissionDenied):
+        view.get_queryset()
+
+
+@pytest.mark.django_db
+def test_get_validated_consents_return_queryset(rf):
+    """Test _get_validated_consents returns the correct QuerySet."""
+    user = UserFactory()
+
+    # create and get 2 validated consents for the user
+    entity = EntityFactory(users=(user,))
+    dl1 = DeliveryPointFactory(entity=entity)
+    dl2 = DeliveryPointFactory(entity=entity)
+    consent1 = Consent.objects.get(delivery_point=dl1)
+    consent2 = Consent.objects.get(delivery_point=dl2)
+    for consent in Consent.objects.all():
+        consent.status = VALIDATED
+        consent.save()
+
+    # and and get an awaiting consent
+    dl3 = DeliveryPointFactory(entity=entity)
+    consent3 = Consent.objects.get(delivery_point=dl3)
+
+    # check the number of validated consents
+    expected_validated_consent = 2
+    assert (
+        Consent.objects.filter(status=VALIDATED).count() == expected_validated_consent
+    )
+
+    request = rf.get(reverse("consent:validated", kwargs={"slug": entity.slug}))
+    request.user = user
+    view = ValidatedConsentView()
+    view.request = request
+    view.kwargs = {"slug": entity.slug}
+
+    # we expected to retrieve only the 2 VALIDATED consents in the result
+    result = view.get_queryset()
+    assert len(result) == expected_validated_consent
+    assert consent1 in result
+    assert consent2 in result
+    assert consent3 not in result
+
+
+@pytest.mark.django_db
+def test_validated_url_without_slug_is_redirected(client):
+    """Test direct access to validated url is redirected to consent index page."""
+    # create and connect user
+    user = UserFactory()
+    client.force_login(user)
+
+    # Get response object
+    response = client.get(reverse("consent:validated"))
+    assert response.status_code == HTTPStatus.FOUND
+    assert response.url == reverse("consent:index")

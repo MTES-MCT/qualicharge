@@ -134,6 +134,10 @@ class Entity(DashboardBase):
         """Get all awaiting consents for this entity."""
         return self.get_consents(AWAITING)
 
+    def get_validated_consents(self) -> QuerySet:
+        """Get all awaiting consents for this entity."""
+        return self.get_consents(VALIDATED)
+
 
 class DeliveryPoint(DashboardBase):
     """Represents a delivery point for electric vehicles.

@@ -16,32 +16,12 @@
 
       {# awaiting consent - no items #}
       {% if resume_awaiting and not has_awaiting_consent %}
-        <div class="fr-card__desc fr-highlight">
-          <p class="fr-card__desc">
-            Aucune autorisation en attente.
-            <br />
-            Si vous pensez qu'il s'agit d'une erreur, merci de contacter l'équipe QualiCharge.
-            <a class="fr-link fr-card__desc"
-              href="mailto:{{ contact_email }}?subject=[QualiCharge] Aucune autorisation en attente dans le Dashboard." target="_blank">
-              {{ contact_email }}
-            </a>
-          </p>
-        </div>
+        {% include "consent/includes/_no_data_card.html" with description="Aucune autorisation en attente." %}
       {% endif %}
 
       {# validated consent - no items #}
       {% if resume_validated and not has_validated_consent %}
-        <div class="fr-card__desc fr-highlight">
-          <p class="fr-card__desc">
-            Aucune station suivie.
-            <br />
-            Si vous pensez qu'il s'agit d'une erreur, merci de contacter l'équipe QualiCharge.
-            <a class="fr-link fr-card__desc"
-              href="mailto:{{ contact_email }}?subject=[QualiCharge] Aucune station suivie dans le Dashboard." target="_blank">
-              {{ contact_email }}
-            </a>
-          </p>
-        </div>
+        {% include "consent/includes/_no_data_card.html" with description="Aucune station suivie." %}
       {% endif %}
     </div>
 
