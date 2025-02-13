@@ -5,6 +5,9 @@
 name = "qualicharge-prefect"
 version = "0.0.1"
 
+# FIXME
+# I'm here so that the Prefect CI is triggered
+
 # Third party packages configuration
 [tool.pytest.ini_options]
 addopts = "-v --cov-report term-missing --cov=indicators"
