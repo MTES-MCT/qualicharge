@@ -95,6 +95,7 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "dsfr.context_processors.site_config",
+                "apps.core.context_processors.contact_email",
             ],
         },
     },
@@ -139,7 +140,6 @@ AUTH_PASSWORD_VALIDATORS = [
 LANGUAGE_CODE = "fr"
 LANGUAGES = [
     ("fr", _("French")),
-    ("en", _("English")),
 ]
 TIME_ZONE = "UTC"
 USE_I18N = True

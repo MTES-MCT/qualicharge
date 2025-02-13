@@ -1,6 +1,7 @@
 """Dashboard consent app urls."""
 
 from django.urls import path
+from django.views.generic.base import RedirectView
 
 from .views import ConsentFormView, IndexView
 
@@ -8,6 +9,12 @@ app_name = "consent"
 
 urlpatterns = [
     path("", IndexView.as_view(), name="index"),
-    path("manage/", ConsentFormView.as_view(), name="manage"),
+    # editing multiple entities at once is no longer available,
+    # instead we redirect to the `index` page.
+    path(
+        "manage/",
+        RedirectView.as_view(pattern_name="consent:index", permanent=False),
+        name="manage",
+    ),
     path("manage/<slug:slug>", ConsentFormView.as_view(), name="manage"),
 ]

@@ -115,7 +115,11 @@ class ConsentForm(forms.Form):
         initial=False,
         widget=ConsentCheckboxInput(
             attrs={
-                "label": _("J'accepte de donner mon consentement"),
+                "label": _(
+                    "Je confirme l'exactitude des informations du présent "
+                    "formulaire et consent au traitement de mes données Enedis "
+                    "par la DGEC"
+                ),
             },
         ),
     )

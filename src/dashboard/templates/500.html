@@ -1,12 +1,6 @@
 {% extends "base.html" %}
 {% load static i18n %}
 
-{% comment %}
-todo: revoir le contenu rédactionnel de cette page
-Faut-il ajouter un bouton contact et un formulaire comme préconisé dans le DSFR:
-https://www.systeme-de-design.gouv.fr/composants-et-modeles/modeles/page-d-erreurs/
-{% endcomment %}
-
 {% block page_title %}
   <title>{% trans "Unexpected error" %}</title>
 {% endblock page_title %}
@@ -28,12 +22,14 @@ https://www.systeme-de-design.gouv.fr/composants-et-modeles/modeles/page-d-erreu
           <p class="fr-text--sm fr-mb-5w">
             {% trans "Try refreshing the page or try again later." %}
           </p>
-          {% comment %}
-        <ul class="fr-btns-group fr-btns-group--inline-md">
-          <li><a class="fr-btn fr-btn--secondary" href="[À MODIFIER - lien vers un formulaire de contact]">
-            {% trans "Contact us" %} </a></li>
-        </ul>
-          {% endcomment %}
+
+          <ul class="fr-btns-group fr-btns-group--inline-md">
+            <li>
+              <a class="fr-btn fr-btn--secondary" href="mailto:{{ contact_email }}" target="_blank">
+                {% trans "Contact us" %}
+              </a>
+            </li>
+          </ul>
         </div>
         <div class="fr-col-12 fr-col-md-3 fr-col-offset-md-1 fr-px-6w fr-px-md-0 fr-py-0">
           <img src="{% static "/dashboard/img/technical-error.svg" %}" width="160" height="200" alt=""/>
