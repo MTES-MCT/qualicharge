@@ -240,7 +240,7 @@ services:
 
   # -- tools
   curl:
-    image: curlimages/curl:8.12.0
+    image: curlimages/curl:8.12.1
     user: ${DOCKER_USER:-1000}
     env_file:
       - env.d/metabase
