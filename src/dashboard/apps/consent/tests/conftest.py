@@ -8,6 +8,12 @@ from django.utils import timezone
 FAKE_TIME = datetime.datetime(2025, 1, 6, 17, 5, 55, 0, tzinfo=datetime.timezone.utc)
 
 
+@pytest.fixture(autouse=True)
+def set_language_code(settings):
+    """Fixture to set LANGUAGE_CODE to 'en-us' by default for tests."""
+    settings.LANGUAGE_CODE = "en-us"
+
+
 @pytest.fixture
 def patch_datetime_now(monkeypatch):
     """Monkeypatch datetime.datetime.now to return a frozen date (`FAKE_TIME`)."""

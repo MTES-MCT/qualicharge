@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-11-19 11:20+0100\n"
-"PO-Revision-Date: 2024-11-19 11:22+0100\n"
+"POT-Creation-Date: 2025-02-12 23:12+0100\n"
+"PO-Revision-Date: 2025-02-17 15:25+0100\n"
 "Last-Translator: ssorin <ssorin@dwdlc.com>\n"
 "Language-Team: \n"
 "Language: fr\n"
@@ -19,155 +19,426 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 "X-Generator: Poedit 3.5\n"
 
-#: apps/auth/apps.py:13
+#: src/dashboard/apps/auth/admin.py:16
+msgid "Personal info"
+msgstr "Informations personnelles"
+
+#: src/dashboard/apps/auth/admin.py:17
+msgid "ProConnect"
+msgstr "ProConnect"
+
+#: src/dashboard/apps/auth/admin.py:19
+msgid "Permissions"
+msgstr "Permissions"
+
+#: src/dashboard/apps/auth/admin.py:30
+msgid "Important dates"
+msgstr "Dates importantes"
+
+#: src/dashboard/apps/auth/apps.py:13
 msgid "Authentication"
 msgstr "Authentification"
 
-#: apps/consent/templates/consent/consent-management.html:7
-msgid "Consents management"
-msgstr "Gestion du consentement"
+#: src/dashboard/apps/auth/models.py:19 src/dashboard/apps/core/models.py:65
+msgid "SIRET"
+msgstr "SIRET"
 
-#: apps/consent/templates/consent/index.html:7
-msgid "Consents summary"
-msgstr "Résumé des consentements"
+#: src/dashboard/apps/consent/__init__.py:11
+msgid "Awaiting"
+msgstr "En attente"
 
-#: apps/consent/templates/consent/index.html:12
-msgid "Manage consent"
-msgstr "Gérer le consentement"
+#: src/dashboard/apps/consent/__init__.py:12
+msgid "Validated"
+msgstr "Validé"
 
-#: apps/consent/views.py:17 apps/consent/views.py:32
+#: src/dashboard/apps/consent/__init__.py:13
+msgid "Revoked"
+msgstr "Révoqué"
+
+#: src/dashboard/apps/consent/admin.py:35
+msgid "Mark selected consents as revoked"
+msgstr "Marquer les consentements sélectionnés comme révoqués"
+
+#: src/dashboard/apps/consent/admin.py:42
+msgid "Selected consents have been marked as revoked."
+msgstr "Les consentements sélectionnés ont été marqués comme révoqués."
+
+#: src/dashboard/apps/consent/apps.py:13 src/dashboard/apps/consent/views.py:28
+#: src/dashboard/apps/consent/views.py:56
 msgid "Consent"
 msgstr "Consentement"
 
-#: apps/consent/views.py:34
+#: src/dashboard/apps/consent/exceptions.py:10
+msgid "Consent workflow error."
+msgstr ""
+
+#: src/dashboard/apps/consent/forms.py:118
+msgid "J'accepte de donner mon consentement"
+msgstr ""
+
+#: src/dashboard/apps/consent/models.py:116 src/dashboard/apps/core/models.py:161
+msgid "delivery point"
+msgstr "point de livraison"
+
+#: src/dashboard/apps/consent/models.py:122
+msgid "created by"
+msgstr "créé par"
+
+#: src/dashboard/apps/consent/models.py:125
+msgid "status"
+msgstr "statut"
+
+#: src/dashboard/apps/consent/models.py:129
+msgid "start date"
+msgstr "date de début"
+
+#: src/dashboard/apps/consent/models.py:130
+msgid "end date"
+msgstr "date de fin"
+
+#: src/dashboard/apps/consent/models.py:131
+msgid "revoked at"
+msgstr "révoqué le"
+
+#: src/dashboard/apps/consent/models.py:135
+msgid "company informations"
+msgstr "informations sur l'entreprise"
+
+#: src/dashboard/apps/consent/models.py:144
+msgid "company representative informations"
+msgstr "informations sur le représentant de l'entreprise"
+
+#: src/dashboard/apps/consent/models.py:153
+msgid "control authority informations"
+msgstr "informations sur l'autorité de contrôle"
+
+#: src/dashboard/apps/consent/models.py:162
+msgid "the signatory has the authority to sign this consent"
+msgstr "le signataire a le pouvoir de signer ce consentement"
+
+#: src/dashboard/apps/consent/models.py:165
+msgid "allows historical measurements in kWh"
+msgstr "permet l'historique des mesures, en kWh"
+
+#: src/dashboard/apps/consent/models.py:168
+msgid "allow history of daily index readings in kWh"
+msgstr "permet l'historique des relevés d'index quotidiens, en kWh"
+
+#: src/dashboard/apps/consent/models.py:171
+msgid "allows historical maximum daily power in kVa or kWh "
+msgstr "permet l'historique de la puissance maximale quotidienne, en kVA ou kWh "
+
+#: src/dashboard/apps/consent/models.py:174
+msgid "allows history of load curve, at steps returned by Enedis"
+msgstr "permet l'historique de courbe de charge, aux pas restitués par Enedis"
+
+#: src/dashboard/apps/consent/models.py:177
+msgid "allows the technical and contractual data available"
+msgstr "permet de disposer des données techniques et contractuelles disponibles"
+
+#: src/dashboard/apps/consent/models.py:180
+msgid "signature date"
+msgstr "date de signature"
+
+#: src/dashboard/apps/consent/models.py:182
+msgid "signature location"
+msgstr "lieu de signature"
+
+#: src/dashboard/apps/consent/models.py:266
+msgid "Revoked consent cannot be modified."
+msgstr "Le consentement révoqué ne peut pas être modifié."
+
+#: src/dashboard/apps/consent/models.py:271
+msgid "Validated consent can only be changed to the status \"revoked\"."
+msgstr "Un consentement validé ne peut être modifié qu'en statut « révoqué »."
+
+#: src/dashboard/apps/consent/models.py:285
+msgid "Only the authorized fields "
+msgstr "Uniquement les champs autorisés "
+
+#: src/dashboard/apps/consent/models.py:298
+msgid "Validated consent cannot be deleted."
+msgstr "Un consentement validé ne peut pas être supprimé."
+
+#: src/dashboard/apps/consent/models.py:301
+msgid "Revoked consent cannot be deleted."
+msgstr "Un consentement révoqué ne peut pas être supprimé."
+
+#: src/dashboard/apps/consent/templates/consent/includes/_manage_consents.html:34
+msgid "Toggle all"
+msgstr "Sélectionner / désélectionner tout"
+
+#: src/dashboard/apps/consent/templates/consent/includes/_manage_consents.html:36
+msgid "Toggle All"
+msgstr "Sélectionner / désélectionner tout"
+
+#: src/dashboard/apps/consent/templates/consent/manage.html:27
+msgid "The form contains errors"
+msgstr "Le formulaire contient des erreurs"
+
+#: src/dashboard/apps/consent/templates/consent/manage.html:44
+#: src/dashboard/apps/consent/templates/consent/manage.html:45
+msgid "submit"
+msgstr "soumettre"
+
+#: src/dashboard/apps/consent/templates/consent/manage.html:49
+msgid "No consents to validate"
+msgstr "Aucun consentement à valider"
+
+#: src/dashboard/apps/consent/views.py:47
+msgid ""
+"An error occurred while validating the form. Our team has been notified and will get back to you "
+"shortly."
+msgstr ""
+"Une erreur s'est produite lors de la validation du formulaire. Notre équipe a été prévenue et "
+"reviendra vers vous rapidement."
+
+#: src/dashboard/apps/consent/views.py:58
 msgid "Manage Consents"
 msgstr "Gérer les consentements"
 
-#: apps/home/templates/home/cards/consentement.html:13
-msgid "Consent Management"
-msgstr "Gestion du consentement"
+#: src/dashboard/apps/consent/views.py:79
+msgid "Consents updated."
+msgstr "Consentements mis à jour."
 
-#: apps/home/templates/home/index.html:7
+#: src/dashboard/apps/core/abstract_models.py:22
+msgid "created at"
+msgstr "créé le"
+
+#: src/dashboard/apps/core/abstract_models.py:24
+msgid "updated at"
+msgstr "mis à jour le"
+
+#: src/dashboard/apps/core/admin.py:20
+msgid "Users"
+msgstr "Utilisateurs"
+
+#: src/dashboard/apps/core/admin.py:25
+msgid "Proxy for"
+msgstr "Procuration pour"
+
+#: src/dashboard/apps/core/apps.py:13
+msgid "Core"
+msgstr "Core"
+
+#: src/dashboard/apps/core/models.py:39
+msgid "slug"
+msgstr "slug"
+
+#: src/dashboard/apps/core/models.py:40
+msgid "name"
+msgstr "nom"
+
+#: src/dashboard/apps/core/models.py:42
+msgid "users"
+msgstr "utilisateurs"
+
+#: src/dashboard/apps/core/models.py:46
+msgid "proxy for"
+msgstr "procuration pour"
+
+#: src/dashboard/apps/core/models.py:52
+msgid "type"
+msgstr "type"
+
+#: src/dashboard/apps/core/models.py:55
+msgid "legal form"
+msgstr "forme juridique"
+
+#: src/dashboard/apps/core/models.py:57
+msgid "SA, SARL …"
+msgstr "SA, SARL …"
+
+#: src/dashboard/apps/core/models.py:62
+msgid "trade name"
+msgstr "nom commercial"
+
+#: src/dashboard/apps/core/models.py:72
+msgid "NAF code"
+msgstr "Code NAF"
+
+#: src/dashboard/apps/core/models.py:78
+msgid "address"
+msgstr "adresse"
+
+#: src/dashboard/apps/core/models.py:80
+msgid "address complement"
+msgstr "complément d'adresse"
+
+#: src/dashboard/apps/core/models.py:83
+msgid "zip code"
+msgstr "code postal"
+
+#: src/dashboard/apps/core/models.py:89
+msgid "city"
+msgstr "ville"
+
+#: src/dashboard/apps/core/models.py:148
+msgid "provider assigned id"
+msgstr "identifiant attribué au fournisseur"
+
+#: src/dashboard/apps/core/models.py:153
+msgid "entity"
+msgstr "entité"
+
+#: src/dashboard/apps/core/models.py:155
+msgid "is active"
+msgstr "est actif"
+
+#: src/dashboard/apps/core/models.py:162
+msgid "delivery points"
+msgstr "points de livraison"
+
+#: src/dashboard/apps/core/validators.py:16
+msgid "The SIRET must be composed only of numbers and must contain exactly 14 digits."
+msgstr "Le SIRET doit être composé uniquement de chiffres et doit contenir exactement 14 chiffres."
+
+#: src/dashboard/apps/core/validators.py:36
+msgid "The NAF code must be in the format of 4 digits followed by a letter (e.g.: 6820A)."
+msgstr "Le code NAF doit être au format de 4 chiffres suivis d'une lettre (ex : 6820A)."
+
+#: src/dashboard/apps/core/validators.py:56
+msgid "Zip code must be composed of number and a fixed length of 5 characters."
+msgstr "Le code postal doit être composé d'un chiffre et d'une longueur fixe de 5 caractères."
+
+#: src/dashboard/apps/home/templates/home/index.html:9
 msgid "QualiCharge dashboard"
 msgstr "Tableau de bord QualiCharge"
 
-#: dashboard/settings.py:129
+#: src/dashboard/apps/home/views.py:23
+msgid "Pending consents"
+msgstr "Consentements en attente"
+
+#: src/dashboard/dashboard/settings.py:141
 msgid "French"
 msgstr "Français"
 
-#: dashboard/settings.py:130
-msgid "English"
-msgstr "Anglais"
+#: src/dashboard/templates/403.html:5 src/dashboard/templates/403.html:14
+msgid "Permission denied"
+msgstr "Permission refusée"
 
-#: templates/404.html:7 templates/404.html:13
-msgid "Page not found (Err 404)"
-msgstr "Page non trouvée (Erreur 404)"
+#: src/dashboard/templates/403.html:17
+msgid "Error 403"
+msgstr "Erreur 403"
 
-#: templates/404.html:17
-#, python-format
+#: src/dashboard/templates/403.html:20
+msgid "Sorry, you are not allowed to access this page."
+msgstr "Désolé, vous n'êtes pas autorisé à accéder à cette page."
+
+#: src/dashboard/templates/403.html:23
 msgid ""
 "\n"
-"        Sorry but this page does not exist.<br /> \n"
-"        You can return to the <a href=\"%(url_home)s\">home page.</a>\n"
-"      "
-msgstr ""
-"\n"
-"       Désolé, mais cette page n'existe pas.<br /> \n"
-"        Vous pouvez revenir à la <a href=\"%(url_home)s\">page d'accueil.</"
-"a>\n"
-"      "
-
-#: templates/500.html:7
-msgid "Server Error (Err. 500)"
-msgstr "Erreur du serveur (Err. 500)"
-
-#: templates/500.html:13
-msgid "Server Error (Err 500)"
-msgstr "Erreur du serveur (Err 500)"
-
-#: templates/500.html:17
-#, python-format
-msgid ""
-"\n"
-"        Oops, It seems that the server has a problem.<br />\n"
-"        You can try to return to the <a href=\"%(url_home)s\">home page.</"
-"a>\n"
-"      "
-msgstr ""
-"\n"
-"        Oups, il semble que le serveur a un problème.<br /> \n"
-"        Vous pouvez essayer de revenir à la <a href=\"%(url_home)s\">page "
-"d'accueil.</a>\n"
+"          If you think this is a mistake, you can contact our team.<br />\n"
+"          Otherwise, to continue your visit you can consult our home page.                \n"
 "        "
+msgstr ""
+"\n"
+"          Si vous pensez qu'il s'agit d'une erreur, vous pouvez contacter notre équipe.<br />\n"
+"          Sinon, pour continuer votre visite, vous pouvez consulter notre page "
+"d'accueil.               "
 
-#: templates/blocks/header.html:6
+#: src/dashboard/templates/403.html:31 src/dashboard/templates/404.html:30
+#: src/dashboard/templates/blocks/header.html:6
 msgid "Home page"
 msgstr "Accueil"
 
-#: templates/blocks/header.html:31
+#: src/dashboard/templates/403.html:36 src/dashboard/templates/404.html:35
+#: src/dashboard/templates/500.html:29
+msgid "Contact us"
+msgstr "Contactez-nous"
+
+#: src/dashboard/templates/404.html:5 src/dashboard/templates/404.html:14
+msgid "Page not found"
+msgstr "Page non trouvée"
+
+#: src/dashboard/templates/404.html:17
+msgid "Error 404"
+msgstr "Erreur 404"
+
+#: src/dashboard/templates/404.html:20
+msgid "The page you are looking for could not be found. We apologize for the inconvenience."
+msgstr "La page que vous cherchez est introuvable. Excusez nous pour la gêne occasionnée."
+
+#: src/dashboard/templates/404.html:23
+msgid ""
+" If you typed the web address in the\n"
+"browser, check that it is correct. The page may no longer be\n"
+"available. <br>In this case, to continue your visit you can consult\n"
+"our home page."
+msgstr ""
+" Si vous avez tapé l'adresse web dans le navigateur, vérifier qu'elle est correcte. La page "
+"n'est peut-être plus disponible.<br>\n"
+"Dans ce cas, pour continuer votre visite vous pouvez consulter notre page d'accueil."
+
+#: src/dashboard/templates/500.html:5 src/dashboard/templates/500.html:14
+msgid "Unexpected error"
+msgstr "Erreur inattendue"
+
+#: src/dashboard/templates/500.html:17
+msgid "Error 500"
+msgstr "Erreur 500"
+
+#: src/dashboard/templates/500.html:20
+msgid "Oops, looks like something terrible happened. We have already been notified."
+msgstr ""
+"Désolé, le service rencontre un problème, nous travaillons pour le résoudre le plus rapidement "
+"possible."
+
+#: src/dashboard/templates/500.html:23
+msgid "Try refreshing the page or try again later."
+msgstr "Essayez de rafraichir la page ou bien revenez plus tard."
+
+#: src/dashboard/templates/blocks/header.html:31
 msgid "Display settings"
 msgstr "Paramètres d'affichage"
 
-#: templates/blocks/header.html:50
+#: src/dashboard/templates/blocks/header.html:46
 msgid "Search"
 msgstr "Recherche"
 
-#: templates/blocks/header.html:52
+#: src/dashboard/templates/blocks/header.html:48
 msgid "Menu"
 msgstr "Menu"
 
-#: templates/blocks/language_selector.html:15
+#: src/dashboard/templates/blocks/language_selector.html:15
 msgid "Select language"
 msgstr "Sélectionner la langue"
 
-#: templates/blocks/logout.html:6
+#: src/dashboard/templates/blocks/logout.html:6
 msgid "Log Out"
 msgstr "Se déconnecter"
 
-#: templates/blocks/main_menu.html:9
+#: src/dashboard/templates/blocks/main_menu.html:9
 msgid "close"
 msgstr "fermer"
 
-#: templates/blocks/main_menu.html:13
+#: src/dashboard/templates/blocks/main_menu.html:13
 msgid "Main menu"
 msgstr "Menu principal"
 
-#: templates/blocks/main_menu.html:25
+#: src/dashboard/templates/blocks/main_menu.html:25
 msgid "Home"
 msgstr "Accueil"
 
-#: templates/registration/login.html:20
+#: src/dashboard/templates/registration/login.html:15
 msgid "Login to"
 msgstr "Se connecter"
 
-#: templates/registration/login.html:30
-msgid "Log in with your account"
-msgstr "Se connecter avec son compte"
+#: src/dashboard/templates/registration/login.html:18
+msgid ""
+"\n"
+"              Description — Lorem ipsum dolor sit amet, consectetur adipiscing elit.\n"
+"              "
+msgstr ""
 
-#: templates/registration/login.html:44
-msgid "Unless otherwise stated, all fields are required."
-msgstr "Sauf mention contraire, tous les champs sont obligatoires."
+#: src/dashboard/templates/registration/login.html:26
+msgid "Log in with"
+msgstr "Se connecter avec"
 
-#: templates/registration/login.html:50
-msgid "Identifier"
-msgstr "Identifiant"
+#: src/dashboard/templates/registration/login.html:33
+msgid "What is ProConnect? - new window"
+msgstr "Qu'est-ce que ProConnect ? - nouvelle fenêtre"
 
-#: templates/registration/login.html:51
-msgid "Expected format: myusername"
-msgstr "Format attendu : nomdutilisateur"
-
-#: templates/registration/login.html:69
-msgid "Password"
-msgstr "Mot de passe"
-
-#: templates/registration/login.html:85
-msgid "Show password"
-msgstr "Afficher le mot de passe"
-
-#: templates/registration/login.html:90
-msgid "Show"
-msgstr "Afficher"
-
-#: templates/registration/login.html:109
-msgid "Login"
-msgstr "Se connecter"
+#: src/dashboard/templates/registration/login.html:34
+msgid "What is ProConnect?"
+msgstr "Qu’est-ce que ProConnect ?"
