@@ -26,18 +26,18 @@ from ..utils import (
 )
 
 NUM_POCS_FOR_LEVEL_QUERY_TEMPLATE = """
-        SELECT
-            COUNT(DISTINCT PointDeCharge.id_pdc_itinerance) AS value,
-            $level_id AS level_id
-        FROM
-            PointDeCharge
-            INNER JOIN Station ON PointDeCharge.station_id = Station.id
-            INNER JOIN Localisation ON Station.localisation_id = Localisation.id
-            INNER JOIN City ON Localisation.code_insee_commune = City.code
-            $join_extras
-        WHERE $level_id IN ($indexes)
-        GROUP BY $level_id
-        """
+SELECT
+    COUNT(DISTINCT PointDeCharge.id_pdc_itinerance) AS value,
+    $level_id AS level_id
+FROM
+    PointDeCharge
+    INNER JOIN Station ON PointDeCharge.station_id = Station.id
+    INNER JOIN Localisation ON Station.localisation_id = Localisation.id
+    INNER JOIN City ON Localisation.code_insee_commune = City.code
+    $join_extras
+WHERE $level_id IN ($indexes)
+GROUP BY $level_id
+"""
 
 
 @task(task_run_name="values-for-target-{level:02d}")
