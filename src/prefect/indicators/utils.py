@@ -3,6 +3,7 @@
 Common indicators functions and constants.
 """
 
+from pydantic import PostgresDsn
 import pandas as pd  # type: ignore
 from prefect import task
 from sqlalchemy import create_engine
@@ -53,9 +54,14 @@ def get_num_for_level_query_params(level):
 
 
 @task
-def get_database_engine() -> Engine:
-    """Get QualiCharge API database engine."""
-    return create_engine(str(settings.DATABASE_URL))
+def get_database_engine(
+    database_url: PostgresDsn = settings.API_DATABASE_URL,
+) -> Engine:
+    """Get database engine given a database URL.
+
+    Defaults to the API database URL.
+    """
+    return create_engine(str(database_url))
 
 
 @task(task_run_name="targets-for-level-{level:02d}")

@@ -7,7 +7,8 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     """Pydantic model for QualiCharge's global environment & configuration settings."""
 
-    DATABASE_URL: PostgresDsn
+    API_DATABASE_URL: PostgresDsn
+    INDICATORS_DATABASE_URL: PostgresDsn
     THREAD_POOL_MAX_WORKERS: int = 5
     WORK_POOL_NAME: str = "indicators"
     DEFAULT_CHUNK_SIZE: int = 100

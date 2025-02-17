@@ -1,2 +1,3 @@
-QUALICHARGE_DATABASE_URL=postgresql+psycopg://qualicharge:pass@postgresql:5432/qualicharge-api
+QUALICHARGE_API_DATABASE_URL=postgresql+psycopg://qualicharge:pass@postgresql:5432/qualicharge-api
+QUALICHARGE_INDICATORS_DATABASE_URL=postgresql+psycopg://qualicharge:pass@postgresql:5432/qualicharge-indicators
 PREFECT_SERVER_EPHEMERAL_STARTUP_TIMEOUT_SECONDS=120

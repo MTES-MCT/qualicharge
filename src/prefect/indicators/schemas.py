@@ -24,10 +24,21 @@ class BaseIndicator(DeclarativeBase):
     extras: Mapped[Optional[dict]] = mapped_column(JSONB)
     timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
+    def __repr__(self) -> str:
+        """Indicator representation."""
+        return (
+                f"{self.__tablename__}/{self.id}: "
+                f"{self.code}-{self.period}-{self.level}-{self.target}-{self.category}"
+        )
+
 
 class Staging(BaseIndicator):
     """Indicators running on the Staging API database."""
 
+    __tablename__ = "staging"
+
 
 class Production(BaseIndicator):
     """Indicators running on the Staging API database."""
+
+    __tablename__ = "production"
