@@ -9,6 +9,8 @@ from prefect import task
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Connection, Engine
 
+from prefect.indicators.schemas import BaseIndicator
+
 from .conf import settings
 from .models import Level
 
@@ -62,6 +64,14 @@ def get_database_engine(
     Defaults to the API database URL.
     """
     return create_engine(str(database_url))
+
+
+@task
+def create_tables():
+    """Create all required tables for indicators."""
+    BaseIndicator.metadata.create_all(
+        get_database_engine(settings.INDICATORS_DATABASE_URL)
+    )
 
 
 @task(task_run_name="targets-for-level-{level:02d}")
