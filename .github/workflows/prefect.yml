@@ -76,14 +76,19 @@ jobs:
       run:
         working-directory: ./src/prefect
     env:
-      QUALICHARGE_DATABASE_URL: "postgresql+psycopg://qualicharge:pass@localhost:5432/qualicharge-api"
-      QUALICHARGE_DATABASE_URL_NO_DRIVER: "postgresql://qualicharge:pass@localhost:5432/qualicharge-api"
+      QUALICHARGE_API_DATABASE_URLS__test: "postgresql+psycopg://qualicharge:pass@localhost:5432/qualicharge-api"
+      QUALICHARGE_API_ACTIVE_ENVIRONMENTS: '["test"]'
+      QUALICHARGE_INDICATORS_DATABASE_URL: "postgresql+psycopg://qualicharge:pass@localhost:5432/qualicharge-indicators"
+      QUALICHARGE_API_DATABASE_URL_NO_DRIVER: "postgresql://qualicharge:pass@localhost:5432/qualicharge-api"
     steps:
       - uses: actions/checkout@v4
+      - name: Create Indicators database
+        run: |
+          psql "postgresql://qualicharge:pass@localhost:5432/postgres" -c 'create database "qualicharge-indicators"'
       - name: Restore database dump
         run: |
-          pg_restore -s -F c -d "${QUALICHARGE_DATABASE_URL_NO_DRIVER}" ../../data/qualicharge-api-schema.sql
-          pg_restore -a -F c -d "${QUALICHARGE_DATABASE_URL_NO_DRIVER}" ../../data/qualicharge-api-data.sql
+          pg_restore -s -F c -d "${QUALICHARGE_API_DATABASE_URL_NO_DRIVER}" ../../data/qualicharge-api-schema.sql
+          pg_restore -a -F c -d "${QUALICHARGE_API_DATABASE_URL_NO_DRIVER}" ../../data/qualicharge-api-data.sql
       - name: Install pipenv
         run: pipx install pipenv
       - name: Set up Python 3.12

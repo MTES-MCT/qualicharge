@@ -20,7 +20,7 @@ curl -sL "https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/${YQ_B
   tar xz -C /tmp
 
 # Create or update deployments
-echo "⚙️  Will create or update deployments…"
+echo "⚙️ Will create or update deployments…"
 for deployment in $(${YQ} .deployments.[].name < prefect.yaml); do
   echo "🚀 deployment ${deployment}"
   prefect deploy -n "${deployment}"

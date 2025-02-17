@@ -6,6 +6,7 @@ services:
       - env.d/api
       - env.d/metabase
       - env.d/prefect
+      - env.d/prefect-qc
       - env.d/dashboard
     healthcheck:
       test:
@@ -194,6 +195,7 @@ services:
     user: ${DOCKER_USER:-1000}
     env_file:
       - env.d/prefect-qc
+      - env.d/prefect-test
     volumes:
       - ./src/prefect:/app
     depends_on:
