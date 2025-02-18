@@ -20,7 +20,7 @@ def prefect_test_fixture():
 @pytest.fixture(scope="session")
 def db_engine() -> Generator[Engine, None, None]:
     """QualiCharge database engine fixture."""
-    engine = create_engine(str(settings.DATABASE_URL), echo=False)
+    engine = create_engine(str(settings.API_DATABASE_URL), echo=False)
     yield engine
     engine.dispose()
 

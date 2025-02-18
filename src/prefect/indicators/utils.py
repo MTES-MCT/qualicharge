@@ -3,13 +3,13 @@
 Common indicators functions and constants.
 """
 
-from pydantic import PostgresDsn
 import pandas as pd  # type: ignore
 from prefect import task
+from pydantic import PostgresDsn
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Connection, Engine
 
-from prefect.indicators.schemas import BaseIndicator
+from indicators.schemas import BaseIndicator
 
 from .conf import settings
 from .models import Level
