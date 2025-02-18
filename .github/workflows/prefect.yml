@@ -83,7 +83,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Create Indicators database
         run: |
-          psql "postgresql://qualicharge:pass@localhost:5432/postgres" -c "create database qualicharge-indicators"
+          psql "postgresql://qualicharge:pass@localhost:5432/postgres" -c 'create database "qualicharge-indicators"'
       - name: Restore database dump
         run: |
           pg_restore -s -F c -d "${QUALICHARGE_API_DATABASE_URL_NO_DRIVER}" ../../data/qualicharge-api-schema.sql
