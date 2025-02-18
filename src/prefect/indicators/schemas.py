@@ -27,8 +27,8 @@ class BaseIndicator(DeclarativeBase):
     def __repr__(self) -> str:
         """Indicator representation."""
         return (
-                f"{self.__tablename__}/{self.id}: "
-                f"{self.code}-{self.period}-{self.level}-{self.target}-{self.category}"
+            f"{self.__tablename__}/{self.id}: "
+            f"{self.code}-{self.period}-{self.level}-{self.target}-{self.category}"
         )
 
 

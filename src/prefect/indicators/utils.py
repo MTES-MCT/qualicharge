@@ -4,26 +4,23 @@ Common indicators functions and constants.
 """
 
 import pandas as pd  # type: ignore
+
 from prefect import task
-from pydantic import PostgresDsn
-from sqlalchemy import create_engine
-from sqlalchemy.engine import Connection, Engine
+from sqlalchemy.orm import Session
 
-from indicators.schemas import BaseIndicator
-
-from .conf import settings
+from .db import get_api_db_engine
 from .models import Level
 
 POWER_RANGE_CTE = """
-    puissance(category, p_cat) AS (
-        VALUES
-            (numrange(0, 15.0), 1),
-            (numrange(15.0, 26.0), 2),
-            (numrange(26, 65.0), 3),
-            (numrange(65, 175.0), 4),
-            (numrange(175, 360.0), 5),
-            (numrange(360, NULL), 6)
-    )"""
+puissance(category, p_cat) AS (
+    VALUES
+        (numrange(0, 15.0), 1),
+        (numrange(15.0, 26.0), 2),
+        (numrange(26, 65.0), 3),
+        (numrange(65, 175.0), 4),
+        (numrange(175, 360.0), 5),
+        (numrange(360, NULL), 6)
+)"""
 
 
 def get_num_for_level_query_params(level):
@@ -55,28 +52,10 @@ def get_num_for_level_query_params(level):
             raise NotImplementedError("Unsupported level %d", level)
 
 
-@task
-def get_database_engine(
-    database_url: PostgresDsn = settings.API_DATABASE_URL,
-) -> Engine:
-    """Get database engine given a database URL.
-
-    Defaults to the API database URL.
-    """
-    return create_engine(str(database_url))
-
-
-@task
-def create_tables():
-    """Create all required tables for indicators."""
-    BaseIndicator.metadata.create_all(
-        get_database_engine(settings.INDICATORS_DATABASE_URL)
-    )
-
-
 @task(task_run_name="targets-for-level-{level:02d}")
-def get_targets_for_level(connection: Connection, level: Level) -> pd.DataFrame:
+def get_targets_for_level(level: Level) -> pd.DataFrame:
     """Get registered targets for level from QualiCharge database."""
     if level == Level.NATIONAL:
         raise NotImplementedError("Unsupported level %d", level)
-    return pd.read_sql_table(level.name.lower(), con=connection)
+    with Session(get_api_db_engine()) as session:
+        return pd.read_sql_table(level.name.lower(), con=session.connection())

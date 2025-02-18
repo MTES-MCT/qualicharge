@@ -16,11 +16,12 @@ from prefect.futures import wait
 from prefect.task_runners import ThreadPoolTaskRunner
 from sqlalchemy import text
 from sqlalchemy.engine import Connection
+from sqlalchemy.orm import Session
 
 from ..conf import settings
+from ..db import get_api_db_engine, get_indicators_db_engine
 from ..models import Indicator, IndicatorPeriod, Level
 from ..utils import (
-    get_database_engine,
     get_num_for_level_query_params,
     get_targets_for_level,
 )
@@ -41,14 +42,15 @@ GROUP BY $level_id
 
 
 @task(task_run_name="values-for-target-{level:02d}")
-def get_values_for_targets(
-    connection: Connection, level: Level, indexes: List[UUID]
-) -> pd.DataFrame:
+def get_values_for_targets(level: Level, indexes: List[UUID]) -> pd.DataFrame:
     """Fetch points of charge given input level and target index."""
     query_template = Template(NUM_POCS_FOR_LEVEL_QUERY_TEMPLATE)
     query_params: dict = {"indexes": ",".join(f"'{i}'" for i in map(str, indexes))}
     query_params |= get_num_for_level_query_params(level)
-    return pd.read_sql_query(query_template.substitute(query_params), con=connection)
+    with Session(get_api_db_engine()) as session:
+        return pd.read_sql_query(
+            query_template.substitute(query_params), con=session.connection()
+        )
 
 
 @flow(
@@ -62,20 +64,18 @@ def i1_for_level(
     chunk_size=settings.DEFAULT_CHUNK_SIZE,
 ) -> pd.DataFrame:
     """Calculate i1 for a level."""
-    engine = get_database_engine()
-    with engine.connect() as connection:
-        targets = get_targets_for_level(connection, level)
-        ids = targets["id"]
-        chunks = (
-            np.array_split(ids, int(len(ids) / chunk_size))
-            if len(ids) > chunk_size
-            else [ids.to_numpy()]
-        )
-        futures = [
-            get_values_for_targets.submit(connection, level, chunk)  # type: ignore[call-overload]
-            for chunk in chunks
-        ]
-        wait(futures)
+    targets = get_targets_for_level(level)
+    ids = targets["id"]
+    chunks = (
+        np.array_split(ids, int(len(ids) / chunk_size))
+        if len(ids) > chunk_size
+        else [ids.to_numpy()]
+    )
+    futures = [
+        get_values_for_targets.submit(level, chunk)  # type: ignore[call-overload]
+        for chunk in chunks
+    ]
+    wait(futures)
 
     # Concatenate results and serialize indicators
     results = pd.concat([future.result() for future in futures], ignore_index=True)
@@ -101,9 +101,8 @@ def i1_for_level(
 )
 def i1_national(period: IndicatorPeriod, at: datetime) -> pd.DataFrame:
     """Calculate i1 at the national level."""
-    engine = get_database_engine()
-    with engine.connect() as connection:
-        result = connection.execute(text("SELECT COUNT(*) FROM PointDeCharge"))
+    with Session(get_api_db_engine()) as session:
+        result = session.execute(text("SELECT COUNT(*) FROM PointDeCharge"))
         count = result.one()[0]
 
     return pd.DataFrame.from_records(
