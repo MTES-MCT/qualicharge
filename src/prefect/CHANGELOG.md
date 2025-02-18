@@ -13,4 +13,8 @@ and this project adheres to
 - Implement t1 workflow
 - Implement i1 workflow
 
+### Changed
+
+- factorize indicators
+
 [unreleased]: https://github.com/MTES-MCT/qualicharge/
