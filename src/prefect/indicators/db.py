@@ -2,10 +2,16 @@
 
 import logging
 from typing import Optional
+from uuid import uuid4
 
+import pandas as pd
+from prefect import task
+from prefect.cache_policies import NONE
+from prefect.logging import get_run_logger
 from pydantic import PostgresDsn
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
+from sqlalchemy.orm import Session
 
 from .conf import settings
 from .schemas import BaseIndicator
@@ -25,8 +31,8 @@ class Singleton(type):
         return cls._instances[cls]
 
 
-class DBEngine(metaclass=Singleton):
-    """Database engine singleton."""
+class DBEngineMixin:
+    """Database engine mixin."""
 
     _engine: Optional[Engine] = None
 
@@ -47,11 +53,17 @@ class DBEngine(metaclass=Singleton):
         return self._engine
 
 
-def get_db_engine(
-    database_url: PostgresDsn,
-) -> Engine:
+class APIDBEngine(DBEngineMixin, metaclass=Singleton):
+    """API database engine singleton."""
+
+
+class IndicatorDBEngine(DBEngineMixin, metaclass=Singleton):
+    """Indicators database engine singleton."""
+
+
+def get_db_engine(klass, database_url: PostgresDsn) -> Engine:
     """Get database engine given a database URL."""
-    return DBEngine().get_engine(
+    return klass().get_engine(
         url=database_url,
         echo=settings.DEBUG,
         pool_size=settings.DB_CONNECTION_POOL_SIZE,
@@ -61,14 +73,55 @@ def get_db_engine(
 
 def get_api_db_engine() -> Engine:
     """Get the API database engine."""
-    return get_db_engine(settings.API_DATABASE_URL)
+    return get_db_engine(APIDBEngine, settings.API_DATABASE_URL)
 
 
 def get_indicators_db_engine() -> Engine:
     """Get the Indicators database engine."""
-    return get_db_engine(settings.INDICATORS_DATABASE_URL)
+    return get_db_engine(IndicatorDBEngine, settings.INDICATORS_DATABASE_URL)
 
 
+@task
 def create_tables():
     """Create all required tables for indicators."""
-    BaseIndicator.metadata.create_all(get_indicators_db_engine())
+    logger = get_run_logger()
+    logger.info("Will create indicator database tables…")
+    engine = get_indicators_db_engine()
+    logger.info(f"Database engine: {engine}")
+    BaseIndicator.metadata.create_all(engine)
+
+
+@task(cache_policy=NONE)
+def save_indicators(name: str, indicators: pd.DataFrame):
+    """Save indicators dataframe to database.
+
+    Args:
+        name (str): database table name to save data to
+        indicators (Dataframe): calculated indicators
+    """
+    logger = get_run_logger()
+    logger.info("Saving indicators to %s table…", name)
+
+    # Ensure tables exists
+    create_tables()
+
+    # Add identifiers
+    indicators["id"] = indicators.apply(lambda _: uuid4(), axis=1)
+
+    # Replace IndicatorPeriod enums by their value
+    indicators["period"] = indicators["period"].apply(lambda x: x.value)
+
+    # Data types
+    dtype = {
+        c.name: c.type for c in BaseIndicator.registry.metadata.tables[name].columns
+    }
+
+    with Session(get_indicators_db_engine()) as session:
+        indicators.to_sql(
+            name,
+            session.connection(),
+            index=False,
+            dtype=dtype,
+            if_exists="append",
+        )
+        session.commit()

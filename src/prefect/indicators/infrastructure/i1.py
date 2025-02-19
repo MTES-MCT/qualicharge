@@ -18,7 +18,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from ..conf import settings
-from ..db import get_api_db_engine
+from ..db import get_api_db_engine, save_indicators
 from ..models import Indicator, IndicatorPeriod, Level
 from ..utils import (
     get_num_for_level_query_params,
@@ -134,6 +134,8 @@ def calculate(
         i1_for_level(Level.CITY, period, now, chunk_size=chunk_size),
     ]
     indicators = pd.concat(subflows_results, ignore_index=True)
+
+    save_indicators("staging", indicators)
 
     if create_artifact:
         create_markdown_artifact(
