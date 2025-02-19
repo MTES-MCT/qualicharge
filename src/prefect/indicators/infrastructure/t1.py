@@ -17,7 +17,7 @@ from prefect.task_runners import ThreadPoolTaskRunner
 from sqlalchemy.orm import Session
 
 from ..conf import settings
-from ..db import get_api_db_engine, get_indicators_db_engine
+from ..db import get_api_db_engine
 from ..models import Indicator, IndicatorPeriod, Level
 from ..utils import (
     POWER_RANGE_CTE,

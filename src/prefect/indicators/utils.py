@@ -4,7 +4,6 @@ Common indicators functions and constants.
 """
 
 import pandas as pd  # type: ignore
-
 from prefect import task
 from sqlalchemy.orm import Session
 

@@ -68,15 +68,15 @@ def test_task_get_values_for_target(db_connection, level, query, expected):
     """Test the `get_values_for_target` task."""
     result = db_connection.execute(text(query))
     indexes = list(result.scalars().all())
-    values = i1.get_values_for_targets.fn(db_connection, level, indexes)
+    values = i1.get_values_for_targets.fn(level, indexes)
     assert len(values) == len(indexes)
     assert values["value"].sum() == expected
 
 
-def test_task_get_values_for_target_unexpected_level(db_connection):
+def test_task_get_values_for_target_unexpected_level():
     """Test the `get_values_for_target` task (unknown level)."""
     with pytest.raises(NotImplementedError, match="Unsupported level"):
-        i1.get_values_for_targets.fn(db_connection, Level.NATIONAL, [])
+        i1.get_values_for_targets.fn(Level.NATIONAL, [])
 
 
 @pytest.mark.parametrize("level,query,targets,expected", PARAMETERS_FLOW)

@@ -15,11 +15,10 @@ from prefect.artifacts import create_markdown_artifact
 from prefect.futures import wait
 from prefect.task_runners import ThreadPoolTaskRunner
 from sqlalchemy import text
-from sqlalchemy.engine import Connection
 from sqlalchemy.orm import Session
 
 from ..conf import settings
-from ..db import get_api_db_engine, get_indicators_db_engine
+from ..db import get_api_db_engine
 from ..models import Indicator, IndicatorPeriod, Level
 from ..utils import (
     get_num_for_level_query_params,
