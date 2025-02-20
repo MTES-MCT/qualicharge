@@ -17,6 +17,13 @@ class DashboardUser(AbstractUser):
     """
 
     siret = models.CharField(_("SIRET"), max_length=14, default="", blank=True)
+    is_validated = models.BooleanField(
+        _("is validated"),
+        default=False,
+        help_text=_(
+            "Designates whether this user has been validated by the QualiCharge team."
+        ),
+    )
 
     def get_entities(self) -> QuerySet[Entity]:
         """Get a list of entities, and their proxies associated."""
