@@ -1,0 +1,22 @@
+{% load i18n %}
+
+<div{% include "django/forms/widgets/attrs.html" %}>
+  <p>
+    <input type="{{ widget.type }}" name="{{ widget.name }}"{% if widget.value != None %} value="{{ widget.value|stringformat:'s' }}"{% endif %}{% include "django/forms/widgets/attrs.html" %}>
+  </p>
+
+  <p>
+    <input type="submit" value="{% trans "Synchronize Entity" %}" name="_sync_entity">
+    {% if entities %}
+      <span>
+        {% trans "The user is already attached to the entity:" %}
+        {% for entity in entities %}
+          <a href="{% url "admin:qcd_core_entity_change" entity.id %}" target="_blank">{{ entity }}</a>{% if not forloop.last %},{% endif %}
+        {% endfor %}
+      </span>
+    {% else %}
+      <span>{% trans "No entity attached to this user" %}</span>
+    {% endif %}
+  </p>
+</div>
+
