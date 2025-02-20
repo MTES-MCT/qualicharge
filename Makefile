@@ -70,7 +70,8 @@ bootstrap: \
   seed-dashboard \
   jupytext--to-ipynb \
   run \
-  seed-api
+  seed-api \
+  refresh-api-static
 .PHONY: bootstrap
 
 bootstrap-dashboard: ## bootstrap the dashboard project for development
