@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-02-12 23:12+0100\n"
-"PO-Revision-Date: 2025-02-17 15:25+0100\n"
+"POT-Creation-Date: 2025-02-20 16:20+0100\n"
+"PO-Revision-Date: 2025-02-20 16:21+0100\n"
 "Last-Translator: ssorin <ssorin@dwdlc.com>\n"
 "Language-Team: \n"
 "Language: fr\n"
@@ -31,7 +31,7 @@ msgstr "ProConnect"
 msgid "Permissions"
 msgstr "Permissions"
 
-#: src/dashboard/apps/auth/admin.py:30
+#: src/dashboard/apps/auth/admin.py:31
 msgid "Important dates"
 msgstr "Dates importantes"
 
@@ -42,6 +42,15 @@ msgstr "Authentification"
 #: src/dashboard/apps/auth/models.py:19 src/dashboard/apps/core/models.py:65
 msgid "SIRET"
 msgstr "SIRET"
+
+#: src/dashboard/apps/auth/models.py:21
+msgid "is validated"
+msgstr "est validé"
+
+#: src/dashboard/apps/auth/models.py:24
+msgid ""
+"Designates whether this user has been validated by the QualiCharge team."
+msgstr "Indique si cet utilisateur a été validé par l'équipe QualiCharge."
 
 #: src/dashboard/apps/consent/__init__.py:11
 msgid "Awaiting"
@@ -63,8 +72,9 @@ msgstr "Marquer les consentements sélectionnés comme révoqués"
 msgid "Selected consents have been marked as revoked."
 msgstr "Les consentements sélectionnés ont été marqués comme révoqués."
 
-#: src/dashboard/apps/consent/apps.py:13 src/dashboard/apps/consent/views.py:28
-#: src/dashboard/apps/consent/views.py:56
+#: src/dashboard/apps/consent/apps.py:13 src/dashboard/apps/consent/views.py:33
+#: src/dashboard/apps/consent/views.py:61
+#: src/dashboard/apps/consent/views.py:283
 msgid "Consent"
 msgstr "Consentement"
 
@@ -72,95 +82,95 @@ msgstr "Consentement"
 msgid "Consent workflow error."
 msgstr ""
 
-#: src/dashboard/apps/consent/forms.py:118
-msgid "J'accepte de donner mon consentement"
+#: src/dashboard/apps/consent/forms.py:119
+msgid ""
+"Je confirme l'exactitude des informations du présent formulaire et consent "
+"au traitement de mes données Enedis par la DGEC"
 msgstr ""
 
-#: src/dashboard/apps/consent/models.py:116 src/dashboard/apps/core/models.py:161
-msgid "delivery point"
-msgstr "point de livraison"
-
-#: src/dashboard/apps/consent/models.py:122
+#: src/dashboard/apps/consent/models.py:119
 msgid "created by"
 msgstr "créé par"
 
-#: src/dashboard/apps/consent/models.py:125
+#: src/dashboard/apps/consent/models.py:122
 msgid "status"
 msgstr "statut"
 
-#: src/dashboard/apps/consent/models.py:129
+#: src/dashboard/apps/consent/models.py:126
 msgid "start date"
 msgstr "date de début"
 
-#: src/dashboard/apps/consent/models.py:130
+#: src/dashboard/apps/consent/models.py:127
 msgid "end date"
 msgstr "date de fin"
 
-#: src/dashboard/apps/consent/models.py:131
+#: src/dashboard/apps/consent/models.py:128
 msgid "revoked at"
 msgstr "révoqué le"
 
-#: src/dashboard/apps/consent/models.py:135
+#: src/dashboard/apps/consent/models.py:132
 msgid "company informations"
 msgstr "informations sur l'entreprise"
 
-#: src/dashboard/apps/consent/models.py:144
+#: src/dashboard/apps/consent/models.py:141
 msgid "company representative informations"
 msgstr "informations sur le représentant de l'entreprise"
 
-#: src/dashboard/apps/consent/models.py:153
+#: src/dashboard/apps/consent/models.py:150
 msgid "control authority informations"
 msgstr "informations sur l'autorité de contrôle"
 
-#: src/dashboard/apps/consent/models.py:162
+#: src/dashboard/apps/consent/models.py:159
 msgid "the signatory has the authority to sign this consent"
 msgstr "le signataire a le pouvoir de signer ce consentement"
 
-#: src/dashboard/apps/consent/models.py:165
+#: src/dashboard/apps/consent/models.py:162
 msgid "allows historical measurements in kWh"
 msgstr "permet l'historique des mesures, en kWh"
 
-#: src/dashboard/apps/consent/models.py:168
+#: src/dashboard/apps/consent/models.py:165
 msgid "allow history of daily index readings in kWh"
 msgstr "permet l'historique des relevés d'index quotidiens, en kWh"
 
-#: src/dashboard/apps/consent/models.py:171
+#: src/dashboard/apps/consent/models.py:168
 msgid "allows historical maximum daily power in kVa or kWh "
-msgstr "permet l'historique de la puissance maximale quotidienne, en kVA ou kWh "
+msgstr ""
+"permet l'historique de la puissance maximale quotidienne, en kVA ou kWh "
 
-#: src/dashboard/apps/consent/models.py:174
+#: src/dashboard/apps/consent/models.py:171
 msgid "allows history of load curve, at steps returned by Enedis"
 msgstr "permet l'historique de courbe de charge, aux pas restitués par Enedis"
 
-#: src/dashboard/apps/consent/models.py:177
+#: src/dashboard/apps/consent/models.py:174
 msgid "allows the technical and contractual data available"
-msgstr "permet de disposer des données techniques et contractuelles disponibles"
+msgstr ""
+"permet de disposer des données techniques et contractuelles disponibles"
 
-#: src/dashboard/apps/consent/models.py:180
+#: src/dashboard/apps/consent/models.py:177
 msgid "signature date"
 msgstr "date de signature"
 
-#: src/dashboard/apps/consent/models.py:182
+#: src/dashboard/apps/consent/models.py:179
 msgid "signature location"
 msgstr "lieu de signature"
 
-#: src/dashboard/apps/consent/models.py:266
+#: src/dashboard/apps/consent/models.py:263
 msgid "Revoked consent cannot be modified."
 msgstr "Le consentement révoqué ne peut pas être modifié."
 
-#: src/dashboard/apps/consent/models.py:271
+#: src/dashboard/apps/consent/models.py:268
 msgid "Validated consent can only be changed to the status \"revoked\"."
 msgstr "Un consentement validé ne peut être modifié qu'en statut « révoqué »."
 
-#: src/dashboard/apps/consent/models.py:285
+#: src/dashboard/apps/consent/models.py:282
 msgid "Only the authorized fields "
 msgstr "Uniquement les champs autorisés "
 
-#: src/dashboard/apps/consent/models.py:298
+#: src/dashboard/apps/consent/models.py:295
 msgid "Validated consent cannot be deleted."
 msgstr "Un consentement validé ne peut pas être supprimé."
 
-#: src/dashboard/apps/consent/models.py:301
+#: src/dashboard/apps/consent/models.py:298
 msgid "Revoked consent cannot be deleted."
 msgstr "Un consentement révoqué ne peut pas être supprimé."
 
@@ -185,19 +195,20 @@ msgstr "soumettre"
 msgid "No consents to validate"
 msgstr "Aucun consentement à valider"
 
-#: src/dashboard/apps/consent/views.py:47
+#: src/dashboard/apps/consent/views.py:52
 msgid ""
-"An error occurred while validating the form. Our team has been notified and will get back to you "
-"shortly."
+"An error occurred while validating the form. Our team has been notified and "
+"will get back to you shortly."
 msgstr ""
-"Une erreur s'est produite lors de la validation du formulaire. Notre équipe a été prévenue et "
-"reviendra vers vous rapidement."
+"Une erreur s'est produite lors de la validation du formulaire. Notre équipe "
+"a été prévenue et reviendra vers vous rapidement."
 
-#: src/dashboard/apps/consent/views.py:58
+#: src/dashboard/apps/consent/views.py:63
+#: src/dashboard/apps/consent/views.py:285
 msgid "Manage Consents"
 msgstr "Gérer les consentements"
 
-#: src/dashboard/apps/consent/views.py:79
+#: src/dashboard/apps/consent/views.py:87
 msgid "Consents updated."
 msgstr "Consentements mis à jour."
 
@@ -273,33 +284,47 @@ msgstr "code postal"
 msgid "city"
 msgstr "ville"
 
-#: src/dashboard/apps/core/models.py:148
+#: src/dashboard/apps/core/models.py:152
 msgid "provider assigned id"
 msgstr "identifiant attribué au fournisseur"
 
-#: src/dashboard/apps/core/models.py:153
+#: src/dashboard/apps/core/models.py:157
 msgid "entity"
 msgstr "entité"
 
-#: src/dashboard/apps/core/models.py:155
+#: src/dashboard/apps/core/models.py:159
 msgid "is active"
 msgstr "est actif"
 
-#: src/dashboard/apps/core/models.py:162
+#: src/dashboard/apps/core/models.py:165
+msgid "delivery point"
+msgstr "point de livraison"
+
+#: src/dashboard/apps/core/models.py:166
 msgid "delivery points"
 msgstr "points de livraison"
 
 #: src/dashboard/apps/core/validators.py:16
-msgid "The SIRET must be composed only of numbers and must contain exactly 14 digits."
-msgstr "Le SIRET doit être composé uniquement de chiffres et doit contenir exactement 14 chiffres."
+msgid ""
+"The SIRET must be composed only of numbers and must contain exactly 14 "
+"digits."
+msgstr ""
+"Le SIRET doit être composé uniquement de chiffres et doit contenir "
+"exactement 14 chiffres."
 
 #: src/dashboard/apps/core/validators.py:36
-msgid "The NAF code must be in the format of 4 digits followed by a letter (e.g.: 6820A)."
-msgstr "Le code NAF doit être au format de 4 chiffres suivis d'une lettre (ex : 6820A)."
+msgid ""
+"The NAF code must be in the format of 4 digits followed by a letter (e.g.: "
+"6820A)."
+msgstr ""
+"Le code NAF doit être au format de 4 chiffres suivis d'une lettre (ex : "
+"6820A)."
 
 #: src/dashboard/apps/core/validators.py:56
 msgid "Zip code must be composed of number and a fixed length of 5 characters."
-msgstr "Le code postal doit être composé d'un chiffre et d'une longueur fixe de 5 caractères."
+msgstr ""
+"Le code postal doit être composé d'un chiffre et d'une longueur fixe de 5 "
+"caractères."
 
 #: src/dashboard/apps/home/templates/home/index.html:9
 msgid "QualiCharge dashboard"
@@ -309,7 +334,7 @@ msgstr "Tableau de bord QualiCharge"
 msgid "Pending consents"
 msgstr "Consentements en attente"
 
-#: src/dashboard/dashboard/settings.py:141
+#: src/dashboard/dashboard/settings.py:142
 msgid "French"
 msgstr "Français"
 
@@ -329,13 +354,15 @@ msgstr "Désolé, vous n'êtes pas autorisé à accéder à cette page."
 msgid ""
 "\n"
 "          If you think this is a mistake, you can contact our team.<br />\n"
-"          Otherwise, to continue your visit you can consult our home page.                \n"
+"          Otherwise, to continue your visit you can consult our home "
+"page.                \n"
 "        "
 msgstr ""
 "\n"
-"          Si vous pensez qu'il s'agit d'une erreur, vous pouvez contacter notre équipe.<br />\n"
-"          Sinon, pour continuer votre visite, vous pouvez consulter notre page "
-"d'accueil.               "
+"          Si vous pensez qu'il s'agit d'une erreur, vous pouvez contacter "
+"notre équipe.<br />\n"
+"          Sinon, pour continuer votre visite, vous pouvez consulter notre "
+"page d'accueil.               "
 
 #: src/dashboard/templates/403.html:31 src/dashboard/templates/404.html:30
 #: src/dashboard/templates/blocks/header.html:6
@@ -356,8 +383,12 @@ msgid "Error 404"
 msgstr "Erreur 404"
 
 #: src/dashboard/templates/404.html:20
-msgid "The page you are looking for could not be found. We apologize for the inconvenience."
-msgstr "La page que vous cherchez est introuvable. Excusez nous pour la gêne occasionnée."
+msgid ""
+"The page you are looking for could not be found. We apologize for the "
+"inconvenience."
+msgstr ""
+"La page que vous cherchez est introuvable. Excusez nous pour la gêne "
+"occasionnée."
 
 #: src/dashboard/templates/404.html:23
 msgid ""
@@ -366,9 +397,10 @@ msgid ""
 "available. <br>In this case, to continue your visit you can consult\n"
 "our home page."
 msgstr ""
-" Si vous avez tapé l'adresse web dans le navigateur, vérifier qu'elle est correcte. La page "
-"n'est peut-être plus disponible.<br>\n"
-"Dans ce cas, pour continuer votre visite vous pouvez consulter notre page d'accueil."
+" Si vous avez tapé l'adresse web dans le navigateur, vérifier qu'elle est "
+"correcte. La page n'est peut-être plus disponible.<br>\n"
+"Dans ce cas, pour continuer votre visite vous pouvez consulter notre page "
+"d'accueil."
 
 #: src/dashboard/templates/500.html:5 src/dashboard/templates/500.html:14
 msgid "Unexpected error"
@@ -379,10 +411,11 @@ msgid "Error 500"
 msgstr "Erreur 500"
 
 #: src/dashboard/templates/500.html:20
-msgid "Oops, looks like something terrible happened. We have already been notified."
+msgid ""
+"Oops, looks like something terrible happened. We have already been notified."
 msgstr ""
-"Désolé, le service rencontre un problème, nous travaillons pour le résoudre le plus rapidement "
-"possible."
+"Désolé, le service rencontre un problème, nous travaillons pour le résoudre "
+"le plus rapidement possible."
 
 #: src/dashboard/templates/500.html:23
 msgid "Try refreshing the page or try again later."
@@ -427,7 +460,8 @@ msgstr "Se connecter"
 #: src/dashboard/templates/registration/login.html:18
 msgid ""
 "\n"
-"              Description — Lorem ipsum dolor sit amet, consectetur adipiscing elit.\n"
+"              Description — Lorem ipsum dolor sit amet, consectetur "
+"adipiscing elit.\n"
 "              "
 msgstr ""
 
