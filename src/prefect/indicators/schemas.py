@@ -1,5 +1,6 @@
 """QualiCharge prefect indicators: schemas."""
 
+import logging
 from datetime import datetime
 from typing import Optional
 from uuid import uuid4
@@ -7,6 +8,10 @@ from uuid import uuid4
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy.types import DateTime, Float, SmallInteger, String
+
+from .conf import settings
+
+logger = logging.getLogger(__name__)
 
 
 class BaseIndicator(DeclarativeBase):
@@ -32,13 +37,18 @@ class BaseIndicator(DeclarativeBase):
         )
 
 
-class Staging(BaseIndicator):
-    """Indicators running on the Staging API database."""
+def declare_environment_schemas():
+    """Declare schemas for every active environment.
 
-    __tablename__ = "staging"
+    When calling this utility, you will declare a new schema per active environment:
 
-
-class Production(BaseIndicator):
-    """Indicators running on the Staging API database."""
-
-    __tablename__ = "production"
+    class Production(BaseIndicator):
+        __tablename__ = "production"
+    """
+    logger.info("Will declare indicators schemas...")
+    for environment in settings.API_ACTIVE_ENVIRONMENTS:
+        schema = environment.value.title()
+        globals()[schema] = type(
+            schema, (BaseIndicator,), {"__tablename__": environment.value}
+        )
+        logger.info("New schema: %s", schema)

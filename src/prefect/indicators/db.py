@@ -1,6 +1,7 @@
 """QualiCharge prefect indicators: databases."""
 
 import logging
+from functools import cache
 from typing import Optional
 from uuid import uuid4
 
@@ -13,8 +14,9 @@ from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
 
-from . import conf
-from .schemas import BaseIndicator
+from .conf import settings
+from .schemas import BaseIndicator, declare_environment_schemas
+from .types import Environment
 
 logger = logging.getLogger(__name__)
 
@@ -63,8 +65,6 @@ class IndicatorDBEngine(DBEngineMixin, metaclass=Singleton):
 
 def get_db_engine(klass, database_url: PostgresDsn) -> Engine:
     """Get database engine given a database URL."""
-    settings = conf.activate()
-    print(f"get_db_engine: {klass=} - {database_url=}")
     return klass().get_engine(
         url=database_url,
         echo=settings.DEBUG,
@@ -73,14 +73,20 @@ def get_db_engine(klass, database_url: PostgresDsn) -> Engine:
     )
 
 
-def get_api_db_engine() -> Engine:
-    """Get the API database engine."""
-    return get_db_engine(APIDBEngine, conf.activate().API_DATABASE_URL)
+@cache
+def get_api_db_engine(environment: Environment) -> Engine:
+    """Get the API database engine for an environment."""
+    return create_engine(
+        str(settings.API_DATABASE_URLS[environment]),
+        echo=settings.DEBUG,
+        pool_size=settings.DB_CONNECTION_POOL_SIZE,
+        max_overflow=settings.DB_CONNECTION_MAX_OVERFLOW,
+    )
 
 
 def get_indicators_db_engine() -> Engine:
     """Get the Indicators database engine."""
-    return get_db_engine(IndicatorDBEngine, conf.activate().INDICATORS_DATABASE_URL)
+    return get_db_engine(IndicatorDBEngine, settings.INDICATORS_DATABASE_URL)
 
 
 @task
@@ -88,21 +94,28 @@ def create_tables():
     """Create all required tables for indicators."""
     logger = get_run_logger()
     logger.info("Will create indicator database tables…")
+
+    logger.info("Declaring schemas for active environments…")
+    declare_environment_schemas()
+
     engine = get_indicators_db_engine()
     logger.info(f"Database engine: {engine}")
+
     BaseIndicator.metadata.create_all(engine)
 
 
 @task(cache_policy=NONE)
-def save_indicators(name: str, indicators: pd.DataFrame):
+def save_indicators(environment: Environment, indicators: pd.DataFrame):
     """Save indicators dataframe to database.
 
     Args:
-        name (str): database table name to save data to
+        environment (Environment): database table name to save data to
         indicators (Dataframe): calculated indicators
     """
     logger = get_run_logger()
-    logger.info("Saving indicators to %s table…", name)
+
+    table_name = environment.value
+    logger.info("Saving indicators to %s table…", table_name)
 
     # Ensure tables exists
     create_tables()
@@ -115,15 +128,16 @@ def save_indicators(name: str, indicators: pd.DataFrame):
 
     # Data types
     dtype = {
-        c.name: c.type for c in BaseIndicator.registry.metadata.tables[name].columns
+        c.name: c.type
+        for c in BaseIndicator.registry.metadata.tables[table_name].columns
     }
 
     with Session(get_indicators_db_engine()) as session:
         indicators.to_sql(
-            name,
+            table_name,
             session.connection(),
             index=False,
-            dtype=dtype,
+            dtype=dtype,  # type: ignore
             if_exists="append",
         )
         session.commit()

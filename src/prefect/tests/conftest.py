@@ -7,9 +7,8 @@ from prefect.testing.utilities import prefect_test_harness
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Connection, Engine
 
-from indicators import conf
-
-settings = conf.activate()
+from indicators.conf import settings
+from indicators.types import Environment
 
 
 @pytest.fixture(autouse=True, scope="session")
@@ -22,7 +21,9 @@ def prefect_test_fixture():
 @pytest.fixture(scope="session")
 def db_engine() -> Generator[Engine, None, None]:
     """QualiCharge database engine fixture."""
-    engine = create_engine(str(settings.API_DATABASE_URL), echo=False)
+    engine = create_engine(
+        str(settings.API_DATABASE_URLS[Environment.DEVELOPMENT]), echo=False
+    )
     yield engine
     engine.dispose()
 

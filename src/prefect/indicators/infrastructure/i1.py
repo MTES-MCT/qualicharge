@@ -5,7 +5,7 @@ I1: the number of publicly open points of charge.
 
 from datetime import datetime
 from string import Template
-from typing import List, Optional
+from typing import List
 from uuid import UUID
 
 import numpy as np
@@ -18,9 +18,10 @@ from prefect.task_runners import ThreadPoolTaskRunner
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from .. import conf
+from ..conf import settings
 from ..db import get_api_db_engine, save_indicators
 from ..models import Indicator, IndicatorPeriod, Level
+from ..types import Environment
 from ..utils import (
     get_num_for_level_query_params,
     get_targets_for_level,
@@ -39,16 +40,17 @@ FROM
 WHERE $level_id IN ($indexes)
 GROUP BY $level_id
 """
-settings = conf.activate()
 
 
 @task(task_run_name="values-for-target-{level:02d}", cache_policy=NONE)
-def get_values_for_targets(level: Level, indexes: List[UUID]) -> pd.DataFrame:
+def get_values_for_targets(
+    level: Level, indexes: List[UUID], environment: Environment
+) -> pd.DataFrame:
     """Fetch points of charge given input level and target index."""
     query_template = Template(NUM_POCS_FOR_LEVEL_QUERY_TEMPLATE)
     query_params: dict = {"indexes": ",".join(f"'{i}'" for i in map(str, indexes))}
     query_params |= get_num_for_level_query_params(level)
-    with Session(get_api_db_engine()) as session:
+    with Session(get_api_db_engine(environment)) as session:
         return pd.read_sql_query(
             query_template.substitute(query_params), con=session.connection()
         )
@@ -62,10 +64,11 @@ def i1_for_level(
     level: Level,
     period: IndicatorPeriod,
     at: datetime,
+    environment: Environment,
     chunk_size=settings.DEFAULT_CHUNK_SIZE,
 ) -> pd.DataFrame:
     """Calculate i1 for a level."""
-    targets = get_targets_for_level(level)
+    targets = get_targets_for_level(level, environment)
     ids = targets["id"]
     chunks = (
         np.array_split(ids, int(len(ids) / chunk_size))
@@ -73,7 +76,7 @@ def i1_for_level(
         else [ids.to_numpy()]
     )
     futures = [
-        get_values_for_targets.submit(level, chunk)  # type: ignore[call-overload]
+        get_values_for_targets.submit(level, chunk, environment)  # type: ignore[call-overload]
         for chunk in chunks
     ]
     wait(futures)
@@ -100,9 +103,11 @@ def i1_for_level(
     task_runner=ThreadPoolTaskRunner(max_workers=settings.THREAD_POOL_MAX_WORKERS),
     flow_run_name="i1-{period.value}-00-{at:%y-%m-%d}",
 )
-def i1_national(period: IndicatorPeriod, at: datetime) -> pd.DataFrame:
+def i1_national(
+    period: IndicatorPeriod, at: datetime, environment: Environment
+) -> pd.DataFrame:
     """Calculate i1 at the national level."""
-    with Session(get_api_db_engine()) as session:
+    with Session(get_api_db_engine(environment)) as session:
         result = session.execute(text("SELECT COUNT(*) FROM PointDeCharge"))
         count = result.one()[0]
 
@@ -125,19 +130,19 @@ def i1_national(period: IndicatorPeriod, at: datetime) -> pd.DataFrame:
 )
 def calculate(
     period: IndicatorPeriod,
+    environment: Environment,
     create_artifact: bool = False,
     persist: bool = False,
     chunk_size: int = 1000,
-    environment: Optional[str] = None,
 ) -> List[Indicator]:
     """Run all i1 subflows."""
     now = pd.Timestamp.now()
     subflows_results = [
-        i1_national(period, now),
-        i1_for_level(Level.REGION, period, now, chunk_size=chunk_size),
-        i1_for_level(Level.DEPARTMENT, period, now, chunk_size=chunk_size),
-        i1_for_level(Level.EPCI, period, now, chunk_size=chunk_size),
-        i1_for_level(Level.CITY, period, now, chunk_size=chunk_size),
+        i1_national(period, now, environment),
+        i1_for_level(Level.REGION, period, now, environment, chunk_size=chunk_size),
+        i1_for_level(Level.DEPARTMENT, period, now, environment, chunk_size=chunk_size),
+        i1_for_level(Level.EPCI, period, now, environment, chunk_size=chunk_size),
+        i1_for_level(Level.CITY, period, now, environment, chunk_size=chunk_size),
     ]
     indicators = pd.concat(subflows_results, ignore_index=True)
 
@@ -146,7 +151,7 @@ def calculate(
 
     if create_artifact:
         create_markdown_artifact(
-            key=runtime.flow_run.name,
+            key=f"{runtime.flow_run.name}-{environment}",
             markdown=indicators.to_markdown(),
             description=f"i1 report at {now} (period: {period.value})",
         )

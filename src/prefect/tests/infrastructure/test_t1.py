@@ -9,6 +9,7 @@ from sqlalchemy import text
 
 from indicators.infrastructure import t1  # type: ignore
 from indicators.models import IndicatorPeriod, Level  # type: ignore
+from indicators.types import Environment
 
 PARAMETERS_FLOW = [
     (
@@ -67,7 +68,7 @@ def test_task_get_values_for_target(db_connection, level, query, expected):
     """Test the `get_values_for_target` task."""
     result = db_connection.execute(text(query))
     indexes = list(result.scalars().all())
-    poc_by_power = t1.get_values_for_targets.fn(level, indexes)
+    poc_by_power = t1.get_values_for_targets.fn(level, indexes, Environment.DEVELOPMENT)
     assert len(set(poc_by_power["level_id"])) == len(indexes)
     assert poc_by_power["value"].sum() == expected
 
@@ -75,14 +76,16 @@ def test_task_get_values_for_target(db_connection, level, query, expected):
 def test_task_get_values_for_target_unexpected_level():
     """Test the `get_values_for_target` task (unknown level)."""
     with pytest.raises(NotImplementedError, match="Unsupported level"):
-        t1.get_values_for_targets.fn(Level.NATIONAL, [])
+        t1.get_values_for_targets.fn(Level.NATIONAL, [], Environment.DEVELOPMENT)
 
 
 @pytest.mark.parametrize("level,query,targets,expected", PARAMETERS_FLOW)
 def test_flow_t1_for_level(db_connection, level, query, targets, expected):
     """Test the `t1_for_level` flow."""
     now = pd.Timestamp.now()
-    indicators = t1.t1_for_level(level, PERIOD, now, chunk_size=1000)
+    indicators = t1.t1_for_level(
+        level, PERIOD, now, Environment.DEVELOPMENT, chunk_size=1000
+    )
     # assert len(indicators) == db_connection.execute(text(query)).scalars().one()
     assert indicators.loc[indicators["target"].isin(targets), "value"].sum() == expected
 
@@ -92,7 +95,9 @@ def test_flow_t1_for_level_with_various_chunk_sizes(chunk_size):
     """Test the `t1_for_level` flow with various chunk sizes."""
     level, query, targets, expected = PARAMETERS_FLOW[2]
     now = pd.Timestamp.now()
-    indicators = t1.t1_for_level(level, PERIOD, now, chunk_size=chunk_size)
+    indicators = t1.t1_for_level(
+        level, PERIOD, now, Environment.DEVELOPMENT, chunk_size=chunk_size
+    )
     assert indicators.loc[indicators["target"].isin(targets), "value"].sum() == expected
 
 
@@ -100,7 +105,7 @@ def test_flow_t1_national(db_connection):
     """Test the `t1_national` flow."""
     query = "SELECT COUNT(*) FROM PointDeCharge WHERE puissance_nominale::numeric >= 0"
     expected = db_connection.execute(text(query)).scalars().one()
-    indicators = t1.t1_national(PERIOD, pd.Timestamp.now())
+    indicators = t1.t1_national(PERIOD, pd.Timestamp.now(), Environment.DEVELOPMENT)
     assert indicators["value"].sum() == expected
 
 
@@ -109,15 +114,21 @@ def test_flow_calculate(db_connection):
     now = pd.Timestamp.now()
     expected = sum(
         [
-            t1.t1_for_level(Level.CITY, PERIOD, now, chunk_size=1000)["value"].sum(),
-            t1.t1_for_level(Level.EPCI, PERIOD, now, chunk_size=1000)["value"].sum(),
-            t1.t1_for_level(Level.DEPARTMENT, PERIOD, now, chunk_size=1000)[
-                "value"
-            ].sum(),
-            t1.t1_for_level(Level.REGION, PERIOD, now, chunk_size=1000)["value"].sum(),
-            t1.t1_national(PERIOD, now)["value"].sum(),
+            t1.t1_for_level(
+                Level.CITY, PERIOD, now, Environment.DEVELOPMENT, chunk_size=1000
+            )["value"].sum(),
+            t1.t1_for_level(
+                Level.EPCI, PERIOD, now, Environment.DEVELOPMENT, chunk_size=1000
+            )["value"].sum(),
+            t1.t1_for_level(
+                Level.DEPARTMENT, PERIOD, now, Environment.DEVELOPMENT, chunk_size=1000
+            )["value"].sum(),
+            t1.t1_for_level(
+                Level.REGION, PERIOD, now, Environment.DEVELOPMENT, chunk_size=1000
+            )["value"].sum(),
+            t1.t1_national(PERIOD, now, Environment.DEVELOPMENT)["value"].sum(),
         ]
     )
-    indicators = t1.calculate(PERIOD, create_artifact=True)
+    indicators = t1.calculate(PERIOD, Environment.DEVELOPMENT, create_artifact=True)
     pd_indics = pd.DataFrame.from_records([indic.model_dump() for indic in indicators])
     assert pd_indics["value"].sum() == expected

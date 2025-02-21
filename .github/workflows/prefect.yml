@@ -76,7 +76,8 @@ jobs:
       run:
         working-directory: ./src/prefect
     env:
-      QUALICHARGE_API_DATABASE_URL: "postgresql+psycopg://qualicharge:pass@localhost:5432/qualicharge-api"
+      QUALICHARGE_API_DATABASE_URLS_development: "postgresql+psycopg://qualicharge:pass@localhost:5432/qualicharge-api"
+      QUALICHARGE_API_ACTIVE_ENVIRONMENTS: "['development']"
       QUALICHARGE_INDICATORS_DATABASE_URL: "postgresql+psycopg://qualicharge:pass@localhost:5432/qualicharge-indicators"
       QUALICHARGE_API_DATABASE_URL_NO_DRIVER: "postgresql://qualicharge:pass@localhost:5432/qualicharge-api"
     steps:

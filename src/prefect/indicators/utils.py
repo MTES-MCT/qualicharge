@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from .db import get_api_db_engine
 from .models import Level
+from .types import Environment
 
 POWER_RANGE_CTE = """
 puissance(category, p_cat) AS (
@@ -52,9 +53,9 @@ def get_num_for_level_query_params(level):
 
 
 @task(task_run_name="targets-for-level-{level:02d}")
-def get_targets_for_level(level: Level) -> pd.DataFrame:
+def get_targets_for_level(level: Level, environment: Environment) -> pd.DataFrame:
     """Get registered targets for level from QualiCharge database."""
     if level == Level.NATIONAL:
         raise NotImplementedError("Unsupported level %d", level)
-    with Session(get_api_db_engine()) as session:
+    with Session(get_api_db_engine(environment)) as session:
         return pd.read_sql_table(level.name.lower(), con=session.connection())
