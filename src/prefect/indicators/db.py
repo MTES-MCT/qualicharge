@@ -55,10 +55,6 @@ class DBEngineMixin:
         return self._engine
 
 
-class APIDBEngine(DBEngineMixin, metaclass=Singleton):
-    """API database engine singleton."""
-
-
 class IndicatorDBEngine(DBEngineMixin, metaclass=Singleton):
     """Indicators database engine singleton."""
 
@@ -101,6 +97,7 @@ def create_tables():
     engine = get_indicators_db_engine()
     logger.info(f"Database engine: {engine}")
 
+    logger.info(f"Registered tables: {BaseIndicator.metadata.tables}")
     BaseIndicator.metadata.create_all(engine)
 
 
