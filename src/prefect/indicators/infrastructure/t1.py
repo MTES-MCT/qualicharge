@@ -16,7 +16,7 @@ from prefect.futures import wait
 from prefect.task_runners import ThreadPoolTaskRunner
 from sqlalchemy.orm import Session
 
-from ..conf import settings
+from .. import conf
 from ..db import get_api_db_engine
 from ..models import Indicator, IndicatorPeriod, Level
 from ..utils import (
@@ -61,6 +61,7 @@ GROUP BY
 ORDER BY
     value DESC
 """
+settings = conf.activate()
 
 
 @task(task_run_name="values-for-target-{level:02d}")

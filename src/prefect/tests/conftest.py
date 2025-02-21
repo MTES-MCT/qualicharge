@@ -7,7 +7,9 @@ from prefect.testing.utilities import prefect_test_harness
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Connection, Engine
 
-from indicators.conf import settings
+from indicators import conf
+
+settings = conf.activate()
 
 
 @pytest.fixture(autouse=True, scope="session")

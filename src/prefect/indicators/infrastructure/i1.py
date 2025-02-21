@@ -5,19 +5,20 @@ I1: the number of publicly open points of charge.
 
 from datetime import datetime
 from string import Template
-from typing import List
+from typing import List, Optional
 from uuid import UUID
 
 import numpy as np
 import pandas as pd  # type: ignore
 from prefect import flow, runtime, task
 from prefect.artifacts import create_markdown_artifact
+from prefect.cache_policies import NONE
 from prefect.futures import wait
 from prefect.task_runners import ThreadPoolTaskRunner
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from ..conf import settings
+from .. import conf
 from ..db import get_api_db_engine, save_indicators
 from ..models import Indicator, IndicatorPeriod, Level
 from ..utils import (
@@ -38,9 +39,10 @@ FROM
 WHERE $level_id IN ($indexes)
 GROUP BY $level_id
 """
+settings = conf.activate()
 
 
-@task(task_run_name="values-for-target-{level:02d}")
+@task(task_run_name="values-for-target-{level:02d}", cache_policy=NONE)
 def get_values_for_targets(level: Level, indexes: List[UUID]) -> pd.DataFrame:
     """Fetch points of charge given input level and target index."""
     query_template = Template(NUM_POCS_FOR_LEVEL_QUERY_TEMPLATE)
@@ -122,7 +124,11 @@ def i1_national(period: IndicatorPeriod, at: datetime) -> pd.DataFrame:
     flow_run_name="meta-i1-{period.value}",
 )
 def calculate(
-    period: IndicatorPeriod, create_artifact: bool = False, chunk_size: int = 1000
+    period: IndicatorPeriod,
+    create_artifact: bool = False,
+    persist: bool = False,
+    chunk_size: int = 1000,
+    environment: Optional[str] = None,
 ) -> List[Indicator]:
     """Run all i1 subflows."""
     now = pd.Timestamp.now()
@@ -135,7 +141,8 @@ def calculate(
     ]
     indicators = pd.concat(subflows_results, ignore_index=True)
 
-    save_indicators("staging", indicators)
+    if persist and environment:
+        save_indicators(environment, indicators)
 
     if create_artifact:
         create_markdown_artifact(

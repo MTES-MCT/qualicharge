@@ -13,7 +13,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
 
-from .conf import settings
+from . import conf
 from .schemas import BaseIndicator
 
 logger = logging.getLogger(__name__)
@@ -63,6 +63,8 @@ class IndicatorDBEngine(DBEngineMixin, metaclass=Singleton):
 
 def get_db_engine(klass, database_url: PostgresDsn) -> Engine:
     """Get database engine given a database URL."""
+    settings = conf.activate()
+    print(f"get_db_engine: {klass=} - {database_url=}")
     return klass().get_engine(
         url=database_url,
         echo=settings.DEBUG,
@@ -73,12 +75,12 @@ def get_db_engine(klass, database_url: PostgresDsn) -> Engine:
 
 def get_api_db_engine() -> Engine:
     """Get the API database engine."""
-    return get_db_engine(APIDBEngine, settings.API_DATABASE_URL)
+    return get_db_engine(APIDBEngine, conf.activate().API_DATABASE_URL)
 
 
 def get_indicators_db_engine() -> Engine:
     """Get the Indicators database engine."""
-    return get_db_engine(IndicatorDBEngine, settings.INDICATORS_DATABASE_URL)
+    return get_db_engine(IndicatorDBEngine, conf.activate().INDICATORS_DATABASE_URL)
 
 
 @task
