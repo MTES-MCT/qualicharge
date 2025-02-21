@@ -226,6 +226,7 @@ create-metabase-db: ## create metabase database
 create-prefect-db: ## create prefect database
 	@echo "Creating prefect service database…"
 	@$(COMPOSE) exec postgresql bash -c 'psql "postgresql://$${POSTGRES_USER}:$${POSTGRES_PASSWORD}@$${QUALICHARGE_DB_HOST}:$${QUALICHARGE_DB_PORT}/postgres" -c "create database \"$${PREFECT_API_DATABASE_NAME}\";"' || echo "Duly noted, skipping database creation."
+	@$(COMPOSE) exec postgresql bash -c 'psql "postgresql://$${POSTGRES_USER}:$${POSTGRES_PASSWORD}@$${QUALICHARGE_DB_HOST}:$${QUALICHARGE_DB_PORT}/postgres" -c "create database \"$${QUALICHARGE_INDICATORS_DB_NAME}\";"' || echo "Duly noted, skipping database creation."
 .PHONY: create-prefect-db
 
 create-dashboard-db: ## create dashboard database
@@ -258,6 +259,7 @@ drop-dashboard-db: ## drop dashboard database
 drop-prefect-db: ## drop prefect database
 	@echo "Droping prefect service database…"
 	@$(COMPOSE) exec postgresql bash -c 'psql "postgresql://$${POSTGRES_USER}:$${POSTGRES_PASSWORD}@$${QUALICHARGE_DB_HOST}:$${QUALICHARGE_DB_PORT}/postgres" -c "drop database \"$${PREFECT_API_DATABASE_NAME}\";"' || echo "Duly noted, skipping database deletion."
+	@$(COMPOSE) exec postgresql bash -c 'psql "postgresql://$${POSTGRES_USER}:$${POSTGRES_PASSWORD}@$${QUALICHARGE_DB_HOST}:$${QUALICHARGE_DB_PORT}/postgres" -c "drop database \"$${QUALICHARGE_INDICATORS_DB_NAME}\";"' || echo "Duly noted, skipping database deletion."
 .PHONY: drop-prefect-db
 
 dump-metabase:  ## dump metabase objects
