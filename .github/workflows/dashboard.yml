@@ -57,6 +57,8 @@ jobs:
       DASHBOARD_PROCONNECT_USER_ENDPOINT: proconnect_endpoint
       DASHBOARD_PROCONNECT_JWKS_ENDPOINT: proconnect_endpoint
       DASHBOARD_PROCONNECT_SESSION_END: proconnect_endpoint
+      DASHBOARD_ANNUAIRE_ENTREPRISE_API_URL: annuaire_api_endpoint
+      DASHBOARD_ANNUAIRE_ENTREPRISE_API_TOKEN: the_secret_token
     steps:
       - uses: actions/checkout@v4
       - name: Install pipenv
@@ -133,3 +135,5 @@ jobs:
           DASHBOARD_PROCONNECT_USER_ENDPOINT: proconnect_endpoint
           DASHBOARD_PROCONNECT_JWKS_ENDPOINT: proconnect_endpoint
           DASHBOARD_PROCONNECT_SESSION_END: proconnect_endpoint
+          DASHBOARD_ANNUAIRE_ENTREPRISE_API_URL: annuaire_api_endpoint
+          DASHBOARD_ANNUAIRE_ENTREPRISE_API_TOKEN: the_secret_token

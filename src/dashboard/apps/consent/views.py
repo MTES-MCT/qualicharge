@@ -32,7 +32,8 @@ class IndexView(BreadcrumbContextMixin, TemplateView):
     template_name = "consent/index.html"
     breadcrumb_current = _("Consent")
 
-    def get_context_data(self, **kwargs):  # noqa: D102
+    def get_context_data(self, **kwargs):
+        """Add user's entities to the context."""
         context = super().get_context_data(**kwargs)
         context["entities"] = self.request.user.get_entities()
         context["has_awaiting_consent"] = any(
@@ -88,11 +89,7 @@ class ConsentFormView(BreadcrumbContextMixin, FormView):
         return super().form_valid(form)
 
     def get_context_data(self, **kwargs):
-        """Add the user's entities to the context.
-
-        Adds to the context the entities that the user has permission to access.
-        If a slug is provided, adds the entity corresponding to the slug.
-        """
+        """Add context data for the view."""
         context = super().get_context_data(**kwargs)
         context["control_authority"] = settings.CONSENT_CONTROL_AUTHORITY
         context["entities"] = self._get_entities()

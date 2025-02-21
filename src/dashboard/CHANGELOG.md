@@ -23,6 +23,8 @@ and this project adheres to
 - add admin integration for Entity, DeliveryPoint and Consent
 - add mass admin action (make revoked) for consents
 - add validators for SIRET, NAF code and Zip code 
+- add API connector to the "Annuaire des Entreprises" API
+- retrieve company information from its SIRET using the "Annuaire des Entreprises" API
 - disallow mass action "delete" for consents in admin
 - block the updates of all new data if a consent has the status `REVOKED`
 - block the updates of all new data if a consent has the status `VALIDATED`

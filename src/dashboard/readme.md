@@ -100,6 +100,17 @@ Consent revoked.
 - [ ] It cannot be modified.
 - [x] It cannot be deleted.
 
+## API Annuaire des Entreprises
+
+### Documentation
+
+https://entreprise.api.gouv.fr/
+https://entreprise.api.gouv.fr/developpeurs
+
+### Information for development
+
+For development, you must use siret `55204944776279`
+
 ## License
 
 This work is released under the MIT License (see LICENSE).
