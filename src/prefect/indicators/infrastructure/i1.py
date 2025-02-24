@@ -137,10 +137,17 @@ def calculate(  # noqa: PLR0913
         i1_for_level(level, timespan, environment, chunk_size=chunk_size)
         for level in levels
     ]
-    indicators = pd.concat(subflows_results, ignore_index=True)
+    # FIXME
+    # Prior to Pandas 2.2, dtypes should be homogeneous or else dataframes cannot be
+    # concatenated.
+    indicators = pd.concat(
+        [res.astype(subflows_results[0].dtypes) for res in subflows_results],
+        ignore_index=True,
+    )
     description = f"i1 report at {timespan.start} (period: {timespan.period.value})"
     flow_name = runtime.flow_run.name
     export_indicators(
         indicators, environment, flow_name, description, create_artifact, persist
     )
+
     return indicators
