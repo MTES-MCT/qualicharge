@@ -18,6 +18,12 @@ and this project adheres to
 - Improve bulk endpoints documentation
 - Improve `/dynamique` (bulk) create endpoint performance by using background
   tasks
+- Upgrade cachetools to `5.5.2`
+- Upgrade geoalchemy2 to `0.17.1`
+- Upgrade psycopg to `3.2.5`
+- Upgrade pyarrow to `19.0.1`
+- Upgrade pydantic-settings to `2.8.0`
+- Upgrade sentry-sdk to `2.22.0`
 
 ## [0.18.0] - 2025-02-10
 
