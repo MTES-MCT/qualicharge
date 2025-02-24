@@ -6,25 +6,25 @@ name = "pypi"
 [packages]
 alembic = "==1.14.1"
 annotated-types = "==0.7.0"
-cachetools = "==5.5.1"
+cachetools = "==5.5.2"
 email-validator = "==2.2.0"
 fastapi = "==0.115.8"
-geoalchemy2 = {extras = ["shapely"], version = "==0.17.0"}
+geoalchemy2 = {extras = ["shapely"], version = "==0.17.1"}
 geopandas = "==1.0.1"
 httpx = {extras = ["cli"], version = "==0.28.1"}
 pandas = "==2.2.3"
 passlib = {extras = ["bcrypt"], version = "==1.7.4"}
 postgresql-audit = "==0.17.1"
-psycopg = {extras = ["pool", "binary"], version = "==3.2.4"}
-pyarrow = "==19.0.0"
+psycopg = {extras = ["pool", "binary"], version = "==3.2.5"}
+pyarrow = "==19.0.1"
 pydantic = "==2.10.6"
 pydantic-extra-types = {extras = ["all"], version = "==2.10.2"}
-pydantic-settings = "==2.7.1"
+pydantic-settings = "==2.8.0"
 pyinstrument = "==5.0.1"
 pyjwt = "==2.10.1"
 python-multipart = "==0.0.20"
 questionary = "==2.1.0"
-sentry-sdk = {extras = ["fastapi"], version = "==2.20.0"}
+sentry-sdk = {extras = ["fastapi"], version = "==2.22.0"}
 setuptools = "==75.8.0"
 sqlalchemy-timescaledb = "==0.4.1"
 sqlalchemy-utils = "==0.41.2"
@@ -36,7 +36,7 @@ uvicorn = {extras = ["standard"] }
 black = "==25.1.0"
 csvkit = "==2.0.1"
 honcho = "==2.0.0"
-locust = "==2.32.8"
+locust = "==2.33.0"
 mypy = "==1.15.0"
 pandas-stubs = "==2.2.3.241126"
 polyfactory = "==2.19.0"
@@ -44,10 +44,10 @@ pytest = "==8.3.4"
 pytest-cov = "==6.0.0"
 pytest-httpx = "==0.35.0"
 qualicharge = {path = ".", editable = true}
-ruff = "==0.9.5"
+ruff = "==0.9.7"
 types-cachetools = "==5.5.0.20240820"
 types-passlib = "==1.7.7.20241221"
-types-python-jose = "==3.3.4.20240106"
+types-python-jose = "==3.4.0.20250224"
 types-requests = "==2.32.0.20241016"
 
 [requires]
