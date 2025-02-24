@@ -31,3 +31,67 @@ deployments:
     work_pool:
       name: indicators
       work_queue_name: default
+  - name: quality-development
+    entrypoint: quality/flows/static.py:run_api_db_validation
+    parameters:
+      environment: development
+      report_by_email: false
+    work_pool:
+      name: indicators
+      work_queue_name: default
+  - name: quality-development-by-amenageur
+    entrypoint: quality/flows/static.py:run_api_db_validation_by_amenageur
+    parameters:
+      environment: development
+      report_by_email: false
+    work_pool:
+      name: indicators
+      work_queue_name: default
+  - name: quality-staging
+    entrypoint: quality/flows/static.py:run_api_db_validation
+    schedules:
+      - cron: "2 2 * * *"
+        timezone: "Europe/Paris"
+        active: true
+    parameters:
+      environment: staging
+      report_by_email: true
+    work_pool:
+      name: indicators
+      work_queue_name: default
+  - name: quality-staging-by-amenageur
+    entrypoint: quality/flows/static.py:run_api_db_validation_by_amenageur
+    schedules:
+      - cron: "12 2 * * *"
+        timezone: "Europe/Paris"
+        active: true
+    parameters:
+      environment: staging
+      report_by_email: true
+    work_pool:
+      name: indicators
+      work_queue_name: default
+  - name: quality-production
+    entrypoint: quality/flows/static.py:run_api_db_validation
+    schedules:
+      - cron: "22 2 * * *"
+        timezone: "Europe/Paris"
+        active: true
+    parameters:
+      environment: production
+      report_by_email: true
+    work_pool:
+      name: indicators
+      work_queue_name: default
+  - name: quality-production-by-amenageur
+    entrypoint: quality/flows/static.py:run_api_db_validation_by_amenageur
+    schedules:
+      - cron: "32 2 * * *"
+        timezone: "Europe/Paris"
+        active: true
+    parameters:
+      environment: production
+      report_by_email: true
+    work_pool:
+      name: indicators
+      work_queue_name: default
