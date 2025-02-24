@@ -22,7 +22,7 @@ and this project adheres to
 
 - Compress requests for bulk endpoints
 - Upgrade Pydantic to `2.7.4`
-- Upgrade pydantic-settings to `2.4.0`
+- Upgrade pydantic-settings to `2.8.0`
 - Upgrade typer to `0.12.5`
 - Upgrade httpx to `0.27.2`
 
