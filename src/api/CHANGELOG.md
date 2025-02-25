@@ -8,6 +8,8 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.19.0] - 2025-02-25
+
 ### Added
 
 - Implement a new `/dynamique/session/check` endpoint to check if a target
@@ -332,7 +334,8 @@ and this project adheres to
 
 - Implement base FastAPI app
 
-[unreleased]: https://github.com/MTES-MCT/qualicharge/compare/v0.18.0...main
+[unreleased]: https://github.com/MTES-MCT/qualicharge/compare/v0.19.0...main
+[0.19.0]: https://github.com/MTES-MCT/qualicharge/compare/v0.18.0...v0.19.0
 [0.18.0]: https://github.com/MTES-MCT/qualicharge/compare/v0.17.0...v0.18.0
 [0.17.0]: https://github.com/MTES-MCT/qualicharge/compare/v0.16.0...v0.17.0
 [0.16.0]: https://github.com/MTES-MCT/qualicharge/compare/v0.15.0...v0.16.0
