@@ -13,7 +13,7 @@ RUN apt-get update && \
 # Upgrade pip to its latest release to speed up dependencies
 # installation
 RUN pip install --upgrade pip && \
-    pip install pipenv==2024.4.0
+    pip install pipenv==2024.4.1
 
 # Pipenv configuration
 ENV PIPENV_USER_UID=${DOCKER_UID}
@@ -42,8 +42,7 @@ RUN mkdir /app && \
 COPY --chown="${PIPENV_USER_NAME}:${PIPENV_GROUP_NAME}" . /app
 WORKDIR /app
 USER ${PIPENV_USER_NAME}:${PIPENV_GROUP_NAME}
-RUN pipenv install -d && \
-    pipenv install -e .
+RUN pipenv install -d
 
 # -- Run --
-CMD pipenv run honcho start web
+CMD ["pipenv", "run", "honcho", "start", "web"]
