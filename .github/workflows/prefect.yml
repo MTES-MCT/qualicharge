@@ -30,7 +30,7 @@ jobs:
       - name: Install dependencies
         run: |
           cd src/prefect
-          pipenv install -d .
+          pipenv install -d
 
   lint-prefect:
     needs: build-prefect
