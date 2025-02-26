@@ -138,7 +138,7 @@ def calculate(
     """Run all i1 subflows."""
     now = pd.Timestamp.now()
     # FIXME
-    # Prior to Pandas 2.2, dtypes should be homogeneous or else dataframe cannot be
+    # Prior to Pandas 2.2, dtypes should be homogeneous or else dataframes cannot be
     # concatenated.
     national = i1_national(period, now, environment)
     indicators = pd.concat(
