@@ -3,25 +3,26 @@
 import great_expectations as gx
 import great_expectations.expectations as gxe
 
-from expectations.pdc import get_expectation_suite as pdc_get_expectation_suite
+from expectations.pdc import get_expectation_suite
 
 
-def get_full_checkpoint(context, batch, name="full"):
-    """Get the full checkpoint."""
-    definition_name = "my_validation_definition"
+def get_static_checkpoint(context, batch, name="static"):
+    """Get the static checkpoint."""
+    definition_name = "static_validation_definition"
     validation_definition = gx.ValidationDefinition(
-        data=batch, suite=pdc_get_expectation_suite(context), name=definition_name
+        data=batch, suite=get_expectation_suite(context), name=definition_name
     )
     validation_definition = context.validation_definitions.add(validation_definition)
 
     action_list = [
         gx.checkpoint.EmailAction(
             notify_on="all",
-            name="dunno",
+            name="Static expectations report",
             receiver_emails="${GX_RECEIVER_EMAILS}",
             smtp_address="${GX_BREVO_SMTP_ADDRESS}",
             smtp_port="${GX_BREVO_SMTP_PORT}",
             sender_login="${GX_BREVO_SENDER_LOGIN}",
+            sender_alias="Julien M.",
             sender_password="${GX_BREVO_PASSWORD}",
             use_tls=True,
         )
