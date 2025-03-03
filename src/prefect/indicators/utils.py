@@ -4,7 +4,6 @@ Common indicators functions and constants.
 """
 
 from string import Template
-from typing import Any
 
 import pandas as pd  # type: ignore
 from prefect import task
