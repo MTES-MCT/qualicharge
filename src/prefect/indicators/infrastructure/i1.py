@@ -128,16 +128,15 @@ def calculate(
     timespan: IndicatorTimeSpan,
     environment: Environment,
     levels: List[Level],
-    options: dict = {},
-    chunk_size: int = 1000,
+    **options: dict,
 ) -> pd.DataFrame:
     """Run all i1 subflows."""
-    opt = {"create-artifact": False, "persist": False} | options
+    opt = {"chunk_size": 1000, "create-artifact": False, "persist": False} | options
     subflows_results = [
-        i1_for_level(level, timespan, environment, chunk_size=chunk_size)
+        i1_for_level(level, timespan, environment, chunk_size=["chunk_size"])
         for level in levels
     ]
     indicators = pd.concat(subflows_results, ignore_index=True)
     description = f"i1 report at {timespan.start} (period: {timespan.period.value})"
     flow_name = runtime.flow_run.name
-    return export_indic(indicators, environment, opt, flow_name, description)
+    return export_indic(indicators, environment, flow_name, description, **opt)
