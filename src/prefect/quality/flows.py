@@ -140,5 +140,5 @@ def run_api_db_validation_by_amenageur(environment: str, report_by_email: bool =
 # FIXME
 # Used to ease development, should be removed
 if __name__ == "__main__":
-    # run_api_db_validation("development")
-    run_api_db_validation_by_amenageur("development")
+    run_api_db_validation("development")
+    # run_api_db_validation_by_amenageur("development")

@@ -24,6 +24,27 @@ operateur_expectations = [
     gxe.ExpectColumnValuesToNotBeNull(column="nom_operateur"),
     gxe.ExpectColumnValuesToNotBeNull(column="telephone_operateur"),
 ]
+localisation_expectations = [
+    gxe.UnexpectedRowsExpectation(unexpected_rows_query="""
+SELECT
+  id_station_itinerance,
+  ST_X ("coordonneesXY"::geometry) AS longitude,
+  ST_Y ("coordonneesXY"::geometry) AS latitude
+FROM
+  {batch}
+WHERE
+  (
+    (
+      ST_X ("coordonneesXY"::geometry) > 10
+      OR ST_X ("coordonneesXY"::geometry) < -5
+    )
+    OR (
+      ST_Y ("coordonneesXY"::geometry) > 52
+      OR ST_Y ("coordonneesXY"::geometry) < 41
+    )
+  )
+    """)
+]
 
 
 def set_expectation_suite(context):
@@ -34,5 +55,6 @@ def set_expectation_suite(context):
     expectations = pdc_expectations
     expectations += amenageur_expectations
     expectations += operateur_expectations
+    expectations += localisation_expectations
     for expectation in expectations:
         expectation_suite.add_expectation(expectation)
