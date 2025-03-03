@@ -4,7 +4,7 @@ I1: the number of publicly open points of charge.
 """
 
 from string import Template
-from typing import List
+from typing import Any, List
 from uuid import UUID
 
 import numpy as np
@@ -124,19 +124,22 @@ def i1_national(timespan: IndicatorTimeSpan, environment: Environment) -> pd.Dat
     task_runner=ThreadPoolTaskRunner(max_workers=settings.THREAD_POOL_MAX_WORKERS),
     flow_run_name="meta-i1-{timespan.period.value}",
 )
-def calculate(
+def calculate(  # noqa: PLR0913
     timespan: IndicatorTimeSpan,
     environment: Environment,
     levels: List[Level],
-    **options: dict,
+    chunk_size: int = 1000,
+    create_artifact: bool = False,
+    persist: bool = False,
 ) -> pd.DataFrame:
     """Run all i1 subflows."""
-    opt = {"chunk_size": 1000, "create-artifact": False, "persist": False} | options
     subflows_results = [
-        i1_for_level(level, timespan, environment, chunk_size=["chunk_size"])
+        i1_for_level(level, timespan, environment, chunk_size=chunk_size)
         for level in levels
     ]
     indicators = pd.concat(subflows_results, ignore_index=True)
     description = f"i1 report at {timespan.start} (period: {timespan.period.value})"
     flow_name = runtime.flow_run.name
-    return export_indic(indicators, environment, flow_name, description, **opt)
+    return export_indic(
+        indicators, environment, flow_name, description, create_artifact, persist
+    )

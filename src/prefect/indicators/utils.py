@@ -4,6 +4,7 @@ Common indicators functions and constants.
 """
 
 from string import Template
+from typing import Any
 
 import pandas as pd  # type: ignore
 from prefect import task
@@ -78,18 +79,19 @@ def get_targets_for_level(level: Level, environment: Environment) -> pd.DataFram
         return pd.read_sql_table(level.name.lower(), con=session.connection())
 
 
-def export_indic(
+def export_indic(  # noqa: PLR0913
     indicators: pd.DataFrame,
     environment: Environment,
     flow_name: str,
     description: str,
-    **option: dict,
+    create_artifact: bool,
+    persist: bool,
 ):
     """Export indicators."""
-    if option["persist"] and environment:
+    if persist and environment:
         save_indicators(environment, indicators)
 
-    if option["create_artifact"]:
+    if create_artifact:
         create_markdown_artifact(
             key=flow_name, markdown=indicators.to_markdown(), description=description
         )
