@@ -4,7 +4,7 @@ T1: the number of publicly open points of charge by power level.
 """
 
 from string import Template
-from typing import Any, List
+from typing import List
 from uuid import UUID
 
 import numpy as np
