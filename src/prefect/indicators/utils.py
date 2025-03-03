@@ -81,9 +81,9 @@ def get_targets_for_level(level: Level, environment: Environment) -> pd.DataFram
 def export_indic(
     indicators: pd.DataFrame,
     environment: Environment,
-    option: dict,
     flow_name: str,
     description: str,
+    **option: dict,
 ):
     """Export indicators."""
     if option["persist"] and environment:
