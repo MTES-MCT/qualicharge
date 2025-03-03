@@ -86,7 +86,6 @@ def export_indic(
     description: str,
 ):
     """Export indicators."""
-
     if option["persist"] and environment:
         save_indicators(environment, indicators)
 
