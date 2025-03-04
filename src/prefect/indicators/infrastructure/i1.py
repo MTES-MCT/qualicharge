@@ -21,22 +21,22 @@ from ..db import get_api_db_engine
 from ..models import Indicator, IndicatorTimeSpan, Level
 from ..types import Environment
 from ..utils import (
-    export_indic,
+    export_indicators,
     get_num_for_level_query_params,
     get_targets_for_level,
 )
 
 NUM_POCS_FOR_LEVEL_QUERY_TEMPLATE = """
-        SELECT
-            COUNT(DISTINCT id_pdc_itinerance) AS value,
-            $level_id AS level_id
-        FROM
-            Statique
-            INNER JOIN City ON code_insee_commune = City.code
-            $join_extras
-        WHERE $level_id IN ($indexes)
-        GROUP BY $level_id
-        """
+SELECT
+    COUNT(DISTINCT id_pdc_itinerance) AS value,
+    $level_id AS level_id
+FROM
+    Statique
+    INNER JOIN City ON code_insee_commune = City.code
+    $join_extras
+WHERE $level_id IN ($indexes)
+GROUP BY $level_id
+"""
 
 
 @task(task_run_name="values-for-target-{level:02d}", cache_policy=NONE)
@@ -45,7 +45,7 @@ def get_values_for_targets(
 ) -> pd.DataFrame:
     """Fetch points of charge given input level and target index."""
     query_template = Template(NUM_POCS_FOR_LEVEL_QUERY_TEMPLATE)
-    query_params = {"indexes": ",".join(f"'{i}'" for i in map(str, indexes))}
+    query_params: dict = {"indexes": ",".join(f"'{i}'" for i in map(str, indexes))}
     query_params |= get_num_for_level_query_params(level)
     with Session(get_api_db_engine(environment)) as session:
         return pd.read_sql_query(
@@ -140,6 +140,7 @@ def calculate(  # noqa: PLR0913
     indicators = pd.concat(subflows_results, ignore_index=True)
     description = f"i1 report at {timespan.start} (period: {timespan.period.value})"
     flow_name = runtime.flow_run.name
-    return export_indic(
+    export_indicators(
         indicators, environment, flow_name, description, create_artifact, persist
     )
+    return indicators

@@ -15,6 +15,6 @@ and this project adheres to
 
 ### Changed
 
-- factorize indicators
+- Factorize indicators
 
 [unreleased]: https://github.com/MTES-MCT/qualicharge/

@@ -20,45 +20,45 @@ from ..models import IndicatorTimeSpan, Level
 from ..types import Environment
 from ..utils import (
     POWER_RANGE_CTE,
-    export_indic,
+    export_indicators,
     get_num_for_level_query_params,
     get_targets_for_level,
 )
 
 NUM_POCS_BY_POWER_RANGE_FOR_LEVEL_QUERY_TEMPLATE = """
-        WITH
-            $power_range
-        SELECT
-            COUNT(DISTINCT id_pdc_itinerance) AS value,
-            category,
-            $level_id AS level_id
-        FROM
-            Statique
-            INNER JOIN City ON code_insee_commune = City.code
-            LEFT JOIN puissance ON puissance_nominale::numeric <@ category
-            $join_extras
-        WHERE
-            $level_id IN ($indexes)
-        GROUP BY
-            $level_id,
-            category
-        ORDER BY
-            value DESC
-        """
+WITH
+    $power_range
+SELECT
+    COUNT(DISTINCT id_pdc_itinerance) AS value,
+    category,
+    $level_id AS level_id
+FROM
+    Statique
+    INNER JOIN City ON code_insee_commune = City.code
+    LEFT JOIN puissance ON puissance_nominale::numeric <@ category
+    $join_extras
+WHERE
+    $level_id IN ($indexes)
+GROUP BY
+    $level_id,
+    category
+ORDER BY
+    value DESC
+"""
 QUERY_NATIONAL_TEMPLATE = """
-        WITH
-            $power_range
-        SELECT
-            COUNT(DISTINCT id_pdc_itinerance) AS value,
-            category
-        FROM
-            Statique
-            LEFT JOIN puissance ON puissance_nominale::numeric <@ category
-        GROUP BY
-            category
-        ORDER BY
-            value DESC
-        """
+WITH
+    $power_range
+SELECT
+    COUNT(DISTINCT id_pdc_itinerance) AS value,
+    category
+FROM
+    Statique
+    LEFT JOIN puissance ON puissance_nominale::numeric <@ category
+GROUP BY
+    category
+ORDER BY
+    value DESC
+"""
 
 
 @task(task_run_name="values-for-target-{level:02d}")
@@ -165,6 +165,7 @@ def calculate(  # noqa: PLR0913
     indicators = pd.concat(subflows_results, ignore_index=True)
     description = f"t1 report at {timespan.start} (period: {timespan.period.value})"
     flow_name = runtime.flow_run.name
-    return export_indic(
+    export_indicators(
         indicators, environment, flow_name, description, create_artifact, persist
     )
+    return indicators
