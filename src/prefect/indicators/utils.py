@@ -36,8 +36,7 @@ def get_timespan_filter_query_params(timespan: IndicatorTimeSpan, session: bool 
     interval_session = "start >= timestamp $start AND start < timestamp $end"
     interval_status = "horodatage >= timestamp $start AND horodatage < timestamp $end"
     interval = interval_session if session else interval_status
-    query_params = {"start": sql_start, "end": sql_end}
-    return {"timespan": Template(interval).substitute(query_params)}
+    return {"timespan": Template(interval).substitute({"start": sql_start, "end": sql_end})}
 
 
 def get_num_for_level_query_params(level: Level):
