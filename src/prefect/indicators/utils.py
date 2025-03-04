@@ -94,4 +94,3 @@ def export_indicators(  # noqa: PLR0913
         create_markdown_artifact(
             key=flow_name, markdown=indicators.to_markdown(), description=description
         )
-    return indicators
