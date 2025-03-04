@@ -1,6 +1,12 @@
 """Dashboard auth middleware."""
+from urllib.parse import urljoin
 
 import requests
+import sentry_sdk
+from anymail.exceptions import AnymailRequestsAPIError
+from anymail.message import AnymailMessage
+from django.conf import settings
+from django.urls import reverse
 from mozilla_django_oidc.auth import (
     OIDCAuthenticationBackend as MozillaOIDCAuthenticationBackend,
 )
@@ -55,9 +61,13 @@ class OIDCAuthenticationBackend(MozillaOIDCAuthenticationBackend):
     def create_user(self, claims):
         """Return object for a newly created user account."""
         username = self.get_username(claims)
-        return self.UserModel.objects.create_user(
+        user = self.UserModel.objects.create_user(
             username, **self.get_data_for_user_create_and_update(claims)
         )
+
+        self.send_admin_notification(user)
+
+        return user
 
     def update_user(self, user, claims):
         """Update existing user with new claims, if necessary save, and return user."""
@@ -70,3 +80,36 @@ class OIDCAuthenticationBackend(MozillaOIDCAuthenticationBackend):
     def get_username(self, claims):
         """Generate username based on claims."""
         return default_username_algo(claims.get("sub"))
+
+    def send_admin_notification(self, user) -> None:
+        """Sends an email notification to QualiCharge team for a new subscription."""
+        email_to = settings.CONTACT_EMAIL
+        email_config = settings.DASHBOARD_EMAIL_CONFIGS["new_subscription"]
+        # todo: change "http://localhost:8030/", with settings
+        link = urljoin(
+            "http://localhost:8030/",
+            reverse("admin:qcd_auth_dashboarduser_change", args=(user.id,))
+        )
+        email_data = {
+            email_to: {
+                "user_last_name": user.last_name,  # type: ignore[union-attr]
+                "user_first_name": user.first_name,  # type: ignore[union-attr]
+                "user_email": user.email,  # type: ignore[union-attr]
+                "user_username": user.username,  # type: ignore[union-attr]
+                "link": link,
+            },
+        }
+
+        email = AnymailMessage(
+            to=[
+                email_to,
+            ],
+            template_id=email_config.get("template_id"),
+            merge_data=email_data,
+        )
+
+        try:
+            email.send()
+        except AnymailRequestsAPIError as e:
+            # fail silently and send a sentry log
+            sentry_sdk.capture_exception(e)
