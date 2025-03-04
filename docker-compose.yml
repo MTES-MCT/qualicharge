@@ -92,7 +92,7 @@ services:
       - ./bin/kc-init:/usr/local/bin/kc-init
 
   metabase:
-    image: metabase/metabase:v0.53.3
+    image: metabase/metabase:v0.53.4
     ports:
       - 3000:3000
     env_file:
@@ -263,7 +263,7 @@ services:
       - env.d/metabase
 
   terraform:
-    image: hashicorp/terraform:1.10.5
+    image: hashicorp/terraform:1.11.0
     env_file:
       - env.d/terraform
     user: ${DOCKER_USER:-1000}
