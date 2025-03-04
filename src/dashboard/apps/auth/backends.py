@@ -1,10 +1,14 @@
 """Dashboard auth middleware."""
 
 import requests
+import sentry_sdk
+from django.core.exceptions import ValidationError
 from mozilla_django_oidc.auth import (
     OIDCAuthenticationBackend as MozillaOIDCAuthenticationBackend,
 )
 from mozilla_django_oidc.auth import default_username_algo
+
+from apps.core.validators import validate_siret
 
 
 class OIDCAuthenticationBackend(MozillaOIDCAuthenticationBackend):
@@ -44,7 +48,7 @@ class OIDCAuthenticationBackend(MozillaOIDCAuthenticationBackend):
             "email": claims.get("email"),
             "first_name": claims.get("given_name", ""),
             "last_name": claims.get("usual_name", ""),
-            "siret": claims.get("siret", ""),
+            "siret": self.clean_siret(claims.get("siret")),
         }
 
     def filter_users_by_claims(self, claims):
@@ -70,3 +74,19 @@ class OIDCAuthenticationBackend(MozillaOIDCAuthenticationBackend):
     def get_username(self, claims):
         """Generate username based on claims."""
         return default_username_algo(claims.get("sub"))
+
+    def clean_siret(self, siret: str | None) -> str | None:
+        """Clean siret extracted from claims.
+
+        The siret from ProConnect does not always have the right format.
+        We try to reformat it, if the format is still not ok, we record a null siret.
+        """
+        siret = siret.replace(" ", "") if siret else siret
+
+        try:
+            validate_siret(siret)
+        except ValidationError as e:
+            sentry_sdk.capture_exception(e)
+            siret = None
+
+        return siret
