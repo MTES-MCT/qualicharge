@@ -3,27 +3,45 @@
 Common indicators functions and constants.
 """
 
+from string import Template
+
 import pandas as pd  # type: ignore
 from prefect import task
+from prefect.artifacts import create_markdown_artifact
 from sqlalchemy.orm import Session
 
-from .db import get_api_db_engine
-from .models import Level
+from .db import get_api_db_engine, save_indicators
+from .models import IndicatorTimeSpan, Level, PeriodDuration
 from .types import Environment
 
-POWER_RANGE_CTE = """
-puissance(category, p_cat) AS (
-    VALUES
-        (numrange(0, 15.0), 1),
-        (numrange(15.0, 26.0), 2),
-        (numrange(26, 65.0), 3),
-        (numrange(65, 175.0), 4),
-        (numrange(175, 360.0), 5),
-        (numrange(360, NULL), 6)
-)"""
+POWER_RANGE_CTE = {
+    "power_range": """
+    puissance(category, p_cat) AS (
+        VALUES
+            (numrange(0.0, 7.4), 1),
+            (numrange(7.4, 22.0), 2),
+            (numrange(22.0, 50.0), 3),
+            (numrange(50, 150.0), 4),
+            (numrange(150, 350.0), 5),
+            (numrange(350, NULL), 6)
+    )"""
+}
 
 
-def get_num_for_level_query_params(level):
+def get_timespan_filter_query_params(timespan: IndicatorTimeSpan, session: bool = True):
+    """Get timespan query parameters."""
+    date_end = timespan.start + PeriodDuration[timespan.period.name].value
+    sql_start = f"'{timespan.start.isoformat(sep=" ")}'"
+    sql_end = f"'{date_end.isoformat(sep=" ")}'"
+    interval_session = "start >= timestamp $start AND start < timestamp $end"
+    interval_status = "horodatage >= timestamp $start AND horodatage < timestamp $end"
+    interval = interval_session if session else interval_status
+    return {
+        "timespan": Template(interval).substitute({"start": sql_start, "end": sql_end})
+    }
+
+
+def get_num_for_level_query_params(level: Level):
     """Get level_id and join_extras query parameters."""
     match level:
         case Level.CITY:
@@ -59,3 +77,21 @@ def get_targets_for_level(level: Level, environment: Environment) -> pd.DataFram
         raise NotImplementedError("Unsupported level %d", level)
     with Session(get_api_db_engine(environment)) as session:
         return pd.read_sql_table(level.name.lower(), con=session.connection())
+
+
+def export_indicators(  # noqa: PLR0913
+    indicators: pd.DataFrame,
+    environment: Environment,
+    flow_name: str,
+    description: str,
+    create_artifact: bool,
+    persist: bool,
+):
+    """Export indicators."""
+    if persist and environment:
+        save_indicators(environment, indicators)
+
+    if create_artifact:
+        create_markdown_artifact(
+            key=flow_name, markdown=indicators.to_markdown(), description=description
+        )
