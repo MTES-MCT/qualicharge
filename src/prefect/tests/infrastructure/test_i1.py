@@ -12,7 +12,7 @@ from indicators.infrastructure import i1  # type: ignore
 from indicators.models import IndicatorPeriod, IndicatorTimeSpan, Level  # type: ignore
 from indicators.types import Environment
 
-from ..param_tests import (
+from ..parameters import (
     PARAM_FLOW,
     PARAM_VALUE,
     PARAMETERS_CHUNK,
@@ -113,9 +113,7 @@ FROM
     SELECT
         COUNT(DISTINCT PointDeCharge.id_pdc_itinerance) AS value
     FROM
-        PointDeCharge
-        INNER JOIN Station ON PointDeCharge.station_id = Station.id
-        INNER JOIN Localisation ON Station.localisation_id = Localisation.id
+        Statique
         INNER JOIN City ON Localisation.code_insee_commune = City.code
         INNER JOIN Department ON City.department_id = Department.id
         INNER JOIN Region ON Department.region_id = Region.id

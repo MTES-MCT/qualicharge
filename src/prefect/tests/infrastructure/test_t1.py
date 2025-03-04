@@ -12,7 +12,7 @@ from indicators.infrastructure import t1  # type: ignore
 from indicators.models import IndicatorPeriod, IndicatorTimeSpan, Level  # type: ignore
 from indicators.types import Environment
 
-from ..param_tests import (
+from ..parameters import (
     PARAM_FLOW,
     PARAM_VALUE,
     PARAMETERS_CHUNK,
