@@ -1,9 +1,14 @@
 """Dashboard auth models tests."""
 
+from unittest.mock import patch
+
 import pytest
+from anymail.exceptions import AnymailRequestsAPIError
+from django.conf import settings
 from pytest_django.asserts import assertQuerySetEqual
 
 from apps.auth.factories import AdminUserFactory, UserFactory
+from apps.auth.models import DashboardUser
 from apps.core.factories import EntityFactory
 
 
@@ -78,3 +83,64 @@ def test_can_validate_entity():
     assert user4.can_validate_entity(entity4) is True
     assert user4.can_validate_entity(entity5) is True
     assert user4.can_validate_entity(entity2) is True
+
+
+@pytest.mark.django_db
+def test_save_triggers_validation_email():
+    """Test the `save` method triggers a validation email."""
+    user = UserFactory(is_validated=False)
+
+    # `is_validated` doesn't change to True: an email should NOT be sent.
+    with patch.object(DashboardUser, "send_validation_email") as mock_send_email:
+        user.save()
+        mock_send_email.assert_not_called()
+
+    # `is_validated` changes to True: an email should be sent.
+    with patch.object(DashboardUser, "send_validation_email") as mock_send_email:
+        user.is_validated = True
+        user.save()
+        mock_send_email.assert_called_once_with()
+
+    # `is_validated` remains to True: an email should NOT be sent.
+    user.refresh_from_db()
+    with patch.object(DashboardUser, "send_validation_email") as mock_send_email:
+        user.is_validated = True
+        user.save()
+        mock_send_email.assert_not_called()
+
+
+@pytest.mark.django_db
+def test_send_validation_email_success():
+    """Test `send_validation_email` successfully sends an email."""
+    user = UserFactory(email="testuser@example.com")
+
+    with patch("apps.auth.models.AnymailMessage") as mock_message:
+        email_send_mock = mock_message.return_value.send
+        user.send_validation_email()
+
+        expected_email_config = settings.DASHBOARD_EMAIL_CONFIGS["validated_user"]
+        mock_message.assert_called_once_with(
+            to=["testuser@example.com"],
+            template_id=expected_email_config.get("template_id"),
+            merge_data={
+                "testuser@example.com": {
+                    "last_name": user.last_name,
+                    "first_name": user.first_name,
+                    "link": expected_email_config.get("link"),
+                    "support_email": settings.CONTACT_EMAIL,
+                },
+            },
+        )
+        email_send_mock.assert_called_once()
+
+
+@pytest.mark.django_db
+def test_send_validation_email_handles_exception():
+    """Test `send_validation_email` handles email sending exception."""
+    user = UserFactory(email="testuser@example.com")
+
+    with patch("apps.auth.models.AnymailMessage") as mock_message:
+        mock_message.return_value.send.side_effect = AnymailRequestsAPIError()
+        with patch("apps.auth.models.sentry_sdk.capture_exception") as mock_sentry:
+            user.send_validation_email()
+            mock_sentry.assert_called_once()

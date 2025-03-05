@@ -254,8 +254,14 @@ DASHBOARD_EMAIL_CONFIGS = {
     # they validate their consents.
     "consent_validation": {
         "template_id": env.int("CONSENT_VALIDATION_TEMPLATE_ID"),
-        "link": "https://beta.gouv.fr/startups/qualicharge.html",
-    }
+        "link": env.str("DOMAIN"),
+    },
+    # Configuration for the notification email sent to the user when
+    # the user has been validated by an admin.
+    "validated_user": {
+        "template_id": env.int("VALIDATED_USER_TEMPLATE_ID"),
+        "link": env.str("DOMAIN"),
+    },
 }
 
 # API Annuaire des Entreprises
