@@ -31,3 +31,17 @@ deployments:
     work_pool:
       name: indicators
       work_queue_name: default
+  - name: quality-development
+    entrypoint: quality/flows.py:run_api_db_validation
+    parameters:
+      environment: development
+    work_pool:
+      name: indicators
+      work_queue_name: default
+  - name: quality-development-by-amenageur
+    entrypoint: quality/flows.py:run_api_db_validation_by_amenageur
+    parameters:
+      environment: development
+    work_pool:
+      name: indicators
+      work_queue_name: default

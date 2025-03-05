@@ -137,14 +137,28 @@ def calculate(
 ) -> List[Indicator]:
     """Run all i1 subflows."""
     now = pd.Timestamp.now()
-    subflows_results = [
-        i1_national(period, now, environment),
-        i1_for_level(Level.REGION, period, now, environment, chunk_size=chunk_size),
-        i1_for_level(Level.DEPARTMENT, period, now, environment, chunk_size=chunk_size),
-        i1_for_level(Level.EPCI, period, now, environment, chunk_size=chunk_size),
-        i1_for_level(Level.CITY, period, now, environment, chunk_size=chunk_size),
-    ]
-    indicators = pd.concat(subflows_results, ignore_index=True)
+    # FIXME
+    # Prior to Pandas 2.2, dtypes should be homogeneous or else dataframes cannot be
+    # concatenated.
+    national = i1_national(period, now, environment)
+    indicators = pd.concat(
+        [
+            national,
+            i1_for_level(
+                Level.REGION, period, now, environment, chunk_size=chunk_size
+            ).astype(national.dtypes),
+            i1_for_level(
+                Level.DEPARTMENT, period, now, environment, chunk_size=chunk_size
+            ).astype(national.dtypes),
+            i1_for_level(
+                Level.EPCI, period, now, environment, chunk_size=chunk_size
+            ).astype(national.dtypes),
+            i1_for_level(
+                Level.CITY, period, now, environment, chunk_size=chunk_size
+            ).astype(national.dtypes),
+        ],
+        ignore_index=True,
+    )
 
     if persist and environment:
         save_indicators(environment, indicators)
