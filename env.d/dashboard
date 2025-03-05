@@ -9,6 +9,9 @@ DASHBOARD_SECRET_KEY=the_secret_key
 DASHBOARD_DB_NAME=qualicharge-dashboard
 DASHBOARD_DATABASE_URL=psql://qualicharge:pass@postgresql:5432/qualicharge-dashboard
 
+# dashboard
+DASHBOARD_DOMAIN="https://beta.gouv.fr/startups/qualicharge.html"
+
 # Third-party integrations
 DASHBOARD_SENTRY_DSN=
 DASHBOARD_SENTRY_TRACES_SAMPLE_RATE=1.0
@@ -48,6 +51,7 @@ DASHBOARD_DEFAULT_FROM_EMAIL=no-reply@qualicharge.beta.gouv.fr
 # Brevo Emailing
 DASHBOARD_BREVO_API_KEY=
 DASHBOARD_CONSENT_VALIDATION_TEMPLATE_ID=3
+DASHBOARD_VALIDATED_USER_TEMPLATE_ID=5
 
 # Annuaire des Entreprises API
 DASHBOARD_ANNUAIRE_ENTREPRISE_API_ROOT_URL="https://staging.entreprise.api.gouv.fr/v3/"

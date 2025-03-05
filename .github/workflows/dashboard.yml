@@ -38,6 +38,7 @@ jobs:
     env:
       DASHBOARD_DATABASE_URL: psql://qualicharge:pass@postgresql:5432/qualicharge-dashboard
       DASHBOARD_SECRET_KEY: the_secret_key
+      DASHBOARD_DOMAIN: https://dashboard.qualicharge.beta.gouv.fr
       DASHBOARD_CONTROL_AUTHORITY_NAME: QualiCharge
       DASHBOARD_CONTROL_AUTHORITY_ADDRESS_1: 1 rue de test
       DASHBOARD_CONTROL_AUTHORITY_ZIP_CODE: 75000
@@ -49,6 +50,7 @@ jobs:
       DASHBOARD_DEFAULT_FROM_EMAIL: contact@exemple.com
       DASHBOARD_BREVO_API_KEY: the_secret_api_key
       DASHBOARD_CONSENT_VALIDATION_TEMPLATE_ID: 3
+      DASHBOARD_VALIDATED_USER_TEMPLATE_ID: 5
       DASHBOARD_PROCONNECT_CLIENT_ID: the_client_id
       DASHBOARD_PROCONNECT_CLIENT_SECRET: the_secret_key
       DASHBOARD_PROCONNECT_DOMAIN: proconnect_endpoint
@@ -117,6 +119,7 @@ jobs:
           DASHBOARD_DB_NAME: test-qualicharge-dashboard
           DASHBOARD_DATABASE_URL: psql://qualicharge:pass@localhost:5432/test-qualicharge-dashboard
           DASHBOARD_SECRET_KEY: the_secret_key
+          DASHBOARD_DOMAIN: https://dashboard.qualicharge.beta.gouv.fr
           DASHBOARD_CONTROL_AUTHORITY_NAME: QualiCharge
           DASHBOARD_CONTROL_AUTHORITY_ADDRESS_1: 1 rue de test
           DASHBOARD_CONTROL_AUTHORITY_ZIP_CODE: 75000
@@ -128,6 +131,7 @@ jobs:
           DASHBOARD_DEFAULT_FROM_EMAIL: contact@exemple.com
           DASHBOARD_BREVO_API_KEY: the_secret_api_key
           DASHBOARD_CONSENT_VALIDATION_TEMPLATE_ID: 3
+          DASHBOARD_VALIDATED_USER_TEMPLATE_ID: 5
           DASHBOARD_PROCONNECT_CLIENT_ID: the_client_id
           DASHBOARD_PROCONNECT_CLIENT_SECRET: the_secret_key
           DASHBOARD_PROCONNECT_DOMAIN: proconnect_endpoint
