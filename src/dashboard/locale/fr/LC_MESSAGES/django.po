@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-02-20 16:20+0100\n"
-"PO-Revision-Date: 2025-02-20 16:21+0100\n"
+"POT-Creation-Date: 2025-03-07 09:17+0100\n"
+"PO-Revision-Date: 2025-03-07 09:25+0100\n"
 "Last-Translator: ssorin <ssorin@dwdlc.com>\n"
 "Language-Team: \n"
 "Language: fr\n"
@@ -35,22 +35,62 @@ msgstr "Permissions"
 msgid "Important dates"
 msgstr "Dates importantes"
 
+#: src/dashboard/apps/auth/admin.py:48
+msgid "is attached to an Entity"
+msgstr "est attaché à une Entité"
+
 #: src/dashboard/apps/auth/apps.py:13
 msgid "Authentication"
 msgstr "Authentification"
 
-#: src/dashboard/apps/auth/models.py:19 src/dashboard/apps/core/models.py:65
+#: src/dashboard/apps/auth/models.py:23 src/dashboard/apps/core/models.py:65
 msgid "SIRET"
 msgstr "SIRET"
 
-#: src/dashboard/apps/auth/models.py:21
+#: src/dashboard/apps/auth/models.py:25
 msgid "is validated"
 msgstr "est validé"
 
-#: src/dashboard/apps/auth/models.py:24
+#: src/dashboard/apps/auth/models.py:28
 msgid ""
 "Designates whether this user has been validated by the QualiCharge team."
 msgstr "Indique si cet utilisateur a été validé par l'équipe QualiCharge."
+
+#: src/dashboard/apps/auth/templates/auth/user_not_validated.html:5
+msgid "Account not validated"
+msgstr "Compte non validé"
+
+#: src/dashboard/apps/auth/templates/auth/user_not_validated.html:14
+msgid "Your account is not validated"
+msgstr "Votre compte n'est pas validé"
+
+#: src/dashboard/apps/auth/templates/auth/user_not_validated.html:17
+msgid "We are sorry, but your account has not been validated yet."
+msgstr "Votre compte n'a pas encore été validé."
+
+#: src/dashboard/apps/auth/templates/auth/user_not_validated.html:20
+msgid ""
+"\n"
+"            If this is your first time logging in, this is expected.<br />\n"
+"            An administrator needs to validate your account, and you will "
+"receive an email notification once this has been completed.\n"
+"            "
+msgstr ""
+"\n"
+"Si il s'agit de votre première connexion, cela est normal.<br />\n"
+"Un administrateur doit valider votre compte. Vous recevrez une notification "
+"par e-mail une fois cette opération terminée."
+
+#: src/dashboard/apps/auth/templates/auth/user_not_validated.html:26
+msgid "If you think this is a mistake, you can contact our team."
+msgstr ""
+"Si vous pensez qu'il s'agit d'une erreur, vous pouvez contacter notre équipe."
+
+#: src/dashboard/apps/auth/templates/auth/user_not_validated.html:32
+#: src/dashboard/templates/403.html:36 src/dashboard/templates/404.html:35
+#: src/dashboard/templates/500.html:29
+msgid "Contact us"
+msgstr "Contactez-nous"
 
 #: src/dashboard/apps/consent/__init__.py:11
 msgid "Awaiting"
@@ -72,9 +112,9 @@ msgstr "Marquer les consentements sélectionnés comme révoqués"
 msgid "Selected consents have been marked as revoked."
 msgstr "Les consentements sélectionnés ont été marqués comme révoqués."
 
-#: src/dashboard/apps/consent/apps.py:13 src/dashboard/apps/consent/views.py:33
-#: src/dashboard/apps/consent/views.py:61
-#: src/dashboard/apps/consent/views.py:283
+#: src/dashboard/apps/consent/apps.py:13 src/dashboard/apps/consent/views.py:34
+#: src/dashboard/apps/consent/views.py:63
+#: src/dashboard/apps/consent/views.py:281
 msgid "Consent"
 msgstr "Consentement"
 
@@ -195,7 +235,7 @@ msgstr "soumettre"
 msgid "No consents to validate"
 msgstr "Aucun consentement à valider"
 
-#: src/dashboard/apps/consent/views.py:52
+#: src/dashboard/apps/consent/views.py:54
 msgid ""
 "An error occurred while validating the form. Our team has been notified and "
 "will get back to you shortly."
@@ -203,14 +243,17 @@ msgstr ""
 "Une erreur s'est produite lors de la validation du formulaire. Notre équipe "
 "a été prévenue et reviendra vers vous rapidement."
 
-#: src/dashboard/apps/consent/views.py:63
-#: src/dashboard/apps/consent/views.py:285
+#: src/dashboard/apps/consent/views.py:65
 msgid "Manage Consents"
 msgstr "Gérer les consentements"
 
-#: src/dashboard/apps/consent/views.py:87
+#: src/dashboard/apps/consent/views.py:89
 msgid "Consents updated."
 msgstr "Consentements mis à jour."
+
+#: src/dashboard/apps/consent/views.py:283
+msgid "Followed stations"
+msgstr "Stations suivies"
 
 #: src/dashboard/apps/core/abstract_models.py:22
 msgid "created at"
@@ -312,7 +355,14 @@ msgstr ""
 "Le SIRET doit être composé uniquement de chiffres et doit contenir "
 "exactement 14 chiffres."
 
-#: src/dashboard/apps/core/validators.py:36
+#: src/dashboard/apps/core/validators.py:37
+msgid ""
+"The SIREN must be composed only of numbers and must contain exactly 9 digits."
+msgstr ""
+"Le SIREN doit être composé uniquement de chiffres et doit contenir "
+"exactement 9 chiffres."
+
+#: src/dashboard/apps/core/validators.py:56
 msgid ""
 "The NAF code must be in the format of 4 digits followed by a letter (e.g.: "
 "6820A)."
@@ -320,7 +370,7 @@ msgstr ""
 "Le code NAF doit être au format de 4 chiffres suivis d'une lettre (ex : "
 "6820A)."
 
-#: src/dashboard/apps/core/validators.py:56
+#: src/dashboard/apps/core/validators.py:76
 msgid "Zip code must be composed of number and a fixed length of 5 characters."
 msgstr ""
 "Le code postal doit être composé d'un chiffre et d'une longueur fixe de 5 "
@@ -330,7 +380,7 @@ msgstr ""
 msgid "QualiCharge dashboard"
 msgstr "Tableau de bord QualiCharge"
 
-#: src/dashboard/apps/home/views.py:23
+#: src/dashboard/apps/home/views.py:25
 msgid "Pending consents"
 msgstr "Consentements en attente"
 
@@ -368,11 +418,6 @@ msgstr ""
 #: src/dashboard/templates/blocks/header.html:6
 msgid "Home page"
 msgstr "Accueil"
-
-#: src/dashboard/templates/403.html:36 src/dashboard/templates/404.html:35
-#: src/dashboard/templates/500.html:29
-msgid "Contact us"
-msgstr "Contactez-nous"
 
 #: src/dashboard/templates/404.html:5 src/dashboard/templates/404.html:14
 msgid "Page not found"

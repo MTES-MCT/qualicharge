@@ -3,8 +3,10 @@
 from django.utils.translation import gettext_lazy as _
 from django.views.generic import TemplateView
 
+from apps.auth.mixins import UserValidationMixin
 
-class IndexView(TemplateView):
+
+class IndexView(UserValidationMixin, TemplateView):
     """Index view of the homepage."""
 
     template_name = "home/index.html"
