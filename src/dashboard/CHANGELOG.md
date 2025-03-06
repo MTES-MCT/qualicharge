@@ -15,6 +15,8 @@ and this project adheres to
 - add core app with Entity and DeliveryPoint models
 - add consent app with Consent model
 - add ProConnect authentication system
+- add `UserValidationMixin` to ensure access restrictions for unvalidated users.
+- add a base view combining mixins for consistency
 - add dashboard homepage
 - add consent form to manage consents of one or many entities
 - added a validated consent page allowing consultation of validated consent for the 
@@ -24,6 +26,8 @@ and this project adheres to
 - add mass admin action (make revoked) for consents
 - add validators for SIRET, NAF code and Zip code 
 - add API connector to the "Annuaire des Entreprises" API
+- add a signal on the creation of a delivery point. This signal allows the creation 
+of the consent corresponding to the delivery point
 - retrieve company information from its SIRET using the "Annuaire des Entreprises" API
 - disallow mass action "delete" for consents in admin
 - block the updates of all new data if a consent has the status `REVOKED`
@@ -33,8 +37,6 @@ and this project adheres to
 - block consent updates (via the consent form) if the consent status is not `AWAITING`
 - integration of custom 403, 404 and 500 pages 
 - sentry integration
-- added a signal on the creation of a delivery point. This signal allows the creation 
-of the consent corresponding to the delivery point
 
 
 [unreleased]: https://github.com/MTES-MCT/qualicharge/compare/main...bootstrap-dashboard-project

@@ -9,6 +9,7 @@ class UserFactory(factory.django.DjangoModelFactory):
 
     username = factory.Faker("user_name")
     password = factory.django.Password("foo")
+    is_validated = True
 
     class Meta:  # noqa: D106
         model = get_user_model()
