@@ -2,12 +2,14 @@
 
 import requests
 import sentry_sdk
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from mozilla_django_oidc.auth import (
     OIDCAuthenticationBackend as MozillaOIDCAuthenticationBackend,
 )
 from mozilla_django_oidc.auth import default_username_algo
 
+from apps.core.helpers import sync_entity_from_siret
 from apps.core.validators import validate_siret
 
 
@@ -59,9 +61,14 @@ class OIDCAuthenticationBackend(MozillaOIDCAuthenticationBackend):
     def create_user(self, claims):
         """Return object for a newly created user account."""
         username = self.get_username(claims)
-        return self.UserModel.objects.create_user(
+        user = self.UserModel.objects.create_user(
             username, **self.get_data_for_user_create_and_update(claims)
         )
+
+        siret = self.clean_siret(claims.get("siret"))
+        self.create_entity(siret, user)
+
+        return user
 
     def update_user(self, user, claims):
         """Update existing user with new claims, if necessary save, and return user."""
@@ -90,3 +97,14 @@ class OIDCAuthenticationBackend(MozillaOIDCAuthenticationBackend):
             siret = None
 
         return siret
+
+    def create_entity(self, siret, user):
+        """Create entity from user siret and optionally attach user to this entity."""
+        attached_user = None
+        if settings.PROCONNECT_ATTACH_USER_ON_CREATION:
+            attached_user = user
+
+        try:
+            sync_entity_from_siret(siret, attached_user)
+        except Exception as e:
+            sentry_sdk.capture_exception(e)

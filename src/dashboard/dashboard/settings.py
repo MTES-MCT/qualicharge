@@ -188,6 +188,10 @@ OIDC_RENEW_ID_TOKEN_EXPIRY_SECONDS = 60 * 60
 OIDC_STORE_ID_TOKEN = True
 ALLOW_LOGOUT_GET_METHOD = True
 
+# if True, a new user created via ProConnect will be automatically attached to
+# the entity corresponding to their SIRET.
+PROCONNECT_ATTACH_USER_ON_CREATION = False
+
 # Sentry
 sentry_sdk.init(
     dsn=env.str("SENTRY_DSN"),
