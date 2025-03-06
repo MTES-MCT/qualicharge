@@ -1,9 +1,10 @@
 """Dashboard auth admin."""
 
-from django.contrib import admin
+from django.contrib import admin, messages
 from django.contrib.auth.admin import UserAdmin
 from django.utils.translation import gettext_lazy as _
 
+from .mails import send_validation_email
 from .models import DashboardUser
 
 
@@ -39,3 +40,38 @@ class DashboardUserAdmin(UserAdmin):
         "is_validated",
     )
     list_filter = ("is_staff", "is_superuser", "is_active", "groups", "is_validated")
+    actions = ["validate_users"]
+
+    def save_model(self, request, obj, form, change):
+        """Overriding save_model to handle errors during the save action."""
+        try:
+            super().save_model(request, obj, form, change)
+        except Exception as e:
+            self.message_user(
+                request,
+                _(f"Error during update: {str(e)}"),
+                level=messages.ERROR,
+            )
+
+    @admin.action(description=_("Validate selected users and send validation emails"))
+    def validate_users(self, request, queryset):
+        """Validate selected users and send validation emails."""
+        count = queryset.count()
+        queryset.update(is_validated=True)
+
+        # send validation emails
+        try:
+            send_validation_email(queryset)
+            success_mail_message = _(" and notified")
+        except ValueError as e:
+            success_mail_message = ""
+            self.message_user(
+                request,
+                _(f"Error during update: {str(e)}"),
+                level=messages.ERROR,
+            )
+
+        self.message_user(
+            request,
+            _(f"{count} users were successfully validated{success_mail_message}."),
+        )
