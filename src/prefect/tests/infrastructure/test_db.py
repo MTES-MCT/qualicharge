@@ -1,7 +1,8 @@
 """QualiCharge prefect indicators tests: databases."""
 
-import pandas as pd
-import pytest
+from datetime import datetime
+
+import pytest  # type: ignore
 from sqlalchemy import text
 from sqlalchemy.exc import ProgrammingError
 
@@ -12,8 +13,10 @@ from indicators.db import (
     save_indicators,
 )
 from indicators.infrastructure import i1  # type: ignore
-from indicators.models import IndicatorPeriod, Level
+from indicators.models import IndicatorPeriod, IndicatorTimeSpan, Level
 from indicators.types import Environment
+
+TIMESPAN = IndicatorTimeSpan(start=datetime.now(), period=IndicatorPeriod.DAY)
 
 
 def test_get_api_db_engine():
@@ -54,13 +57,8 @@ def test_create_tables(indicators_db_engine):
 def test_save_indicators(indicators_db_engine):
     """Test save_indicators utility."""
     # Get data sample
-    now = pd.Timestamp.now()
     indicators = i1.i1_for_level(
-        Level.DEPARTMENT,
-        IndicatorPeriod.DAY,
-        now,
-        Environment.TEST,
-        chunk_size=1000,
+        Level.DEPARTMENT, TIMESPAN, Environment.TEST, chunk_size=1000
     )
 
     # The test table should not exist yet
