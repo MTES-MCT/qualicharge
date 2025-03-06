@@ -10,7 +10,7 @@ DASHBOARD_DB_NAME=qualicharge-dashboard
 DASHBOARD_DATABASE_URL=psql://qualicharge:pass@postgresql:5432/qualicharge-dashboard
 
 # dashboard
-DASHBOARD_DOMAIN="https://beta.gouv.fr/startups/qualicharge.html"
+DASHBOARD_DOMAIN="http://localhost:8030/"
 
 # Third-party integrations
 DASHBOARD_SENTRY_DSN=
@@ -51,6 +51,7 @@ DASHBOARD_DEFAULT_FROM_EMAIL=no-reply@qualicharge.beta.gouv.fr
 # Brevo Emailing
 DASHBOARD_BREVO_API_KEY=
 DASHBOARD_CONSENT_VALIDATION_TEMPLATE_ID=3
+DASHBOARD_NEW_SUBSCRIPTION_TEMPLATE_ID=4
 DASHBOARD_VALIDATED_USER_TEMPLATE_ID=5
 
 # Annuaire des Entreprises API

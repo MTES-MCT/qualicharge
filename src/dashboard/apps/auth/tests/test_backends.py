@@ -3,6 +3,8 @@
 from unittest.mock import patch
 
 import pytest
+from anymail.exceptions import AnymailRequestsAPIError
+from django.conf import settings
 
 from apps.auth.backends import OIDCAuthenticationBackend
 from apps.auth.factories import UserFactory
@@ -92,3 +94,44 @@ def test_create_entity_with_siret_exception(mocked):
         backend.create_entity("12345678901234", user)
         mocked.assert_called_once_with("12345678901234", None)
         mock_capture_exception.assert_called_once()
+
+
+@pytest.mark.django_db
+def test_send_admin_notification_populated(rf):
+    """Test `send_admin_notification` is sent."""
+    user = UserFactory()
+    backend = OIDCAuthenticationBackend()
+
+    with patch("apps.auth.backends.AnymailMessage") as mock_message:
+        email_send_mock = mock_message.return_value.send
+        backend.send_admin_notification(user)
+
+        expected_email_config = settings.DASHBOARD_EMAIL_CONFIGS["new_subscription"]
+        expected_email_to = settings.CONTACT_EMAIL
+        mock_message.assert_called_once_with(
+            to=[
+                expected_email_to,
+            ],
+            template_id=expected_email_config.get("template_id"),
+            merge_data={
+                expected_email_to: {
+                    "user_username": user.username,
+                    "link": f"http://localhost:8030/admin/qcd_auth/dashboarduser/{user.id}/change/",
+                }
+            },
+        )
+        email_send_mock.assert_called_once()
+
+
+@pytest.mark.django_db
+def test_send_admin_notification_raises_exception_logged_to_sentry(rf):
+    """Test `send_admin_notification` handles exception and logs it to Sentry."""
+    user = UserFactory()
+    backend = OIDCAuthenticationBackend()
+
+    with patch("apps.auth.backends.AnymailMessage") as mock_message:
+        mock_message.return_value.send.side_effect = AnymailRequestsAPIError()
+
+        with patch("apps.auth.backends.sentry_sdk.capture_exception") as mock_sentry:
+            backend.send_admin_notification(user)
+            mock_sentry.assert_called_once()
