@@ -14,11 +14,11 @@ from prefect.futures import wait
 from prefect.task_runners import ThreadPoolTaskRunner
 from sqlalchemy.orm import Session
 
-from ..conf import settings
-from ..db import get_api_db_engine
-from ..models import IndicatorTimeSpan, Level
-from ..types import Environment
-from ..utils import (
+from indicators.conf import settings
+from indicators.db import get_api_db_engine
+from indicators.models import IndicatorTimeSpan, Level
+from indicators.types import Environment
+from indicators.utils import (
     POWER_RANGE_CTE,
     export_indicators,
     get_num_for_level_query_params,
