@@ -17,16 +17,16 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from django.views.generic import FormView, ListView, TemplateView
 
+from apps.auth.models import DashboardUser
 from apps.core.models import Entity
+from apps.core.views import BaseView
 
-from ..auth.models import DashboardUser
 from . import AWAITING, VALIDATED
 from .forms import ConsentForm
-from .mixins import BreadcrumbContextMixin
 from .models import Consent
 
 
-class IndexView(BreadcrumbContextMixin, TemplateView):
+class IndexView(BaseView, TemplateView):
     """Index view of the consent app."""
 
     template_name = "consent/index.html"
@@ -46,7 +46,7 @@ class IndexView(BreadcrumbContextMixin, TemplateView):
         return context
 
 
-class ConsentFormView(BreadcrumbContextMixin, FormView):
+class ConsentFormView(BaseView, FormView):
     """Updates the status of consents."""
 
     ERROR_MESSAGE = _(
@@ -269,8 +269,8 @@ class ConsentFormView(BreadcrumbContextMixin, FormView):
             return
 
 
-class ValidatedConsentView(BreadcrumbContextMixin, ListView):
-    """Index view of the consent app."""
+class ValidatedConsentView(BaseView, ListView):
+    """Validated consents view of the consent app."""
 
     context_object_name = "consents"
     template_name = "consent/validated.html"
@@ -279,7 +279,7 @@ class ValidatedConsentView(BreadcrumbContextMixin, ListView):
     breadcrumb_links = [
         {"url": reverse("consent:index"), "title": _("Consent")},
     ]
-    breadcrumb_current = _("Manage Consents")
+    breadcrumb_current = _("Followed stations")
 
     def get_queryset(self):
         """Filter queryset to only return validated consents for the current user.

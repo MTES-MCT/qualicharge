@@ -6,6 +6,8 @@ import pytest
 from django.test import Client
 from django.urls import reverse
 
+from apps.auth.factories import UserFactory
+
 
 def test_redirect_for_unauthenticated_user():
     """Test redirect for an unauthenticated user on IndexView."""
@@ -20,9 +22,7 @@ def test_redirect_for_unauthenticated_user():
 def test_index_view_for_authenticated_user(django_user_model):
     """Test the IndexView for an authenticated user."""
     client = Client()
-    username = "user1"
-    password = "bar"  # noqa: S105
-    user = django_user_model.objects.create_user(username=username, password=password)
+    user = UserFactory()
     client.force_login(user)
     path = reverse("home:index")
     response = client.get(path)
