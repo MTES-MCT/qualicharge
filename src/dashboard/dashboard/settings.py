@@ -210,6 +210,8 @@ sentry_sdk.init(
     send_default_pii=True,
 )
 
+## Dashboard
+DASHBOARD_DOMAIN = env.str("DOMAIN")
 
 ## Consent app
 
@@ -259,6 +261,11 @@ DASHBOARD_EMAIL_CONFIGS = {
     "consent_validation": {
         "template_id": env.int("CONSENT_VALIDATION_TEMPLATE_ID"),
         "link": env.str("DOMAIN"),
+    },
+    # Configuration for the notification email sent to the QualiCharge Team when
+    # a new user registers on the Dashboard.
+    "new_subscription": {
+        "template_id": env.int("NEW_SUBSCRIPTION_TEMPLATE_ID"),
     },
     # Configuration for the notification email sent to the user when
     # the user has been validated by an admin.

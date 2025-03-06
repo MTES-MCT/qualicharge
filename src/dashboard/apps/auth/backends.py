@@ -1,9 +1,14 @@
 """Dashboard auth middleware."""
 
+from urllib.parse import urljoin
+
 import requests
 import sentry_sdk
+from anymail.exceptions import AnymailRequestsAPIError
+from anymail.message import AnymailMessage
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.urls import reverse
 from mozilla_django_oidc.auth import (
     OIDCAuthenticationBackend as MozillaOIDCAuthenticationBackend,
 )
@@ -65,6 +70,8 @@ class OIDCAuthenticationBackend(MozillaOIDCAuthenticationBackend):
             username, **self.get_data_for_user_create_and_update(claims)
         )
 
+        self.send_admin_notification(user)
+
         siret = self.clean_siret(claims.get("siret"))
         self.create_entity(siret, user)
 
@@ -107,4 +114,33 @@ class OIDCAuthenticationBackend(MozillaOIDCAuthenticationBackend):
         try:
             sync_entity_from_siret(siret, attached_user)
         except Exception as e:
+            sentry_sdk.capture_exception(e)
+
+    def send_admin_notification(self, user) -> None:
+        """Sends an email notification to QualiCharge team for a new subscription."""
+        email_to = settings.CONTACT_EMAIL
+        email_config = settings.DASHBOARD_EMAIL_CONFIGS["new_subscription"]
+        link = urljoin(
+            settings.DASHBOARD_DOMAIN,
+            reverse("admin:qcd_auth_dashboarduser_change", args=(user.id,)),
+        )
+        email_data = {
+            email_to: {
+                "user_username": user.username,  # type: ignore[union-attr]
+                "link": link,
+            },
+        }
+
+        email = AnymailMessage(
+            to=[
+                email_to,
+            ],
+            template_id=email_config.get("template_id"),
+            merge_data=email_data,
+        )
+
+        try:
+            email.send()
+        except AnymailRequestsAPIError as e:
+            # fail silently and send a sentry log
             sentry_sdk.capture_exception(e)
