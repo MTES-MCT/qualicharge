@@ -13,7 +13,7 @@ class IndexView(TemplateView):
         context = super().get_context_data(**kwargs)
 
         entities = self.request.user.get_entities()
-        has_awaiting_consent = any(entity.get_consents for entity in entities)
+        has_awaiting_consent = any(entity.get_consents() for entity in entities)
 
         if has_awaiting_consent:
             context["top_detail"] = {
