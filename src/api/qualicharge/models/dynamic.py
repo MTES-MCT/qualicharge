@@ -39,10 +39,10 @@ class StatusBase(SQLModel):
     etat_pdc: EtatPDCEnum
     occupation_pdc: OccupationPDCEnum
     horodatage: PastDatetime
-    etat_prise_type_2: Optional[EtatPriseEnum]
-    etat_prise_type_combo_ccs: Optional[EtatPriseEnum]
-    etat_prise_type_chademo: Optional[EtatPriseEnum]
-    etat_prise_type_ef: Optional[EtatPriseEnum]
+    etat_prise_type_2: Optional[EtatPriseEnum] = None
+    etat_prise_type_combo_ccs: Optional[EtatPriseEnum] = None
+    etat_prise_type_chademo: Optional[EtatPriseEnum] = None
+    etat_prise_type_ef: Optional[EtatPriseEnum] = None
 
 
 class StatusCreate(StatusBase):
