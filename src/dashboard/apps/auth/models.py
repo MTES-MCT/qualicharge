@@ -1,5 +1,7 @@
 """Dashboard auth models."""
 
+import uuid
+
 import sentry_sdk
 from anymail.exceptions import AnymailRequestsAPIError
 from anymail.message import AnymailMessage
@@ -20,6 +22,7 @@ class DashboardUser(AbstractUser):
     AbstractUser model in Django.
     """
 
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     siret = models.CharField(_("SIRET"), max_length=14, default="", blank=True)
     is_validated = models.BooleanField(
         _("is validated"),
@@ -34,7 +37,7 @@ class DashboardUser(AbstractUser):
         # Check if `is_validated` changes to True
         if self.pk:
             previous = DashboardUser.objects.filter(pk=self.pk).first()
-            if not previous.is_validated and self.is_validated:
+            if previous and not previous.is_validated and self.is_validated:
                 self.send_validation_email()
 
         super().save(*args, **kwargs)
