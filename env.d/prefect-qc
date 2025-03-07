@@ -2,3 +2,9 @@ QUALICHARGE_API_ACTIVE_ENVIRONMENTS=["development"]
 QUALICHARGE_API_DATABASE_URLS__development=postgresql+psycopg://qualicharge:pass@postgresql:5432/qualicharge-api
 QUALICHARGE_INDICATORS_DATABASE_URL=postgresql+psycopg://qualicharge:pass@postgresql:5432/qualicharge-indicators
 QUALICHARGE_INDICATORS_DB_NAME="qualicharge-indicators"
+# Great Expectation email notification using Brevo
+# GX_BREVO_SMTP_ADDRESS=
+# GX_BREVO_SMTP_PORT=
+# GX_BREVO_SENDER_LOGIN=
+# GX_BREVO_PASSWORD=
+# GX_RECEIVER_EMAILS=

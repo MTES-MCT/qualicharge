@@ -9,23 +9,41 @@ pdc_expectations = [
     gxe.ExpectColumnMinToBeBetween(
         column="puissance_nominale",
         min_value=1.3,
-    ),
-    gxe.ExpectColumnMaxToBeBetween(
-        column="puissance_nominale",
         max_value=4000,
+        meta={"code": "E001"},
     ),
+    # gxe.ExpectColumnMaxToBeBetween(
+    #     column="puissance_nominale",
+    #     max_value=4000,
+    # ),
 ]
 amenageur_expectations = [
-    gxe.ExpectColumnValuesToNotBeNull(column="nom_amenageur"),
-    gxe.ExpectColumnValuesToNotBeNull(column="siren_amenageur"),
-    gxe.ExpectColumnValuesToNotBeNull(column="contact_amenageur"),
+    gxe.ExpectColumnValuesToNotBeNull(
+        column="nom_amenageur",
+        meta={"code": "E002"},
+    ),
+    gxe.ExpectColumnValuesToNotBeNull(
+        column="siren_amenageur",
+        meta={"code": "E003"},
+    ),
+    gxe.ExpectColumnValuesToNotBeNull(
+        column="contact_amenageur",
+        meta={"code": "E004"},
+    ),
 ]
 operateur_expectations = [
-    gxe.ExpectColumnValuesToNotBeNull(column="nom_operateur"),
-    gxe.ExpectColumnValuesToNotBeNull(column="telephone_operateur"),
+    gxe.ExpectColumnValuesToNotBeNull(
+        column="nom_operateur",
+        meta={"code": "E005"},
+    ),
+    gxe.ExpectColumnValuesToNotBeNull(
+        column="telephone_operateur",
+        meta={"code": "E006"},
+    ),
 ]
 localisation_expectations = [
-    gxe.UnexpectedRowsExpectation(unexpected_rows_query="""
+    gxe.UnexpectedRowsExpectation(
+        unexpected_rows_query="""
 SELECT
   id_station_itinerance,
   ST_X ("coordonneesXY"::geometry) AS longitude,
@@ -43,7 +61,9 @@ WHERE
       OR ST_Y ("coordonneesXY"::geometry) < 41
     )
   )
-    """)
+    """,
+        meta={"code": "E007"},
+    )
 ]
 
 

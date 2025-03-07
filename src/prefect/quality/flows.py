@@ -1,11 +1,16 @@
 """Prefect flow: run checkpoints."""
 
+import json
 import os
 import re
 import unicodedata
+from typing import List
 
+from pydantic import BaseModel
+
+import pandas as pd
 import great_expectations as gx
-from indicators import db
+from jinja2 import Environment, FileSystemLoader, select_autoescape
 from prefect import flow, task
 from prefect.artifacts import create_markdown_artifact
 from prefect.cache_policies import NONE
@@ -176,14 +181,76 @@ def run_api_db_validation_by_amenageur(
                 )
             ).all()
         ]
-    for amenageur in amenageurs:
-        result = run_api_db_checkpoint_for_amenageur(
+
+    class QCExpectationResult(BaseModel):
+        """QualiCharge simplified expectation result.
+
+        This model is used for reporting.
+        """
+
+        code: str
+        success: bool
+
+    class QCExpectationsSuiteResult(BaseModel):
+        """QualiCharge simplified expectation suite result."""
+
+        amenageur: str
+        success: bool
+        suite: List[QCExpectationResult] = []
+
+    class QCReport(BaseModel):
+        """QualiCharge expectations report."""
+
+        name: str
+        results: List[QCExpectationsSuiteResult] = []
+
+    report = QCReport(name=f"static-{environment}")
+    for i, amenageur in enumerate(amenageurs):
+        ge_result = run_api_db_checkpoint_for_amenageur(
             context,
             amenageur,
             environment,
             report_by_email=report_by_email,
             update_data_docs=update_data_docs,
         )
+        if ge_result is None:
+            continue
+        qc_results = QCExpectationsSuiteResult(
+            amenageur=amenageur, success=ge_result.success
+        )
+        # print(f"{dir(result)=}")
+        # print(f"{result.__class__.__name__=}")
+        # print(f"{result.run_results=}")
+        for _, v in ge_result.run_results.items():
+            for r in v.results:
+                qc_results.suite.append(
+                    QCExpectationResult(
+                        code=r.expectation_config.meta.get("code"), success=r.success
+                    )
+                )
+                # print(f"{r.expectation_config.meta.get('code')=}")
+        report.results.append(qc_results)
+    #     if i == 6:
+    #         break
+    # print(f"{report=}")
+    # df = pd.DataFrame.from_records(results)
+    # print(result)
+    # print(df)
+
+    # with open("foo.json", "w") as f:
+    #     f.write("\n".join([json.dumps(r, indent=2) for _, r in results]))
+
+    jinja_env = Environment(
+        loader=FileSystemLoader("quality/templates"), autoescape=select_autoescape()
+    )
+    template = jinja_env.get_template("static-by-amenageur.md.j2")
+    md = template.render(report=report)
+    # print(md)
+    create_markdown_artifact(
+        md,
+        description=f"# GX validation by `Amenageur` for API DB instance: {environment}",
+        key=f"api-db-static-amenageurs-{environment}",
+    )
     #     md.append(f"| {amenageur} | " + ("✅" if result.success else "😡") + " |")
     #
     # create_markdown_artifact(
@@ -196,5 +263,5 @@ def run_api_db_validation_by_amenageur(
 # FIXME
 # Used to ease development, should be removed
 if __name__ == "__main__":
-    run_api_db_validation("development")
-    # run_api_db_validation_by_amenageur("development")
+    # run_api_db_validation("development")
+    run_api_db_validation_by_amenageur("development")
