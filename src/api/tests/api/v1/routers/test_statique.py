@@ -521,6 +521,45 @@ def test_create_for_unknown_operational_unit(client_auth, db_session):
     assert n_pdc == 0
 
 
+def test_create_with_required_fields_only(client_auth, db_session):
+    """Test the /statique/ create endpoint."""
+    GroupFactory.__session__ = db_session
+
+    # Create statique
+    id_pdc_itinerance = "FR911E1111ER1"
+    data = StatiqueFactory.build(
+        id_pdc_itinerance=id_pdc_itinerance,
+    )
+
+    # Ignore optional fields in the payload
+    optional_fields = {
+        "nom_amenageur",
+        "siren_amenageur",
+        "contact_amenageur",
+        "nom_operateur",
+        "telephone_operateur",
+        "id_station_local",
+        "id_pdc_local",
+        "gratuit",
+        "paiement_cb",
+        "paiement_autre",
+        "tarification",
+        "raccordement",
+        "date_mise_en_service",
+        "observations",
+        "cable_t2_attache",
+    }
+    response = client_auth.post(
+        "/statique/",
+        json=json.loads(data.model_dump_json(exclude=optional_fields)),
+    )
+    assert response.status_code == status.HTTP_201_CREATED
+    json_response = response.json()
+    assert json_response["message"] == "Statique items created"
+    assert json_response["size"] == 1
+    assert json_response["items"][0] == id_pdc_itinerance
+
+
 @pytest.mark.parametrize(
     "client_auth",
     (

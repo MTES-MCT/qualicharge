@@ -98,8 +98,7 @@ DataGouvCoordinate = Annotated[
             "type": "string",
             "title": "coordonneesXY",
             "description": (
-                "coordonneesXY is supposed to be a "
-                "'[longitude,latitude]' array string"
+                "coordonneesXY is supposed to be a '[longitude,latitude]' array string"
             ),
             "examples": [
                 "[12.3, 41.5]",
@@ -150,7 +149,7 @@ class Statique(ModelSchemaMixin, BaseModel):
     id_station_itinerance: Annotated[
         str, Field(pattern="(?:(?:^|,)(^[A-Z]{2}[A-Z0-9]{4,33}$|Non concerné))+$")
     ]
-    id_station_local: Optional[str]
+    id_station_local: Optional[str] = None
     nom_station: str
     implantation_station: ImplantationStationEnum
     adresse_station: str
@@ -164,18 +163,18 @@ class Statique(ModelSchemaMixin, BaseModel):
             examples=["FR0NXEVSEXB9YG", "FRFASE3300405", "FR073012308585"],
         ),
     ]
-    id_pdc_local: Optional[str]
+    id_pdc_local: Optional[str] = None
     puissance_nominale: PositiveFloat
     prise_type_ef: bool
     prise_type_2: bool
     prise_type_combo_ccs: bool
     prise_type_chademo: bool
     prise_type_autre: bool
-    gratuit: Optional[bool]
+    gratuit: Optional[bool] = None
     paiement_acte: bool
-    paiement_cb: Optional[bool]
-    paiement_autre: Optional[bool]
-    tarification: Optional[str]
+    paiement_cb: Optional[bool] = None
+    paiement_autre: Optional[bool] = None
+    tarification: Optional[str] = None
     condition_acces: ConditionAccesEnum
     reservation: bool
     horaires: Annotated[
@@ -184,12 +183,12 @@ class Statique(ModelSchemaMixin, BaseModel):
     accessibilite_pmr: AccessibilitePMREnum
     restriction_gabarit: str
     station_deux_roues: bool
-    raccordement: Optional[RaccordementEnum]
+    raccordement: Optional[RaccordementEnum] = None
     num_pdl: Optional[Annotated[str, Field(max_length=64)]]
-    date_mise_en_service: Optional[PastDate]
-    observations: Optional[str]
+    date_mise_en_service: Optional[PastDate] = None
+    observations: Optional[str] = None
     date_maj: NotFutureDate
-    cable_t2_attache: Optional[bool]
+    cable_t2_attache: Optional[bool] = None
 
     @model_validator(mode="after")
     def check_afirev_prefix(self) -> Self:
