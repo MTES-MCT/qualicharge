@@ -8,6 +8,14 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Changed
+
+- Upgrade alembic to `1.15.1`
+- Upgrade fastapi to `0.115.11`
+- Upgrade pydantic-settings to `2.8.1`
+- Upgrade sqlmodel to `0.0.24`
+- Upgrade typer to `0.15.2`
+
 ## [0.19.0] - 2025-02-25
 
 ### Added

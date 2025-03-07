@@ -13,8 +13,8 @@ and this project adheres to
 - Upgrade anyio to `4.6.1`
 - Upgrade httpx to `0.28.0`
 - Upgrade Pydantic to `2.9.1`
-- Upgrade pydantic-settings to `2.5.2`
-- Upgrade typer to `0.15.1`
+- Upgrade pydantic-settings to `2.8.1`
+- Upgrade typer to `0.15.2`
 
 ## [0.2.0] - 2024-09-05
 
