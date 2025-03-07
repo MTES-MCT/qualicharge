@@ -1,0 +1,267 @@
+"""Prefect flow: run checkpoints."""
+
+import json
+import os
+import re
+import unicodedata
+from typing import List
+
+from pydantic import BaseModel
+
+import pandas as pd
+import great_expectations as gx
+from jinja2 import Environment, FileSystemLoader, select_autoescape
+from prefect import flow, task
+from prefect.artifacts import create_markdown_artifact
+from prefect.cache_policies import NONE
+from sqlalchemy import create_engine, text, update
+from sqlalchemy.orm import Session
+
+from checkpoints.static import get_static_checkpoint
+from expectations.static import set_expectation_suite as set_static_expectation_suite
+
+api_data_source_name = "api-{environment}"
+
+
+def slugify(value, allow_unicode=False):
+    """Slugify a string.
+
+    Convert to ASCII if 'allow_unicode' is False. Convert spaces or repeated
+    dashes to single dashes. Remove characters that aren't alphanumerics,
+    underscores, or hyphens. Convert to lowercase. Also strip leading and
+    trailing whitespace, dashes, and underscores.
+
+    Taken from Django code base:
+    https://github.com/django/django/blob/main/django/utils/text.py
+    """
+    value = str(value)
+    if allow_unicode:
+        value = unicodedata.normalize("NFKC", value)
+    else:
+        value = (
+            unicodedata.normalize("NFKD", value)
+            .encode("ascii", "ignore")
+            .decode("ascii")
+        )
+    value = re.sub(r"[^\w\s-]", "", value.lower())
+    return re.sub(r"[-\s]+", "-", value).strip("-_")
+
+
+def set_data_source(context, environment: str):
+    """Add API data instance as a data source."""
+    context.data_sources.add_postgres(
+        name=api_data_source_name.format(environment=environment),
+        connection_string=f"${{QUALICHARGE_API_DATABASE_URLS__{environment}}}",
+    )
+
+
+def get_data_asset(
+    context,
+    environment: str,
+    name: str,
+    table: str | None = None,
+    query: str | None = None,
+):
+    """Get data asset for an environment."""
+    data_source = context.data_sources.get(
+        api_data_source_name.format(environment=environment)
+    )
+    assets = [a.name for a in data_source.assets]
+    if name in assets:
+        return None
+    elif table:
+        return data_source.add_table_asset(name=name, table_name=table)
+    elif query:
+        return data_source.add_query_asset(name=name, query=query)
+    raise Exception
+
+
+def get_api_db_checkpoint(
+    environment="development",
+    report_by_email: bool = False,
+    update_data_docs: bool = False,
+):
+    """Check API database instance quality."""
+    context = gx.get_context(mode="ephemeral")
+
+    table = "statique"
+    asset = f"static-{environment}"
+    name = f"static-{environment}"
+    set_data_source(context, environment)
+    set_static_expectation_suite(context)
+    static = get_data_asset(context, environment, asset, table=table)
+    batch = static.add_batch_definition_whole_table(name="FULL_TABLE")
+    checkpoint = get_static_checkpoint(
+        context,
+        batch,
+        name=name,
+        report_by_email=report_by_email,
+        update_data_docs=update_data_docs,
+    )
+    return checkpoint
+
+
+@task(cache_policy=NONE)
+def run_api_db_checkpoint_for_amenageur(
+    context,
+    amenageur: str,
+    environment: str = "development",
+    report_by_email: bool = False,
+    update_data_docs: bool = False,
+):
+    """Get API database instance checkpoint for an amenageur."""
+    asset = f"static-{environment}-{slugify(amenageur)}"
+    name = f"static-{environment}-{slugify(amenageur)}"
+
+    query = f"SELECT * FROM STATIQUE where nom_amenageur = '{amenageur}'"
+    static = get_data_asset(context, environment, asset, query=query)
+    # Duplicate
+    if not static:
+        return
+    batch = static.add_batch_definition_whole_table(name="FULL_TABLE")
+    checkpoint = get_static_checkpoint(
+        context,
+        batch,
+        name=name,
+        report_by_email=report_by_email,
+        update_data_docs=update_data_docs,
+    )
+    return checkpoint.run()
+
+
+@flow(log_prints=True)
+def run_api_db_validation(
+    environment, report_by_email: bool = False, update_data_docs: bool = False
+):
+    """Run API DB checkpoint."""
+    checkpoint = get_api_db_checkpoint(
+        environment, report_by_email=report_by_email, update_data_docs=update_data_docs
+    )
+    result = checkpoint.run()
+    create_markdown_artifact(
+        "\n".join(
+            (
+                f"# Checkpoint validation: {checkpoint.name}",
+                "```json",
+                f"{result.describe()}",
+                "```",
+            )
+        ),
+        description=f"GX validation for API DB instance: {environment}",
+        key=f"api-db-static-{environment}",
+    )
+
+
+@flow(log_prints=True)
+def run_api_db_validation_by_amenageur(
+    environment: str, report_by_email: bool = False, update_data_docs: bool = False
+):
+    """Run API DB checkpoint by amenageur."""
+    context = gx.get_context(mode="ephemeral")
+    set_data_source(context, environment)
+    set_static_expectation_suite(context)
+    md = [
+        "# Checkpoint validation by amenageur",
+        "| Amenageur | Statique |",
+        "| -- | -- |",
+    ]
+
+    db_connection_url = os.getenv(f"QUALICHARGE_API_DATABASE_URLS__{environment}")
+    db_engine = create_engine(db_connection_url)
+    with Session(db_engine) as session:
+        amenageurs = [
+            res[0]
+            for res in session.execute(
+                text(
+                    "SELECT nom_amenageur "
+                    "FROM Statique "
+                    "WHERE nom_amenageur <> ''"
+                    "GROUP BY nom_amenageur "
+                    "ORDER BY nom_amenageur"
+                )
+            ).all()
+        ]
+
+    class QCExpectationResult(BaseModel):
+        """QualiCharge simplified expectation result.
+
+        This model is used for reporting.
+        """
+
+        code: str
+        success: bool
+
+    class QCExpectationsSuiteResult(BaseModel):
+        """QualiCharge simplified expectation suite result."""
+
+        amenageur: str
+        success: bool
+        suite: List[QCExpectationResult] = []
+
+    class QCReport(BaseModel):
+        """QualiCharge expectations report."""
+
+        name: str
+        results: List[QCExpectationsSuiteResult] = []
+
+    report = QCReport(name=f"static-{environment}")
+    for i, amenageur in enumerate(amenageurs):
+        ge_result = run_api_db_checkpoint_for_amenageur(
+            context,
+            amenageur,
+            environment,
+            report_by_email=report_by_email,
+            update_data_docs=update_data_docs,
+        )
+        if ge_result is None:
+            continue
+        qc_results = QCExpectationsSuiteResult(
+            amenageur=amenageur, success=ge_result.success
+        )
+        # print(f"{dir(result)=}")
+        # print(f"{result.__class__.__name__=}")
+        # print(f"{result.run_results=}")
+        for _, v in ge_result.run_results.items():
+            for r in v.results:
+                qc_results.suite.append(
+                    QCExpectationResult(
+                        code=r.expectation_config.meta.get("code"), success=r.success
+                    )
+                )
+                # print(f"{r.expectation_config.meta.get('code')=}")
+        report.results.append(qc_results)
+    #     if i == 6:
+    #         break
+    # print(f"{report=}")
+    # df = pd.DataFrame.from_records(results)
+    # print(result)
+    # print(df)
+
+    # with open("foo.json", "w") as f:
+    #     f.write("\n".join([json.dumps(r, indent=2) for _, r in results]))
+
+    jinja_env = Environment(
+        loader=FileSystemLoader("quality/templates"), autoescape=select_autoescape()
+    )
+    template = jinja_env.get_template("static-by-amenageur.md.j2")
+    md = template.render(report=report)
+    # print(md)
+    create_markdown_artifact(
+        md,
+        description=f"# GX validation by `Amenageur` for API DB instance: {environment}",
+        key=f"api-db-static-amenageurs-{environment}",
+    )
+    #     md.append(f"| {amenageur} | " + ("✅" if result.success else "😡") + " |")
+    #
+    # create_markdown_artifact(
+    #     "\n".join(md),
+    #     description=f"GX validation by `Amenageur` for API DB instance: {environment}",
+    #     key=f"api-db-static-amenageurs-{environment}",
+    # )
+
+
+# FIXME
+# Used to ease development, should be removed
+if __name__ == "__main__":
+    # run_api_db_validation("development")
+    run_api_db_validation_by_amenageur("development")
