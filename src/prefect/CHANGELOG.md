@@ -13,9 +13,7 @@ and this project adheres to
 - Implement t1 workflow
 - Implement i1 workflow
 - Integrate Great-Expectations
-
-### Changed
-
-- Factorize indicators
+- Implement e4 workflow
+- Implement up workflow
 
 [unreleased]: https://github.com/MTES-MCT/qualicharge/
