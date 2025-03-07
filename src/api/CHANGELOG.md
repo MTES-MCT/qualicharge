@@ -16,6 +16,11 @@ and this project adheres to
 - Upgrade sqlmodel to `0.0.24`
 - Upgrade typer to `0.15.2`
 
+### Fixed
+
+- Add default `None` value to API models optional fields or else they are
+  considered as required
+
 ## [0.19.0] - 2025-02-25
 
 ### Added

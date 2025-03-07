@@ -880,6 +880,26 @@ def test_create_status_number_of_queries(db_session, client_auth):
     assert counter.count == expected
 
 
+def test_create_status_with_required_fields_only(db_session, client_auth):
+    """Test the /status/ create endpoint with only required fields."""
+    id_pdc_itinerance = "FR911E1111ER1"
+
+    # Create point of charge
+    save_statique(
+        db_session, StatiqueFactory.build(id_pdc_itinerance=id_pdc_itinerance)
+    )
+    payload = {
+        "id_pdc_itinerance": id_pdc_itinerance,
+        "etat_pdc": "en_service",
+        "occupation_pdc": "occupe",
+        "horodatage": "2024-10-05T14:48:00.000Z",
+    }
+
+    # Create a new status
+    response = client_auth.post("/dynamique/status/", json=payload)
+    assert response.status_code == status.HTTP_201_CREATED
+
+
 @pytest.mark.parametrize(
     "client_auth",
     (
