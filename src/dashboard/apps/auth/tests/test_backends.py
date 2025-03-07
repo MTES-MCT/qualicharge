@@ -115,7 +115,7 @@ def test_send_admin_notification_populated(rf):
             template_id=expected_email_config.get("template_id"),
             merge_data={
                 expected_email_to: {
-                    "user_username": user.username,
+                    "user_email": user.email,
                     "link": f"http://localhost:8030/admin/qcd_auth/dashboarduser/{user.id}/change/",
                 }
             },
