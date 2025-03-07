@@ -4,7 +4,7 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-prefect = "==3.1.5"
+prefect = "==3.2.11"
 geoalchemy2 = {extras = ["shapely"], version = "==0.17.1"}
 geopandas = "==1.0.1"
 pandas = "==2.2.3"
@@ -17,10 +17,10 @@ black = "==25.1.0"
 honcho = "==2.0.0"
 mypy = "==1.15.0"
 pandas-stubs = "==2.2.3.241126"
-pytest = "==8.3.4"
+pytest = "==8.3.5"
 pytest-cov = "==6.0.0"
-ruff = "==0.9.7"
-setuptools = "==75.8.0"
+ruff = "==0.9.10"
+setuptools = "==75.8.2"
 types-python-dateutil = "*"
 
 [requires]
