@@ -126,7 +126,7 @@ class OIDCAuthenticationBackend(MozillaOIDCAuthenticationBackend):
         )
         email_data = {
             email_to: {
-                "user_username": user.username,  # type: ignore[union-attr]
+                "user_email": user.email,  # type: ignore[union-attr]
                 "link": link,
             },
         }
