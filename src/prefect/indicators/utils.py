@@ -3,29 +3,62 @@
 Common indicators functions and constants.
 """
 
+from datetime import datetime
 from string import Template
 
 import pandas as pd  # type: ignore
+from dateutil.relativedelta import MO, relativedelta
 from prefect import task
 from prefect.artifacts import create_markdown_artifact
 from sqlalchemy.orm import Session
 
 from .db import get_api_db_engine, save_indicators
-from .models import IndicatorTimeSpan, Level, PeriodDuration
+from .models import IndicatorPeriod, IndicatorTimeSpan, Level, PeriodDuration
 from .types import Environment
 
-POWER_RANGE_CTE = {
+# in AFIR regulation, 22 kw belongs interval [7.4, 22] and not [22, 50]
+POWER_RANGE_CTE: dict = {
     "power_range": """
     puissance(category, p_cat) AS (
         VALUES
             (numrange(0.0, 7.4), 1),
-            (numrange(7.4, 22.0), 2),
-            (numrange(22.0, 50.0), 3),
+            (numrange(7.4, 22.0, '[]'), 2),
+            (numrange(22.0, 50.0, '()'), 3),
             (numrange(50, 150.0), 4),
             (numrange(150, 350.0), 5),
             (numrange(350, NULL), 6)
     )"""
 }
+
+
+# @typing.no_type_check
+# type: ignore[arg-type]
+def get_period_start_from_pit(  # type: ignore[arg-type]  # noqa: PLR0911
+    pit: datetime | None = None,
+    offset: int = 0,
+    period: IndicatorPeriod = IndicatorPeriod.DAY,
+) -> datetime:  # type: ignore[arg-type]
+    """Return the starting datetime of a period given a point in time (PIT) definition and an offset."""  # noqa: E501
+    first_minute = {"minute": 0, "second": 0, "microsecond": 0}
+    first_hour = first_minute | {"hour": 0}
+    start_date = datetime.now() if pit is None else pit
+    start_date += PeriodDuration[period.name].value * offset
+    match period:
+        case IndicatorPeriod.DAY:
+            return start_date + relativedelta(**first_hour)  # type: ignore[arg-type]
+        case IndicatorPeriod.MONTH:
+            return start_date + relativedelta(day=1, **first_hour)  # type: ignore[arg-type]
+        case IndicatorPeriod.QUARTER:
+            first_month = (start_date.month - 1) // 3 * 3 + 1
+            return start_date + relativedelta(month=first_month, day=1, **first_hour)  # type: ignore[arg-type]
+        case IndicatorPeriod.YEAR:
+            return start_date + relativedelta(month=1, day=1, **first_hour)  # type: ignore[arg-type]
+        case IndicatorPeriod.WEEK:
+            return start_date + relativedelta(weekday=MO(-1), **first_hour)  # type: ignore[arg-type]
+        case IndicatorPeriod.HOUR:
+            return start_date + relativedelta(**first_minute)  # type: ignore[arg-type]
+        case _:
+            return start_date
 
 
 def get_timespan_filter_query_params(timespan: IndicatorTimeSpan, session: bool = True):
