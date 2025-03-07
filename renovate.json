@@ -1,17 +1,30 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["config:recommended"],
+  "extends": [
+    "config:recommended"
+  ],
   "commitBodyTable": true,
   "commitMessageAction": "upgrade",
   "commitMessagePrefix": "⬆️(project)",
   "commitMessageTopic": "{{depName}}",
-  "labels": ["dependencies"],
+  "labels": [
+    "dependencies"
+  ],
   "packageRules": [
     {
       "groupName": "python dependencies",
-      "matchManagers": ["pep621", "pipenv", "setup-cfg", "poetry"],
-      "schedule": ["before 7am on monday"],
-      "matchPackagePatterns": ["*"]
+      "matchManagers": [
+        "pep621",
+        "pipenv",
+        "setup-cfg",
+        "poetry"
+      ],
+      "schedule": [
+        "before 7am on monday"
+      ],
+      "matchPackageNames": [
+        "*"
+      ]
     }
   ],
   "prConcurrentLimit": 2,
