@@ -10,8 +10,15 @@ and this project adheres to
 
 ### Added
 
+#### Indicators
+
 - Implement t1 workflow
 - Implement i1 workflow
+- Implement e4 workflow
+- Implement up workflow
+
+#### Quality
+
 - Integrate Great-Expectations
 
 [unreleased]: https://github.com/MTES-MCT/qualicharge/
