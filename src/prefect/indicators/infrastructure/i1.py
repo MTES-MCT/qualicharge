@@ -150,4 +150,4 @@ def calculate(  # noqa: PLR0913
         indicators, environment, flow_name, description, create_artifact, persist
     )
 
-    return [Indicator(**record) for record in indicators.to_dict(orient="records")]  # type: ignore[misc]
+    return indicators
