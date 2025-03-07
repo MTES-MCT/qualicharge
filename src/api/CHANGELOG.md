@@ -8,6 +8,11 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Fixed
+
+- Add default `None` value to API models optional fields or else they are
+  considered as required
+
 ## [0.19.0] - 2025-02-25
 
 ### Added
