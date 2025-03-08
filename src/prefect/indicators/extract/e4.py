@@ -1,4 +1,4 @@
-"""QualiCharge prefect indicators: infrastructure.
+"""QualiCharge prefect indicators: extract.
 
 E4: the list of points of charge in activity.
 """
@@ -38,12 +38,23 @@ FROM
     LEFT JOIN localisation ON localisation_id = localisation.id
     LEFT JOIN city ON city.code = code_insee_commune
     $join_extras
- WHERE
+WHERE
     $level_id IN ($indexes)
     AND $timespan
 GROUP BY
     id_pdc_itinerance,
     $level_id
+"""
+QUERY_NATIONAL_TEMPLATE = """
+SELECT
+    id_pdc_itinerance
+FROM
+    SESSION
+    INNER JOIN PointDeCharge ON point_de_charge_id = PointDeCharge.id
+WHERE
+    $timespan
+GROUP BY
+    id_pdc_itinerance
 """
 
 
@@ -76,12 +87,12 @@ def e4_for_level(
     chunk_size=settings.DEFAULT_CHUNK_SIZE,
 ) -> pd.DataFrame:
     """Calculate e4 for a level."""
-    timespan = IndicatorTimeSpan(
-        start=timespan.start - PeriodDuration[timespan.period.name].value,
+    timespan_query = IndicatorTimeSpan(
+        start=timespan.start - PeriodDuration.MONTH.value,
         period=timespan.period,
     )
     if level == Level.NATIONAL:
-        return e4_national(timespan, environment)
+        return e4_national(timespan_query, environment)
     targets = get_targets_for_level(level, environment)
     ids = targets["id"]
     chunks = (
@@ -90,7 +101,7 @@ def e4_for_level(
         else [ids.to_numpy()]
     )
     futures = [
-        get_values_for_targets.submit(level, timespan, chunk, environment)  # type: ignore[call-overload]
+        get_values_for_targets.submit(level, timespan_query, chunk, environment)  # type: ignore[call-overload]
         for chunk in chunks
     ]
     wait(futures)
@@ -132,21 +143,24 @@ def e4_for_level(
 )
 def e4_national(timespan: IndicatorTimeSpan, environment: Environment) -> pd.DataFrame:
     """Calculate e4 at the national level."""
+    query_template = Template(QUERY_NATIONAL_TEMPLATE)
+    query_params = get_timespan_filter_query_params(timespan, session=True)
     with Session(get_api_db_engine(environment)) as session:
-        result = session.execute(text("SELECT COUNT(*) FROM PointDeCharge"))
-        count = result.one()[0]
-
-    return pd.DataFrame.from_records(
-        [
-            Indicator(
-                code="e4",
-                level=Level.NATIONAL,
-                period=timespan.period,
-                value=count,
-                timestamp=timespan.start.isoformat(),
-            ).model_dump(),
-        ]
-    )
+        result = pd.read_sql_query(
+            query_template.substitute(query_params), con=session.connection()
+        )
+    extras_list = list(result["id_pdc_itinerance"])
+    indicators = {
+        "target": None,
+        "value": len(extras_list),
+        "code": "e4",
+        "level": Level.NATIONAL,
+        "period": timespan.period,
+        "timestamp": timespan.start.isoformat(),
+        "category": None,
+        "extras": {"id_pdc_itinerance": extras_list},
+    }
+    return pd.DataFrame(indicators)
 
 
 @flow(
@@ -175,16 +189,29 @@ def calculate(  # noqa: PLR0913
     return indicators
 
 
+'''
 if __name__ == "__main__":
     from datetime import datetime  # noqa: I001
     from indicators.models import IndicatorPeriod, PeriodDuration
 
     indexes = [1, 2, 3]
     TIMESPAN = IndicatorTimeSpan(
-        start=datetime.now() - PeriodDuration.QUARTER.value,
-        period=IndicatorPeriod.QUARTER,
+        start=datetime.fromisoformat("2025-03-08") - PeriodDuration.YEAR.value,
+        period=IndicatorPeriod.YEAR,
     )
-    print(e4_for_level(Level.REGION, TIMESPAN, Environment.DEVELOPMENT))
+    print(TIMESPAN.start)
+    all_levels = [
+        Level.NATIONAL,
+        Level.REGION,
+        Level.DEPARTMENT,
+        Level.CITY,
+        Level.EPCI,
+    ]
+    indicators = calculate(
+        TIMESPAN, Environment.DEVELOPMENT, [Level.NATIONAL, Level.REGION], persist=True
+    )
+    print(len(indicators))
+    print(indicators)
     """
     query_template = Template(LIST_POCS_FOR_LEVEL_QUERY_TEMPLATE)
     query_params: dict = {"indexes": ",".join(f"'{i}'" for i in map(str, indexes))}
@@ -210,3 +237,4 @@ if __name__ == "__main__":
         persist=True,
     )
     """
+'''
