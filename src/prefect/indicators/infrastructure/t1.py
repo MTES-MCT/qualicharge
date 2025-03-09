@@ -129,17 +129,17 @@ def t1_national(timespan: IndicatorTimeSpan, environment: Environment) -> pd.Dat
     query_template = Template(QUERY_NATIONAL_TEMPLATE)
     query_params = POWER_RANGE_CTE
     with Session(get_api_db_engine(environment)) as session:
-        res = pd.read_sql_query(
+        result = pd.read_sql_query(
             query_template.substitute(query_params), con=session.connection()
         )
     indicators = {
         "target": None,
-        "value": res["value"].fillna(0),
+        "value": result["value"].fillna(0),
         "code": "t1",
         "level": Level.NATIONAL,
         "period": timespan.period,
         "timestamp": timespan.start.isoformat(),
-        "category": res["category"].astype("str"),
+        "category": result["category"].astype("str"),
         "extras": None,
     }
     return pd.DataFrame(indicators)

@@ -10,11 +10,11 @@ and this project adheres to
 
 ### Added
 
-- Implement t1 workflow
-- Implement i1 workflow
+- Implement e4 workflow
+- Implement function up
 
 ### Changed
 
-- Factorize indicators
+- bug PeriodDuration
 
 [unreleased]: https://github.com/MTES-MCT/qualicharge/

@@ -18,9 +18,7 @@ from indicators.models import (
 )
 
 
-def to_df_histo_up(
-    indic: pd.DataFrame, timest: datetime, period: IndicatorPeriod
-) -> pd.DataFrame:
+def to_df_histo_up(indic: pd.DataFrame, timespan: IndicatorTimeSpan) -> pd.DataFrame:
     """Return a converted historicization for a new period."""
     index = ["code", "level", "target", "category"]
     histo = ["period", "timestamp"]
@@ -82,7 +80,7 @@ def to_df_histo_up(
 
     # add the historicization format
     df_up["extras"] = df_up[add_val + add_col].to_dict(orient="records")
-    df_up["timestamp"] = timest
-    df_up["period"] = period.value
+    df_up["timestamp"] = timespan.start
+    df_up["period"] = timespan.period.value
 
     return df_up.reset_index()[index + value + ["extras"] + histo]
