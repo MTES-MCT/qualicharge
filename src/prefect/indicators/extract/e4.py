@@ -13,12 +13,11 @@ from prefect import flow, runtime, task
 from prefect.cache_policies import NONE
 from prefect.futures import wait
 from prefect.task_runners import ThreadPoolTaskRunner
-from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from indicators.conf import settings
 from indicators.db import get_api_db_engine
-from indicators.models import Indicator, IndicatorTimeSpan, Level
+from indicators.models import IndicatorPeriod, IndicatorTimeSpan, Level, PeriodDuration
 from indicators.types import Environment
 from indicators.utils import (
     export_indicators,
@@ -89,10 +88,10 @@ def e4_for_level(
     """Calculate e4 for a level."""
     timespan_query = IndicatorTimeSpan(
         start=timespan.start - PeriodDuration.MONTH.value,
-        period=timespan.period,
+        period=IndicatorPeriod.MONTH,
     )
     if level == Level.NATIONAL:
-        return e4_national(timespan_query, environment)
+        return e4_national(timespan, timespan_query, environment)
     targets = get_targets_for_level(level, environment)
     ids = targets["id"]
     chunks = (
@@ -141,10 +140,14 @@ def e4_for_level(
     task_runner=ThreadPoolTaskRunner(max_workers=settings.THREAD_POOL_MAX_WORKERS),
     flow_run_name="e4-{timespan.period.value}-00-{timespan.start:%y-%m-%d}",
 )
-def e4_national(timespan: IndicatorTimeSpan, environment: Environment) -> pd.DataFrame:
+def e4_national(
+    timespan: IndicatorTimeSpan,
+    timespan_query: IndicatorTimeSpan,
+    environment: Environment,
+) -> pd.DataFrame:
     """Calculate e4 at the national level."""
     query_template = Template(QUERY_NATIONAL_TEMPLATE)
-    query_params = get_timespan_filter_query_params(timespan, session=True)
+    query_params = get_timespan_filter_query_params(timespan_query, session=True)
     with Session(get_api_db_engine(environment)) as session:
         result = pd.read_sql_query(
             query_template.substitute(query_params), con=session.connection()
@@ -189,17 +192,14 @@ def calculate(  # noqa: PLR0913
     return indicators
 
 
-'''
 if __name__ == "__main__":
     from datetime import datetime  # noqa: I001
-    from indicators.models import IndicatorPeriod, PeriodDuration
 
     indexes = [1, 2, 3]
     TIMESPAN = IndicatorTimeSpan(
-        start=datetime.fromisoformat("2025-03-08") - PeriodDuration.YEAR.value,
-        period=IndicatorPeriod.YEAR,
+        start=datetime.fromisoformat("2024-12-24"),
+        period=IndicatorPeriod.DAY,
     )
-    print(TIMESPAN.start)
     all_levels = [
         Level.NATIONAL,
         Level.REGION,
@@ -237,4 +237,3 @@ if __name__ == "__main__":
         persist=True,
     )
     """
-'''
