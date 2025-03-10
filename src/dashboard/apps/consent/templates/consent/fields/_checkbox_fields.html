@@ -1,0 +1,14 @@
+<div class="{% if field.errors %}fr-pl-3v{% endif %} fr-mb-6v">
+  <div class="fr-checkbox-group{% if field.errors %} fr-checkbox-group--error{% endif %}">
+    {{ field }}
+    <div class="fr-messages-group" id="{{ field.id_for_label }}--messages" aria-live="assertive">
+      {% if field.errors %}
+        {% for error in field.errors %}
+        <p class="fr-message fr-message--error" id="{{ field.id_for_label }}--message-error">
+        {{ error }}
+        </p>
+        {% endfor %}
+      {% endif %}
+    </div>
+  </div>
+</div>

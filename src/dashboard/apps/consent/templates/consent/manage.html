@@ -27,7 +27,7 @@
                 {% trans "The form contains errors" %}
               </li>
               {% if form.non_field_errors %}
-                  {% for error in form.non_field_errors %}
+                {% for error in form.non_field_errors %}
                   <li class="fr-message fr-message--error">{{ error }}</li>
                 {% endfor %}
               {% endif %}
