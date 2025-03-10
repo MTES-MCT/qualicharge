@@ -19,6 +19,7 @@ class ConsentAdmin(admin.ModelAdmin):
         "start",
         "end",
         "revoked_at",
+        "updated_at",
     ]
     search_fields = [
         "delivery_point__provider_assigned_id",

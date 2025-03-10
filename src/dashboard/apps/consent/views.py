@@ -63,6 +63,17 @@ class ConsentFormView(BaseView, FormView):
     ]
     breadcrumb_current = _("Manage Consents")
 
+    def get_initial(self):
+        """Set initial data for the view."""
+        initial = super().get_initial()
+
+        entity = self._get_entity()
+        initial["contract_holder_name"] = entity.contract_holder_name
+        initial["contract_holder_email"] = entity.contract_holder_email
+        initial["contract_holder_phone"] = entity.contract_holder_phone
+
+        return initial
+
     def form_valid(self, form):
         """Update the consent status.
 
@@ -74,6 +85,7 @@ class ConsentFormView(BaseView, FormView):
         selected_ids: list[str] = self.request.POST.getlist("status")
 
         try:
+            self._update_entity(form=form)
             self._bulk_update_consent(selected_ids, VALIDATED, form)  # type: ignore
             awaiting_ids = self._get_awaiting_ids(selected_ids)
             self._bulk_update_consent(awaiting_ids, AWAITING, form)  # type: ignore
@@ -108,6 +120,17 @@ class ConsentFormView(BaseView, FormView):
         entity: Entity = get_object_or_404(Entity, slug=slug)
         if not user.can_validate_entity(entity):
             raise PermissionDenied
+        return entity
+
+    def _update_entity(self, form: ConsentForm) -> Entity:
+        """Update the entity with the form data."""
+        entity = self._get_entity()
+
+        entity.contract_holder_name = form.cleaned_data["contract_holder_name"]
+        entity.contract_holder_email = form.cleaned_data["contract_holder_email"]
+        entity.contract_holder_phone = form.cleaned_data["contract_holder_phone"]
+        entity.save()
+
         return entity
 
     def _bulk_update_consent(
@@ -160,6 +183,7 @@ class ConsentFormView(BaseView, FormView):
                 "allows_max_daily_power",
                 "allows_load_curve",
                 "allows_technical_contractual_data",
+                "contract_holder",
                 "signed_at",
                 "signature_location",
             ],
@@ -212,8 +236,18 @@ class ConsentFormView(BaseView, FormView):
             "email": self.request.user.email,  # type: ignore[union-attr]
         }
 
-        # remove `consent_agreed` from `form_values`, which is not stored in db
+        contract_holder = {
+            "name": form_values["contract_holder_name"],
+            "email": form_values["contract_holder_email"],
+            "phone": form_values["contract_holder_phone"],
+        }
+        # remove contract holder fields, which are in a json field
         form_values_copy = form_values.copy()
+        form_values_copy.pop("contract_holder_name", None)
+        form_values_copy.pop("contract_holder_email", None)
+        form_values_copy.pop("contract_holder_phone", None)
+
+        # remove `consent_agreed` from `form_values`, which is not stored in db
         form_values_copy.pop("consent_agreed", None)
 
         # build a Consent object with all validated data
@@ -225,7 +259,9 @@ class ConsentFormView(BaseView, FormView):
             company=company_data,
             control_authority=settings.CONSENT_CONTROL_AUTHORITY,
             company_representative=company_representative,
+            contract_holder=contract_holder,
             **form_values_copy,
+            signed_at=timezone.now(),
             signature_location=settings.CONSENT_SIGNATURE_LOCATION,
         )
 

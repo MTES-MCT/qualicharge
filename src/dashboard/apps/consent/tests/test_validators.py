@@ -6,6 +6,7 @@ from django.core.exceptions import ImproperlyConfigured, ValidationError
 from apps.consent.validators import (
     validate_company_schema,
     validate_configured_control_authority,
+    validate_contract_holder_schema,
     validate_control_authority_schema,
     validate_representative_schema,
 )
@@ -38,6 +39,12 @@ VALID_CONTROL_AUTHORITY_DATA = {
     "address_2": None,
     "zip_code": "75000",
     "city": "Paris",
+}
+
+VALID_CONTRACT_HOLDER_DATA = {
+    "name": "Alice Brown",
+    "email": "alice.brown@example.com",
+    "phone": "9876543210",
 }
 
 
@@ -277,3 +284,36 @@ def test_validate_configured_control_authority_raise_error(settings):
     # must raise ImproperlyConfigured
     with pytest.raises(ImproperlyConfigured):
         validate_configured_control_authority()
+
+
+def test_validate_contract_holder_schema_valid():
+    """Test the json schema validator with a valid contract holder data."""
+    assert validate_contract_holder_schema(VALID_CONTRACT_HOLDER_DATA) is None
+
+    # test with null values
+    validate_contract_holder_data = {
+        "name": None,
+        "email": None,
+        "phone": None,
+    }
+    assert validate_contract_holder_schema(validate_contract_holder_data) is None
+
+
+def test_validate_contract_holder_schema_invalid():
+    """Test the json schema validator with a valid contract holder data."""
+    # test without properties
+    invalid_value = {}
+    with pytest.raises(ValidationError):
+        validate_contract_holder_schema(invalid_value)
+
+    # test with invalid value
+    invalid_value = VALID_CONTRACT_HOLDER_DATA
+    invalid_value["name"] = 1234
+    with pytest.raises(ValidationError):
+        validate_contract_holder_schema(invalid_value)
+
+    # test with additional properties
+    invalid_value = VALID_CONTRACT_HOLDER_DATA
+    invalid_value["additional_property"] = ""
+    with pytest.raises(ValidationError):
+        validate_contract_holder_schema(invalid_value)

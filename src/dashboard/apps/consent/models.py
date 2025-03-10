@@ -12,6 +12,7 @@ from .managers import ConsentManager
 from .utils import consent_end_date
 from .validators import (
     validate_company_schema,
+    validate_contract_holder_schema,
     validate_control_authority_schema,
     validate_representative_schema,
 )
@@ -87,6 +88,17 @@ CONTROL_AUTHORITY_SCHEMA = {
     "additionalProperties": False,
 }
 
+CONTRACT_HOLDER_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "name": {"type": ["string", "null"], "maxLength": 150},
+        "email": {"type": ["string", "null"], "format": "email"},
+        "phone": {"type": ["string", "null"], "maxLength": 20},
+    },
+    "required": ["name", "email", "phone"],
+    "additionalProperties": False,
+}
+
 
 class Consent(DashboardBase):
     """Represents the consent status for a given delivery point and user.
@@ -155,14 +167,13 @@ class Consent(DashboardBase):
     )
 
     # contract holder information
-    contract_holder_name = models.CharField(
-        _("contract holder name"), max_length=150, blank=True, null=True
-    )
-    contract_holder_email = models.EmailField(
-        _("contract holder email address"), blank=True, null=True
-    )
-    contract_holder_phone = models.CharField(
-        _("contract holder phone number"), max_length=20, blank=True, null=True
+    # (Holder of the supply contract for delivery points)
+    contract_holder = models.JSONField(
+        _("contract holder informations"),
+        blank=True,
+        null=True,
+        default=None,
+        validators=[validate_contract_holder_schema],
     )
 
     # specific authorization fields

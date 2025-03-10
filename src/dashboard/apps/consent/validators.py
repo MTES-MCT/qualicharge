@@ -55,3 +55,11 @@ def validate_configured_control_authority():
         raise ImproperlyConfigured(
             f"settings.CONSENT_CONTROL_AUTHORITY validation error: {e.message}"
         ) from e
+
+
+def validate_contract_holder_schema(value):
+    """Validate a contract holder JSON object against the contract holder schema."""
+    from .models import CONTRACT_HOLDER_SCHEMA
+
+    validator = json_schema_validator(CONTRACT_HOLDER_SCHEMA)
+    return validator(value)

@@ -1,6 +1,5 @@
 """Dashboard consent views tests."""
 
-import datetime
 import uuid
 from http import HTTPStatus
 from unittest.mock import MagicMock, patch
@@ -15,10 +14,15 @@ from apps.auth.factories import UserFactory
 from apps.consent import AWAITING, REVOKED, VALIDATED
 from apps.consent.factories import ConsentFactory
 from apps.consent.models import Consent
+from apps.consent.tests.conftest import FAKE_TIME
 from apps.consent.views import ConsentFormView, ValidatedConsentView
 from apps.core.factories import DeliveryPointFactory, EntityFactory
+from apps.core.models import Entity
 
 FORM_CLEANED_DATA = {
+    "contract_holder_name": "<NAME>",
+    "contract_holder_email": "contact@domain.com",
+    "contract_holder_phone": "+33.500000000",
     "is_authoritative_signatory": True,
     "allows_measurements": True,
     "allows_daily_index_readings": True,
@@ -26,7 +30,6 @@ FORM_CLEANED_DATA = {
     "allows_load_curve": True,
     "allows_technical_contractual_data": True,
     "consent_agreed": True,
-    "signed_at": "2025-03-01",
 }
 
 
@@ -60,7 +63,7 @@ def test_bulk_update_consent_status_without_ids(rf):
 
 
 @pytest.mark.django_db
-def test_bulk_update_consent_status(rf):  # noqa: PLR0915
+def test_bulk_update_consent_status(rf, patch_timezone_now):  # noqa: PLR0915
     """Test all consents are correctly updated."""
     user = UserFactory()
 
@@ -91,9 +94,7 @@ def test_bulk_update_consent_status(rf):  # noqa: PLR0915
     # and checks that the data has changed to VALIDATED after the update.
     assert all(c == VALIDATED for c in Consent.objects.values_list("status", flat=True))
     for c in Consent.objects.all():
-        assert c.signed_at == datetime.datetime(
-            2025, 3, 1, 0, 0, tzinfo=datetime.timezone.utc
-        )
+        assert c.signed_at == FAKE_TIME
         assert c.signature_location == settings.CONSENT_SIGNATURE_LOCATION
 
         # check company data are present in company json field
@@ -127,6 +128,12 @@ def test_bulk_update_consent_status(rf):  # noqa: PLR0915
         assert c.control_authority["address_2"] == control_authority["address_2"]
         assert c.control_authority["zip_code"] == control_authority["zip_code"]
         assert c.control_authority["city"] == control_authority["city"]
+
+        # check contract holder data are presents
+        assert c.contract_holder is not None
+        assert c.contract_holder["name"] == FORM_CLEANED_DATA["contract_holder_name"]
+        assert c.contract_holder["email"] == FORM_CLEANED_DATA["contract_holder_email"]
+        assert c.contract_holder["phone"] == FORM_CLEANED_DATA["contract_holder_phone"]
 
         # check authorizations (boolean fields)
         assert c.is_authoritative_signatory is True
@@ -233,6 +240,52 @@ def test_bulk_update_consent_without_user_perms(rf):
         for c in Consent.objects.filter(
             delivery_point__entity=wrong_entity
         ).values_list("status", flat=True)
+    )
+
+
+@pytest.mark.django_db
+def test_update_entity_with_valid_data(rf):
+    """Test the update of an entity."""
+    user = UserFactory()
+
+    # create entity without contract holder data
+    assert Entity.objects.count() == 0
+    entity_name = "entity-1"
+    entity = EntityFactory(users=(user,), name=entity_name)
+    assert Entity.objects.count() == 1
+    assert entity.contract_holder_name is None
+    assert entity.contract_holder_email is None
+    assert entity.contract_holder_phone is None
+
+    # Set up the view and the mock form
+    request = rf.get(reverse("consent:manage", kwargs={"slug": entity_name}))
+    request.user = user
+    view = ConsentFormView()
+    view.setup(request, slug=entity_name)
+
+    mock_form = MagicMock()
+    mock_form.cleaned_data = FORM_CLEANED_DATA
+    mock_form.is_valid()
+
+    # Call _update_entity with the mock form
+    updated_entity = view._update_entity(mock_form)
+
+    # Verify that the entity fields have been updated
+    assert (
+        updated_entity.contract_holder_name == FORM_CLEANED_DATA["contract_holder_name"]
+    )
+    assert (
+        updated_entity.contract_holder_email
+        == FORM_CLEANED_DATA["contract_holder_email"]
+    )
+    assert (
+        updated_entity.contract_holder_phone
+        == FORM_CLEANED_DATA["contract_holder_phone"]
+    )
+    assert Entity.objects.count() == 1
+    assert (
+        Entity.objects.first().contract_holder_name
+        == FORM_CLEANED_DATA["contract_holder_name"]
     )
 
 
@@ -399,7 +452,72 @@ def test_form_post_empty(rf):
     assert response.status_code == HTTPStatus.OK
 
     html = rendered.content.decode()
-    expected = 'id="checkboxes-error-message-error"'
+    expected = 'id="id_is_authoritative_signatory--message-error"'
+    assert (expected in html) is True
+
+
+@pytest.mark.django_db
+def test_form_post_empty_contract_holder(rf):
+    """POST request without required `contract holder` fields will display error."""
+    user = UserFactory()
+
+    # all mandatory are posted expected contract holder data
+    posted_data = {
+        "is_authoritative_signatory": True,
+        "allows_measurements": True,
+        "allows_daily_index_readings": True,
+        "allows_max_daily_power": True,
+        "allows_load_curve": True,
+        "allows_technical_contractual_data": True,
+        "consent_agreed": True,
+    }
+
+    # create entity
+    entity_name = "entity-1"
+    EntityFactory(users=(user,), name=entity_name)
+    request = rf.post(
+        reverse("consent:manage", kwargs={"slug": entity_name}), posted_data
+    )
+    request.user = user
+
+    view = ConsentFormView()
+    view.setup(request, slug=entity_name)
+
+    # Get response object and force template rendering
+    response = view.dispatch(request)
+    rendered = response.render()
+    assert response.status_code == HTTPStatus.OK
+
+    html = rendered.content.decode()
+    expected = 'id="id_contract_holder_name--message-error"'
+    assert (expected in html) is True
+
+    # all mandatory are posted expected contract holder data email and phone.
+    posted_data["contract_holder_name"] = "<NAME>"
+    request = rf.post(
+        reverse("consent:manage", kwargs={"slug": entity_name}), posted_data
+    )
+    request.user = user
+    view.setup(request, slug=entity_name)
+    response = view.dispatch(request)
+    rendered = response.render()
+    assert response.status_code == HTTPStatus.OK
+    html = rendered.content.decode()
+    expected = 'id="id_contract_holder_email--message-error"'
+    assert (expected in html) is True
+
+    # all mandatory are posted expected contract holder phone.
+    posted_data["contract_holder_email"] = "test@domain.com"
+    request = rf.post(
+        reverse("consent:manage", kwargs={"slug": entity_name}), posted_data
+    )
+    request.user = user
+    view.setup(request, slug=entity_name)
+    response = view.dispatch(request)
+    rendered = response.render()
+    assert response.status_code == HTTPStatus.OK
+    html = rendered.content.decode()
+    expected = 'id="id_contract_holder_phone--message-error"'
     assert (expected in html) is True
 
 
@@ -517,3 +635,83 @@ def test_validated_url_without_slug_is_redirected(client):
     response = client.get(reverse("consent:validated"))
     assert response.status_code == HTTPStatus.FOUND
     assert response.url == reverse("consent:index")
+
+
+@pytest.mark.django_db
+def test_display_form_if_entity_contract_holder_is_not_set(rf):
+    """Test the form is displayed if the entity has no contract holder data."""
+    user = UserFactory()
+
+    # create entity without contract holder data
+    assert Entity.objects.count() == 0
+    entity_name = "entity-1"
+    entity = EntityFactory(users=(user,), name=entity_name)
+    assert Entity.objects.count() == 1
+    assert entity.contract_holder_name is None
+    assert entity.contract_holder_email is None
+    assert entity.contract_holder_phone is None
+
+    # Set up the view
+    request = rf.get(reverse("consent:manage", kwargs={"slug": entity_name}))
+    request.user = user
+
+    view = ConsentFormView()
+    view.setup(request, slug=entity_name)
+
+    # Get response object and force template rendering
+    response = view.dispatch(request)
+    rendered = response.render()
+    assert response.status_code == HTTPStatus.OK
+
+    html = rendered.content.decode()
+    expected_name = '<input type="text" name="contract_holder_name"'
+    expected_email = '<input type="email" name="contract_holder_email"'
+    expected_phone = '<input type="text" name="contract_holder_phone"'
+    assert (expected_name in html) is True
+    assert (expected_email in html) is True
+    assert (expected_phone in html) is True
+    not_expected = 'id="table-contract-holder-component"'
+    assert (not_expected not in html) is True
+
+
+@pytest.mark.django_db
+def test_display_table_if_entity_contract_holder_is_set(rf):
+    """Test the table is displayed if the entity has contract holder data."""
+    user = UserFactory()
+
+    # create entity without contract holder data
+    assert Entity.objects.count() == 0
+    entity_name = "entity-1"
+    entity = EntityFactory(
+        users=(user,),
+        name=entity_name,
+        contract_holder_name="John Doe",
+        contract_holder_email="contact@domain.com",
+        contract_holder_phone="+33.1234567890",
+    )
+    assert Entity.objects.count() == 1
+    assert entity.contract_holder_name == "John Doe"
+    assert entity.contract_holder_email == "contact@domain.com"
+    assert entity.contract_holder_phone == "+33.1234567890"
+
+    # Set up the view
+    request = rf.get(reverse("consent:manage", kwargs={"slug": entity_name}))
+    request.user = user
+
+    view = ConsentFormView()
+    view.setup(request, slug=entity_name)
+
+    # Get response object and force template rendering
+    response = view.dispatch(request)
+    rendered = response.render()
+    assert response.status_code == HTTPStatus.OK
+
+    html = rendered.content.decode()
+    expected_id = 'id="table-contract-holder-component"'
+    expected_name = '<input type="hidden" name="contract_holder_name"'
+    expected_email = '<input type="hidden" name="contract_holder_email"'
+    expected_phone = '<input type="hidden" name="contract_holder_phone"'
+    assert (expected_id in html) is True
+    assert (expected_name in html) is True
+    assert (expected_email in html) is True
+    assert (expected_phone in html) is True

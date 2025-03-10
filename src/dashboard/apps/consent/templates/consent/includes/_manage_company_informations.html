@@ -52,14 +52,62 @@
                 {% include "consent/includes/_table_row.html" with label="Complément d'adresse" value=entity.address_2 row_number=row_number|add:"1" %}
                 {% include "consent/includes/_table_row.html" with label="Code postal" value=entity.address_zip_code row_number=row_number|add:"1" %}
                 {% include "consent/includes/_table_row.html" with label="Commune" value=entity.address_city row_number=row_number|add:"1" %}
-                {# todo: add a form field to retrieve this information (+ email and phone) if it doesn't exist #}
-                {% include "consent/includes/_table_row.html" with label="Nom du titulaire du contrat" value="-" row_number=row_number|add:"1" %}
               </tbody>
             </table>
         </div>
       </div>
     </div>
   </div>
+
+  {% if not form.contract_holder_name.value or not form.contract_holder_email.value or not form.contract_holder_phone.value %}
+    <div class="fr-my-4w">
+      <legend class="fr-text--md fr-text--bold">
+        Informations sur le titulaire du contrat
+      </legend>
+      <p>
+        Merci de renseigner l'ensemble des informations concernant le client raccordé
+        (titulaire du contrat de fourniture sur les points de livraison) :
+      </p>
+      {% include "consent/fields/_input_fields.html" with field=form.contract_holder_name %}
+      {% include "consent/fields/_input_fields.html" with field=form.contract_holder_email %}
+      {% include "consent/fields/_input_fields.html" with field=form.contract_holder_phone %}
+    </div>
+  {% else %}
+    <div class="fr-table fr-table--bordered" id="table-contract-holder-component">
+      <div class="fr-table__wrapper">
+        <div class="fr-table__container">
+          <div class="fr-table__content">
+            <table>
+              <caption class="fr-text--md">
+                Informations sur le titulaire du contrat
+              </caption>
+              <thead>
+               <tr>
+                <th scope="col">
+                  Libellé
+                </th>
+                <th scope="col">
+                  Valeur
+                </th>
+              </tr>
+              </thead>
+              <tbody>
+                {% if form.contract_holder_name.value %}
+                  {% include "consent/includes/_table_row.html" with label=form.contract_holder_name.label value=form.contract_holder_name.value row_number=row_number|add:"1" %}
+                  {% include "consent/includes/_table_row.html" with label=form.contract_holder_email.label value=form.contract_holder_email.value row_number=row_number|add:"1" %}
+                  {% include "consent/includes/_table_row.html" with label=form.contract_holder_phone.label value=form.contract_holder_phone.value row_number=row_number|add:"1" %}
+
+                  {% include "consent/fields/_hidden_fields.html" with field=form.contract_holder_name %}
+                  {% include "consent/fields/_hidden_fields.html" with field=form.contract_holder_email %}
+                  {% include "consent/fields/_hidden_fields.html" with field=form.contract_holder_phone %}
+                {% endif %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  {% endif %}
 
   <div class="fr-table fr-table--bordered" id="table-representative-bordered-component">
     <div class="fr-table__wrapper">
@@ -91,4 +139,3 @@
   </div>
   {% endwith %}
 </div>
-
