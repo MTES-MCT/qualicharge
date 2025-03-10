@@ -154,6 +154,17 @@ class Consent(DashboardBase):
         validators=[validate_control_authority_schema],
     )
 
+    # contract holder information
+    contract_holder_name = models.CharField(
+        _("contract holder name"), max_length=150, blank=True, null=True
+    )
+    contract_holder_email = models.EmailField(
+        _("contract holder email address"), blank=True, null=True
+    )
+    contract_holder_phone = models.CharField(
+        _("contract holder phone number"), max_length=20, blank=True, null=True
+    )
+
     # specific authorization fields
     is_authoritative_signatory = models.BooleanField(
         _("the signatory has the authority to sign this consent"), default=False

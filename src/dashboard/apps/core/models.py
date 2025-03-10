@@ -88,6 +88,17 @@ class Entity(DashboardBase):
     )
     address_city = models.CharField(_("city"), max_length=255, blank=True, null=True)
 
+    # contract holder information
+    contract_holder_name = models.CharField(
+        _("contract holder name"), max_length=150, blank=True, null=True
+    )
+    contract_holder_email = models.EmailField(
+        _("contract holder email address"), blank=True, null=True
+    )
+    contract_holder_phone = models.CharField(
+        _("contract holder phone number"), max_length=20, blank=True, null=True
+    )
+
     class Meta:  # noqa: D106
         verbose_name = "entity"
         verbose_name_plural = "entities"
