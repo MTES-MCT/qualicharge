@@ -24,6 +24,7 @@ and this project adheres to
 - add an email notification to users (via Brevo) after they have validated their consents.
 - add admin integration for Entity, DeliveryPoint and Consent
 - add mass admin action (make revoked) for consents
+- add mass admin action to validate users
 - add validators for SIRET, NAF code and Zip code 
 - add API connector to the "Annuaire des Entreprises" API
 - add a signal on the creation of a delivery point. This signal allows the creation 
