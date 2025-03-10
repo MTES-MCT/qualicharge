@@ -8,6 +8,8 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.19.1] - 2025-03-10
+
 ### Changed
 
 - Upgrade alembic to `1.15.1`
@@ -347,7 +349,8 @@ and this project adheres to
 
 - Implement base FastAPI app
 
-[unreleased]: https://github.com/MTES-MCT/qualicharge/compare/v0.19.0...main
+[unreleased]: https://github.com/MTES-MCT/qualicharge/compare/v0.19.1...main
+[0.19.1]: https://github.com/MTES-MCT/qualicharge/compare/v0.19.0...v0.19.1
 [0.19.0]: https://github.com/MTES-MCT/qualicharge/compare/v0.18.0...v0.19.0
 [0.18.0]: https://github.com/MTES-MCT/qualicharge/compare/v0.17.0...v0.18.0
 [0.17.0]: https://github.com/MTES-MCT/qualicharge/compare/v0.16.0...v0.17.0
