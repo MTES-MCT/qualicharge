@@ -5,6 +5,7 @@ from datetime import datetime
 from django import forms
 from django.forms.widgets import CheckboxInput
 from django.utils.translation import gettext_lazy as _
+from dsfr.forms import DsfrBaseForm
 
 
 class ConsentCheckboxInput(CheckboxInput):
@@ -13,13 +14,18 @@ class ConsentCheckboxInput(CheckboxInput):
     template_name = "consent/forms/widgets/checkbox.html"
 
 
-class ConsentForm(forms.Form):
+class ConsentForm(DsfrBaseForm):
     """Save user consent through a checkbox field.
 
     Note: all texts of this form (attributes: `label`, `description`, `help_text`)
     are intended to appear in a contract and must therefore be in French and
     non-translatable.
     """
+
+    # contract holder information
+    contract_holder_name = forms.CharField(required=True, max_length=150)
+    contract_holder_email = forms.EmailField(required=True)
+    contract_holder_phone = forms.CharField(required=True, max_length=20)
 
     # Specific authorisation checkbox
     is_authoritative_signatory = forms.BooleanField(
@@ -123,3 +129,17 @@ class ConsentForm(forms.Form):
             },
         ),
     )
+
+    def __init__(self, *args, **kwargs):
+        """Initialize the form."""
+        entity = kwargs.get('initial', None).pop("entity", None)
+
+        super().__init__(*args, **kwargs)
+
+        if entity:
+            self.fields["contract_holder_name"].initial = entity.contract_holder_name
+            self.fields["contract_holder_email"].initial = entity.contract_holder_email
+            self.fields["contract_holder_phone"].initial = entity.contract_holder_phone
+
+            if self.initial.get("contract_holder_name"):
+                self.fields["contract_holder_name"].widget = forms.HiddenInput()

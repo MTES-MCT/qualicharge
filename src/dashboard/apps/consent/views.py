@@ -63,6 +63,12 @@ class ConsentFormView(BaseView, FormView):
     ]
     breadcrumb_current = _("Manage Consents")
 
+    def get_initial(self):
+        """Set initial data for the view."""
+        initial = super().get_initial()
+        initial["entity"] = self._get_entities()[0]
+        return initial
+
     def form_valid(self, form):
         """Update the consent status.
 
