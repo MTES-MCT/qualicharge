@@ -74,7 +74,7 @@ jobs:
           cache: "pipenv"
           cache-dependency-path: "src/dashboard/Pipfile.lock"
       - name: Lint with Black
-        run: pipenv run black dashboard apps tests
+        run: pipenv run black --check dashboard apps tests
       - name: Lint with Ruff
         run: pipenv run ruff check dashboard apps tests
       - name: Lint with MyPy
