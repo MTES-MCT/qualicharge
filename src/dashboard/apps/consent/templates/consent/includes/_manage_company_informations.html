@@ -5,91 +5,90 @@
     therefore be in French and non-translatable.
 {% endcomment %}
 
-{% for entity in entities %}
-  <div class="fr-fieldset__element fr-my-4w">
+<div class="fr-fieldset__element fr-my-4w">
 
-    <legend class="fr-fieldset__legend">
-      B. Client raccordé
-    </legend>
+  <legend class="fr-fieldset__legend">
+    B. Client raccordé
+  </legend>
 
-    <p>
-      Merci de vérifier l’exactitude des informations concernant votre structure et le
-      signataire du présent formulaire.
-      <br />
-      En cas d'informations erronées, merci de nous contacter :
-      <a class="fr-link fr-link--icon-left fr-icon-mail-line"
-         href="mailto:{{ contact_email }}?subject=[QualiCharge] Informations erronées dans le formulaire de gestion des autorisations" target="_blank">
-        {{ contact_email }}
-      </a>
-    </p>
+  <p>
+    Merci de vérifier l’exactitude des informations concernant votre structure et le
+    signataire du présent formulaire.
+    <br />
+    En cas d'informations erronées, merci de nous contacter :
+    <a class="fr-link fr-link--icon-left fr-icon-mail-line"
+       href="mailto:{{ contact_email }}?subject=[QualiCharge] Informations erronées dans le formulaire de gestion des autorisations" target="_blank">
+      {{ contact_email }}
+    </a>
+  </p>
 
-    {% with row_number=0 %}
-    <div class="fr-table fr-table--bordered" id="table-company-bordered-component">
-      <div class="fr-table__wrapper">
-        <div class="fr-table__container">
-          <div class="fr-table__content">
-            <table>
-              <caption class="fr-text--md">
-                Informations sur l'entreprise
-              </caption>
-              <thead>
-               <tr>
-                <th scope="col">
-                  Libellé
-                </th>
-                <th scope="col">
-                  Valeur
-                </th>
-              </tr>
-              </thead>
-              <tbody>
-                  {% include "consent/includes/_table_row.html" with label="Dénomination sociale" value=entity.name row_number=row_number|add:"1" %}
-                  {% include "consent/includes/_table_row.html" with label="Type de structure" value=entity.get_company_type_display row_number=row_number|add:"1" %}
-                  {% include "consent/includes/_table_row.html" with label="Forme juridique" value=entity.legal_form row_number=row_number|add:"1" %}
-                  {% include "consent/includes/_table_row.html" with label="Nom commercial" value=entity.trade_name row_number=row_number|add:"1" %}
-                  {% include "consent/includes/_table_row.html" with label="N° d'identification SIRET" value=entity.siret row_number=row_number|add:"1" %}
-                  {% include "consent/includes/_table_row.html" with label="Activité NAF" value=entity.naf row_number=row_number|add:"1" %}
-                  {% include "consent/includes/_table_row.html" with label="Adresse" value=entity.address_1 row_number=row_number|add:"1" %}
-                  {% include "consent/includes/_table_row.html" with label="Complément d'adresse" value=entity.address_2 row_number=row_number|add:"1" %}
-                  {% include "consent/includes/_table_row.html" with label="Code postal" value=entity.address_zip_code row_number=row_number|add:"1" %}
-                  {% include "consent/includes/_table_row.html" with label="Commune" value=entity.address_city row_number=row_number|add:"1" %}
-                  {# todo: add a form field to retrieve this information (+ email and phone) if it doesn't exist #}
-                  {% include "consent/includes/_table_row.html" with label="Nom du titulaire du contrat" value="-" row_number=row_number|add:"1" %}
-                </tbody>
-              </table>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="fr-table fr-table--bordered" id="table-representative-bordered-component">
-      <div class="fr-table__wrapper">
-        <div class="fr-table__container">
-          <div class="fr-table__content">
-            <table>
-              <caption class="fr-text--md">
-                Informations sur le représentant de l'entreprise
-              </caption>
-              <thead>
-               <tr>
-                <th scope="col">
-                  Libellé
-                </th>
-                <th scope="col">
-                  Valeur
-                </th>
-              </tr>
-              </thead>
-              <tbody>
-                  {% include "consent/includes/_table_row.html" with label="Nom" value=request.user.last_name row_number=row_number|add:"1" %}
-                  {% include "consent/includes/_table_row.html" with label="Prénom" value=request.user.first_name row_number=row_number|add:"1" %}
-                  {% include "consent/includes/_table_row.html" with label="E-mail" value=request.user.email row_number=row_number|add:"1" %}
+  {% with row_number=0 %}
+  <div class="fr-table fr-table--bordered" id="table-company-bordered-component">
+    <div class="fr-table__wrapper">
+      <div class="fr-table__container">
+        <div class="fr-table__content">
+          <table>
+            <caption class="fr-text--md">
+              Informations sur l'entreprise
+            </caption>
+            <thead>
+             <tr>
+              <th scope="col">
+                Libellé
+              </th>
+              <th scope="col">
+                Valeur
+              </th>
+            </tr>
+            </thead>
+            <tbody>
+                {% include "consent/includes/_table_row.html" with label="Dénomination sociale" value=entity.name row_number=row_number|add:"1" %}
+                {% include "consent/includes/_table_row.html" with label="Type de structure" value=entity.get_company_type_display row_number=row_number|add:"1" %}
+                {% include "consent/includes/_table_row.html" with label="Forme juridique" value=entity.legal_form row_number=row_number|add:"1" %}
+                {% include "consent/includes/_table_row.html" with label="Nom commercial" value=entity.trade_name row_number=row_number|add:"1" %}
+                {% include "consent/includes/_table_row.html" with label="N° d'identification SIRET" value=entity.siret row_number=row_number|add:"1" %}
+                {% include "consent/includes/_table_row.html" with label="Activité NAF" value=entity.naf row_number=row_number|add:"1" %}
+                {% include "consent/includes/_table_row.html" with label="Adresse" value=entity.address_1 row_number=row_number|add:"1" %}
+                {% include "consent/includes/_table_row.html" with label="Complément d'adresse" value=entity.address_2 row_number=row_number|add:"1" %}
+                {% include "consent/includes/_table_row.html" with label="Code postal" value=entity.address_zip_code row_number=row_number|add:"1" %}
+                {% include "consent/includes/_table_row.html" with label="Commune" value=entity.address_city row_number=row_number|add:"1" %}
+                {# todo: add a form field to retrieve this information (+ email and phone) if it doesn't exist #}
+                {% include "consent/includes/_table_row.html" with label="Nom du titulaire du contrat" value="-" row_number=row_number|add:"1" %}
               </tbody>
             </table>
-          </div>
         </div>
       </div>
     </div>
-    {% endwith %}
   </div>
-{% endfor %}
+
+  <div class="fr-table fr-table--bordered" id="table-representative-bordered-component">
+    <div class="fr-table__wrapper">
+      <div class="fr-table__container">
+        <div class="fr-table__content">
+          <table>
+            <caption class="fr-text--md">
+              Informations sur le représentant de l'entreprise
+            </caption>
+            <thead>
+             <tr>
+              <th scope="col">
+                Libellé
+              </th>
+              <th scope="col">
+                Valeur
+              </th>
+            </tr>
+            </thead>
+            <tbody>
+                {% include "consent/includes/_table_row.html" with label="Nom" value=request.user.last_name row_number=row_number|add:"1" %}
+                {% include "consent/includes/_table_row.html" with label="Prénom" value=request.user.first_name row_number=row_number|add:"1" %}
+                {% include "consent/includes/_table_row.html" with label="E-mail" value=request.user.email row_number=row_number|add:"1" %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endwith %}
+</div>
+

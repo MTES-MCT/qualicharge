@@ -50,54 +50,52 @@
             </thead>
 
             <tbody>
-              {% for entity in entities %}
-                {% for consent in entity.get_consents %}
-                  <tr id="table-prm-row-key-{{ forloop.counter }}"
-                      data-row-key="{{ forloop.counter }}"
-                      aria-labelledby="row-label-{{ forloop.counter }}"
-                      {% if consent.status == "VALIDATED" %}
-                        title="Point de livraison déjà validé."
-                        aria-label="Point de livraison déjà validé."
-                      {% elif consent.status == "AWAITING" %}
-                        title="Point de livraison en attente de validation."
-                        aria-label="Point de livraison en attente de validation."
-                      {% endif %}>
+              {% for consent in entity.get_consents %}
+                <tr id="table-prm-row-key-{{ forloop.counter }}"
+                    data-row-key="{{ forloop.counter }}"
+                    aria-labelledby="row-label-{{ forloop.counter }}"
+                    {% if consent.status == "VALIDATED" %}
+                      title="Point de livraison déjà validé."
+                      aria-label="Point de livraison déjà validé."
+                    {% elif consent.status == "AWAITING" %}
+                      title="Point de livraison en attente de validation."
+                      aria-label="Point de livraison en attente de validation."
+                    {% endif %}>
 
-                    <th class="fr-cell--fixed fr-cell--center" scope="row">
-                      <div class="fr-checkbox-group fr-checkbox-group--sm">
-                        <input type="checkbox"
-                         name="status"
-                         value="{{ consent.id }}"
-                         id="{{ consent.id }}"
-                         {% if consent.status == "VALIDATED" %} checked="checked" disabled="disabled"{% endif %}
-                         aria-describedby="{{ consent.id }}-messages"
-                         data-fr-js-checkbox-input="true"
-                         data-fr-js-checkbox-actionee="true"
-                         {% if consent.status == "VALIDATED" %}
-                            title="Point de livraison déjà validé."
-                            aria-label="Point de livraison validé, case à cocher désactivée."
-                         {% elif consent.status == "AWAITING" %}
-                            title="Point de livraison en attente de validation."
-                            aria-label="Point de livraison en attente de validation."
-                         {% endif %}
-                        />
+                  <th class="fr-cell--fixed fr-cell--center" scope="row">
+                    <div class="fr-checkbox-group fr-checkbox-group--sm">
+                      <input type="checkbox"
+                       name="status"
+                       value="{{ consent.id }}"
+                       id="{{ consent.id }}"
+                       {% if consent.status == "VALIDATED" %} checked="checked" disabled="disabled"{% endif %}
+                       aria-describedby="{{ consent.id }}-messages"
+                       data-fr-js-checkbox-input="true"
+                       data-fr-js-checkbox-actionee="true"
+                       {% if consent.status == "VALIDATED" %}
+                          title="Point de livraison déjà validé."
+                          aria-label="Point de livraison validé, case à cocher désactivée."
+                       {% elif consent.status == "AWAITING" %}
+                          title="Point de livraison en attente de validation."
+                          aria-label="Point de livraison en attente de validation."
+                       {% endif %}
+                      />
 
-                        <label class="fr-label" for="{{ consent.id }}"
-                          {% if consent.status == "VALIDATED" %}
-                            title="Point de livraison déjà validé."
-                          {% elif consent.status == "AWAITING" %}
-                            title="Point de livraison en attente de validation."
-                          {% endif %}>
-                          Sélectionner le PDL {{ consent.delivery_point.provider_assigned_id }}
-                        </label>
-                      </div>
-                    </th>
-                    {# todo : get station_name, station_id, prm_id #}
-                    <td> -- station name -- </td>
-                    <td> -- station id --  </td>
-                    <td> {{ consent.delivery_point.provider_assigned_id }} </td>
-                  </tr>
-                {% endfor %}
+                      <label class="fr-label" for="{{ consent.id }}"
+                        {% if consent.status == "VALIDATED" %}
+                          title="Point de livraison déjà validé."
+                        {% elif consent.status == "AWAITING" %}
+                          title="Point de livraison en attente de validation."
+                        {% endif %}>
+                        Sélectionner le PDL {{ consent.delivery_point.provider_assigned_id }}
+                      </label>
+                    </div>
+                  </th>
+                  {# todo : get station_name, station_id, prm_id #}
+                  <td> -- station name -- </td>
+                  <td> -- station id --  </td>
+                  <td> {{ consent.delivery_point.provider_assigned_id }} </td>
+                </tr>
               {% endfor %}
             </tbody>
           </table>

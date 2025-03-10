@@ -10,7 +10,7 @@ from django.core.exceptions import (
     ValidationError,
 )
 from django.db.models import Q
-from django.http import HttpResponse
+from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404
 from django.urls import reverse_lazy as reverse
 from django.utils import timezone
@@ -92,23 +92,23 @@ class ConsentFormView(BaseView, FormView):
         """Add context data for the view."""
         context = super().get_context_data(**kwargs)
         context["control_authority"] = settings.CONSENT_CONTROL_AUTHORITY
-        context["entities"] = self._get_entities()
+        context["entity"] = self._get_entity()
         context["signature_location"] = settings.CONSENT_SIGNATURE_LOCATION
 
         return context
 
-    def _get_entities(self) -> list:
-        """Return a list of entities or specific entity if slug is provided."""
+    def _get_entity(self) -> Entity:
+        """Return the specific entity with the provided slug."""
         slug: str | None = self.kwargs.get("slug", None)
         user: DashboardUser = self.request.user  # type: ignore
 
-        if slug:
-            entity: Entity = get_object_or_404(Entity, slug=slug)
-            if not user.can_validate_entity(entity):
-                raise PermissionDenied
-            return [entity]
-        else:
-            return list(user.get_entities())
+        if not slug:
+            raise Http404
+
+        entity: Entity = get_object_or_404(Entity, slug=slug)
+        if not user.can_validate_entity(entity):
+            raise PermissionDenied
+        return entity
 
     def _bulk_update_consent(
         self, ids: list[str], status: str, form: ConsentForm
@@ -170,11 +170,9 @@ class ConsentFormView(BaseView, FormView):
         if any(not isinstance(item, str) for item in validated_ids):
             raise ValueError("validated_ids must be a list of strings")
 
+        entity = self._get_entity()
         return [
-            str(c.id)
-            for e in self._get_entities()
-            for c in e.get_consents()
-            if str(c.id) not in validated_ids
+            str(c.id) for c in entity.get_consents() if str(c.id) not in validated_ids
         ]
 
     def _build_consent_object(

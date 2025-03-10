@@ -15,7 +15,7 @@
     le gestionnaire du réseau de distribution.
   </p>
 
-  {% if entities %}
+  {% if entity %}
     <form action="" method="post">
       {% csrf_token %}
 
@@ -51,7 +51,7 @@
 {% endblock dashboard_content %}
 
 {% block dashboard_extra_js %}
-  {% if entities %}
+  {% if entity %}
     <script src="{% static 'apps/consent/js/app.js' %}"></script>
   {% endif %}
 {% endblock dashboard_extra_js %}
