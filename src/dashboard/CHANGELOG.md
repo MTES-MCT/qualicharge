@@ -18,7 +18,7 @@ and this project adheres to
 - add `UserValidationMixin` to ensure access restrictions for unvalidated users.
 - add a base view combining mixins for consistency
 - add dashboard homepage
-- add consent form to manage consents of one or many entities
+- add consent form to manage consents of one entity
 - added a validated consent page allowing consultation of validated consent for the 
   current period.
 - add an email notification to users (via Brevo) after they have validated their consents.

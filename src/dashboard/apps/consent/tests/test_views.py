@@ -8,6 +8,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from django.conf import settings
 from django.core.exceptions import PermissionDenied
+from django.http import Http404
 from django.urls import reverse
 
 from apps.auth.factories import UserFactory
@@ -247,7 +248,7 @@ def test_get_awaiting_ids_with_bad_parameters(rf):
     request.user = user
 
     view = ConsentFormView()
-    view.setup(request)
+    view.setup(request, slug=entity_name)
 
     # create a list of UUID instead of str
     ids = [uuid.uuid4(), uuid.uuid4(), uuid.uuid4()]
@@ -265,16 +266,15 @@ def test_get_awaiting_ids(rf):
 
     # create entity
     entity_name = "entity-1"
-    EntityFactory(users=(user,), name=entity_name)
+    entity = EntityFactory(users=(user,), name=entity_name)
     request = rf.get(reverse("consent:manage", kwargs={"slug": entity_name}))
     request.user = user
 
     view = ConsentFormView()
-    view.setup(request)
+    view.setup(request, slug=entity_name)
 
-    # create entity for the user and consents for the entity
+    # create consents for the entity
     size = 3
-    entity = EntityFactory(users=(user,))
     DeliveryPointFactory.create_batch(size, entity=entity)
     ids = [
         str(c.id) for c in Consent.active_objects.filter(delivery_point__entity=entity)
@@ -292,7 +292,25 @@ def test_get_awaiting_ids(rf):
 
 
 @pytest.mark.django_db
-def test_templates_render_with_entities_without_consents(rf):
+def test_get_entity_without_slug_raise_404(rf):
+    """Test _get_entity() with slug=None raises Http404."""
+    user = UserFactory()
+
+    # create entity
+    entity_name = "entity-1"
+    EntityFactory(users=(user,), name=entity_name)
+    request = rf.get(reverse("consent:manage", kwargs={"slug": entity_name}))
+    request.user = user
+
+    view = ConsentFormView()
+    view.setup(request)
+
+    with pytest.raises(Http404):
+        view._get_entity()
+
+
+@pytest.mark.django_db
+def test_templates_render_with_entity_without_consents(rf):
     """Test the templates without consents are rendered with expected content."""
     user = UserFactory()
 
@@ -303,11 +321,11 @@ def test_templates_render_with_entities_without_consents(rf):
     request.user = user
 
     view = ConsentFormView()
-    view.setup(request)
+    view.setup(request, slug=entity_name)
 
     # check the context
     context = view.get_context_data()
-    assert context["entities"] == [entity]
+    assert context["entity"] == entity
 
     # get response object
     response = view.dispatch(request)
@@ -338,11 +356,11 @@ def test_templates_render_html_content_with_consents(rf):
     request.user = user
 
     view = ConsentFormView()
-    view.setup(request)
+    view.setup(request, slug=entity_name)
 
     # check the context
     context = view.get_context_data()
-    assert context["entities"] == [entity]
+    assert context["entity"] == entity
 
     # create consents
     size = 3
@@ -373,7 +391,7 @@ def test_form_post_empty(rf):
     request.user = user
 
     view = ConsentFormView()
-    view.setup(request)
+    view.setup(request, slug=entity_name)
 
     # Get response object and force template rendering
     response = view.dispatch(request)
