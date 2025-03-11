@@ -69,9 +69,20 @@ bootstrap: \
   create-dashboard-superuser \
   seed-dashboard \
   jupytext--to-ipynb \
-  run \
+  run-api \
   seed-api
 .PHONY: bootstrap
+
+bootstrap-api: ## bootstrap the api service
+bootstrap-api: \
+  build-api \
+  build-client \
+  migrate-api \
+  create-api-test-db \
+  create-api-superuser \
+  run-api \
+  seed-api
+.PHONY: bootstrap-api
 
 bootstrap-dashboard: ## bootstrap the dashboard project for development
 bootstrap-dashboard: \
@@ -139,9 +150,9 @@ logs-dashboard: ## display dashboard logs (follow mode)
 	@$(COMPOSE) logs -f dashboard
 .PHONY: logs-dashboard
 
-run: ## run the api server (and dependencies)
+run-api: ## run the api server (and dependencies)
 	$(COMPOSE_UP) --wait api
-.PHONY: run
+.PHONY: run-api
 
 run-all: ## run the whole stack
 	$(COMPOSE_UP) api keycloak metabase notebook opendata dashboard
