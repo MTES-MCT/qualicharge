@@ -396,6 +396,7 @@ seed-api-sessions: ## seed the API database (sessions data)
 seed-api: ## seed the API database (static + dynamic data)
 seed-api: \
   seed-api-static \
+  refresh-api-static \
   seed-api-sessions \
   seed-api-statuses
 .PHONY: seed-api
