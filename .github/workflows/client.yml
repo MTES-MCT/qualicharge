@@ -24,7 +24,7 @@ jobs:
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.13"
           cache: "poetry"
       - name: Install dependencies
         run: |
@@ -44,7 +44,7 @@ jobs:
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.13"
           cache: "poetry"
       - name: Lint with Black
         run: poetry run black --check qcc tests
@@ -66,7 +66,7 @@ jobs:
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.13"
           cache: "poetry"
       - name: Test with pytest
         run: poetry run pytest
