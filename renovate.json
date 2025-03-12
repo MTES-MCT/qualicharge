@@ -33,5 +33,6 @@
   "semanticCommits": "disabled",
   "separateMajorMinor": false,
   "updateNotScheduled": true,
-  "rebaseWhen": "behind-base-branch"
+  "rebaseWhen": "behind-base-branch",
+  "recreateWhen": "never"
 }
