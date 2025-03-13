@@ -8,6 +8,10 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Added
+
+- Add manage router and `station/siren` endpoint for the Dashboard
+
 ## [0.19.1] - 2025-03-10
 
 ### Changed

@@ -6,18 +6,18 @@ from typing import Union
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 
+from qualicharge.conf import settings
 from qualicharge.exceptions import (
     AuthenticationError,
     OIDCProviderException,
     PermissionDenied,
 )
 
-from .routers import auth, dynamic, static
+from .routers import auth, dynamic, manage, static
 
 logger = logging.getLogger(__name__)
 
-
-app = FastAPI(title="QualiCharge API (v1)")
+app = FastAPI(title="QualiCharge API (v1)", debug=settings.DEBUG)
 
 
 @app.exception_handler(PermissionDenied)
@@ -47,5 +47,6 @@ async def authentication_exception_handler(
 
 
 app.include_router(auth.router)
+app.include_router(manage.router)
 app.include_router(static.router)
 app.include_router(dynamic.router)

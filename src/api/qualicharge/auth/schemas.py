@@ -51,6 +51,9 @@ class ScopesEnum(StrEnum):
     DYNAMIC_UPDATE = "dynamic:update"
     DYNAMIC_DELETE = "dynamic:delete"
 
+    # Management
+    MANAGE_READ = "manage:read"
+
 
 # -- Core schemas
 class User(BaseAuditableSQLModel, table=True):
