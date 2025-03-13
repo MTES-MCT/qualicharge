@@ -91,9 +91,8 @@
                       </label>
                     </div>
                   </th>
-                  {# todo : get station_name, station_id, prm_id #}
-                  <td> -- station name -- </td>
-                  <td> -- station id --  </td>
+                  <td> {{ consent.delivery_point.station_name }} </td>
+                  <td> {{ consent.delivery_point.id_station_itinerance }}  </td>
                   <td> {{ consent.delivery_point.provider_assigned_id }} </td>
                 </tr>
               {% endfor %}

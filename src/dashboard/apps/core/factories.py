@@ -1,6 +1,6 @@
 """Dashboard core factories."""
 
-import uuid
+import random
 
 import factory
 
@@ -49,8 +49,14 @@ class EntityFactory(factory.django.DjangoModelFactory):
 class DeliveryPointFactory(factory.django.DjangoModelFactory):
     """Factory class for creating instances of the DeliveryPoint model."""
 
+    id_station_itinerance = factory.Faker(
+        "bothify", text="FR???P#####", letters="ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    )
+    station_name = factory.Faker("company")
+    provider_assigned_id = factory.LazyAttribute(
+        lambda o: f"{o.id_station_itinerance}{random.randint(0, 9)}"  # noqa: S311
+    )
+    entity = factory.SubFactory(EntityFactory)
+
     class Meta:  # noqa: D106
         model = DeliveryPoint
-
-    provider_assigned_id = factory.LazyFunction(lambda: str(uuid.uuid4()))
-    entity = factory.SubFactory(EntityFactory)
