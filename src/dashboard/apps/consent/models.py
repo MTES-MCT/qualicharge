@@ -121,6 +121,14 @@ class Consent(DashboardBase):
     - revoked_at (DateTimeField): recording the revoked date of the consent, if any.
     """
 
+    provider_assigned_id = models.CharField(
+        _("provider assigned id"), max_length=64, blank=True
+    )
+    id_station_itinerance = models.CharField(
+        _("id station itinerance"), max_length=35, blank=True
+    )
+    station_name = models.CharField(_("station name"), max_length=255, blank=True)
+
     delivery_point = models.ForeignKey(
         "qcd_core.DeliveryPoint", on_delete=models.CASCADE, related_name="consents"
     )

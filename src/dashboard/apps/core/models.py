@@ -160,13 +160,19 @@ class DeliveryPoint(DashboardBase):
     - is_active (BooleanField): indicating the active status of the delivery point.
     """
 
-    provider_assigned_id = models.CharField(_("provider assigned id"), max_length=64)
+    provider_assigned_id = models.CharField(
+        _("provider assigned id"), unique=True, max_length=64
+    )
     entity = models.ForeignKey(
         Entity,
         on_delete=models.CASCADE,
         related_name="delivery_points",
         verbose_name=_("entity"),
     )
+    id_station_itinerance = models.CharField(
+        _("id station itinerance"), max_length=35, blank=True
+    )
+    station_name = models.CharField(_("station name"), max_length=255, blank=True)
     is_active = models.BooleanField(_("is active"), default=True)
 
     active_objects = DeliveryPointManager()

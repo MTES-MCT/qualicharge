@@ -15,4 +15,9 @@ def handle_new_delivery_point(sender, instance, created, **kwargs):
     Create a new Consent object for the delivery point.
     """
     if created:
-        Consent.objects.create(delivery_point=instance)
+        Consent.objects.create(
+            delivery_point=instance,
+            id_station_itinerance=instance.id_station_itinerance,
+            station_name=instance.station_name,
+            provider_assigned_id=instance.provider_assigned_id,
+        )
