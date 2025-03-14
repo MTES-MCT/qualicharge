@@ -48,7 +48,7 @@ def to_df_histo_up(
     df_in["value"] = df_in["value"].astype("float")
     if "extras" in df_in.columns:
         df_in = pd.concat(
-            [df_in, pd.json_normalize(df_in["extras"], errors="ignore")], axis=1
+            [df_in, pd.json_normalize(list(df_in["extras"]), errors="ignore")], axis=1
         )
         del df_in["extras"]
     if "quantity" not in df_in.columns:
@@ -104,7 +104,9 @@ def to_df_histo_up(
     return df_up.reset_index()[fld_index + fld_value + fld_extras + fld_histo]
 
 
-def set_start_period(start: date, offset: int, period: IndicatorPeriod) -> datetime:
+def set_start_period(
+    start: date | None, offset: int, period: IndicatorPeriod
+) -> datetime:
     """Return the start datetime of the period."""
     start_date = date.today() if start is None else start
     if offset:
