@@ -2,6 +2,7 @@
 
 from .endpoints.auth import Auth
 from .endpoints.dynamic import Session, Status
+from .endpoints.manage import Manage
 from .endpoints.static import Static
 from .exceptions import ConfigurationError
 from .http import HTTPClient
@@ -26,6 +27,7 @@ class QCC:
             username=username, password=password, base_url=api_root_url
         )
         self.auth = Auth(self.client)
+        self.manage = Manage(self.client)
         self.static = Static(self.client)
         self.status = Status(self.client)
         self.session = Session(self.client)

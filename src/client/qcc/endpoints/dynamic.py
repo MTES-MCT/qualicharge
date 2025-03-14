@@ -27,7 +27,7 @@ class Status(BaseEndpoint):
         station: Optional[List[str]] = None,
     ) -> AsyncIterator[dict]:
         """Query the /dynamique/status endpoint (GET)."""
-        # Get isotring for the `from_` parameter
+        # Get ISO string for the `from_` parameter
         from_str = from_.isoformat() if from_ else None
 
         # Query filters
@@ -50,7 +50,7 @@ class Status(BaseEndpoint):
         self, id_: str, from_: Optional[datetime] = None
     ) -> AsyncIterator[dict]:
         """Query the /{endpoint}/{id_}/history endpoint (GET)."""
-        # Get isotring for the `from_` parameter
+        # Get ISO string for the `from_` parameter
         from_str = from_.isoformat() if from_ else None
         params = {"from": from_str} if from_str else {}
 
