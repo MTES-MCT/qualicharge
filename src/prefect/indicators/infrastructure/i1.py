@@ -19,7 +19,7 @@ from sqlalchemy.orm import Session
 
 from indicators.conf import settings
 from indicators.db import get_api_db_engine
-from indicators.models import Indicator, IndicatorPeriod, IndicatorTimeSpan, Level
+from indicators.models import IndicatorPeriod, IndicatorTimeSpan, Level
 from indicators.types import Environment
 from indicators.utils import (
     export_indicators,

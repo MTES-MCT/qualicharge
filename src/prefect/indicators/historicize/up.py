@@ -4,7 +4,6 @@ from datetime import date, datetime
 from string import Template
 
 import pandas as pd
-from dateutil.relativedelta import relativedelta
 from prefect import flow, runtime, task
 from prefect.cache_policies import NONE
 from prefect.task_runners import ThreadPoolTaskRunner
@@ -20,7 +19,7 @@ QUERY_HISTORICIZE = """
 SELECT
     *
 FROM
-    development
+    $environment
 WHERE
     period = '$period' AND
     timestamp >= '$start'   AND
@@ -144,6 +143,7 @@ def calculate(  # noqa: PLR0913
     init_period = set_start_period(start, offset, to_period)
     final_timespan = IndicatorTimeSpan(start=init_period, period=to_period)
     query_params = {
+        "environment": environment,
         "period": period.value,
         "start": init_period,
         "end": init_period + PeriodDuration[to_period.name].value,

@@ -156,7 +156,7 @@ def test_flow_calculate_persistence(indicators_db_engine):
     )
     with indicators_db_engine.connect() as connection:
         query = """
-        select count(*) from test 
+        select count(*) from test
         where code = 'i1' and period = 'm'and timestamp::date = '2024-01-01'
         """
         result = connection.execute(text(query))
