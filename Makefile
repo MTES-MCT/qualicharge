@@ -81,7 +81,8 @@ bootstrap-api: \
   create-api-test-db \
   create-api-superuser \
   run-api \
-  seed-api
+  seed-api \
+  refresh-api-static
 .PHONY: bootstrap-api
 
 bootstrap-dashboard: ## bootstrap the dashboard project for development
