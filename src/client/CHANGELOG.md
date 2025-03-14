@@ -8,6 +8,10 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Added
+
+- Add support for new `/manage` API endpoints
+
 ### Changed
 
 - Upgrade anyio to `4.6.1`
