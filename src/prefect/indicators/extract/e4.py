@@ -33,7 +33,7 @@ SELECT
     $level_id AS level_id
 FROM
     SESSION
-    INNER JOIN PointDeCharge ON point_de_charge_id = PointDeCharge.id 
+    INNER JOIN PointDeCharge ON point_de_charge_id = PointDeCharge.id
     LEFT JOIN station ON station_id = station.id
     LEFT JOIN localisation ON localisation_id = localisation.id
     LEFT JOIN city ON city.code = code_insee_commune
