@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "qualicharge-client"
-version = "0.2.0"
+version = "0.3.0"
 description = "A python client and CLI for the QualiCharge API"
 authors = ["Julien Maupetit <julien@maupetit.net>"]
 license = "MIT"
