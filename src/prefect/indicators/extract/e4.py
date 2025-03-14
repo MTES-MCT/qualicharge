@@ -1,6 +1,6 @@
-"""QualiCharge prefect indicators: infrastructure.
+"""QualiCharge prefect indicators: extract.
 
-I1: the number of publicly open points of charge.
+E4: the list of points of charge in activity.
 """
 
 from datetime import datetime
@@ -14,40 +14,62 @@ from prefect import flow, runtime, task
 from prefect.cache_policies import NONE
 from prefect.futures import wait
 from prefect.task_runners import ThreadPoolTaskRunner
-from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from indicators.conf import settings
 from indicators.db import get_api_db_engine
-from indicators.models import IndicatorPeriod, IndicatorTimeSpan, Level
+from indicators.models import IndicatorPeriod, IndicatorTimeSpan, Level, PeriodDuration
 from indicators.types import Environment
 from indicators.utils import (
     export_indicators,
     get_num_for_level_query_params,
     get_targets_for_level,
+    get_timespan_filter_query_params,
 )
 
-NUM_POCS_FOR_LEVEL_QUERY_TEMPLATE = """
+LIST_POCS_FOR_LEVEL_QUERY_TEMPLATE = """
 SELECT
-    COUNT(DISTINCT id_pdc_itinerance) AS value,
+    id_pdc_itinerance,
     $level_id AS level_id
 FROM
-    Statique
-    INNER JOIN City ON code_insee_commune = City.code
+    SESSION
+    INNER JOIN PointDeCharge ON point_de_charge_id = PointDeCharge.id
+    LEFT JOIN station ON station_id = station.id
+    LEFT JOIN localisation ON localisation_id = localisation.id
+    LEFT JOIN city ON city.code = code_insee_commune
     $join_extras
-WHERE $level_id IN ($indexes)
-GROUP BY $level_id
+WHERE
+    $level_id IN ($indexes)
+    AND $timespan
+GROUP BY
+    id_pdc_itinerance,
+    $level_id
+"""
+QUERY_NATIONAL_TEMPLATE = """
+SELECT
+    id_pdc_itinerance
+FROM
+    SESSION
+    INNER JOIN PointDeCharge ON point_de_charge_id = PointDeCharge.id
+WHERE
+    $timespan
+GROUP BY
+    id_pdc_itinerance
 """
 
 
 @task(task_run_name="values-for-target-{level:02d}", cache_policy=NONE)
 def get_values_for_targets(
-    level: Level, indexes: List[UUID], environment: Environment
+    level: Level,
+    timespan: IndicatorTimeSpan,
+    indexes: List[UUID],
+    environment: Environment,
 ) -> pd.DataFrame:
     """Fetch points of charge given input level and target index."""
-    query_template = Template(NUM_POCS_FOR_LEVEL_QUERY_TEMPLATE)
+    query_template = Template(LIST_POCS_FOR_LEVEL_QUERY_TEMPLATE)
     query_params: dict = {"indexes": ",".join(f"'{i}'" for i in map(str, indexes))}
     query_params |= get_num_for_level_query_params(level)
+    query_params |= get_timespan_filter_query_params(timespan, session=True)
     with Session(get_api_db_engine(environment)) as session:
         return pd.read_sql_query(
             query_template.substitute(query_params), con=session.connection()
@@ -56,17 +78,21 @@ def get_values_for_targets(
 
 @flow(
     task_runner=ThreadPoolTaskRunner(max_workers=settings.THREAD_POOL_MAX_WORKERS),
-    flow_run_name="i1-{timespan.period.value}-{level:02d}-{timespan.start:%y-%m-%d}",
+    flow_run_name="e4-{timespan.period.value}-{level:02d}-{timespan.start:%y-%m-%d}",
 )
-def i1_for_level(
+def e4_for_level(
     level: Level,
     timespan: IndicatorTimeSpan,
     environment: Environment,
     chunk_size=settings.DEFAULT_CHUNK_SIZE,
 ) -> pd.DataFrame:
-    """Calculate i1 for a level."""
+    """Calculate e4 for a level."""
+    timespan_query = IndicatorTimeSpan(
+        start=timespan.start - PeriodDuration.MONTH.value,
+        period=IndicatorPeriod.MONTH,
+    )
     if level == Level.NATIONAL:
-        return i1_national(timespan, environment)
+        return e4_national(timespan, timespan_query, environment)
     targets = get_targets_for_level(level, environment)
     ids = targets["id"]
     chunks = (
@@ -75,53 +101,73 @@ def i1_for_level(
         else [ids.to_numpy()]
     )
     futures = [
-        get_values_for_targets.submit(level, chunk, environment)  # type: ignore[call-overload]
+        get_values_for_targets.submit(level, timespan_query, chunk, environment)  # type: ignore[call-overload]
         for chunk in chunks
     ]
     wait(futures)
 
     # Concatenate results and serialize indicators
     results = pd.concat([future.result() for future in futures], ignore_index=True)
-    merged = targets.merge(results, how="left", left_on="id", right_on="level_id")
+
+    grp = results.groupby("level_id")
+    results_list = pd.DataFrame()
+    results_list["level_id"] = [name for name, group in grp]
+    results_list["extras"] = [
+        {"list": list(group["id_pdc_itinerance"])} for name, group in grp
+    ]
+    results_list["value"] = [
+        len(list(group["id_pdc_itinerance"])) for name, group in grp
+    ]
+
+    merged = targets.merge(results_list, how="left", left_on="id", right_on="level_id")
+
     # Build result DataFrame
     indicators = {
         "target": merged["code"],
         "value": merged["value"].fillna(0),
-        "code": "i1",
+        "code": "e4",
         "level": level,
         "period": timespan.period,
         "timestamp": timespan.start.isoformat(),
         "category": None,
-        "extras": None,
+        "extras": merged["extras"].fillna(pd.Series([{"list": []}] * len(merged))),
     }
     return pd.DataFrame(indicators)
 
 
 @flow(
     task_runner=ThreadPoolTaskRunner(max_workers=settings.THREAD_POOL_MAX_WORKERS),
-    flow_run_name="i1-{timespan.period.value}-00-{timespan.start:%y-%m-%d}",
+    flow_run_name="e4-{timespan.period.value}-00-{timespan.start:%y-%m-%d}",
 )
-def i1_national(timespan: IndicatorTimeSpan, environment: Environment) -> pd.DataFrame:
-    """Calculate i1 at the national level."""
+def e4_national(
+    timespan: IndicatorTimeSpan,
+    timespan_query: IndicatorTimeSpan,
+    environment: Environment,
+) -> pd.DataFrame:
+    """Calculate e4 at the national level."""
+    query_template = Template(QUERY_NATIONAL_TEMPLATE)
+    query_params = get_timespan_filter_query_params(timespan_query, session=True)
     with Session(get_api_db_engine(environment)) as session:
-        result = session.execute(text("SELECT COUNT(*) FROM PointDeCharge"))
-        count = result.one()[0]
+        result = pd.read_sql_query(
+            query_template.substitute(query_params), con=session.connection()
+        )
+    extras_list = list(result["id_pdc_itinerance"])
     indicators = {
         "target": "00",
-        "value": [count],
-        "code": "i1",
+        "value": len(extras_list),
+        "code": "e4",
         "level": Level.NATIONAL,
         "period": timespan.period,
         "timestamp": timespan.start.isoformat(),
         "category": None,
-        "extras": None,
+        "extras": [{"list": extras_list}],
     }
     return pd.DataFrame(indicators)
 
 
 @flow(
     task_runner=ThreadPoolTaskRunner(max_workers=settings.THREAD_POOL_MAX_WORKERS),
-    flow_run_name="meta-i1-{period.value}",
+    flow_run_name="meta-e4-{period.value}",
 )
 def calculate(  # noqa: PLR0913
     environment: Environment,
@@ -132,25 +178,18 @@ def calculate(  # noqa: PLR0913
     create_artifact: bool = False,
     persist: bool = False,
 ) -> pd.DataFrame:
-    """Run all i1 subflows."""
+    """Run all e4 subflows."""
     if start is None:
         start = pd.Timestamp.now()
     timespan = IndicatorTimeSpan(period=period.value, start=start)
     subflows_results = [
-        i1_for_level(level, timespan, environment, chunk_size=chunk_size)
+        e4_for_level(level, timespan, environment, chunk_size=chunk_size)
         for level in levels
     ]
-    # FIXME
-    # Prior to Pandas 2.2, dtypes should be homogeneous or else dataframes cannot be
-    # concatenated.
-    indicators = pd.concat(
-        [res.astype(subflows_results[0].dtypes) for res in subflows_results],
-        ignore_index=True,
-    )
-    description = f"i1 report at {timespan.start} (period: {timespan.period.value})"
+    indicators = pd.concat(subflows_results, ignore_index=True)
+    description = f"e4 report at {timespan.start} (period: {timespan.period.value})"
     flow_name = runtime.flow_run.name
     export_indicators(
         indicators, environment, flow_name, description, create_artifact, persist
     )
-
     return indicators

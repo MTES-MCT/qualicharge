@@ -3,6 +3,7 @@
 T1: the number of publicly open points of charge by power level.
 """
 
+from datetime import datetime
 from string import Template
 from typing import List
 from uuid import UUID
@@ -14,11 +15,11 @@ from prefect.futures import wait
 from prefect.task_runners import ThreadPoolTaskRunner
 from sqlalchemy.orm import Session
 
-from ..conf import settings
-from ..db import get_api_db_engine
-from ..models import IndicatorTimeSpan, Level
-from ..types import Environment
-from ..utils import (
+from indicators.conf import settings
+from indicators.db import get_api_db_engine
+from indicators.models import IndicatorPeriod, IndicatorTimeSpan, Level
+from indicators.types import Environment
+from indicators.utils import (
     POWER_RANGE_CTE,
     export_indicators,
     get_num_for_level_query_params,
@@ -129,17 +130,17 @@ def t1_national(timespan: IndicatorTimeSpan, environment: Environment) -> pd.Dat
     query_template = Template(QUERY_NATIONAL_TEMPLATE)
     query_params = POWER_RANGE_CTE
     with Session(get_api_db_engine(environment)) as session:
-        res = pd.read_sql_query(
+        result = pd.read_sql_query(
             query_template.substitute(query_params), con=session.connection()
         )
     indicators = {
-        "target": None,
-        "value": res["value"].fillna(0),
+        "target": "00",
+        "value": result["value"].fillna(0),
         "code": "t1",
         "level": Level.NATIONAL,
         "period": timespan.period,
         "timestamp": timespan.start.isoformat(),
-        "category": res["category"].astype("str"),
+        "category": result["category"].astype("str"),
         "extras": None,
     }
     return pd.DataFrame(indicators)
@@ -147,17 +148,21 @@ def t1_national(timespan: IndicatorTimeSpan, environment: Environment) -> pd.Dat
 
 @flow(
     task_runner=ThreadPoolTaskRunner(max_workers=settings.THREAD_POOL_MAX_WORKERS),
-    flow_run_name="meta-t1-{timespan.period.value}",
+    flow_run_name="meta-t1-{period.value}",
 )
 def calculate(  # noqa: PLR0913
-    timespan: IndicatorTimeSpan,
     environment: Environment,
     levels: List[Level],
+    start: datetime | None = None,
+    period: IndicatorPeriod = IndicatorPeriod.DAY,
     chunk_size: int = 1000,
     create_artifact: bool = False,
     persist: bool = False,
 ) -> pd.DataFrame:
     """Run all t1 subflows."""
+    if start is None:
+        start = pd.Timestamp.now()
+    timespan = IndicatorTimeSpan(period=period.value, start=start)
     subflows_results = [
         t1_for_level(level, timespan, environment, chunk_size=chunk_size)
         for level in levels
