@@ -22,6 +22,12 @@ make bootstrap-dashboard
 make run-dashboard
 ```
 
+Bootstrap qualicharge API (this is required to integrate the QualiCharge API to the dashboard): 
+```
+make bootstrap-api
+make run-api
+```
+
 Perform a Django migration *(manage.py migrate)*:
 
 ```

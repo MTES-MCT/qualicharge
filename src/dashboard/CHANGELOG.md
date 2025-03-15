@@ -27,6 +27,7 @@ and this project adheres to
 - add mass admin action to validate users
 - add validators for SIRET, NAF code and Zip code 
 - add API connector to the "Annuaire des Entreprises" API
+- add API connector to the QualiCharge API
 - add a signal on the creation of a delivery point. This signal allows the creation 
 of the consent corresponding to the delivery point
 - retrieve company information from its SIRET using the "Annuaire des Entreprises" API

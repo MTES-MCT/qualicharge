@@ -293,6 +293,13 @@ ANNUAIRE_ENTREPRISE_API_CONTEXT = {
     "recipient": "12008701000068",  # DGEC Siret
 }
 
+
+## QualiCharge client API
+QCC_API_LOGIN_USERNAME = env.str("QCC_API_LOGIN_USERNAME")
+QCC_API_LOGIN_PASSWORD = env.str("QCC_API_LOGIN_PASSWORD")
+QCC_API_ROOT_URL = env.str("QCC_API_ROOT_URL")
+
+
 ## Debug-toolbar
 
 # Despite the `DEBUG` being set to `False`, for some tests,
