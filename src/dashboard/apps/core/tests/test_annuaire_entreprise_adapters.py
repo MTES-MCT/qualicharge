@@ -1,4 +1,4 @@
-"""Dashboard core validators tests."""
+"""Dashboard core annuaire entreprise API adapters tests."""
 
 import pytest
 

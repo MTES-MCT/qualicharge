@@ -63,6 +63,9 @@ jobs:
       DASHBOARD_ANNUAIRE_ENTREPRISE_API_ROOT_URL: annuaire_api_endpoint
       DASHBOARD_ANNUAIRE_ENTREPRISE_API_TOKEN: the_secret_token
       DASHBOARD_ANNUAIRE_ENTREPRISE_API_TIMEOUT: 5
+      DASHBOARD_QCC_API_LOGIN_USERNAME: admin
+      DASHBOARD_QCC_API_LOGIN_PASSWORD: admin
+      DASHBOARD_QCC_API_ROOT_URL: http://api:8000/api/v1
     steps:
       - uses: actions/checkout@v4
       - name: Install pipenv
@@ -145,3 +148,6 @@ jobs:
           DASHBOARD_ANNUAIRE_ENTREPRISE_API_ROOT_URL: annuaire_api_endpoint
           DASHBOARD_ANNUAIRE_ENTREPRISE_API_TOKEN: the_secret_token
           DASHBOARD_ANNUAIRE_ENTREPRISE_API_TIMEOUT: 5
+          DASHBOARD_QCC_API_LOGIN_USERNAME: admin
+          DASHBOARD_QCC_API_LOGIN_PASSWORD: admin
+          DASHBOARD_QCC_API_ROOT_URL: http://api:8000/api/v1

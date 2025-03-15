@@ -1,4 +1,4 @@
-"""Dashboard core validators tests."""
+"""Dashboard core annuaire entreprise API clients tests."""
 
 from http import HTTPStatus
 from urllib.parse import urlencode, urljoin

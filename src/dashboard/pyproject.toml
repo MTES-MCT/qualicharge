@@ -23,6 +23,7 @@ omit = [
 ]
 
 [tool.pytest.ini_options]
+asyncio_mode = "auto"
 addopts = "-v --cov-report term-missing --cov=apps --cov=dashboard"
 DJANGO_SETTINGS_MODULE = "dashboard.settings"
 python_files = [
