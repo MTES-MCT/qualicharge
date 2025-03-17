@@ -40,7 +40,7 @@ deployments:
       name: indicators
       work_queue_name: default
 
-  # quality deployement
+  # quality deployments
 
   - name: quality-development
     entrypoint: quality/flows/static.py:run_api_db_validation
