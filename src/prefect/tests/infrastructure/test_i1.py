@@ -8,8 +8,8 @@ from datetime import datetime
 import pytest  # type: ignore
 from sqlalchemy import text
 
-from indicators.infrastructure import i1  # type: ignore
-from indicators.models import IndicatorPeriod, IndicatorTimeSpan, Level  # type: ignore
+from indicators.infrastructure import i1
+from indicators.models import IndicatorPeriod, IndicatorTimeSpan, Level
 from indicators.types import Environment
 
 from ..parameters import (
@@ -71,7 +71,7 @@ def test_flow_i1_national(db_connection):
     assert indicators.at[0, "value"] == expected
 
 
-def test_flow_i1_calculate(db_connection):
+def test_flow_i1_calculate():
     """Test the `calculate` flow."""
     expected = N_NAT_REG_DPT_EPCI_CITY
     all_levels = [
@@ -82,7 +82,11 @@ def test_flow_i1_calculate(db_connection):
         Level.EPCI,
     ]
     indicators = i1.calculate(
-        TIMESPAN, Environment.TEST, all_levels, create_artifact=True
+        Environment.TEST,
+        all_levels,
+        TIMESPAN.start,
+        TIMESPAN.period.value,
+        create_artifact=True,
     )
     assert len(indicators) == expected
 
@@ -90,7 +94,11 @@ def test_flow_i1_calculate(db_connection):
 def test_flow_calculate_persistence(indicators_db_engine):
     """Test the `calculate` flow."""
     indicators = i1.calculate(
-        TIMESPAN, Environment.TEST, [Level.NATIONAL], persist=True
+        Environment.TEST,
+        [Level.NATIONAL],
+        TIMESPAN.start,
+        TIMESPAN.period.value,
+        persist=True,
     )
 
     with indicators_db_engine.connect() as connection:

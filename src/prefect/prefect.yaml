@@ -3,6 +3,10 @@
 #
 
 deployments:
+
+  # indicators deployement
+  
+  # null start value -> datetime.now()
   - name: i1-daily
     entrypoint: indicators/run.py:i1_calculate
     concurrency_limit: 10
@@ -11,9 +15,11 @@ deployments:
         timezone: "Europe/Paris"
         active: true
     parameters:
+      environment: production
+      levels: [0, 1, 2, 3, 4]
       period: d
       create_artifact: true
-      chunk_size: 1000
+      persist: true
     work_pool:
       name: indicators
       work_queue_name: default
@@ -25,12 +31,17 @@ deployments:
         timezone: "Europe/Paris"
         active: true
     parameters:
+      environment: production
+      levels: [0, 1, 2, 3, 4]
       period: d
       create_artifact: true
-      chunk_size: 1000
+      persist: true
     work_pool:
       name: indicators
       work_queue_name: default
+
+  # quality deployments
+
   - name: quality-development
     entrypoint: quality/flows/static.py:run_api_db_validation
     parameters:

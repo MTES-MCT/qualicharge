@@ -56,4 +56,4 @@ class PeriodDuration(Enum):
     WEEK = timedelta(days=7)
     MONTH = relativedelta(months=1)
     QUARTER = relativedelta(months=3)
-    YEAR = relativedelta(year=1)
+    YEAR = relativedelta(years=1)

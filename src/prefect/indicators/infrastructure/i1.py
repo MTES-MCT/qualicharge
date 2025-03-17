@@ -3,6 +3,7 @@
 I1: the number of publicly open points of charge.
 """
 
+from datetime import datetime
 from string import Template
 from typing import List
 from uuid import UUID
@@ -16,11 +17,11 @@ from prefect.task_runners import ThreadPoolTaskRunner
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from ..conf import settings
-from ..db import get_api_db_engine
-from ..models import Indicator, IndicatorTimeSpan, Level
-from ..types import Environment
-from ..utils import (
+from indicators.conf import settings
+from indicators.db import get_api_db_engine
+from indicators.models import IndicatorPeriod, IndicatorTimeSpan, Level
+from indicators.types import Environment
+from indicators.utils import (
     export_indicators,
     get_num_for_level_query_params,
     get_targets_for_level,
@@ -82,7 +83,6 @@ def i1_for_level(
     # Concatenate results and serialize indicators
     results = pd.concat([future.result() for future in futures], ignore_index=True)
     merged = targets.merge(results, how="left", left_on="id", right_on="level_id")
-
     # Build result DataFrame
     indicators = {
         "target": merged["code"],
@@ -106,33 +106,36 @@ def i1_national(timespan: IndicatorTimeSpan, environment: Environment) -> pd.Dat
     with Session(get_api_db_engine(environment)) as session:
         result = session.execute(text("SELECT COUNT(*) FROM PointDeCharge"))
         count = result.one()[0]
-
-    return pd.DataFrame.from_records(
-        [
-            Indicator(
-                code="i1",
-                level=Level.NATIONAL,
-                period=timespan.period,
-                value=count,
-                timestamp=timespan.start.isoformat(),
-            ).model_dump(),
-        ]
-    )
+    indicators = {
+        "target": "00",
+        "value": [count],
+        "code": "i1",
+        "level": Level.NATIONAL,
+        "period": timespan.period,
+        "timestamp": timespan.start.isoformat(),
+        "category": None,
+        "extras": None,
+    }
+    return pd.DataFrame(indicators)
 
 
 @flow(
     task_runner=ThreadPoolTaskRunner(max_workers=settings.THREAD_POOL_MAX_WORKERS),
-    flow_run_name="meta-i1-{timespan.period.value}",
+    flow_run_name="meta-i1-{period.value}",
 )
 def calculate(  # noqa: PLR0913
-    timespan: IndicatorTimeSpan,
     environment: Environment,
     levels: List[Level],
+    start: datetime | None = None,
+    period: IndicatorPeriod = IndicatorPeriod.DAY,
     chunk_size: int = 1000,
     create_artifact: bool = False,
     persist: bool = False,
 ) -> pd.DataFrame:
     """Run all i1 subflows."""
+    if start is None:
+        start = pd.Timestamp.now()
+    timespan = IndicatorTimeSpan(period=period.value, start=start)
     subflows_results = [
         i1_for_level(level, timespan, environment, chunk_size=chunk_size)
         for level in levels
