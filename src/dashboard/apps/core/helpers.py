@@ -1,15 +1,20 @@
 """Dashboard core helpers."""
 
+from datetime import datetime
 from typing import Optional
 
+from django.utils import timezone
+
 from apps.auth.models import DashboardUser
+from apps.consent.models import Consent
 from apps.core.annuaire_entreprise_api.adapters import (
     CompanyAddressAdapter,
     CompanyInformationAdapter,
 )
 from apps.core.annuaire_entreprise_api.clients import AnnuaireDesEntreprises
-from apps.core.models import Entity
-from apps.core.validators import validate_siret
+from apps.core.models import DeliveryPoint, Entity
+from apps.core.qualicharge_api.clients import QualiChargeApi
+from apps.core.utils import siret2siren
 
 
 def sync_entity_from_siret(siret: str, user: Optional[DashboardUser] = None) -> Entity:
@@ -30,8 +35,7 @@ def sync_entity_from_siret(siret: str, user: Optional[DashboardUser] = None) -> 
     Returns:
         Entity: The created or updated instance of the Entity model.
     """
-    validate_siret(siret)
-    siren: str = siret[:9]
+    siren: str = siret2siren(siret)
 
     ade = AnnuaireDesEntreprises()
 
@@ -56,3 +60,68 @@ def sync_entity_from_siret(siret: str, user: Optional[DashboardUser] = None) -> 
         entity.users.add(user)
 
     return entity
+
+
+def sync_delivery_points_from_qualicharge_api(entity: Entity):
+    """Synchronize delivery points from QualiCharge API for a given entity.
+
+    This function retrieves station data from the QualiCharge API based on the
+    entity's SIRET and creates delivery points in the database if they do not
+    already exist.
+
+    Parameters:
+        entity (Entity): The entity object for which delivery points need to be
+        synchronized. The entity must have a valid SIRET.
+
+    Raises:
+        ValueError: If the SIRET of the provided entity is None.
+    """
+    if not entity.siret:
+        raise ValueError("SIRET should be defined when syncing delivery points.")
+
+    siren: str = siret2siren(entity.siret)
+    after: datetime | None = None if not entity.synced_at else entity.synced_at
+
+    qcc = QualiChargeApi()
+    stations = qcc.manage_stations_list(siren=siren, after=after)
+
+    # get existing delivery points
+    existing_delivery_points = DeliveryPoint.objects.filter(
+        provider_assigned_id__in=[station.num_pdl for station in stations]
+    ).values_list("provider_assigned_id", flat=True)
+
+    # deduce delivery points that should be created
+    delivery_points_to_create = [
+        DeliveryPoint(
+            id_station_itinerance=station.id_station_itinerance,
+            station_name=station.nom_station,
+            entity=entity,
+            provider_assigned_id=station.num_pdl,
+        )
+        for station in stations
+        if station.num_pdl not in existing_delivery_points
+    ]
+
+    if delivery_points_to_create:
+        created_delivery_points = DeliveryPoint.objects.bulk_create(
+            delivery_points_to_create
+        )
+
+        # `Signals` don't work with `bulk_create`, so we manually create the
+        # associated consents.
+        # (https://docs.djangoproject.com/en/5.2/ref/models/querysets/#django.db.models.query.QuerySet.abulk_create)
+        consents_to_create = [
+            Consent(
+                delivery_point=delivery_point,
+                id_station_itinerance=delivery_point.id_station_itinerance,
+                station_name=delivery_point.station_name,
+                provider_assigned_id=delivery_point.provider_assigned_id,
+            )
+            for delivery_point in created_delivery_points
+        ]
+
+        if consents_to_create:
+            Consent.objects.bulk_create(consents_to_create)
+
+    entity.synced_at = timezone.now()
+    entity.save(update_fields=["synced_at"])

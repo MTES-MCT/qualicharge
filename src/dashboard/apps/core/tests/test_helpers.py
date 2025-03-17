@@ -1,15 +1,24 @@
 """Dashboard core helpers tests."""
 
+from unittest.mock import patch
+
 import pytest
 from django.core.exceptions import ValidationError
 
 from apps.auth.factories import UserFactory
+from apps.consent import AWAITING
+from apps.consent.models import Consent
 from apps.core.annuaire_entreprise_api.adapters import (
     CompanyAddressAdapter,
     CompanyInformationAdapter,
 )
-from apps.core.helpers import sync_entity_from_siret
-from apps.core.models import Entity
+from apps.core.factories import EntityFactory
+from apps.core.helpers import (
+    sync_delivery_points_from_qualicharge_api,
+    sync_entity_from_siret,
+)
+from apps.core.models import DeliveryPoint, Entity
+from apps.core.qualicharge_api.adapters import ManageStationsAdapter
 
 
 class MockCompanyInfo(CompanyInformationAdapter):
@@ -92,3 +101,74 @@ def test_create_and_populate_entity_creates_new_entity_raise_error(monkeypatch):
         sync_entity_from_siret(bad_siret)
 
     assert Entity.objects.all().count() == 0
+
+
+@pytest.mark.django_db
+@patch("apps.core.helpers.QualiChargeApi")
+def test_create_deliverypoint_from_qualicharge_api(mock_qualicharge_api):
+    """Test create delivery point from QualiCharge API."""
+    assert Entity.objects.all().count() == 0
+    entity = EntityFactory(siret="30119246401234")
+    assert entity.synced_at is None
+    assert Entity.objects.all().count() == 1
+    assert DeliveryPoint.objects.all().count() == 0
+    assert Consent.objects.all().count() == 0
+
+    # Simulate API response
+    mock_response = [
+        ManageStationsAdapter(
+            id_station_itinerance="FR073P01STATIONA",
+            nom_station="Station A",
+            num_pdl="50088800000000",
+            updated_at="2025-03-12T15:49:43.477800Z",
+        ),
+        ManageStationsAdapter(
+            id_station_itinerance="FR073P02STB",
+            nom_station="Station B",
+            num_pdl="50088800000001",
+            updated_at="2025-03-12T15:49:43.477800Z",
+        ),
+        ManageStationsAdapter(
+            id_station_itinerance="FR073P02STB",
+            nom_station="Station B",
+            num_pdl="50088800000002",
+            updated_at="2025-03-12T15:49:43.477800Z",
+        ),
+    ]
+    # mock ManageStationClient.list()
+    mock_qualicharge_api.return_value.manage_stations_list.return_value = mock_response
+
+    # create new delivery points should be ok
+    sync_delivery_points_from_qualicharge_api(entity)
+
+    entity.refresh_from_db()
+    delivery_points = DeliveryPoint.objects.all()
+    consents = Consent.objects.all()
+    expected_delivery_points_count = 3
+
+    # 3 delivery_points and consents should be created
+    assert delivery_points.count() == expected_delivery_points_count
+    assert consents.count() == expected_delivery_points_count
+
+    # check created delivery points
+    for dp, expected in zip(delivery_points, mock_response, strict=True):
+        assert dp.id_station_itinerance == expected.id_station_itinerance
+        assert dp.station_name == expected.nom_station
+        assert dp.provider_assigned_id == expected.num_pdl
+        assert dp.entity == entity
+
+    # check created consents
+    for consent, dp in zip(consents, delivery_points, strict=True):
+        assert consent.delivery_point == dp
+        assert consent.id_station_itinerance == dp.id_station_itinerance
+        assert consent.station_name == dp.station_name
+        assert consent.provider_assigned_id == dp.provider_assigned_id
+        assert consent.status == AWAITING
+
+    entity.refresh_from_db()
+    assert entity.synced_at is not None
+
+    # run function with same delivery points should not create new delivery points.
+    sync_delivery_points_from_qualicharge_api(entity)
+    assert DeliveryPoint.objects.all().count() == expected_delivery_points_count
+    assert Consent.objects.all().count() == expected_delivery_points_count
