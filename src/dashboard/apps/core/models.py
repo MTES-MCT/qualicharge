@@ -98,6 +98,9 @@ class Entity(DashboardBase):
     contract_holder_phone = models.CharField(
         _("contract holder phone number"), max_length=20, blank=True, null=True
     )
+    synced_at = models.DateTimeField(
+        _("Last synchronization with the API occurred at"), null=True, blank=True
+    )
 
     class Meta:  # noqa: D106
         verbose_name = "entity"
