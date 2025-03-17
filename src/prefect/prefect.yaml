@@ -39,55 +39,6 @@ deployments:
     work_pool:
       name: indicators
       work_queue_name: default
-  - name: e4-daily
-    entrypoint: indicators/run.py:e4_calculate
-    concurrency_limit: 10
-    schedules:
-      - cron: "20 14 * * *"
-        timezone: "Europe/Paris"
-        active: true
-    parameters:
-      environment: development
-      levels: [0, 1]
-      period: d
-      create_artifact: false
-      persist: true
-    work_pool:
-      name: indicators
-      work_queue_name: default
-  # offset: 0 -> init period = start value 
-  - name: up-monthly
-    entrypoint: indicators/run.py:up_calculate
-    concurrency_limit: 10
-    schedules:
-      - cron: "22 14 10 * *"
-        timezone: "Europe/Paris"
-        active: true
-    parameters:
-      environment: development
-      to_period: m
-      period: d
-      create_artifact: false
-      persist: true
-    work_pool:
-      name: indicators
-      work_queue_name: default
-  - name: up-weekly
-    entrypoint: indicators/run.py:up_calculate
-    concurrency_limit: 10
-    schedules:
-      - cron: "02 15 * * 1"
-        timezone: "Europe/Paris"
-        active: true
-    parameters:
-      environment: development
-      to_period: w
-      period: d
-      create_artifact: false
-      persist: true
-    work_pool:
-      name: indicators
-      work_queue_name: default
 
   # quality deployement
 
