@@ -4,8 +4,8 @@
 
 deployments:
 
-  # indicators deployement
-  
+  # -- Indicators deployments --
+
   # null start value -> datetime.now()
   - name: i1-daily
     entrypoint: indicators/run.py:i1_calculate
@@ -40,24 +40,8 @@ deployments:
       name: indicators
       work_queue_name: default
 
-  # quality deployments
+  # -- Quality deployments --
 
-  - name: quality-development
-    entrypoint: quality/flows/static.py:run_api_db_validation
-    parameters:
-      environment: development
-      report_by_email: false
-    work_pool:
-      name: indicators
-      work_queue_name: default
-  - name: quality-development-by-amenageur
-    entrypoint: quality/flows/static.py:run_api_db_validation_by_amenageur
-    parameters:
-      environment: development
-      report_by_email: false
-    work_pool:
-      name: indicators
-      work_queue_name: default
   - name: quality-staging
     entrypoint: quality/flows/static.py:run_api_db_validation
     schedules:

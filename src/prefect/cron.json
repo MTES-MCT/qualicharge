@@ -1,0 +1,7 @@
+{
+  "jobs": [
+    {
+      "command": "13 * * * * ./prefect-deploy-all.sh"
+    }
+  ]
+}
