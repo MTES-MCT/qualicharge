@@ -8,6 +8,10 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Fixed
+
+- Fix copy/pasta in manage endpoint doc strings
+
 ## [0.3.0] - 2025-03-14
 
 ### Added

@@ -19,7 +19,7 @@ class Manage:
     endpoint: str = "/manage"
 
     def __init__(self, client: HTTPClient) -> None:
-        """Set /auth endpoints HTTP client."""
+        """Set /manage endpoints HTTP client."""
         self.client = client
 
     async def read_stations(
@@ -27,7 +27,7 @@ class Manage:
         siren: str,
         after: Optional[datetime] = None,
     ) -> AsyncIterator[dict]:
-        """Query the /dynamique/status endpoint (GET)."""
+        """Query the /station/siren/ endpoint (GET)."""
         # Get ISO string for the `after` parameter
         after_str = after.isoformat() if after else None
 
