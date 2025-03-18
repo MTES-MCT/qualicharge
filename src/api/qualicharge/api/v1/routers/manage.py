@@ -61,7 +61,9 @@ async def stations_by_siren(
 ) -> List[DashboardStation]:
     """List stations for a given company identified by its SIREN."""
     statement = select(Station).where(
-        cast(SAColumn, Station.amenageur).has(siren_amenageur=siren)
+        (cast(SAColumn, Station.amenageur).has(siren_amenageur=siren))
+        & (Station.num_pdl != None)  # noqa: E711
+        & (Station.num_pdl != "")
     )
     if after is not None:
         statement = statement.where(Station.updated_at >= after)

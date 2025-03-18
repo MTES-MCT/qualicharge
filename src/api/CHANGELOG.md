@@ -15,6 +15,7 @@ and this project adheres to
 ### Fixed
 
 - Allow creating a new PDC the day it has been connected
+- Ignore stations without PDL in stations mananagement endpoint
 
 ## [0.19.1] - 2025-03-10
 
