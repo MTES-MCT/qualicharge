@@ -5,6 +5,7 @@ set -eo pipefail
 # Create .htpasswd file for ngnix
 echo "${PREFECT_HTPASSWD_CLIENT}" > .htpasswd
 echo "${PREFECT_HTPASSWD_ADMIN}" >> .htpasswd
+echo "${PREFECT_HTPASSWD_USER1}" >> .htpasswd
 
 # Run prefect server in the background
 prefect server start &
