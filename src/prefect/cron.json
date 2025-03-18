@@ -2,6 +2,9 @@
   "jobs": [
     {
       "command": "13 * * * * ./prefect-deploy-all.sh"
+    },
+    {
+      "command": "2 * * * * ./clean-offline-workers.sh"
     }
   ]
 }
