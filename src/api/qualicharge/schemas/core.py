@@ -9,7 +9,6 @@ from geoalchemy2.shape import to_shape
 from geoalchemy2.types import Geometry, WKBElement
 from pydantic import (
     EmailStr,
-    PastDate,
     PastDatetime,
     PositiveFloat,
     PositiveInt,
@@ -313,7 +312,7 @@ class Station(BaseAuditableSQLModel, table=True):
     )
     num_pdl: Optional[str] = Field(max_length=64)
     date_maj: NotFutureDate = Field(sa_type=Date)
-    date_mise_en_service: Optional[PastDate] = Field(sa_type=Date)
+    date_mise_en_service: Optional[NotFutureDate] = Field(sa_type=Date)
 
     # Relationships
     amenageur_id: Optional[UUID] = Field(

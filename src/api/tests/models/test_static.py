@@ -125,6 +125,21 @@ def test_statique_model_date_maj():
         StatiqueFactory.build(date_maj=tomorrow)
 
 
+def test_statique_model_date_mise_en_service():
+    """Test statique model accepts only a `date_mise_en_service` not in the future."""
+    today = datetime.now(timezone.utc).date()
+    statique = StatiqueFactory.build(date_mise_en_service=today)
+    assert statique.date_mise_en_service == today
+
+    yesterday = today - timedelta(days=1)
+    statique = StatiqueFactory.build(date_mise_en_service=yesterday)
+    assert statique.date_mise_en_service == yesterday
+
+    tomorrow = today + timedelta(days=1)
+    with pytest.raises(ValueError, match=f"{tomorrow} is in the future"):
+        StatiqueFactory.build(date_mise_en_service=tomorrow)
+
+
 def test_statique_model_defaults():
     """Test the Statique model defaut values (when not provided)."""
     example = StatiqueFactory.build()
