@@ -1,13 +1,13 @@
 """Core management sync delivery points commands."""
 
 import sentry_sdk
-from django.core.management.base import BaseCommand
 
 from apps.core.helpers import sync_delivery_points_from_qualicharge_api
+from apps.core.management.commands.base_command import DashboardBaseCommand
 from apps.core.models import Entity
 
 
-class Command(BaseCommand):
+class Command(DashboardBaseCommand):
     """Synchronize delivery points using QualiCharge API.
 
     Synchronizes delivery points by querying the external "QualiCharge" API and
@@ -57,15 +57,3 @@ class Command(BaseCommand):
                 self._log_error(f"Failed to process SIRET: {entity.siret}. Error: {e}")
 
         self._log_success("✅ Sync completed successfully.")
-
-    def _log_notice(self, message: str) -> None:
-        """Helper method for logging notice messages."""
-        self.stderr.write(self.style.NOTICE(message))
-
-    def _log_success(self, message: str) -> None:
-        """Helper method for logging success messages."""
-        self.stderr.write(self.style.SUCCESS(message))
-
-    def _log_error(self, message: str) -> None:
-        """Helper method for logging error messages."""
-        self.stderr.write(self.style.ERROR(message))

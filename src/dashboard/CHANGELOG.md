@@ -23,6 +23,7 @@ and this project adheres to
 - added a validated consent page allowing consultation of validated consent for the 
   current period.
 - add an email notification to users (via Brevo) after they have validated their consents.
+- add en email notification to users if they have awaiting consents.
 - add admin integration for Entity, DeliveryPoint and Consent
 - add mass admin action (make revoked) for consents
 - add mass admin action to validate users

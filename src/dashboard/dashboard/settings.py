@@ -259,22 +259,30 @@ DEFAULT_FROM_EMAIL = env.str("DEFAULT_FROM_EMAIL")
 # Email configuration for the dashboard emails.
 # - Please add a configuration for each type of email to be sent.
 # - `template_id` refers to the ID of the template from Brevo.
+DASHBOARD_EMAIL_CONSENT_VALIDATION = "consent_validation"
+DASHBOARD_EMAIL_NEW_SUBSCRIPTION = "new_subscription"
+DASHBOARD_EMAIL_VALIDATED_USER = "validated_user"
+DASHBOARD_EMAIL_AWAITING_EMAIL = "awaiting_email"
 DASHBOARD_EMAIL_CONFIGS = {
     # Configuration for the notification email sent to the user when
     # they validate their consents.
-    "consent_validation": {
+    DASHBOARD_EMAIL_CONSENT_VALIDATION: {
         "template_id": env.int("CONSENT_VALIDATION_TEMPLATE_ID"),
         "link": env.str("DOMAIN"),
     },
     # Configuration for the notification email sent to the QualiCharge Team when
     # a new user registers on the Dashboard.
-    "new_subscription": {
+    DASHBOARD_EMAIL_NEW_SUBSCRIPTION: {
         "template_id": env.int("NEW_SUBSCRIPTION_TEMPLATE_ID"),
     },
     # Configuration for the notification email sent to the user when
     # the user has been validated by an admin.
-    "validated_user": {
+    DASHBOARD_EMAIL_VALIDATED_USER: {
         "template_id": env.int("VALIDATED_USER_TEMPLATE_ID"),
+        "link": env.str("DOMAIN"),
+    },
+    DASHBOARD_EMAIL_AWAITING_EMAIL: {
+        "template_id": env.int("AWAITING_EMAIL_TEMPLATE_ID"),
         "link": env.str("DOMAIN"),
     },
 }
