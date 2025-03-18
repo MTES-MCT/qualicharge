@@ -356,6 +356,23 @@ def test_station_date_maj(db_session):
         StationFactory.create_sync(date_maj=tomorrow)
 
 
+def test_station_date_mise_en_service(db_session):
+    """Test station schema accepts only a `date_mise_en_service` not in the future."""
+    StationFactory.__session__ = db_session
+
+    today = datetime.now(timezone.utc).date()
+    station = StationFactory.create_sync(date_mise_en_service=today)
+    assert station.date_mise_en_service == today
+
+    yesterday = today - timedelta(days=1)
+    station = StationFactory.create_sync(date_mise_en_service=yesterday)
+    assert station.date_mise_en_service == yesterday
+
+    tomorrow = today + timedelta(days=1)
+    with pytest.raises(ValueError, match=f"{tomorrow} is in the future"):
+        StationFactory.create_sync(date_mise_en_service=tomorrow)
+
+
 def test_operational_unit_create_stations_fk_no_station(db_session):
     """Test OperationalUnit.create_stations_fk method with no matching station."""
     OperationalUnitFactory.__session__ = db_session

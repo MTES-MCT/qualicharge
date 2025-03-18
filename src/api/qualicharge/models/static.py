@@ -18,7 +18,6 @@ from pydantic import (
     WithJsonSchema,
     model_validator,
 )
-from pydantic.types import PastDate
 from pydantic_extra_types.coordinate import Coordinate
 from pydantic_extra_types.phone_numbers import PhoneNumber
 from typing_extensions import Annotated, Self
@@ -185,7 +184,7 @@ class Statique(ModelSchemaMixin, BaseModel):
     station_deux_roues: bool
     raccordement: Optional[RaccordementEnum] = None
     num_pdl: Optional[Annotated[str, Field(max_length=64)]]
-    date_mise_en_service: Optional[PastDate] = None
+    date_mise_en_service: Optional[NotFutureDate] = None
     observations: Optional[str] = None
     date_maj: NotFutureDate
     cable_t2_attache: Optional[bool] = None

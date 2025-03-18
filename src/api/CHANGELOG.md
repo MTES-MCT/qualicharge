@@ -12,6 +12,10 @@ and this project adheres to
 
 - Add manage router and `station/siren` endpoint for the Dashboard
 
+### Fixed
+
+- Allow creating a new PDC the day it has been connected
+
 ## [0.19.1] - 2025-03-10
 
 ### Changed
