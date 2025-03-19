@@ -75,6 +75,7 @@ deployments:
       name: indicators
       work_queue_name: default
 
+
   - name: e4-daily
     entrypoint: indicators/run.py:e4_calculate
     concurrency_limit: 10
@@ -137,6 +138,22 @@ deployments:
       name: indicators
       work_queue_name: default
 
+
+  - name: u10-daily
+    entrypoint: indicators/run.py:u10_calculate
+    concurrency_limit: 10
+    schedules:
+      - cron: "10 15 * * *"
+        timezone: "Europe/Paris"
+        active: true
+    parameters:
+      period: d
+      create_artifact: true
+      chunk_size: 1000
+    work_pool:
+      name: indicators
+      work_queue_name: default
+
   # offset (default -1): 0 -> init period = start value 
   - name: up-monthly
     entrypoint: indicators/run.py:up_calculate
@@ -154,6 +171,7 @@ deployments:
     work_pool:
       name: indicators
       work_queue_name: default
+
 
   - name: up-weekly
     entrypoint: indicators/run.py:up_calculate

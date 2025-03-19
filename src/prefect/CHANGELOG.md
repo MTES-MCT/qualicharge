@@ -21,6 +21,7 @@ and this project adheres to
 - Implement u5 workflow
 - Implement u6 workflow
 - Implement u9 workflow
+- Implement u10 workflow
 
 #### Quality
 
