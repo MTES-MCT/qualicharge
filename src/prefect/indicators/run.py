@@ -12,3 +12,6 @@ from .historicize.up import calculate as up_calculate
 from .infrastructure.i1 import calculate as i1_calculate
 from .infrastructure.i4 import calculate as i4_calculate
 from .infrastructure.t1 import calculate as t1_calculate
+
+# usage
+from .usage.u5 import calculate as u5_calculate
