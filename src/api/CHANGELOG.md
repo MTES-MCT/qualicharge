@@ -8,6 +8,8 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.20.0] - 2025-03-19
+
 ### Added
 
 - Add manage router and `station/siren` endpoint for the Dashboard
@@ -358,7 +360,8 @@ and this project adheres to
 
 - Implement base FastAPI app
 
-[unreleased]: https://github.com/MTES-MCT/qualicharge/compare/v0.19.1...main
+[unreleased]: https://github.com/MTES-MCT/qualicharge/compare/v0.20.0...main
+[0.20.0]: https://github.com/MTES-MCT/qualicharge/compare/v0.19.1...v0.20.0
 [0.19.1]: https://github.com/MTES-MCT/qualicharge/compare/v0.19.0...v0.19.1
 [0.19.0]: https://github.com/MTES-MCT/qualicharge/compare/v0.18.0...v0.19.0
 [0.18.0]: https://github.com/MTES-MCT/qualicharge/compare/v0.17.0...v0.18.0
