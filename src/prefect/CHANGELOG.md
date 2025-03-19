@@ -16,6 +16,10 @@ and this project adheres to
 - Implement i1 workflow
 - Implement e4 workflow
 - Implement up workflow
+- Implement u5 workflow
+- Implement u6 workflow
+- Implement u9 workflow
+- Implement u10 workflow
 
 #### Quality
 
