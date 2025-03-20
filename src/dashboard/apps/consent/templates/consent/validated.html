@@ -32,6 +32,9 @@
                   <th scope="col">
                     <div class="fr-cell__title">Identifiant du PDL</div>
                   </th>
+                  <th scope="col">
+                    <div class="fr-cell__title">Période d'autorisation</div>
+                  </th>
                 </tr>
               </thead>
 
@@ -44,6 +47,7 @@
                     <td> {{ consent.delivery_point.station_name }} </td>
                     <td> {{ consent.delivery_point.id_station_itinerance }} </td>
                     <td> {{ consent.delivery_point.provider_assigned_id }} </td>
+                    <td> du {{ consent.start|date:'d/m/Y' }} au {{ consent.end|date:'d/m/Y' }} </td>
                   </tr>
                 {% endfor %}
               </tbody>

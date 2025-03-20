@@ -1,6 +1,7 @@
 """Dashboard consent views tests."""
 
 import uuid
+from datetime import timedelta
 from http import HTTPStatus
 from unittest.mock import MagicMock, patch
 
@@ -9,15 +10,20 @@ from django.conf import settings
 from django.core.exceptions import PermissionDenied
 from django.http import Http404
 from django.urls import reverse
+from django.utils import timezone
 
 from apps.auth.factories import UserFactory
 from apps.consent import AWAITING, REVOKED, VALIDATED
 from apps.consent.factories import ConsentFactory
 from apps.consent.models import Consent
 from apps.consent.tests.conftest import FAKE_TIME
-from apps.consent.views import ConsentFormView, ValidatedConsentView
+from apps.consent.views import (
+    ConsentFormView,
+    UpcomingConsentFormView,
+    ValidatedConsentView,
+)
 from apps.core.factories import DeliveryPointFactory, EntityFactory
-from apps.core.models import Entity
+from apps.core.models import DeliveryPoint, Entity
 
 FORM_CLEANED_DATA = {
     "contract_holder_name": "<NAME>",
@@ -377,8 +383,11 @@ def test_templates_render_with_entity_without_consents(rf):
     view.setup(request, slug=entity_name)
 
     # check the context
+    consents = entity.get_consents()
+    assert consents.count() == 0
     context = view.get_context_data()
     assert context["entity"] == entity
+    assert len(context["consents"]) == 0
 
     # get response object
     response = view.dispatch(request)
@@ -398,7 +407,7 @@ def test_templates_render_with_entity_without_consents(rf):
 
 
 @pytest.mark.django_db
-def test_templates_render_html_content_with_consents(rf):
+def test_templates_render_html_content_with_consents(rf, settings):
     """Test the HTML content of the templates with entities and consents."""
     user = UserFactory()
 
@@ -411,14 +420,32 @@ def test_templates_render_html_content_with_consents(rf):
     view = ConsentFormView()
     view.setup(request, slug=entity_name)
 
-    # check the context
-    context = view.get_context_data()
-    assert context["entity"] == entity
-
     # create consents
     size = 3
     DeliveryPointFactory.create_batch(size, entity=entity)
-    consents = Consent.objects.filter(delivery_point__entity=entity)
+
+    # upcoming consent limit
+    settings.CONSENT_UPCOMING_DAYS_LIMIT = 30
+
+    # create upcoming consents in futur period (+30 days)
+    dp = DeliveryPoint.objects.first()
+    ConsentFactory(
+        delivery_point=dp,
+        created_by=user,
+        status=AWAITING,
+        start=timezone.now() + timedelta(days=30),
+        end=timezone.now() + timedelta(days=90),
+    )
+
+    # check the context
+    assert Consent.objects.count() == size + 1
+    consents = entity.get_consents()
+    assert consents.count() == size
+
+    context = view.get_context_data()
+    assert context["entity"] == entity
+    assert len(context["consents"]) == size
+    assert list(context["consents"]) == list(consents)
 
     # get response object
     response = view.dispatch(request)
@@ -715,3 +742,129 @@ def test_display_table_if_entity_contract_holder_is_set(rf):
     assert (expected_name in html) is True
     assert (expected_email in html) is True
     assert (expected_phone in html) is True
+
+
+@pytest.mark.django_db
+def test_upcoming_consent_form_get_context_data(rf):
+    """Test the upcoming consent form context data without consents."""
+    user = UserFactory()
+
+    # create entity
+    entity_name = "entity-1"
+    entity = EntityFactory(users=(user,), name=entity_name)
+    request = rf.get(reverse("consent:manage", kwargs={"slug": entity_name}))
+    request.user = user
+
+    view = UpcomingConsentFormView()
+    view.setup(request, slug=entity_name)
+
+    # Test without consents
+    # check the context
+    consents = entity.get_upcoming_consents()
+    assert consents.count() == 0
+    context = view.get_context_data()
+    assert context["entity"] == entity
+    assert len(context["consents"]) == 0
+
+    # Test with consents
+    # create consents
+    size = 3
+    DeliveryPointFactory.create_batch(size, entity=entity)
+
+    # upcoming consent limit
+    settings.CONSENT_UPCOMING_DAYS_LIMIT = 30
+
+    # create upcoming consents in futur period (+30 days)
+    dp = DeliveryPoint.objects.first()
+    ConsentFactory(
+        delivery_point=dp,
+        created_by=user,
+        status=AWAITING,
+        start=timezone.now() + timedelta(days=30),
+        end=timezone.now() + timedelta(days=90),
+    )
+
+    # check the context
+    assert Consent.objects.count() == size + 1
+    upcoming_consents = entity.get_upcoming_consents()
+    assert upcoming_consents.count() == 1
+
+    context = view.get_context_data()
+    assert context["entity"] == entity
+    assert len(context["consents"]) == 1
+    assert list(context["consents"]) == list(upcoming_consents)
+
+
+@pytest.mark.django_db
+def test_upcoming_consent_form_get_awaiting_ids_with_bad_parameters(rf):
+    """Test get_awaiting_ids() with bad parameters raise exception."""
+    user = UserFactory()
+
+    # create entity
+    entity_name = "entity-1"
+    EntityFactory(users=(user,), name=entity_name)
+    request = rf.get(reverse("consent:manage-upcoming", kwargs={"slug": entity_name}))
+    request.user = user
+
+    view = UpcomingConsentFormView()
+    view.setup(request, slug=entity_name)
+
+    # create a list of UUID instead of str
+    ids = [uuid.uuid4(), uuid.uuid4(), uuid.uuid4()]
+
+    # check _get_awaiting_ids() raise exception
+    # (IDs must be a list of string not of UUID)
+    with pytest.raises(ValueError):
+        view._get_awaiting_ids(validated_ids=ids)
+
+
+@pytest.mark.django_db
+def test_upcoming_consent_form_get_awaiting_ids(rf):
+    """Test getting of awaiting IDs inferred from validated consents."""
+    user = UserFactory()
+
+    # create entity
+    entity_name = "entity-1"
+    entity = EntityFactory(users=(user,), name=entity_name)
+    request = rf.get(reverse("consent:manage-upcoming", kwargs={"slug": entity_name}))
+    request.user = user
+
+    view = UpcomingConsentFormView()
+    view.setup(request, slug=entity_name)
+
+    # create consents for the entity
+    assert Consent.objects.count() == 0
+    size = 3
+    DeliveryPointFactory.create_batch(size, entity=entity)
+    assert Consent.objects.count() == size
+
+    # upcoming consent limit
+    settings.CONSENT_UPCOMING_DAYS_LIMIT = 30
+
+    # create upcoming consents in futur period (+30 days)
+    for dp in DeliveryPoint.objects.all():
+        ConsentFactory(
+            delivery_point=dp,
+            created_by=user,
+            status=AWAITING,
+            start=timezone.now() + timedelta(days=30),
+            end=timezone.now() + timedelta(days=90),
+        )
+    upcoming_size = 3
+    assert Consent.objects.count() == size + upcoming_size
+
+    ids = [
+        str(c.id)
+        for c in Consent.upcoming_objects.filter(delivery_point__entity=entity)
+    ]
+    assert len(ids) == upcoming_size
+
+    # removes one `id` from the list `ids`,
+    # this is the one we must find with _get_awaiting_ids()
+    id_not_include = ids.pop()
+    assert len(ids) == size - 1
+
+    # check awaiting id is the expected
+    awaiting_ids = view._get_awaiting_ids(validated_ids=ids)
+    assert len(awaiting_ids) == 1
+    assert id_not_include in awaiting_ids

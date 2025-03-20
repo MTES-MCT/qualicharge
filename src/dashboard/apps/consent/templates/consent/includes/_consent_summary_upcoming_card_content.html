@@ -42,9 +42,8 @@
                     </p>
                   </td>
                   <td class="fr-cell--center">
-                    {# todo : add new form url #}
                     <a class="fr-link fr-icon-arrow-right-line fr-link--icon-right"
-                       href=""
+                       href="{% url "consent:manage-upcoming" entity.slug %}"
                        data-fr-js-link-actionee="true">
                       Gérer les autorisations
                     </a>
