@@ -42,6 +42,9 @@ class IndexView(BaseView, TemplateView):
         context["has_validated_consent"] = any(
             entity.count_validated_consents() for entity in context["entities"]
         )
+        context["has_upcoming_consent"] = any(
+            entity.count_upcoming_consents() for entity in context["entities"]
+        )
 
         return context
 

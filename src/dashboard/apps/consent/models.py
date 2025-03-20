@@ -8,7 +8,7 @@ from apps.core.abstract_models import DashboardBase
 
 from . import AWAITING, CONSENT_STATUS_CHOICE, REVOKED, VALIDATED
 from .exceptions import ConsentWorkflowError
-from .managers import ConsentManager
+from .managers import ConsentManager, UpcomingConsentManager
 from .utils import consent_end_date
 from .validators import (
     validate_company_schema,
@@ -212,6 +212,7 @@ class Consent(DashboardBase):
     # models.Manager() must be in first place to ensure django admin expectations.
     objects = models.Manager()
     active_objects = ConsentManager()
+    upcoming_objects = UpcomingConsentManager()
 
     class Meta:  # noqa: D106
         ordering = ["delivery_point"]

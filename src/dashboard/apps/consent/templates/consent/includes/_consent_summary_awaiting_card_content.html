@@ -13,7 +13,7 @@
             <thead>
               <tr>
                 <th>
-                  <div class="fr-cell__title">Unités d’exploitation</div>
+                  <div class="fr-cell__title">Entreprise</div>
                 </th>
                 <th>
                   <div class="fr-cell__title fr-cell--center">
@@ -32,13 +32,12 @@
                 {% if entity.count_awaiting_consents %}
                 <tr id="undefined-row-key-{{ forloop.counter }}" data-row-key="forloop.counter">
                   <td>
-                    {# todo: change entity.name with the "unité fonctionnel" id#}
                     <p>{{ entity.name }}</p>
                   </td>
                   <td class="fr-cell--center">
                     <p class="fr-badge fr-badge--new">
                       {% with consent_total=entity.get_consents.count entity_count=entity.count_awaiting_consents pluralize=entity.count_awaiting_consents|pluralize %}
-                      {{ entity_count }} PDL en attente sur {{ consent_total }}
+                      {{ entity_count }} PDL{{ pluralize }} en attente sur {{ consent_total }}
                       {% endwith %}
                     </p>
                   </td>
