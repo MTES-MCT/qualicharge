@@ -115,14 +115,16 @@ class Entity(DashboardBase):
         """Retrieve entities for which this entity is a proxy."""
         return self.proxy_for.all()
 
-    def get_consents(self, status: str | None = None) -> QuerySet:
+    def get_consents(
+        self, status: str | None = None, obj: models.Manager = Consent.active_objects
+    ) -> QuerySet:
         """Get consents associated with this entity."""
         queryset_filters: dict = {}
         if status:
             queryset_filters["status"] = status
 
         return (
-            Consent.active_objects.filter(
+            obj.filter(
                 delivery_point__entity=self,
                 **queryset_filters,
             )
@@ -141,6 +143,10 @@ class Entity(DashboardBase):
         """Counts the number of validated consents associated with a given entity."""
         return self.get_consents(AWAITING).count()
 
+    def count_upcoming_consents(self) -> int:
+        """Counts the number of upcoming consents associated with a given entity."""
+        return self.get_consents(AWAITING, Consent.upcoming_objects).count()
+
     def get_awaiting_consents(self) -> QuerySet:
         """Get all awaiting consents for this entity."""
         return self.get_consents(AWAITING)
@@ -148,6 +154,10 @@ class Entity(DashboardBase):
     def get_validated_consents(self) -> QuerySet:
         """Get all awaiting consents for this entity."""
         return self.get_consents(VALIDATED)
+
+    def get_upcoming_consents(self) -> QuerySet:
+        """Get all upcoming consents for this entity."""
+        return self.get_consents(AWAITING, Consent.upcoming_objects)
 
 
 class DeliveryPoint(DashboardBase):

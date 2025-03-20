@@ -239,6 +239,75 @@ def test_count_awaiting_consents():
 
 
 @pytest.mark.django_db
+def test_count_upcoming_consents(settings):
+    """Test count_awaiting_consents method."""
+    settings.CONSENT_UPCOMING_DAYS_LIMIT = 60
+    user1 = UserFactory()
+    user2 = UserFactory()
+    user3 = UserFactory()
+    entity1 = EntityFactory(users=(user1,), name="entity1")
+    entity2 = EntityFactory(users=(user2,), name="entity2")
+    entity3 = EntityFactory(
+        users=(user3,), proxy_for=(entity1, entity2), name="entity3"
+    )
+
+    # create awaiting consent in current period
+    for i in range(1, 4):
+        DeliveryPointFactory(provider_assigned_id=f"entity1_{i}", entity=entity1)
+        DeliveryPointFactory(provider_assigned_id=f"entity2_{i}", entity=entity2)
+        DeliveryPointFactory(provider_assigned_id=f"entity3_{i}", entity=entity3)
+
+    # create validated consent for entity1
+    dl = DeliveryPointFactory(provider_assigned_id="entity3_validated", entity=entity1)
+    Consent.objects.filter(delivery_point=dl).update(status=VALIDATED)
+
+    # create awaiting consents for entity1 in past period
+    dl = DeliveryPointFactory(provider_assigned_id="entity3_past", entity=entity1)
+    (
+        Consent.objects.filter(
+            delivery_point=dl,
+            status=AWAITING,
+        ).update(
+            start=timezone.now() - timedelta(days=300),
+            end=timezone.now() - timedelta(days=270),
+        )
+    )
+
+    # create upcoming consents for entity1 in futur period (start in 30 days)
+    dl = DeliveryPointFactory(provider_assigned_id="entity3_futur30", entity=entity1)
+    (
+        Consent.objects.filter(
+            delivery_point=dl,
+            status=AWAITING,
+        ).update(
+            start=timezone.now() + timedelta(days=29),
+            end=timezone.now() + timedelta(days=60),
+        )
+    )
+
+    # create upcoming consents for entity1 in futur period (start in 90 days)
+    dl = DeliveryPointFactory(provider_assigned_id="entity3_futur90", entity=entity1)
+    (
+        Consent.objects.filter(
+            delivery_point=dl,
+            status=AWAITING,
+        ).update(
+            start=timezone.now() + timedelta(days=90),
+            end=timezone.now() + timedelta(days=120),
+        )
+    )
+
+    assert (
+        Consent.objects.filter(status=AWAITING, delivery_point__entity=entity1).count()
+        == 6  # noqa: PLR2004
+    )
+    assert entity1.count_awaiting_consents() == 3  # noqa: PLR2004
+    assert entity2.count_awaiting_consents() == 3  # noqa: PLR2004
+    assert entity3.count_awaiting_consents() == 3  # noqa: PLR2004
+    assert entity1.count_upcoming_consents() == 1
+
+
+@pytest.mark.django_db
 def test_get_consents():
     """Test get_consents method."""
     user1 = UserFactory()
@@ -289,8 +358,15 @@ def test_get_consents():
 
 
 @pytest.mark.django_db
-def test_get_awaiting_consents():
-    """Test get_awaiting_consents method."""
+def test_get_consents_shortcuts(settings):
+    """Test get_consents shortcuts method.
+
+    - get_awaiting_consents()
+    - get_validated_consents()
+    - get_upcoming_consents()
+    """
+    assert Consent.objects.count() == 0
+
     user1 = UserFactory()
     user2 = UserFactory()
     user3 = UserFactory()
@@ -331,7 +407,51 @@ def test_get_awaiting_consents():
         end=timezone.now() - timedelta(days=270),
     )
 
+    # upcoming consent limit
+    settings.CONSENT_UPCOMING_DAYS_LIMIT = 30
+
+    # create upcoming consents for entity1 in futur period (+30 days)
+    c_futur_1 = ConsentFactory(
+        delivery_point=dl1_1,
+        created_by=user1,
+        status=AWAITING,
+        start=timezone.now() + timedelta(days=30),
+        end=timezone.now() + timedelta(days=90),
+    )
+
+    # create upcoming consents for entity1 in futur period (+90 days)
+    ConsentFactory(
+        delivery_point=dl1_2,
+        created_by=user1,
+        status=AWAITING,
+        start=timezone.now() + timedelta(days=90),
+        end=timezone.now() + timedelta(days=30),
+    )
+
+    # count all created consents
+    expected_count = 10
+    assert Consent.objects.count() == expected_count
     # test with awaiting status
     assertQuerySetEqual(entity1.get_awaiting_consents(), [c1_1, c1_2])
     assertQuerySetEqual(entity2.get_awaiting_consents(), [c2_1, c2_2])
     assertQuerySetEqual(entity3.get_awaiting_consents(), [c3_1, c3_2])
+
+    # test with validated
+    assertQuerySetEqual(
+        entity1.get_validated_consents(),
+        [
+            c1_3,
+        ],
+    )
+    assertQuerySetEqual(entity2.get_validated_consents(), [])
+    assertQuerySetEqual(entity3.get_validated_consents(), [])
+
+    # test with upcoming
+    assertQuerySetEqual(
+        entity1.get_upcoming_consents(),
+        [
+            c_futur_1,
+        ],
+    )
+    assertQuerySetEqual(entity2.get_upcoming_consents(), [])
+    assertQuerySetEqual(entity3.get_upcoming_consents(), [])

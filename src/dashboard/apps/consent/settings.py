@@ -13,6 +13,11 @@ from django.conf import settings
 # during the year 2024).
 CONSENT_NUMBER_DAYS_END_DATE = getattr(settings, "CONSENT_NUMBER_DAYS_END_DATE", None)
 
+# Number of days defining the "upcoming" period.
+# Used to filter objects with a start date within the next x days.
+CONSENT_UPCOMING_DAYS_LIMIT = getattr(settings, "CONSENT_UPCOMING_DAYS_LIMIT", 30)
+
+
 # Control authority contact for consent validation.
 CONSENT_CONTROL_AUTHORITY = getattr(
     settings,
