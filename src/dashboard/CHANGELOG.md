@@ -19,6 +19,7 @@ and this project adheres to
 - add a base view combining mixins for consistency
 - add dashboard homepage
 - add consent form to manage consents of one entity
+- add consent form to manage upcoming consents
 - added a validated consent page allowing consultation of validated consent for the 
   current period.
 - add an email notification to users (via Brevo) after they have validated their consents.

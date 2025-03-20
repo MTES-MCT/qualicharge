@@ -108,6 +108,7 @@ class ConsentFormView(BaseView, FormView):
         context = super().get_context_data(**kwargs)
         context["control_authority"] = settings.CONSENT_CONTROL_AUTHORITY
         context["entity"] = self._get_entity()
+        context["consents"] = self._get_entity().get_consents()
         context["signature_location"] = settings.CONSENT_SIGNATURE_LOCATION
 
         return context
@@ -337,3 +338,33 @@ class ValidatedConsentView(BaseView, ListView):
             raise PermissionDenied
 
         return entity.get_validated_consents()
+
+
+class UpcomingConsentFormView(ConsentFormView):
+    """Updates the status of upcoming consents."""
+
+    def get_context_data(self, **kwargs):
+        """Override context data for the view.
+
+        The consents context are different as the ConsentFormView context.
+        We need to only retrieve upcoming consents.
+        """
+        context = super().get_context_data(**kwargs)
+        context["consents"] = self._get_entity().get_upcoming_consents()
+
+        return context
+
+    def _get_awaiting_ids(self, validated_ids: list[str]) -> list[str]:
+        """Override the _get_awaiting_ids to get upcoming consents.
+
+        Get the list of the non-selected IDs (awaiting IDs) for the upcoming consents.
+        """
+        if any(not isinstance(item, str) for item in validated_ids):
+            raise ValueError("validated_ids must be a list of strings")
+
+        entity = self._get_entity()
+        return [
+            str(c.id)
+            for c in entity.get_upcoming_consents()
+            if str(c.id) not in validated_ids
+        ]
