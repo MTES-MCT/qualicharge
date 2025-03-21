@@ -1,11 +1,17 @@
 """Dashboard consent helpers tests."""
 
+import datetime
 from unittest.mock import patch
 
 import pytest
+from django.utils import timezone
 
 from apps.auth.factories import UserFactory
-from apps.consent.helpers import send_notification_for_awaiting_consents
+from apps.consent.helpers import (
+    _get_checking_date,
+    _get_renewal_end_date,
+    send_notification_for_awaiting_consents,
+)
 from apps.consent.models import Consent
 from apps.core.factories import DeliveryPointFactory, EntityFactory
 from apps.core.models import Entity
@@ -80,3 +86,55 @@ def test_send_notification_for_no_awaiting_consents(mock_send_mail):
     # no notification should be sent
     send_notification_for_awaiting_consents(entity)
     mock_send_mail.assert_not_called()
+
+
+@pytest.mark.django_db
+def test_get_renewal_end_date_with_number_days(patch_datetime_now, monkeypatch):
+    """Test `_get_renewal_end_date` with number days.
+
+    Test function `_get_renewal_end_date` when CONSENT_NUMBER_DAYS_END_DATE is provided.
+    """
+    days = 90
+    monkeypatch.setattr("apps.consent.helpers.CONSENT_NUMBER_DAYS_END_DATE", days)
+
+    renewal_end_date = _get_renewal_end_date()
+    expected_date = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(
+        days=days
+    )
+    assert renewal_end_date == expected_date
+
+
+@pytest.mark.django_db
+def test__get_renewal_end_date_without_number_days(patch_datetime_now):
+    """Test `_get_renewal_end_date` without number days.
+
+    Test `_get_renewal_end_date` when no CONSENT_NUMBER_DAYS_END_DATE is provided.
+    """
+    duplicate_date = _get_renewal_end_date()
+    current_year = datetime.datetime.now().year
+    expected_date = datetime.datetime(
+        year=current_year + 1,
+        month=12,
+        day=31,
+        hour=23,
+        minute=59,
+        second=59,
+        tzinfo=datetime.timezone.utc,
+    )
+    assert duplicate_date == expected_date
+
+
+@pytest.mark.django_db
+def test_get_checking_date_with_upcoming_days_limit(patch_timezone_now, monkeypatch):
+    """Test `consent_checking_date` with a provided CONSENT_UPCOMING_DAYS_LIMIT."""
+    upcoming_days = 15
+    monkeypatch.setattr(
+        "apps.consent.helpers.CONSENT_UPCOMING_DAYS_LIMIT", upcoming_days
+    )
+
+    now = timezone.now()
+    expected_date = now.replace(
+        hour=23, minute=59, second=59, microsecond=999999
+    ) + datetime.timedelta(days=upcoming_days)
+
+    assert _get_checking_date() == expected_date

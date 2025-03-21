@@ -31,6 +31,7 @@ and this project adheres to
 - add API connector to the "Annuaire des Entreprises" API
 - add API connector to the QualiCharge API
 - add a command to sync delivery points from qualicharge API  
+- add a command to duplicate expiring consents
 - add a signal on the creation of a delivery point. This signal allows the creation 
 of the consent corresponding to the delivery point
 - retrieve company information from its SIRET using the "Annuaire des Entreprises" API
