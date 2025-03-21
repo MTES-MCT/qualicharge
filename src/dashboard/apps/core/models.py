@@ -135,10 +135,6 @@ class Entity(DashboardBase):
             .order_by("delivery_point__provider_assigned_id", "start")
         )
 
-    def count_validated_consents(self) -> int:
-        """Counts the number of validated consents associated with a given entity."""
-        return self.get_consents(VALIDATED).count()
-
     def count_awaiting_consents(self) -> int:
         """Counts the number of validated consents associated with a given entity."""
         return self.get_consents(AWAITING).count()
@@ -147,17 +143,26 @@ class Entity(DashboardBase):
         """Counts the number of upcoming consents associated with a given entity."""
         return self.get_consents(AWAITING, Consent.upcoming_objects).count()
 
+    def count_validated_consents(self) -> int:
+        """Counts the number of validated consents associated with a given entity."""
+        return self.get_consents(VALIDATED, Consent.validated_objects).count()
+
     def get_awaiting_consents(self) -> QuerySet:
         """Get all awaiting consents for this entity."""
         return self.get_consents(AWAITING)
 
-    def get_validated_consents(self) -> QuerySet:
-        """Get all awaiting consents for this entity."""
-        return self.get_consents(VALIDATED)
-
     def get_upcoming_consents(self) -> QuerySet:
         """Get all upcoming consents for this entity."""
         return self.get_consents(AWAITING, Consent.upcoming_objects)
+
+    def get_validated_consents(self) -> QuerySet:
+        """Get all awaiting consents for this entity."""
+        return self.get_consents(VALIDATED, Consent.validated_objects).order_by(
+            "-start",
+            "-end",
+            "delivery_point__station_name",
+            "delivery_point__provider_assigned_id",
+        )
 
 
 class DeliveryPoint(DashboardBase):

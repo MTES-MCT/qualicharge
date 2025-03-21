@@ -4,6 +4,7 @@ from datetime import timedelta
 
 from django.conf import settings
 from django.db import models
+from django.db.models import Q
 from django.utils import timezone
 
 
@@ -37,5 +38,33 @@ class UpcomingConsentManager(models.Manager):
                 start__lte=timezone.now()
                 + timedelta(days=settings.CONSENT_UPCOMING_DAYS_LIMIT),
                 end__gt=timezone.now(),
+            )
+        )
+
+
+class ValidatedConsentManager(models.Manager):
+    """Custom consent manager, for validated consents."""
+
+    def get_queryset(self):
+        """Return validated consents with active delivery point.
+
+        Includes validated consents for the current period and the upcoming period.
+        """
+        return (
+            super()
+            .get_queryset()
+            .filter(
+                Q(
+                    delivery_point__is_active=True,
+                    start__lte=timezone.now(),
+                    end__gte=timezone.now(),
+                )
+                | Q(
+                    delivery_point__is_active=True,
+                    start__gt=timezone.now(),
+                    start__lte=timezone.now()
+                    + timedelta(days=settings.CONSENT_UPCOMING_DAYS_LIMIT),
+                    end__gt=timezone.now(),
+                )
             )
         )

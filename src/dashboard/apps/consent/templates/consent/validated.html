@@ -47,7 +47,8 @@
                     <td> {{ consent.delivery_point.station_name }} </td>
                     <td> {{ consent.delivery_point.id_station_itinerance }} </td>
                     <td> {{ consent.delivery_point.provider_assigned_id }} </td>
-                    <td> du {{ consent.start|date:'d/m/Y' }} au {{ consent.end|date:'d/m/Y' }} </td>
+                    <td>
+                      du {{ consent.start|date:'d/m/Y' }} au {{ consent.end|date:'d/m/Y' }} </td>
                   </tr>
                 {% endfor %}
               </tbody>

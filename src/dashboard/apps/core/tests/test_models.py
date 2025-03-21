@@ -185,13 +185,23 @@ def test_count_validated_consents():
         end=timezone.now() - timedelta(days=270),
     )
 
+    # create upcoming and validated consents for entity2 in futur period (+30 days)
+    ConsentFactory(
+        delivery_point=dl,
+        created_by=user1,
+        status=VALIDATED,
+        start=timezone.now() + timedelta(days=30),
+        end=timezone.now() + timedelta(days=90),
+    )
+
     assert (
         Consent.active_objects.filter(
             status=AWAITING, delivery_point__entity=entity1
         ).count()
         == 4  # noqa: PLR2004
     )
-    assert entity1.count_validated_consents() == 1
+    expected_count = 2
+    assert entity1.count_validated_consents() == expected_count
     assert entity2.count_validated_consents() == 0
     assert entity3.count_validated_consents() == 0
 
@@ -217,7 +227,7 @@ def test_count_awaiting_consents():
     dl = DeliveryPointFactory(provider_assigned_id="entity3_validated", entity=entity1)
     Consent.objects.filter(delivery_point=dl).update(status=VALIDATED)
 
-    # create awainting consents for entity1 in past period
+    # create awaiting consents for entity1 in past period
     dl = DeliveryPointFactory(provider_assigned_id="entity3_past", entity=entity1)
     (
         Consent.objects.filter(
@@ -227,6 +237,15 @@ def test_count_awaiting_consents():
             start=timezone.now() - timedelta(days=300),
             end=timezone.now() - timedelta(days=270),
         )
+    )
+
+    # create upcoming and validated consents for entity2 in futur period (+30 days)
+    ConsentFactory(
+        delivery_point=dl,
+        created_by=user1,
+        status=VALIDATED,
+        start=timezone.now() + timedelta(days=30),
+        end=timezone.now() + timedelta(days=90),
     )
 
     assert (
@@ -295,6 +314,15 @@ def test_count_upcoming_consents(settings):
             start=timezone.now() + timedelta(days=90),
             end=timezone.now() + timedelta(days=120),
         )
+    )
+
+    # create upcoming and validated consents for entity2 in futur period (+30 days)
+    ConsentFactory(
+        delivery_point=dl,
+        created_by=user1,
+        status=VALIDATED,
+        start=timezone.now() + timedelta(days=30),
+        end=timezone.now() + timedelta(days=90),
     )
 
     assert (
@@ -385,7 +413,7 @@ def test_get_consents_shortcuts(settings):
     dl3_1 = DeliveryPointFactory(provider_assigned_id="entity3_1", entity=entity3)
     dl3_2 = DeliveryPointFactory(provider_assigned_id="entity3_2", entity=entity3)
 
-    # get awaiting consents
+    # get 6 awaiting consents
     c1_1 = Consent.objects.get(delivery_point=dl1_1, status=AWAITING)
     c1_2 = Consent.objects.get(delivery_point=dl1_2, status=AWAITING)
     c2_1 = Consent.objects.get(delivery_point=dl2_1, status=AWAITING)
@@ -411,7 +439,7 @@ def test_get_consents_shortcuts(settings):
     settings.CONSENT_UPCOMING_DAYS_LIMIT = 30
 
     # create upcoming consents for entity1 in futur period (+30 days)
-    c_futur_1 = ConsentFactory(
+    c_upcoming_1 = ConsentFactory(
         delivery_point=dl1_1,
         created_by=user1,
         status=AWAITING,
@@ -428,8 +456,17 @@ def test_get_consents_shortcuts(settings):
         end=timezone.now() + timedelta(days=30),
     )
 
+    # create upcoming and validated consents for entity2 in futur period (+30 days)
+    c_upcoming_3 = ConsentFactory(
+        delivery_point=dl2_1,
+        created_by=user1,
+        status=VALIDATED,
+        start=timezone.now() + timedelta(days=30),
+        end=timezone.now() + timedelta(days=90),
+    )
+
     # count all created consents
-    expected_count = 10
+    expected_count = 11
     assert Consent.objects.count() == expected_count
     # test with awaiting status
     assertQuerySetEqual(entity1.get_awaiting_consents(), [c1_1, c1_2])
@@ -437,21 +474,11 @@ def test_get_consents_shortcuts(settings):
     assertQuerySetEqual(entity3.get_awaiting_consents(), [c3_1, c3_2])
 
     # test with validated
-    assertQuerySetEqual(
-        entity1.get_validated_consents(),
-        [
-            c1_3,
-        ],
-    )
-    assertQuerySetEqual(entity2.get_validated_consents(), [])
+    assertQuerySetEqual(entity1.get_validated_consents(), [c1_3])
+    assertQuerySetEqual(entity2.get_validated_consents(), [c_upcoming_3])
     assertQuerySetEqual(entity3.get_validated_consents(), [])
 
     # test with upcoming
-    assertQuerySetEqual(
-        entity1.get_upcoming_consents(),
-        [
-            c_futur_1,
-        ],
-    )
+    assertQuerySetEqual(entity1.get_upcoming_consents(), [c_upcoming_1])
     assertQuerySetEqual(entity2.get_upcoming_consents(), [])
     assertQuerySetEqual(entity3.get_upcoming_consents(), [])
