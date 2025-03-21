@@ -5,7 +5,7 @@ from django.db.models import QuerySet
 from django.utils.translation import gettext_lazy as _
 from django_extensions.db.fields import AutoSlugField
 
-from apps.consent import AWAITING, VALIDATED
+from apps.consent import AWAITING
 from apps.consent.models import Consent
 
 from .abstract_models import DashboardBase
@@ -140,11 +140,11 @@ class Entity(DashboardBase):
 
     def count_upcoming_consents(self) -> int:
         """Counts the number of upcoming consents associated with a given entity."""
-        return self.get_consents(AWAITING, Consent.upcoming_objects).count()
+        return self.get_consents(obj=Consent.upcoming_objects).count()
 
     def count_validated_consents(self) -> int:
         """Counts the number of validated consents associated with a given entity."""
-        return self.get_consents(VALIDATED, Consent.validated_objects).count()
+        return self.get_consents(obj=Consent.validated_objects).count()
 
     def get_awaiting_consents(self) -> QuerySet:
         """Get all awaiting consents for this entity."""
@@ -152,11 +152,11 @@ class Entity(DashboardBase):
 
     def get_upcoming_consents(self) -> QuerySet:
         """Get all upcoming consents for this entity."""
-        return self.get_consents(AWAITING, Consent.upcoming_objects)
+        return self.get_consents(obj=Consent.upcoming_objects)
 
     def get_validated_consents(self) -> QuerySet:
-        """Get all awaiting consents for this entity."""
-        return self.get_consents(VALIDATED, Consent.validated_objects).order_by(
+        """Get all validated consents for this entity."""
+        return self.get_consents(obj=Consent.validated_objects).order_by(
             "-start",
             "-end",
             "delivery_point__station_name",

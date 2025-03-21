@@ -7,6 +7,8 @@ from django.db import models
 from django.db.models import Q
 from django.utils import timezone
 
+from apps.consent import AWAITING, VALIDATED
+
 
 class ConsentManager(models.Manager):
     """Custom consent manager."""
@@ -28,7 +30,15 @@ class UpcomingConsentManager(models.Manager):
     """Custom consent manager, for upcoming consents."""
 
     def get_queryset(self):
-        """Return consents with active delivery point, for the upcoming period."""
+        """Return awaiting consents with active delivery point, for the upcoming period.
+
+        Upcoming consents are consents that
+        - start in the future and before the upcoming days limit and end in the next
+        (ie: between now and 30 days from now),
+        - end in the future,
+        - have an active delivery point,
+        - are awaiting validation,
+        """
         return (
             super()
             .get_queryset()
@@ -38,6 +48,7 @@ class UpcomingConsentManager(models.Manager):
                 start__lte=timezone.now()
                 + timedelta(days=settings.CONSENT_UPCOMING_DAYS_LIMIT),
                 end__gt=timezone.now(),
+                status=AWAITING,
             )
         )
 
@@ -58,6 +69,7 @@ class ValidatedConsentManager(models.Manager):
                     delivery_point__is_active=True,
                     start__lte=timezone.now(),
                     end__gte=timezone.now(),
+                    status=VALIDATED,
                 )
                 | Q(
                     delivery_point__is_active=True,
@@ -65,6 +77,7 @@ class ValidatedConsentManager(models.Manager):
                     start__lte=timezone.now()
                     + timedelta(days=settings.CONSENT_UPCOMING_DAYS_LIMIT),
                     end__gt=timezone.now(),
+                    status=VALIDATED,
                 )
             )
         )
