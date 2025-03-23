@@ -24,6 +24,7 @@ from indicators.utils import (
     get_num_for_level_query_params,
     get_targets_for_level,
     get_timespan_filter_query_params,
+    set_start,
 )
 
 HOURLY_SESSIONS_QUERY_TEMPLATE = """
@@ -34,9 +35,6 @@ SELECT
 FROM
     Session
     INNER JOIN statique ON point_de_charge_id = pdc_id
-    --INNER JOIN PointDeCharge ON point_de_charge_id = PointDeCharge.id
-    --LEFT JOIN Station ON station_id = Station.id
-    --LEFT JOIN Localisation ON localisation_id = Localisation.id
     LEFT JOIN City ON City.code = code_insee_commune
     $join_extras
 WHERE
@@ -155,14 +153,14 @@ def calculate(  # noqa: PLR0913
     environment: Environment,
     levels: List[Level],
     start: datetime | None = None,
+    offset: int = -1,
     period: IndicatorPeriod = IndicatorPeriod.DAY,
     chunk_size: int = 1000,
     create_artifact: bool = False,
     persist: bool = False,
 ) -> pd.DataFrame:
     """Run all u5 subflows."""
-    if start is None:
-        start = pd.Timestamp.now()
+    start = set_start(start, offset, period)
     timespan = IndicatorTimeSpan(period=period.value, start=start)
     subflows_results = [
         u5_for_level(level, timespan, environment, chunk_size=chunk_size)

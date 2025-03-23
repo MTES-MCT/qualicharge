@@ -102,18 +102,6 @@ def test_to_df_histo_up_extras():
     assert df["liste"].equals(pd.Series([[DUREE, 1 + DUREE, 2 + DUREE]] * SIZE))
 
 
-def test_start_period():
-    """Test the 'set_start_period' function."""
-    tst = date(2024, 1, 10)
-    assert up.set_start_period(tst, -1, IndicatorPeriod.MONTH) == datetime(2023, 12, 1)
-    assert up.set_start_period(tst, -1, IndicatorPeriod.QUARTER) == datetime(
-        2023, 10, 1
-    )
-    assert up.set_start_period(tst, -1, IndicatorPeriod.WEEK) == datetime(2024, 1, 3)
-    assert up.set_start_period(tst, -2, IndicatorPeriod.WEEK) == datetime(2023, 12, 27)
-    assert up.set_start_period(tst, 0, IndicatorPeriod.DAY) == datetime(2024, 1, 10)
-
-
 def test_flow_up_calculate(db_connection):
     """Test the `calculate` flow."""
     indicators = i1.calculate(

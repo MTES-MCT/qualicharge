@@ -52,6 +52,7 @@ class IndicatorTimeSpan(BaseModel):
 class PeriodDuration(Enum):
     """Represents the time delta of an IndicatorPeriod."""
 
+    HOUR = timedelta(hours=1)
     DAY = timedelta(days=1)
     WEEK = timedelta(days=7)
     MONTH = relativedelta(months=1)

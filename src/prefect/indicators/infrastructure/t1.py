@@ -24,6 +24,7 @@ from indicators.utils import (
     export_indicators,
     get_num_for_level_query_params,
     get_targets_for_level,
+    set_start,
 )
 
 NUM_POCS_BY_POWER_RANGE_FOR_LEVEL_QUERY_TEMPLATE = """
@@ -160,9 +161,7 @@ def calculate(  # noqa: PLR0913
     persist: bool = False,
 ) -> pd.DataFrame:
     """Run all t1 subflows."""
-    if start is None:
-        start = pd.Timestamp.now()
-    timespan = IndicatorTimeSpan(period=period.value, start=start)
+    timespan = IndicatorTimeSpan(period=period.value, start=set_start(start))
     subflows_results = [
         t1_for_level(level, timespan, environment, chunk_size=chunk_size)
         for level in levels

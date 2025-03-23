@@ -3,6 +3,7 @@
 Common indicators functions and constants.
 """
 
+from datetime import datetime
 from string import Template
 
 import pandas as pd  # type: ignore
@@ -11,7 +12,7 @@ from prefect.artifacts import create_markdown_artifact
 from sqlalchemy.orm import Session
 
 from .db import get_api_db_engine, save_indicators
-from .models import IndicatorTimeSpan, Level, PeriodDuration
+from .models import IndicatorPeriod, IndicatorTimeSpan, Level, PeriodDuration
 from .types import Environment
 
 POWER_RANGE_CTE = {
@@ -19,13 +20,47 @@ POWER_RANGE_CTE = {
     puissance(category, p_cat) AS (
         VALUES
             (numrange(0.0, 7.4), 1),
-            (numrange(7.4, 22.0), 2),
-            (numrange(22.0, 50.0), 3),
+            (numrange(7.4, 22.0, '[]'), 2),
+            (numrange(22.0, 50.0, '()'), 3),
             (numrange(50, 150.0), 4),
             (numrange(150, 350.0), 5),
             (numrange(350, NULL), 6)
     )"""
 }
+
+
+def set_start(
+    start: datetime | None = None,
+    offset: int = 0,
+    period: IndicatorPeriod = IndicatorPeriod.DAY,
+) -> datetime:
+    """Return the start datetime of the period."""
+    if not offset and start is None:
+        return datetime.now()
+    start_date = datetime.now() if start is None else start
+    if period == IndicatorPeriod.WEEK:
+        start_date -= PeriodDuration.DAY.value * start_date.weekday()
+    start_date += PeriodDuration[period.name].value * offset
+    day_start = start_date.day
+    month_start = start_date.month
+    hour_start = start_date.hour
+    match period:
+        case IndicatorPeriod.DAY | IndicatorPeriod.WEEK:
+            hour_start = 0
+        case IndicatorPeriod.MONTH:
+            hour_start = 0
+            day_start = 1
+        case IndicatorPeriod.QUARTER:
+            hour_start = 0
+            day_start = 1
+            month_start = (start_date.month + 1) // 3 * 3 + 1
+        case IndicatorPeriod.YEAR:
+            hour_start = 0
+            day_start = 1
+            month_start = 1
+        case _:
+            ...
+    return datetime(start_date.year, month_start, day_start, hour_start)
 
 
 def get_timespan_filter_query_params(timespan: IndicatorTimeSpan, session: bool = True):
@@ -95,3 +130,14 @@ def export_indicators(  # noqa: PLR0913
         create_markdown_artifact(
             key=flow_name, markdown=indicators.to_markdown(), description=description
         )
+
+
+if __name__ == "__main__":
+    from enum import StrEnum  # noqa: F401
+
+    tst = datetime(2024, 1, 10)
+    print(set_start(tst, -1, IndicatorPeriod.MONTH) == datetime(2023, 12, 1))
+    print(set_start(tst, -1, IndicatorPeriod.QUARTER) == datetime(2023, 10, 1))
+    print(set_start(tst, -1, IndicatorPeriod.WEEK) == datetime(2024, 1, 3))
+    print(set_start(tst, -2, IndicatorPeriod.WEEK) == datetime(2023, 12, 27))
+    print(set_start(tst, 0, IndicatorPeriod.DAY) == datetime(2024, 1, 10))

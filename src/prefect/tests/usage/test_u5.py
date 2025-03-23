@@ -80,8 +80,9 @@ def test_flow_u5_calculate(db_connection):
     indicators = u5.calculate(
         Environment.TEST,
         all_levels,
-        TIMESPAN.start,
-        TIMESPAN.period.value,
+        start=TIMESPAN.start,
+        offset=0,
+        period=TIMESPAN.period.value,
         create_artifact=True,
     )
     assert list(indicators["level"].unique()) == all_levels
@@ -92,8 +93,9 @@ def test_flow_calculate_persistence(indicators_db_engine):
     indicators = u5.calculate(
         Environment.TEST,
         [Level.NATIONAL],
-        TIMESPAN.start,
-        TIMESPAN.period.value,
+        start=TIMESPAN.start,
+        offset=0,
+        period=TIMESPAN.period.value,
         persist=True,
     )
 

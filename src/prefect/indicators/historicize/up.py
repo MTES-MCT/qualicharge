@@ -13,7 +13,7 @@ from indicators.conf import settings
 from indicators.db import get_indicators_db_engine
 from indicators.models import IndicatorPeriod, IndicatorTimeSpan, PeriodDuration
 from indicators.types import Environment
-from indicators.utils import export_indicators
+from indicators.utils import export_indicators, set_start
 
 QUERY_HISTORICIZE = """
 SELECT
@@ -104,30 +104,6 @@ def to_df_histo_up(
     return df_up.reset_index()[fld_index + fld_value + fld_extras + fld_histo]
 
 
-def set_start_period(
-    start: date | None, offset: int, period: IndicatorPeriod
-) -> datetime:
-    """Return the start datetime of the period."""
-    start_date = date.today() if start is None else start
-    if offset:
-        start_date += PeriodDuration[period.name].value * offset
-    day_start = start_date.day
-    month_start = start_date.month
-    if offset:
-        match period:
-            case IndicatorPeriod.MONTH:
-                day_start = 1
-            case IndicatorPeriod.QUARTER:
-                day_start = 1
-                month_start = (start_date.month + 1) // 3 * 3 + 1
-            case IndicatorPeriod.YEAR:
-                day_start = 1
-                month_start = 1
-            case _:
-                ...
-    return datetime(start_date.year, month_start, day_start)
-
-
 @flow(
     task_runner=ThreadPoolTaskRunner(max_workers=settings.THREAD_POOL_MAX_WORKERS),
     flow_run_name="meta-up-{to_period.value}-{start:%y-%m-%d}",
@@ -135,14 +111,14 @@ def set_start_period(
 def calculate(  # noqa: PLR0913
     environment: Environment,
     to_period: IndicatorPeriod,
-    start: date | None = None,
+    start: datetime | None = None,
     offset: int = -1,
     period: IndicatorPeriod = IndicatorPeriod.DAY,
     create_artifact: bool = False,
     persist: bool = False,
 ) -> pd.DataFrame:
     """Add an historicization with a new period."""
-    init_period = set_start_period(start, offset, to_period)
+    init_period = set_start(start, offset, to_period)
     final_timespan = IndicatorTimeSpan(start=init_period, period=to_period)
     query_params = {
         "environment": environment,
