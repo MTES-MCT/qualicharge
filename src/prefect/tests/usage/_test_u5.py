@@ -31,11 +31,9 @@ def test_task_get_values_for_target(db_connection, level, query, expected):
     """Test the `get_values_for_target` task."""
     result = db_connection.execute(text(query))
     indexes = list(result.scalars().all())
-    ses_by_hour = u5.get_values_for_targets.fn(
-        level, TIMESPAN, indexes, Environment.TEST
-    )
-    assert len(set(ses_by_hour["level_id"])) == len(indexes)
-    assert ses_by_hour["value"].sum() == expected
+    values = u5.get_values_for_targets.fn(level, TIMESPAN, indexes, Environment.TEST)
+    assert len(set(values["level_id"])) == len(indexes)
+    assert values["value"].sum() == expected
 
 
 def test_task_get_values_for_target_unexpected_level(db_connection):

@@ -1,6 +1,6 @@
 """QualiCharge prefect indicators: historicization up."""
 
-from datetime import date, datetime
+from datetime import datetime
 from string import Template
 
 import pandas as pd
