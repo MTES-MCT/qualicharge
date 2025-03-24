@@ -5,11 +5,11 @@ name = "pypi"
 
 [packages]
 data7 = "==0.9.0"
-psycopg = {extras = ["binary", "pool"], version = "==3.2.5"}
+psycopg = {extras = ["binary", "pool"], version = "==3.2.6"}
 
 [dev-packages]
 honcho = "==2.0.0"
-setuptools = "==76.0.0"
+setuptools = "==77.0.3"
 
 [requires]
 python_version = "3.12"
