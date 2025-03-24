@@ -89,7 +89,7 @@ def test_whoami_auth_get_user_cache(client_auth, db_session):
 
 
 def test_whoami_expired_signature(
-    client, httpx_mock, monkeypatch, id_token_factory: IDTokenFactory = IDTokenFactory
+    client, httpx_mock, monkeypatch, id_token_factory=IDTokenFactory
 ):
     """Test the whoami endpoint when user's token expired."""
     monkeypatch.setenv("QUALICHARGE_OIDC_PROVIDER_BASE_URL", "http://oidc")
@@ -123,7 +123,7 @@ def test_whoami_expired_signature(
 
 
 def test_whoami_with_bad_token_claims(
-    client, httpx_mock, monkeypatch, id_token_factory: IDTokenFactory = IDTokenFactory
+    client, httpx_mock, monkeypatch, id_token_factory=IDTokenFactory
 ):
     """Test the whoami endpoint with bad token claims."""
     monkeypatch.setenv("QUALICHARGE_OIDC_PROVIDER_BASE_URL", "http://oidc")
