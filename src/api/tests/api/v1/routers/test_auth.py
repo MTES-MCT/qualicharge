@@ -89,7 +89,7 @@ def test_whoami_auth_get_user_cache(client_auth, db_session):
 
 
 def test_whoami_expired_signature(
-    client, id_token_factory: IDTokenFactory, httpx_mock, monkeypatch
+    client, httpx_mock, monkeypatch, id_token_factory=IDTokenFactory
 ):
     """Test the whoami endpoint when user's token expired."""
     monkeypatch.setenv("QUALICHARGE_OIDC_PROVIDER_BASE_URL", "http://oidc")
@@ -123,7 +123,7 @@ def test_whoami_expired_signature(
 
 
 def test_whoami_with_bad_token_claims(
-    client, id_token_factory: IDTokenFactory, httpx_mock, monkeypatch
+    client, httpx_mock, monkeypatch, id_token_factory=IDTokenFactory
 ):
     """Test the whoami endpoint with bad token claims."""
     monkeypatch.setenv("QUALICHARGE_OIDC_PROVIDER_BASE_URL", "http://oidc")
@@ -153,9 +153,7 @@ def test_whoami_with_bad_token_claims(
     assert response.json() == {"message": "Authentication failed: Invalid audience"}
 
 
-def test_whoami_jwt_decoding_error(
-    client, id_token_factory: IDTokenFactory, httpx_mock, monkeypatch
-):
+def test_whoami_jwt_decoding_error(client, httpx_mock, monkeypatch):
     """Test the whoami endpoint when JWT decoding fails."""
     monkeypatch.setenv("QUALICHARGE_OIDC_PROVIDER_BASE_URL", "http://oidc")
     httpx_mock.add_response(

@@ -8,6 +8,14 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Changed
+
+- Upgrade fastapi to `0.115.12`
+- Upgrade psycopg to `3.2.6`
+- Upgrade pydantic-extra-types to `2.10.3`
+- Upgrade sentry-sdk to `2.24.0`
+- Upgrade setuptools to `77.0.3`
+
 ## [0.20.0] - 2025-03-19
 
 ### Added

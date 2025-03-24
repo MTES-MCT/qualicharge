@@ -18,7 +18,7 @@ def client():
 
 
 @pytest.fixture
-def client_auth(request, id_token_factory: IDTokenFactory, db_session: Session):
+def client_auth(request, db_session: Session, id_token_factory=IDTokenFactory):
     """An authenticated test client configured for the /api/v1 application.
 
     Parameter:
