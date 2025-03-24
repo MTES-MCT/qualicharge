@@ -98,7 +98,10 @@ def test_get_public_keys_with_bad_configuration(httpx_mock):
 
 @pytest.mark.parametrize("oidc_is_enabled", (True, False))
 def test_get_token(
-    oidc_is_enabled, httpx_mock, monkeypatch, id_token_factory: IDTokenFactory
+    oidc_is_enabled,
+    httpx_mock,
+    monkeypatch,
+    id_token_factory: IDTokenFactory = IDTokenFactory,
 ):
     """Test the OIDC get token utility."""
     monkeypatch.setenv("QUALICHARGE_OIDC_PROVIDER_BASE_URL", "http://oidc")
@@ -139,7 +142,10 @@ def test_get_token(
 
 @pytest.mark.parametrize("oidc_is_enabled", (True, False))
 def test_get_token_with_expired_token(
-    oidc_is_enabled, httpx_mock, monkeypatch, id_token_factory: IDTokenFactory
+    oidc_is_enabled,
+    httpx_mock,
+    monkeypatch,
+    id_token_factory: IDTokenFactory = IDTokenFactory,
 ):
     """Test the OIDC get token utility when the token expired."""
     monkeypatch.setenv("QUALICHARGE_OIDC_PROVIDER_BASE_URL", "http://oidc")
@@ -181,7 +187,7 @@ def test_get_token_with_expired_token(
 
 
 def test_get_user_with_not_registered_user(
-    id_token_factory: IDTokenFactory, db_session
+    db_session, id_token_factory: IDTokenFactory = IDTokenFactory
 ):
     """Test the OIDC get user utility when user is not registered."""
     with pytest.raises(AuthenticationError, match="User is not registered yet"):
@@ -192,7 +198,9 @@ def test_get_user_with_not_registered_user(
         )
 
 
-def test_get_user_with_not_active_user(id_token_factory: IDTokenFactory, db_session):
+def test_get_user_with_not_active_user(
+    db_session, id_token_factory: IDTokenFactory = IDTokenFactory
+):
     """Test the OIDC get user utility when user is not active."""
     UserFactory.__session__ = db_session
 
@@ -208,7 +216,9 @@ def test_get_user_with_not_active_user(id_token_factory: IDTokenFactory, db_sess
         )
 
 
-def test_get_user_for_admin_user(id_token_factory: IDTokenFactory, db_session):
+def test_get_user_for_admin_user(
+    db_session, id_token_factory: IDTokenFactory = IDTokenFactory
+):
     """Test the OIDC get user utility for an admin user."""
     UserFactory.__session__ = db_session
 
@@ -235,7 +245,7 @@ def test_get_user_for_admin_user(id_token_factory: IDTokenFactory, db_session):
 
 
 def test_get_user_for_user_with_limited_scopes(
-    id_token_factory: IDTokenFactory, db_session
+    db_session, id_token_factory: IDTokenFactory = IDTokenFactory
 ):
     """Test the OIDC get user utility for an admin user."""
     UserFactory.__session__ = db_session
@@ -304,7 +314,9 @@ def test_get_user_for_user_with_limited_scopes(
         )
 
 
-def test_get_user_number_of_queries(id_token_factory: IDTokenFactory, db_session):
+def test_get_user_number_of_queries(
+    db_session, id_token_factory: IDTokenFactory = IDTokenFactory
+):
     """Test the OIDC get user utility number of queries for a standard user."""
     UserFactory.__session__ = db_session
     GroupFactory.__session__ = db_session
@@ -352,7 +364,7 @@ def test_get_user_number_of_queries(id_token_factory: IDTokenFactory, db_session
     assert counter.count == 0
 
 
-def test_get_user_cache(id_token_factory: IDTokenFactory, db_session):
+def test_get_user_cache(db_session, id_token_factory: IDTokenFactory = IDTokenFactory):
     """Test the OIDC get user utility number of queries for a standard user."""
     UserFactory.__session__ = db_session
     GroupFactory.__session__ = db_session
