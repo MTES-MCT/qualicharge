@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-03-07 09:17+0100\n"
-"PO-Revision-Date: 2025-03-07 09:25+0100\n"
+"POT-Creation-Date: 2025-03-25 14:12+0100\n"
+"PO-Revision-Date: 2025-03-27 09:11+0100\n"
 "Last-Translator: ssorin <ssorin@dwdlc.com>\n"
 "Language-Team: \n"
 "Language: fr\n"
@@ -19,29 +19,52 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 "X-Generator: Poedit 3.5\n"
 
-#: src/dashboard/apps/auth/admin.py:16
+#: src/dashboard/apps/auth/admin.py:17
 msgid "Personal info"
 msgstr "Informations personnelles"
 
-#: src/dashboard/apps/auth/admin.py:17
+#: src/dashboard/apps/auth/admin.py:18
 msgid "ProConnect"
 msgstr "ProConnect"
 
-#: src/dashboard/apps/auth/admin.py:19
+#: src/dashboard/apps/auth/admin.py:20
 msgid "Permissions"
 msgstr "Permissions"
 
-#: src/dashboard/apps/auth/admin.py:31
+#: src/dashboard/apps/auth/admin.py:32
 msgid "Important dates"
 msgstr "Dates importantes"
 
-#: src/dashboard/apps/auth/admin.py:48
+#: src/dashboard/apps/auth/admin.py:53 src/dashboard/apps/auth/admin.py:71
+msgid "Error during update: {str(e)}"
+msgstr "Erreur lors de la mise à jour : {str(e)}"
+
+#: src/dashboard/apps/auth/admin.py:57
+msgid "Validate selected users and send validation emails"
+msgstr ""
+"Valider les utilisateurs sélectionnés et envoyer les e-mails de validation"
+
+#: src/dashboard/apps/auth/admin.py:62
+#, python-brace-format
+msgid "{count} users were successfully validated"
+msgstr "{count} utilisateur(s) ont été validés avec succès"
+
+#: src/dashboard/apps/auth/admin.py:67
+#, python-brace-format
+msgid "{success_message} and notified"
+msgstr "{success_message} et notifié"
+
+#: src/dashboard/apps/auth/admin.py:81
 msgid "is attached to an Entity"
 msgstr "est attaché à une Entité"
 
 #: src/dashboard/apps/auth/apps.py:13
 msgid "Authentication"
 msgstr "Authentification"
+
+#: src/dashboard/apps/auth/mails.py:24
+msgid "Email can't be send. "
+msgstr "L'email ne peut pas être envoyé. "
 
 #: src/dashboard/apps/auth/models.py:23 src/dashboard/apps/core/models.py:65
 msgid "SIRET"
@@ -79,7 +102,8 @@ msgstr ""
 "\n"
 "Si il s'agit de votre première connexion, cela est normal.<br />\n"
 "Un administrateur doit valider votre compte. Vous recevrez une notification "
-"par e-mail une fois cette opération terminée."
+"par e-mail une fois cette opération terminée.\n"
+"            "
 
 #: src/dashboard/apps/auth/templates/auth/user_not_validated.html:26
 msgid "If you think this is a mistake, you can contact our team."
@@ -104,17 +128,17 @@ msgstr "Validé"
 msgid "Revoked"
 msgstr "Révoqué"
 
-#: src/dashboard/apps/consent/admin.py:35
+#: src/dashboard/apps/consent/admin.py:36
 msgid "Mark selected consents as revoked"
 msgstr "Marquer les consentements sélectionnés comme révoqués"
 
-#: src/dashboard/apps/consent/admin.py:42
+#: src/dashboard/apps/consent/admin.py:43
 msgid "Selected consents have been marked as revoked."
 msgstr "Les consentements sélectionnés ont été marqués comme révoqués."
 
-#: src/dashboard/apps/consent/apps.py:13 src/dashboard/apps/consent/views.py:34
-#: src/dashboard/apps/consent/views.py:63
-#: src/dashboard/apps/consent/views.py:281
+#: src/dashboard/apps/consent/apps.py:13 src/dashboard/apps/consent/views.py:33
+#: src/dashboard/apps/consent/views.py:65
+#: src/dashboard/apps/consent/views.py:318
 msgid "Consent"
 msgstr "Consentement"
 
@@ -122,95 +146,126 @@ msgstr "Consentement"
 msgid "Consent workflow error."
 msgstr ""
 
-#: src/dashboard/apps/consent/forms.py:119
+#: src/dashboard/apps/consent/forms.py:25 src/dashboard/apps/core/models.py:40
+msgid "name"
+msgstr "nom"
+
+#: src/dashboard/apps/consent/forms.py:27
+msgid "email"
+msgstr "email"
+
+#: src/dashboard/apps/consent/forms.py:29
+msgid "phone"
+msgstr "téléphone"
+
+#: src/dashboard/apps/consent/forms.py:121
 msgid ""
 "Je confirme l'exactitude des informations du présent formulaire et consent "
 "au traitement de mes données Enedis par la DGEC"
 msgstr ""
 
-#: src/dashboard/apps/consent/models.py:119
+#: src/dashboard/apps/consent/models.py:125
+#: src/dashboard/apps/core/models.py:182
+msgid "provider assigned id"
+msgstr "identifiant attribué au fournisseur"
+
+#: src/dashboard/apps/consent/models.py:128
+#: src/dashboard/apps/core/models.py:191
+msgid "id station itinerance"
+msgstr "id station itinérance"
+
+#: src/dashboard/apps/consent/models.py:130
+#: src/dashboard/apps/core/models.py:193
+msgid "station name"
+msgstr "nom de la station"
+
+#: src/dashboard/apps/consent/models.py:139
 msgid "created by"
 msgstr "créé par"
 
-#: src/dashboard/apps/consent/models.py:122
+#: src/dashboard/apps/consent/models.py:142
 msgid "status"
 msgstr "statut"
 
-#: src/dashboard/apps/consent/models.py:126
+#: src/dashboard/apps/consent/models.py:146
 msgid "start date"
 msgstr "date de début"
 
-#: src/dashboard/apps/consent/models.py:127
+#: src/dashboard/apps/consent/models.py:147
 msgid "end date"
 msgstr "date de fin"
 
-#: src/dashboard/apps/consent/models.py:128
+#: src/dashboard/apps/consent/models.py:148
 msgid "revoked at"
 msgstr "révoqué le"
 
-#: src/dashboard/apps/consent/models.py:132
+#: src/dashboard/apps/consent/models.py:152
 msgid "company informations"
 msgstr "informations sur l'entreprise"
 
-#: src/dashboard/apps/consent/models.py:141
+#: src/dashboard/apps/consent/models.py:161
 msgid "company representative informations"
 msgstr "informations sur le représentant de l'entreprise"
 
-#: src/dashboard/apps/consent/models.py:150
+#: src/dashboard/apps/consent/models.py:170
 msgid "control authority informations"
 msgstr "informations sur l'autorité de contrôle"
 
-#: src/dashboard/apps/consent/models.py:159
+#: src/dashboard/apps/consent/models.py:180
+msgid "contract holder informations"
+msgstr "informations sur le titulaire du contrat"
+
+#: src/dashboard/apps/consent/models.py:189
 msgid "the signatory has the authority to sign this consent"
 msgstr "le signataire a le pouvoir de signer ce consentement"
 
-#: src/dashboard/apps/consent/models.py:162
+#: src/dashboard/apps/consent/models.py:192
 msgid "allows historical measurements in kWh"
 msgstr "permet l'historique des mesures, en kWh"
 
-#: src/dashboard/apps/consent/models.py:165
+#: src/dashboard/apps/consent/models.py:195
 msgid "allow history of daily index readings in kWh"
 msgstr "permet l'historique des relevés d'index quotidiens, en kWh"
 
-#: src/dashboard/apps/consent/models.py:168
+#: src/dashboard/apps/consent/models.py:198
 msgid "allows historical maximum daily power in kVa or kWh "
 msgstr ""
 "permet l'historique de la puissance maximale quotidienne, en kVA ou kWh "
 
-#: src/dashboard/apps/consent/models.py:171
+#: src/dashboard/apps/consent/models.py:201
 msgid "allows history of load curve, at steps returned by Enedis"
 msgstr "permet l'historique de courbe de charge, aux pas restitués par Enedis"
 
-#: src/dashboard/apps/consent/models.py:174
+#: src/dashboard/apps/consent/models.py:204
 msgid "allows the technical and contractual data available"
 msgstr ""
 "permet de disposer des données techniques et contractuelles disponibles"
 
-#: src/dashboard/apps/consent/models.py:177
+#: src/dashboard/apps/consent/models.py:207
 msgid "signature date"
 msgstr "date de signature"
 
-#: src/dashboard/apps/consent/models.py:179
+#: src/dashboard/apps/consent/models.py:209
 msgid "signature location"
 msgstr "lieu de signature"
 
-#: src/dashboard/apps/consent/models.py:263
+#: src/dashboard/apps/consent/models.py:295
 msgid "Revoked consent cannot be modified."
 msgstr "Le consentement révoqué ne peut pas être modifié."
 
-#: src/dashboard/apps/consent/models.py:268
+#: src/dashboard/apps/consent/models.py:300
 msgid "Validated consent can only be changed to the status \"revoked\"."
 msgstr "Un consentement validé ne peut être modifié qu'en statut « révoqué »."
 
-#: src/dashboard/apps/consent/models.py:282
+#: src/dashboard/apps/consent/models.py:314
 msgid "Only the authorized fields "
 msgstr "Uniquement les champs autorisés "
 
-#: src/dashboard/apps/consent/models.py:295
+#: src/dashboard/apps/consent/models.py:327
 msgid "Validated consent cannot be deleted."
 msgstr "Un consentement validé ne peut pas être supprimé."
 
-#: src/dashboard/apps/consent/models.py:298
+#: src/dashboard/apps/consent/models.py:330
 msgid "Revoked consent cannot be deleted."
 msgstr "Un consentement révoqué ne peut pas être supprimé."
 
@@ -235,7 +290,7 @@ msgstr "soumettre"
 msgid "No consents to validate"
 msgstr "Aucun consentement à valider"
 
-#: src/dashboard/apps/consent/views.py:54
+#: src/dashboard/apps/consent/views.py:56
 msgid ""
 "An error occurred while validating the form. Our team has been notified and "
 "will get back to you shortly."
@@ -243,15 +298,15 @@ msgstr ""
 "Une erreur s'est produite lors de la validation du formulaire. Notre équipe "
 "a été prévenue et reviendra vers vous rapidement."
 
-#: src/dashboard/apps/consent/views.py:65
+#: src/dashboard/apps/consent/views.py:67
 msgid "Manage Consents"
 msgstr "Gérer les consentements"
 
-#: src/dashboard/apps/consent/views.py:89
+#: src/dashboard/apps/consent/views.py:103
 msgid "Consents updated."
 msgstr "Consentements mis à jour."
 
-#: src/dashboard/apps/consent/views.py:283
+#: src/dashboard/apps/consent/views.py:320
 msgid "Followed stations"
 msgstr "Stations suivies"
 
@@ -278,10 +333,6 @@ msgstr "Core"
 #: src/dashboard/apps/core/models.py:39
 msgid "slug"
 msgstr "slug"
-
-#: src/dashboard/apps/core/models.py:40
-msgid "name"
-msgstr "nom"
 
 #: src/dashboard/apps/core/models.py:42
 msgid "users"
@@ -327,23 +378,35 @@ msgstr "code postal"
 msgid "city"
 msgstr "ville"
 
-#: src/dashboard/apps/core/models.py:152
-msgid "provider assigned id"
-msgstr "identifiant attribué au fournisseur"
+#: src/dashboard/apps/core/models.py:93
+msgid "contract holder name"
+msgstr "nom du titulaire du contrat"
 
-#: src/dashboard/apps/core/models.py:157
+#: src/dashboard/apps/core/models.py:96
+msgid "contract holder email address"
+msgstr "adresse e-mail du titulaire du contrat"
+
+#: src/dashboard/apps/core/models.py:99
+msgid "contract holder phone number"
+msgstr "numéro de téléphone du titulaire du contrat"
+
+#: src/dashboard/apps/core/models.py:102
+msgid "Last synchronization with the API occurred at"
+msgstr "La dernière synchronisation avec l'API a eu lieu à"
+
+#: src/dashboard/apps/core/models.py:188
 msgid "entity"
 msgstr "entité"
 
-#: src/dashboard/apps/core/models.py:159
+#: src/dashboard/apps/core/models.py:194
 msgid "is active"
 msgstr "est actif"
 
-#: src/dashboard/apps/core/models.py:165
+#: src/dashboard/apps/core/models.py:200
 msgid "delivery point"
 msgstr "point de livraison"
 
-#: src/dashboard/apps/core/models.py:166
+#: src/dashboard/apps/core/models.py:201
 msgid "delivery points"
 msgstr "points de livraison"
 
