@@ -14,7 +14,7 @@ from qualicharge.auth.models import IDToken, Token, UserRead
 from qualicharge.auth.oidc import get_user
 from qualicharge.auth.schemas import User
 from qualicharge.conf import settings
-from qualicharge.db import get_async_session, get_session
+from qualicharge.db import get_async_session
 from qualicharge.exceptions import AuthenticationError
 
 logger = logging.getLogger(__name__)

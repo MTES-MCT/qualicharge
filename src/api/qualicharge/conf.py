@@ -71,7 +71,7 @@ class Settings(BaseSettings):
     def TEST_DATABASE_URL(self) -> PostgresDsn:
         """Get the database URL as required by SQLAlchemy."""
         return PostgresDsn.build(
-            scheme=self.DB_ASYNC_ENGINE,
+            scheme=self.DB_ENGINE,
             username=self.DB_USER,
             password=self.DB_PASSWORD,
             host=self.DB_HOST,
