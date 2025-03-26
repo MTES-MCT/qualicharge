@@ -23,12 +23,11 @@ from jwt.exceptions import (
 from pydantic import AnyHttpUrl
 from sentry_sdk import set_user
 from sqlalchemy.orm import joinedload
-from sqlmodel import Session as SMSession
 from sqlmodel import select
-
-from qualicharge.db import get_session
+from sqlmodel.ext.asyncio.session import AsyncSession
 
 from ..conf import settings
+from ..db import get_session, get_async_session
 from ..exceptions import (
     AuthenticationError,
     OIDCProviderException,
@@ -160,36 +159,38 @@ def get_token(
     key=lambda email, session: email,
     info=settings.API_GET_USER_CACHE_INFO,
 )
-def get_user_from_db(
+async def get_user_from_db(
     email: str,
     session: Annotated[
-        SMSession,
-        Depends(get_session),
+        AsyncSession,
+        Depends(get_async_session),
     ],
-):
+) -> User:
     """Fetch user and related objects from database."""
     logging.debug(f"Getting user from database: {email}")
     return (
-        session.exec(
-            select(User)
-            .options(joinedload(User.groups).joinedload(Group.operational_units))  # type: ignore[arg-type]
-            .where(User.email == email)
+        (
+            await session.exec(
+                select(User)
+                .options(joinedload(User.groups).joinedload(Group.operational_units))  # type: ignore[arg-type]
+                .where(User.email == email)
+            )
         )
         .unique()
         .one_or_none()
     )
 
 
-def get_user(
+async def get_user(
     security_scopes: SecurityScopes,
     token: Annotated[IDToken, Depends(get_token)],
     session: Annotated[
-        SMSession,
-        Depends(get_session),
+        AsyncSession,
+        Depends(get_async_session),
     ],
 ) -> User:
     """Get request user."""
-    user = get_user_from_db(email=token.email, session=session)
+    user = await get_user_from_db(email=token.email, session=session)
 
     # User does not exist: raise an error
     if user is None:

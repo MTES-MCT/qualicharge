@@ -4,11 +4,11 @@ import logging
 from typing import Generator, Optional
 
 from pydantic import PostgresDsn
-from sqlalchemy import Engine as SAEngine
-from sqlalchemy import event, text
+from sqlalchemy import Engine as SAEngine, event, text
 from sqlalchemy.exc import OperationalError
-from sqlmodel import Session as SMSession
-from sqlmodel import create_engine
+from sqlalchemy.ext.asyncio import AsyncEngine as SAAsyncEngine, create_async_engine
+from sqlmodel import Session as SMSession, create_engine
+from sqlmodel.ext.asyncio.session import AsyncSession
 
 from .conf import settings
 
@@ -27,26 +27,71 @@ class Singleton(type):
         return cls._instances[cls]
 
 
-class Engine(metaclass=Singleton):
-    """Database engine singleton."""
+class BaseEngine(metaclass=Singleton):
+    """Base database engine."""
 
-    _engine: Optional[SAEngine] = None
+    _engine: Optional[SAEngine | SAAsyncEngine] = None
 
-    def get_engine(
+    def __init__(
         self,
         url: PostgresDsn,
         echo: bool = False,
         pool_size: int = 10,
         max_overflow: int = 20,
-    ) -> SAEngine:
-        """Get created engine or create a new one."""
+    ):
+        """Set engine kwargs."""
+        self.kwargs: dict = {
+            "url": str(url),
+            "echo": echo,
+            "pool_size": pool_size,
+            "max_overflow": max_overflow,
+        }
+
+    @staticmethod
+    def create(*args, **kwargs) -> SAEngine | SAAsyncEngine:
+        """An engine should define how it will be created.
+
+        We cannot use both the singleton and abstract metaclasses,
+        hence we use this old trick.
+        """
+        raise NotImplementedError("An engine should define a create static method.")
+
+    def get_engine(self) -> SAEngine | SAAsyncEngine:
+        """Get database engine."""
         if self._engine is None:
-            logger.debug("Create a new engine")
-            self._engine = create_engine(
-                str(url), echo=echo, pool_size=pool_size, max_overflow=max_overflow
-            )
+            url = self.kwargs.pop("url")
+            logger.debug(f"Create a new engine using {url=} and {self.kwargs=}")
+            self._engine = self.create(url, **self.kwargs)
+
         logger.debug("Getting database engine %s", self._engine)
         return self._engine
+
+
+class Engine(BaseEngine):
+    """Database engine singleton."""
+
+    @staticmethod
+    def create(*args, **kwargs) -> SAEngine:
+        """Create a synchronous database engine."""
+        return create_engine(*args, **kwargs)
+
+
+class AsyncEngine(BaseEngine):
+    """Database asynchronous engine singleton."""
+
+    def __init__(self, *args, **kwargs) -> None:
+        """Add extra kwargs."""
+        super().__init__(*args, **kwargs)
+        self.kwargs.update(
+            {
+                "connect_args": {"server_settings": {"jit": "off"}},
+            }
+        )
+
+    @staticmethod
+    def create(*args, **kwargs) -> SAAsyncEngine:
+        """Create an asynchronous database engine."""
+        return create_async_engine(*args, **kwargs)
 
 
 class SAQueryCounter:
@@ -75,28 +120,37 @@ class SAQueryCounter:
         logger.debug(f"Database query [{self.count=}] >> {args=} {kwargs=}")
 
 
-def get_engine() -> SAEngine:
+def get_engine(async_: bool = False) -> SAAsyncEngine | SAEngine:
     """Get database engine."""
-    return Engine().get_engine(
-        url=settings.DATABASE_URL,
-        echo=settings.DEBUG,
-        pool_size=settings.DB_CONNECTION_POOL_SIZE,
-        max_overflow=settings.DB_CONNECTION_MAX_OVERFLOW,
-    )
+    kwargs = {
+        "url": settings.ASYNC_DATABASE_URL if async_ else settings.DATABASE_URL,
+        "echo": settings.DEBUG,
+        "pool_size": settings.DB_CONNECTION_POOL_SIZE,
+        "max_overflow": settings.DB_CONNECTION_MAX_OVERFLOW,
+    }
+    Klass = AsyncEngine if async_ else Engine
+    return Klass(**kwargs).get_engine()
 
 
-def get_session() -> Generator[SMSession, None, None]:
-    """Get database session."""
-    with SMSession(bind=get_engine()) as session:
+async def get_async_session() -> AsyncSession:
+    """Get async database session."""
+    async with AsyncSession(bind=get_engine(async_=True)) as session:
         logger.debug("Getting session %s", session)
         yield session
 
 
-def is_alive() -> bool:
+def get_session() -> Generator[SMSession, None, None]:
+    """Get database session."""
+    with SMSession(bind=get_engine(async_=False)) as session:
+        logger.debug("Getting session %s", session)
+        yield session
+
+
+async def is_alive() -> bool:
     """Check if database connection is alive."""
-    session = next(get_session())
+    session = await get_async_session()
     try:
-        session.execute(text("SELECT 1 as is_alive"))
+        await session.execute(text("SELECT 1 as is_alive"))
         return True
     except OperationalError as err:
         logger.debug("Exception: %s", err)

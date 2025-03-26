@@ -32,7 +32,8 @@ class Settings(BaseSettings):
     ALEMBIC_CFG_PATH: Path = ROOT_PATH / "alembic.ini"
 
     # Database
-    DB_ENGINE: str = "postgresql"
+    DB_ENGINE: str = "postgresql+psycopg"
+    DB_ASYNC_ENGINE: str = "postgresql+asyncpg"
     DB_HOST: str
     DB_NAME: str
     DB_USER: str
@@ -42,12 +43,10 @@ class Settings(BaseSettings):
     DB_CONNECTION_MAX_OVERFLOW: int = 10
     TEST_DB_NAME: str = "test-qualicharge-api"
 
-    @computed_field  # type: ignore[misc]
-    @property
-    def DATABASE_URL(self) -> PostgresDsn:
-        """Get the database URL as required by SQLAlchemy."""
+    def _build_db_url(self, async_: bool = False) -> PostgresDsn:
+        """A private method that build the database URL."""
         return PostgresDsn.build(
-            scheme=self.DB_ENGINE,
+            scheme=self.DB_ASYNC_ENGINE if async_ else self.DB_ENGINE,
             username=self.DB_USER,
             password=self.DB_PASSWORD,
             host=self.DB_HOST,
@@ -57,10 +56,22 @@ class Settings(BaseSettings):
 
     @computed_field  # type: ignore[misc]
     @property
+    def DATABASE_URL(self) -> PostgresDsn:
+        """Get the database URL as required by SQLAlchemy."""
+        return self._build_db_url(async_=False)
+
+    @computed_field  # type: ignore[misc]
+    @property
+    def ASYNC_DATABASE_URL(self) -> PostgresDsn:
+        """Get the asynchronous database URL as required by SQLAlchemy."""
+        return self._build_db_url(async_=True)
+
+    @computed_field  # type: ignore[misc]
+    @property
     def TEST_DATABASE_URL(self) -> PostgresDsn:
         """Get the database URL as required by SQLAlchemy."""
         return PostgresDsn.build(
-            scheme=self.DB_ENGINE,
+            scheme=self.DB_ASYNC_ENGINE,
             username=self.DB_USER,
             password=self.DB_PASSWORD,
             host=self.DB_HOST,

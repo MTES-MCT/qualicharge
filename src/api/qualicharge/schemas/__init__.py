@@ -6,11 +6,16 @@ from uuid import UUID
 
 from pydantic import PastDatetime
 from sqlalchemy import CheckConstraint
+from sqlalchemy.ext.asyncio import AsyncAttrs
 from sqlalchemy.types import DateTime
 from sqlmodel import Field, SQLModel
 
 
-class BaseTimestampedSQLModel(SQLModel):
+class BaseAsyncModel(SQLModel, AsyncAttrs):
+    """A base SQLModel with async attributes."""
+
+
+class BaseTimestampedSQLModel(BaseAsyncModel):
     """A base class for SQL models with timestamp fields.
 
     This class provides two timestamp fields, `created_at` and `updated_at`, which are
