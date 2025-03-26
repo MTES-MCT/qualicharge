@@ -27,7 +27,7 @@ from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from ..conf import settings
-from ..db import get_session, get_async_session
+from ..db import get_async_session
 from ..exceptions import (
     AuthenticationError,
     OIDCProviderException,

@@ -30,7 +30,7 @@ def test_whoami_not_auth(client):
 @pytest.mark.parametrize("client_auth", ((False, {}),), indirect=True)
 def test_whoami_auth_not_registered_user(client_auth):
     """Test the whoami endpoint when user is authenticated but not registered."""
-    response = await client_auth.get("/auth/whoami")
+    response = client_auth.get("/auth/whoami")
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
     assert response.json() == {
         "message": "Authentication failed: User is not registered yet"

@@ -4,10 +4,13 @@ import logging
 from typing import Generator, Optional
 
 from pydantic import PostgresDsn
-from sqlalchemy import Engine as SAEngine, event, text
+from sqlalchemy import Engine as SAEngine
+from sqlalchemy import event, text
 from sqlalchemy.exc import OperationalError
-from sqlalchemy.ext.asyncio import AsyncEngine as SAAsyncEngine, create_async_engine
-from sqlmodel import Session as SMSession, create_engine
+from sqlalchemy.ext.asyncio import AsyncEngine as SAAsyncEngine
+from sqlalchemy.ext.asyncio import create_async_engine
+from sqlmodel import Session as SMSession
+from sqlmodel import create_engine
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from .conf import settings

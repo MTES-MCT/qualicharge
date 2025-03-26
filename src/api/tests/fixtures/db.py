@@ -9,7 +9,7 @@ from alembic.config import Config
 from postgresql_audit.base import VersioningManager
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 from sqlalchemy.orm import configure_mappers, declarative_base
-from sqlmodel import SQLModel
+from sqlmodel import Session, SQLModel, create_engine
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from qualicharge.api.v1 import app as v1
@@ -30,22 +30,22 @@ def versioning_manager():
 
 
 @pytest.fixture(scope="session")
-async def db_engine(versioning_manager) -> AsyncGenerator[AsyncEngine, None]:
+def db_engine(versioning_manager):
     """Test database engine fixture."""
-    engine = create_async_engine(str(settings.TEST_DATABASE_URL), echo=False)
+    engine = create_engine(str(settings.TEST_DATABASE_URL), echo=False)
 
     configure_mappers()
 
-    async with engine.begin() as connection:
-        await connection.run_sync(versioning_manager.transaction_cls.__table__.create)
-        await connection.run_sync(versioning_manager.activity_cls.__table__.create)
-        await connection.run_sync(SQLModel.metadata.create_all)
+    with engine.begin() as connection:
+        versioning_manager.transaction_cls.__table__.create(connection)
+        versioning_manager.activity_cls.__table__.create(connection)
+        SQLModel.metadata.create_all(connection)
 
         # add 'postgresql-audit' functions and operators
         for table in versioning_manager.table_listeners:
             for _trig, event in versioning_manager.table_listeners[table]:
                 if isinstance(event, sa.schema.DDL):
-                    await connection.execute(event)
+                    connection.execute(event)
                 else:
                     event("dummy_table_argument", connection)
 
@@ -61,7 +61,7 @@ async def db_engine(versioning_manager) -> AsyncGenerator[AsyncEngine, None]:
             core.Session,
         ]
         for cls in versioned_model_classes:
-            await connection.execute(
+            connection.execute(
                 versioning_manager.build_audit_table_query(
                     table=cls.__table__,
                     exclude_columns=cls.__versioned__.get("exclude"),
@@ -74,34 +74,36 @@ async def db_engine(versioning_manager) -> AsyncGenerator[AsyncEngine, None]:
 
     yield engine
     SQLModel.metadata.drop_all(engine)
-    await engine.dispose()
+    engine.dispose()
 
 
 @pytest.fixture(scope="function")
-async def db_session(db_engine) -> AsyncGenerator[AsyncSession, None]:
+def db_session(db_engine):
     """Test session fixture."""
     # Setup
     #
     # Connect to the database and create a non-ORM transaction. Our connection
     # is bound to the test session.
-    connection = await db_engine.connect()
-    transaction = await connection.begin()
-    async with AsyncSession(bind=connection) as session:
-        yield session
+    connection = db_engine.connect()
+    transaction = connection.begin()
+    session = Session(bind=connection)
+
+    yield session
 
     # Teardown
     #
     # Rollback everything that happened with the Session above (including
     # explicit commits).
-    await transaction.rollback()
-    await connection.close()
+    session.close()
+    transaction.rollback()
+    connection.close()
 
 
 @pytest.fixture(autouse=True)
-async def override_db_test_session(db_session):
+def override_db_test_session(db_session):
     """Use test database along with a test session by default."""
 
-    async def get_session_override():
+    def get_session_override():
         return db_session
 
     v1.dependency_overrides[get_session] = get_session_override
@@ -110,9 +112,9 @@ async def override_db_test_session(db_session):
 
 
 @pytest.fixture(autouse=True, scope="session")
-async def load_operational_units(db_engine):
+def load_operational_units(db_engine):
     """Load operational units fixture."""
-    with AsyncSession(db_engine) as session:
+    with Session(db_engine) as session:
         session.add_all(operational_units)
-        await session.commit()
+        session.commit()
     yield
