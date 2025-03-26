@@ -36,11 +36,11 @@ def to_df_histo_up(
 ) -> pd.DataFrame:
     """Return an historicization for a new period."""
     # categorize the fields of the indicator DataFrame
-    fld_index = ["code", "level", "target", "category"]
-    fld_histo = ["period", "timestamp"]
-    fld_value = ["value"]
-    fld_extras = ["extras"]
-    fld_extra_fixed = ["quantity", "mini", "maxi", "last", "variance"]
+    index_fields = ["code", "level", "target", "category"]
+    temporal_fields = ["period", "timestamp"]
+    value_fields = ["value"]
+    extras_fields = ["extras"]
+    summary_fields = ["quantity", "mini", "maxi", "last", "variance"]
 
     # normalize the indicator DataFrame (add extras fields)
     df_in = indicator.sort_values(by="timestamp").reset_index(drop=True)
