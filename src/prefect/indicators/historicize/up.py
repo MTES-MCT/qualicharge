@@ -22,7 +22,7 @@ FROM
     $environment
 WHERE
     period = '$period' AND
-    timestamp >= '$start'   AND
+    timestamp >= '$start' AND
     timestamp < '$end'
 """
 
