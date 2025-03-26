@@ -1,12 +1,16 @@
 """Fixtures for QualiCharge API database."""
 
+from typing import AsyncGenerator
+
 import pytest
 import sqlalchemy as sa
 from alembic import command
 from alembic.config import Config
 from postgresql_audit.base import VersioningManager
+from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 from sqlalchemy.orm import configure_mappers, declarative_base
-from sqlmodel import Session, SQLModel, create_engine
+from sqlmodel import SQLModel
+from sqlmodel.ext.asyncio.session import AsyncSession
 
 from qualicharge.api.v1 import app as v1
 from qualicharge.auth.schemas import Group, User
@@ -26,22 +30,22 @@ def versioning_manager():
 
 
 @pytest.fixture(scope="session")
-def db_engine(versioning_manager):
+async def db_engine(versioning_manager) -> AsyncGenerator[AsyncEngine, None]:
     """Test database engine fixture."""
-    engine = create_engine(str(settings.TEST_DATABASE_URL), echo=False)
+    engine = create_async_engine(str(settings.TEST_DATABASE_URL), echo=False)
 
     configure_mappers()
 
-    with engine.begin() as connection:
-        versioning_manager.transaction_cls.__table__.create(connection)
-        versioning_manager.activity_cls.__table__.create(connection)
-        SQLModel.metadata.create_all(connection)
+    async with engine.begin() as connection:
+        await connection.run_sync(versioning_manager.transaction_cls.__table__.create)
+        await connection.run_sync(versioning_manager.activity_cls.__table__.create)
+        await connection.run_sync(SQLModel.metadata.create_all)
 
         # add 'postgresql-audit' functions and operators
         for table in versioning_manager.table_listeners:
             for _trig, event in versioning_manager.table_listeners[table]:
                 if isinstance(event, sa.schema.DDL):
-                    connection.execute(event)
+                    await connection.execute(event)
                 else:
                     event("dummy_table_argument", connection)
 
@@ -57,7 +61,7 @@ def db_engine(versioning_manager):
             core.Session,
         ]
         for cls in versioned_model_classes:
-            connection.execute(
+            await connection.execute(
                 versioning_manager.build_audit_table_query(
                     table=cls.__table__,
                     exclude_columns=cls.__versioned__.get("exclude"),
@@ -70,36 +74,34 @@ def db_engine(versioning_manager):
 
     yield engine
     SQLModel.metadata.drop_all(engine)
-    engine.dispose()
+    await engine.dispose()
 
 
 @pytest.fixture(scope="function")
-def db_session(db_engine):
+async def db_session(db_engine) -> AsyncGenerator[AsyncSession, None]:
     """Test session fixture."""
     # Setup
     #
     # Connect to the database and create a non-ORM transaction. Our connection
     # is bound to the test session.
-    connection = db_engine.connect()
-    transaction = connection.begin()
-    session = Session(bind=connection)
-
-    yield session
+    connection = await db_engine.connect()
+    transaction = await connection.begin()
+    async with AsyncSession(bind=connection) as session:
+        yield session
 
     # Teardown
     #
     # Rollback everything that happened with the Session above (including
     # explicit commits).
-    session.close()
-    transaction.rollback()
-    connection.close()
+    await transaction.rollback()
+    await connection.close()
 
 
 @pytest.fixture(autouse=True)
-def override_db_test_session(db_session):
+async def override_db_test_session(db_session):
     """Use test database along with a test session by default."""
 
-    def get_session_override():
+    async def get_session_override():
         return db_session
 
     v1.dependency_overrides[get_session] = get_session_override
@@ -108,9 +110,9 @@ def override_db_test_session(db_session):
 
 
 @pytest.fixture(autouse=True, scope="session")
-def load_operational_units(db_engine):
+async def load_operational_units(db_engine):
     """Load operational units fixture."""
-    with Session(db_engine) as session:
+    with AsyncSession(db_engine) as session:
         session.add_all(operational_units)
-        session.commit()
+        await session.commit()
     yield

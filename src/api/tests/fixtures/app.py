@@ -2,7 +2,7 @@
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlmodel import Session
+from sqlmodel.ext.asyncio.session import AsyncSession
 
 from qualicharge.api.v1 import app
 from qualicharge.api.v1.routers.dynamic import get_pdc_id
@@ -18,7 +18,9 @@ def client():
 
 
 @pytest.fixture
-def client_auth(request, db_session: Session, id_token_factory=IDTokenFactory):
+async def client_auth(
+    request, db_session: AsyncSession, id_token_factory=IDTokenFactory
+):
     """An authenticated test client configured for the /api/v1 application.
 
     Parameter:
@@ -31,8 +33,8 @@ def client_auth(request, db_session: Session, id_token_factory=IDTokenFactory):
 
     Note that by default, we will persist a superuser in database.
     """
-    GroupFactory.__session__ = db_session
-    UserFactory.__session__ = db_session
+    GroupFactory.__async_session__ = db_session
+    UserFactory.__async_session__ = db_session
 
     persist = True
     fields = {
@@ -46,9 +48,9 @@ def client_auth(request, db_session: Session, id_token_factory=IDTokenFactory):
         fields.update(extras)
     user = UserFactory.build(**fields)
     if persist:
-        group = GroupFactory.create_sync(name="administrators")
-        user = UserFactory.create_sync(**user.model_dump())
-        db_session.add(UserGroup(user_id=user.id, group_id=group.id))
+        group = await GroupFactory.create_async(name="administrators")
+        user = await UserFactory.create_async(**user.model_dump())
+        await db_session.add(UserGroup(user_id=user.id, group_id=group.id))
 
     app.dependency_overrides[get_token] = lambda: id_token_factory.build(
         email=user.email, scope=" ".join(user.scopes)
