@@ -20,29 +20,31 @@ def setup_function():
     get_public_keys.cache_clear()
 
 
-def test_whoami_not_auth(client):
+@pytest.mark.anyio
+async def test_whoami_not_auth(client):
     """Test the whoami endpoint when user is not authenticated."""
-    response = client.get("/auth/whoami")
+    response = await client.get("/auth/whoami")
     assert response.status_code == status.HTTP_403_FORBIDDEN
     assert response.json() == {"detail": "Not authenticated"}
 
 
+@pytest.mark.anyio
 @pytest.mark.parametrize("client_auth", ((False, {}),), indirect=True)
-def test_whoami_auth_not_registered_user(client_auth):
+async def test_whoami_auth_not_registered_user(client_auth):
     """Test the whoami endpoint when user is authenticated but not registered."""
-    response = client_auth.get("/auth/whoami")
+    response = await client_auth.get("/auth/whoami")
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
     assert response.json() == {
         "message": "Authentication failed: User is not registered yet"
     }
 
-
+@pytest.mark.anyio
 @pytest.mark.parametrize(
     "client_auth", ((True, {"email": "jane@doe.com"}),), indirect=True
 )
-def test_whoami_auth(client_auth):
+async def test_whoami_auth(client_auth):
     """Test the whoami endpoint when user is authenticated."""
-    response = client_auth.get("/auth/whoami")
+    response = await client_auth.get("/auth/whoami")
     assert response.status_code == status.HTTP_200_OK
 
     user = UserRead(**response.json())
@@ -52,19 +54,20 @@ def test_whoami_auth(client_auth):
     assert user.is_staff is True
 
 
+@pytest.mark.anyio
 @pytest.mark.parametrize(
     "client_auth",
     ((True, {"email": "jane@doe.com", "username": "jdoe"}),),
     indirect=True,
 )
-def test_whoami_auth_get_user_cache(client_auth, db_session):
+async def test_whoami_auth_get_user_cache(client_auth, db_async_session):
     """Test the get_user cache on the whoami endpoint."""
     cache_info = get_user_from_db.cache_info()
     assert cache_info.hits == 0
     assert cache_info.currsize == 0
 
-    with SAQueryCounter(db_session.connection()) as counter:
-        response = client_auth.get("/auth/whoami")
+    with SAQueryCounter(db_async_session.connection()) as counter:
+        response = await client_auth.get("/auth/whoami")
     expected = 2
     assert counter.count == expected
     assert response.status_code == status.HTTP_200_OK
@@ -77,8 +80,8 @@ def test_whoami_auth_get_user_cache(client_auth, db_session):
 
     # Now we should be using cache 10 times
     for hit in range(1, 10):
-        with SAQueryCounter(db_session.connection()) as counter:
-            response = client_auth.get("/auth/whoami")
+        with SAQueryCounter(db_async_session.connection()) as counter:
+            response = await client_auth.get("/auth/whoami")
         cache_info = get_user_from_db.cache_info()
         assert counter.count == 0
         assert cache_info.hits == hit
