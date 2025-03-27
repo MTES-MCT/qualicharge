@@ -38,6 +38,7 @@ async def test_whoami_auth_not_registered_user(client_auth):
         "message": "Authentication failed: User is not registered yet"
     }
 
+
 @pytest.mark.anyio
 @pytest.mark.parametrize(
     "client_auth", ((True, {"email": "jane@doe.com"}),), indirect=True
@@ -66,7 +67,7 @@ async def test_whoami_auth_get_user_cache(client_auth, db_async_session):
     assert cache_info.hits == 0
     assert cache_info.currsize == 0
 
-    with SAQueryCounter(db_async_session.connection()) as counter:
+    async with SAQueryCounter(db_async_session.sync_session.connection()) as counter:
         response = await client_auth.get("/auth/whoami")
     expected = 2
     assert counter.count == expected
@@ -80,7 +81,9 @@ async def test_whoami_auth_get_user_cache(client_auth, db_async_session):
 
     # Now we should be using cache 10 times
     for hit in range(1, 10):
-        with SAQueryCounter(db_async_session.connection()) as counter:
+        async with SAQueryCounter(
+            db_async_session.sync_session.connection()
+        ) as counter:
             response = await client_auth.get("/auth/whoami")
         cache_info = get_user_from_db.cache_info()
         assert counter.count == 0

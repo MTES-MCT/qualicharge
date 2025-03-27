@@ -108,12 +108,12 @@ class SAQueryCounter:
         self.connection = connection.engine
         self.count = 0
 
-    def __enter__(self):
+    async def __aenter__(self):
         """Start listening `before_cursor_execute` event."""
         event.listen(self.connection, "before_cursor_execute", self.callback)
         return self
 
-    def __exit__(self, *args, **kwargs):
+    async def __aexit__(self, *args, **kwargs):
         """Stop listening `before_cursor_execute` event."""
         event.remove(self.connection, "before_cursor_execute", self.callback)
 
