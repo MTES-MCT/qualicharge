@@ -28,6 +28,16 @@ class Settings(BaseSettings):
     # (used at least by everything that is alembic-configuration-related)
     ROOT_PATH: Path = Path(__file__).parent
 
+    # API server
+    SERVER_PROTOCOL: str = "http"
+    SERVER_HOST: str = "localhost"
+    SERVER_PORT: int = 8010
+
+    @property
+    def SERVER_URL(self) -> str:
+        """Get the full server URL."""
+        return f"{self.SERVER_PROTOCOL}://{self.SERVER_HOST}:{self.SERVER_PORT}"
+
     # Alembic
     ALEMBIC_CFG_PATH: Path = ROOT_PATH / "alembic.ini"
 
