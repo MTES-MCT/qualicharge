@@ -378,11 +378,18 @@ def test_get_consents():
         end=timezone.now() - timedelta(days=270),
     )
 
+    expected_1 = [c1_1, c1_2, c1_3]
+    expected_2 = [c2_1, c2_2]
+    expected_3 = [c3_1, c3_2]
     assertQuerySetEqual(
-        entity1.get_consents().order_by("delivery_point"), [c1_1, c1_2, c1_3]
+        set(entity1.get_consents().order_by("delivery_point")), set(expected_1)
     )
-    assertQuerySetEqual(entity2.get_consents(), [c2_1, c2_2])
-    assertQuerySetEqual(entity3.get_consents(), [c3_1, c3_2])
+    assertQuerySetEqual(
+        set(entity2.get_consents().order_by("delivery_point")), set(expected_2)
+    )
+    assertQuerySetEqual(
+        set(entity3.get_consents().order_by("delivery_point")), set(expected_3)
+    )
 
 
 @pytest.mark.django_db
@@ -469,9 +476,18 @@ def test_get_consents_shortcuts(settings):
     expected_count = 11
     assert Consent.objects.count() == expected_count
     # test with awaiting status
-    assertQuerySetEqual(entity1.get_awaiting_consents(), [c1_1, c1_2])
-    assertQuerySetEqual(entity2.get_awaiting_consents(), [c2_1, c2_2])
-    assertQuerySetEqual(entity3.get_awaiting_consents(), [c3_1, c3_2])
+    expected_1 = [c1_1, c1_2]
+    expected_2 = [c2_1, c2_2]
+    expected_3 = [c3_1, c3_2]
+    assertQuerySetEqual(
+        set(entity1.get_awaiting_consents().order_by("delivery_point")), set(expected_1)
+    )
+    assertQuerySetEqual(
+        set(entity2.get_awaiting_consents().order_by("delivery_point")), set(expected_2)
+    )
+    assertQuerySetEqual(
+        set(entity3.get_awaiting_consents().order_by("delivery_point")), set(expected_3)
+    )
 
     # test with validated
     assertQuerySetEqual(entity1.get_validated_consents(), [c1_3])

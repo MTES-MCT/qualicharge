@@ -126,16 +126,12 @@ class Entity(DashboardBase):
         if status:
             queryset_filters["status"] = status
 
-        return (
-            obj.filter(
-                delivery_point__entity=self,
-                **queryset_filters,
-            )
-            .select_related(
-                "delivery_point",
-                "delivery_point__entity",
-            )
-            .order_by("delivery_point__provider_assigned_id", "start")
+        return obj.filter(
+            delivery_point__entity=self,
+            **queryset_filters,
+        ).select_related(
+            "delivery_point",
+            "delivery_point__entity",
         )
 
     def count_awaiting_consents(self) -> int:
@@ -178,9 +174,7 @@ class DeliveryPoint(DashboardBase):
     - is_active (BooleanField): indicating the active status of the delivery point.
     """
 
-    provider_assigned_id = models.CharField(
-        _("provider assigned id"), unique=True, max_length=64
-    )
+    provider_assigned_id = models.CharField(_("provider assigned id"), max_length=64)
     entity = models.ForeignKey(
         Entity,
         on_delete=models.CASCADE,
@@ -200,6 +194,12 @@ class DeliveryPoint(DashboardBase):
         verbose_name = _("delivery point")
         verbose_name_plural = _("delivery points")
         ordering = ["provider_assigned_id"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["provider_assigned_id", "id_station_itinerance"],
+                name="unique_provider_station",
+            )
+        ]
 
     def __str__(self):  # noqa: D105
         return self.provider_assigned_id
