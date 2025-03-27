@@ -216,7 +216,7 @@ class Consent(DashboardBase):
     validated_objects = ValidatedConsentManager()
 
     class Meta:  # noqa: D106
-        ordering = ["delivery_point"]
+        ordering = ["delivery_point__station_name", "provider_assigned_id", "start"]
 
     def __str__(self):  # noqa: D105
         return f"{self.delivery_point} - {self.updated_at}: {self.status}"
