@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "f5a0c22394c0a3284357d50b5e47243c08cedb869e9f03710ec32f7851a8f402"
+            "sha256": "2d81295fc55be6f6315eb506dc5cd0a78da4734f3d29154aa6e1dc834f20f961"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -16,6 +16,14 @@
         ]
     },
     "default": {
+        "aiocache": {
+            "hashes": [
+                "sha256:889086fc24710f431937b87ad3720a289f7fc31c4fd8b68e9f918b9bacd8270d",
+                "sha256:f528b27bf4d436b497a1d0d1a8f59a542c153ab1e37c3621713cb376d44c4713"
+            ],
+            "index": "pypi",
+            "version": "==0.12.3"
+        },
         "alembic": {
             "hashes": [
                 "sha256:197de710da4b3e91cf66a826a5b31b5d59a127ab41bd0fc42863e2902ce2bbbe",
@@ -41,6 +49,15 @@
             ],
             "markers": "python_version >= '3.9'",
             "version": "==4.9.0"
+        },
+        "asyncache": {
+            "hashes": [
+                "sha256:9a1e60a75668e794657489bdea6540ee7e3259c483517b934670db7600bf5035",
+                "sha256:ef20a1024d265090dd1e0785c961cf98b9c32cc7d9478973dcf25ac1b80011f5"
+            ],
+            "index": "pypi",
+            "markers": "python_version >= '3.8' and python_version < '4.0'",
+            "version": "==0.3.1"
         },
         "asyncpg": {
             "hashes": [

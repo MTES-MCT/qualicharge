@@ -2,12 +2,11 @@
 
 import logging
 from functools import lru_cache
-from threading import Lock
 from typing import Annotated, Dict, Union
 
 import httpx
 import jwt
-from cachetools import TTLCache, cached
+from aiocache import cached
 from fastapi import Depends
 from fastapi.security import (
     HTTPAuthorizationCredentials,
@@ -26,6 +25,7 @@ from sqlalchemy.orm import joinedload
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
+from ..cache import amemory as amemory_cache
 from ..conf import settings
 from ..db import get_async_session
 from ..exceptions import (
@@ -151,13 +151,9 @@ def get_token(
 
 
 @cached(
-    TTLCache(
-        maxsize=settings.API_GET_USER_CACHE_MAXSIZE,
-        ttl=settings.API_GET_USER_CACHE_TTL,
-    ),
-    lock=Lock(),
-    key=lambda email, session: email,
-    info=settings.API_GET_USER_CACHE_INFO,
+    amemory_cache,
+    # FIXME
+    # key_builder=lambda email, session: email,
 )
 async def get_user_from_db(
     email: str,

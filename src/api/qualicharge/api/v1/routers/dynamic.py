@@ -1,12 +1,11 @@
 """QualiCharge API v1 dynamique router."""
 
 import logging
-from threading import Lock
 from typing import Annotated, List, cast
 from uuid import UUID, uuid4
 
+from aiocache import cached
 from annotated_types import Len
-from cachetools import LRUCache, cached
 from fastapi import (
     APIRouter,
     BackgroundTasks,
@@ -25,6 +24,7 @@ from sqlmodel import Session, join, select
 from qualicharge.api.utils import GzipRoute
 from qualicharge.auth.oidc import get_user
 from qualicharge.auth.schemas import ScopesEnum, User
+from qualicharge.cache import amemory as amemory_cache
 from qualicharge.conf import settings
 from qualicharge.db import get_session
 from qualicharge.exceptions import PermissionDenied
@@ -71,12 +71,10 @@ class DynamiqueItemsCreatedResponse(BaseModel):
 
 
 @cached(
-    LRUCache(
-        maxsize=settings.API_GET_PDC_ID_CACHE_MAXSIZE,
-    ),
-    lock=Lock(),
-    key=lambda id_pdc_itinerance, session: id_pdc_itinerance,
-    info=settings.API_GET_PDC_ID_CACHE_INFO,
+    amemory_cache,
+    # ttl=settings.API_GET_PDC_ID_CACHE_TTL,
+    # FIXME
+    # key_builder=lambda id_pdc_itinerance, session: id_pdc_itinerance,
 )
 def get_pdc_id(id_pdc_itinerance: str, session: Session) -> UUID:
     """Get PointDeCharge.id from an `id_pdc_itinerance`."""

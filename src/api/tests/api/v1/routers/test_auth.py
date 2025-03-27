@@ -63,18 +63,18 @@ async def test_whoami_auth(client_auth):
 )
 async def test_whoami_auth_get_user_cache(client_auth, db_async_session):
     """Test the get_user cache on the whoami endpoint."""
-    cache_info = get_user_from_db.cache_info()
-    assert cache_info.hits == 0
-    assert cache_info.currsize == 0
+    cache_info = get_user_from_db.cache.hit_miss_ratio
+    assert cache_info["hits"] == 0
+    assert cache_info["total"] == 0
 
     async with SAQueryCounter(db_async_session.sync_session.connection()) as counter:
         response = await client_auth.get("/auth/whoami")
     expected = 2
     assert counter.count == expected
     assert response.status_code == status.HTTP_200_OK
-    cache_info = get_user_from_db.cache_info()
-    assert cache_info.hits == 0
-    assert cache_info.currsize == 1
+    cache_info = get_user_from_db.cache.hit_miss_ratio
+    assert cache_info["hits"] == 0
+    assert cache_info["total"] == 1
 
     user = UserRead(**response.json())
     assert user.email == "jane@doe.com"
@@ -85,10 +85,10 @@ async def test_whoami_auth_get_user_cache(client_auth, db_async_session):
             db_async_session.sync_session.connection()
         ) as counter:
             response = await client_auth.get("/auth/whoami")
-        cache_info = get_user_from_db.cache_info()
+        cache_info = get_user_from_db.cache.hit_miss_ratio
         assert counter.count == 0
-        assert cache_info.hits == hit
-        assert cache_info.currsize == 1
+        assert cache_info["hits"] == hit
+        assert cache_info["total"] == 1
         assert response.status_code == status.HTTP_200_OK
         user = UserRead(**response.json())
         assert user.email == "jane@doe.com"

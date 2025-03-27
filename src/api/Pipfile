@@ -4,6 +4,7 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
+aiocache = "==0.12.3"
 alembic = "==1.15.1"
 annotated-types = "==0.7.0"
 asyncpg = "==0.30.0"
