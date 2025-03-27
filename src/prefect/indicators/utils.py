@@ -16,6 +16,7 @@ from .db import get_api_db_engine, save_indicators
 from .models import IndicatorPeriod, IndicatorTimeSpan, Level, PeriodDuration
 from .types import Environment
 
+# in AFIR regulation, 22 kw belongs interval [7.4, 22] and not [22, 50]
 POWER_RANGE_CTE = {
     "power_range": """
     puissance(category, p_cat) AS (
@@ -35,7 +36,7 @@ def set_start(  # noqa: PLR0911
     offset: int = 0,
     period: IndicatorPeriod = IndicatorPeriod.DAY,
 ) -> datetime:
-    """Return the begining datetime of the period."""
+    """Return the begining datetime of the period with the defined offset."""
     if not offset and start is None:
         return datetime.now()
     first_minute = {'minute':0, 'second':0, 'microsecond':0}

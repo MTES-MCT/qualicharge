@@ -61,7 +61,8 @@ def to_df_histo_up(
 
     # decode specific extras fields
     fld_extra_other = list(
-        set(df_in.columns) - set(fld_index + fld_value + fld_extra_fixed + fld_histo)
+        set(df_in.columns)
+        - set(index_fields + value_fields + summary_fields + temporal_fields)
     )
     extra_sum = [col for col in fld_extra_other if col[:4] == "sum_"]
     extra_min = [col for col in fld_extra_other if col[:4] == "min_"]
@@ -72,15 +73,15 @@ def to_df_histo_up(
     )
 
     # add fields to calculate mean values
-    for col in extra_mean + fld_value:
+    for col in extra_mean + value_fields:
         df_in[col + "_qua"] = df_in[col] * df_in["quantity"]
 
     # calculate DataFrame with new period
-    grp = df_in.groupby(fld_index, sort=False)
-    col_mean = [col + "_qua" for col in extra_mean + fld_value]
+    grp = df_in.groupby(index_fields, sort=False)
+    col_mean = [col + "_qua" for col in extra_mean + value_fields]
     grp_sum = grp[col_mean + extra_sum + ["quantity"]].sum()
     df_up = grp_sum[["quantity"]].copy()
-    for col in extra_mean + fld_value:
+    for col in extra_mean + value_fields:
         df_up[col] = grp_sum[col + "_qua"] / df_up["quantity"]
     for col in extra_sum:
         df_up[col] = grp_sum[col]
@@ -97,11 +98,13 @@ def to_df_histo_up(
     pass  # variance calculation to add
 
     # add the historicization format
-    df_up["extras"] = df_up[fld_extra_fixed + fld_extra_other].to_dict(orient="records")
+    df_up["extras"] = df_up[summary_fields + fld_extra_other].to_dict(orient="records")
     df_up["timestamp"] = timespan_up.start.isoformat()
     df_up["period"] = timespan_up.period
 
-    return df_up.reset_index()[fld_index + fld_value + fld_extras + fld_histo]
+    return df_up.reset_index()[
+        index_fields + value_fields + extras_fields + temporal_fields
+    ]
 
 
 @flow(
