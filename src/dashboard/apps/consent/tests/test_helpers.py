@@ -67,7 +67,8 @@ def test_send_notification_for_awaiting_consents(mock_send_mail, settings):
 
         # user2 has no email, an error should be raised
         mock_sentry.assert_any_call(
-            f"Email can't be send. User {user2.id} does not have an email address.",
+            f"(notification_for_awaiting_consents) Email can't be send. "
+            f"User {user2.id} does not have an email address.",
             level="error",
         )
 
