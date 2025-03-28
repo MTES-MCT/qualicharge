@@ -45,7 +45,8 @@ def send_notification_for_awaiting_consents(entity: Entity) -> None:
     for user in entity.users.all():
         if not user.email:
             error = (
-                f"Email can't be send. User {user.id} does not have an email address."
+                f"(notification_for_awaiting_consents) Email can't be send. "
+                f"User {user.id} does not have an email address."
             )
             sentry_sdk.capture_message(error, level="error")
             continue

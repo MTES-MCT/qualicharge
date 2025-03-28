@@ -139,7 +139,15 @@ def test_create_deliverypoint_from_qualicharge_api(mock_qualicharge_api):
     mock_qualicharge_api.return_value.manage_stations_list.return_value = mock_response
 
     # create new delivery points should be ok
-    sync_delivery_points_from_qualicharge_api(entity)
+    delivery_points, consents = sync_delivery_points_from_qualicharge_api(entity)
+
+    expected_count = 3
+    assert len(delivery_points) == expected_count
+    assert len(consents) == expected_count
+    for dp, expected in zip(delivery_points, mock_response, strict=True):
+        assert dp.id_station_itinerance == expected.id_station_itinerance
+    for consent, expected in zip(consents, mock_response, strict=True):
+        assert consent.id_station_itinerance == expected.id_station_itinerance
 
     entity.refresh_from_db()
     delivery_points = DeliveryPoint.objects.all()
@@ -169,6 +177,8 @@ def test_create_deliverypoint_from_qualicharge_api(mock_qualicharge_api):
     assert entity.synced_at is not None
 
     # run function with same delivery points should not create new delivery points.
-    sync_delivery_points_from_qualicharge_api(entity)
+    delivery_points, consents = sync_delivery_points_from_qualicharge_api(entity)
+    assert delivery_points == []
+    assert consents == []
     assert DeliveryPoint.objects.all().count() == expected_delivery_points_count
     assert Consent.objects.all().count() == expected_delivery_points_count
