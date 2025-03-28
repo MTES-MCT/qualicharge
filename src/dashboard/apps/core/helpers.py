@@ -62,12 +62,14 @@ def sync_entity_from_siret(siret: str, user: Optional[DashboardUser] = None) -> 
     return entity
 
 
-def sync_delivery_points_from_qualicharge_api(entity: Entity):
+def sync_delivery_points_from_qualicharge_api(
+    entity: Entity,
+) -> tuple[list[DeliveryPoint], list[Consent] | None]:
     """Synchronize delivery points from QualiCharge API for a given entity.
 
     This function retrieves station data from the QualiCharge API based on the
-    entity's SIRET and creates delivery points in the database if they do not
-    already exist.
+    entity's SIRET and creates delivery points and associated consents in the database
+     if they do not already exist.
 
     Parameters:
         entity (Entity): The entity object for which delivery points need to be
@@ -75,10 +77,15 @@ def sync_delivery_points_from_qualicharge_api(entity: Entity):
 
     Raises:
         ValueError: If the SIRET of the provided entity is None.
+
+    Returns:
+        A list of created delivery points, and a list of their associated consents
+        or None if no consents were created.
     """
     if not entity.siret:
         raise ValueError("SIRET should be defined when syncing delivery points.")
 
+    created_delivery_points = consents = []
     siren: str = siret2siren(entity.siret)
     after: datetime | None = None if not entity.synced_at else entity.synced_at
 
@@ -121,7 +128,9 @@ def sync_delivery_points_from_qualicharge_api(entity: Entity):
         ]
 
         if consents_to_create:
-            Consent.objects.bulk_create(consents_to_create)
+            consents = Consent.objects.bulk_create(consents_to_create)
 
     entity.synced_at = timezone.now()
     entity.save(update_fields=["synced_at"])
+
+    return created_delivery_points, consents

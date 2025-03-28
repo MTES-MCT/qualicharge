@@ -1,10 +1,15 @@
 """Core management sync delivery points commands."""
 
-import sentry_sdk
+from typing import List, Optional
 
+import sentry_sdk
+from django.db.models import QuerySet
+
+from apps.consent.helpers import send_notification_for_awaiting_consents
+from apps.consent.models import Consent
 from apps.core.helpers import sync_delivery_points_from_qualicharge_api
 from apps.core.management.commands.base_command import DashboardBaseCommand
-from apps.core.models import Entity
+from apps.core.models import DeliveryPoint, Entity
 
 
 class Command(DashboardBaseCommand):
@@ -44,16 +49,28 @@ class Command(DashboardBaseCommand):
             '⚡ Querying "QualiCharge" API and updating delivery points...'
         )
 
-        entities = (
+        delivery_points: List[DeliveryPoint] = []
+        consents: Optional[List[Consent]] = []
+
+        entities: QuerySet = (
             Entity.objects.filter(siret__in=siret) if siret else Entity.objects.all()
         )
 
         for entity in entities:
             self._log_notice(f"⚙️ Processing SIRET: {entity.siret}...")
             try:
-                sync_delivery_points_from_qualicharge_api(entity)
+                delivery_points, consents = sync_delivery_points_from_qualicharge_api(
+                    entity
+                )
             except Exception as e:
                 sentry_sdk.capture_exception(e)
-                self._log_error(f"Failed to process SIRET: {entity.siret}. Error: {e}")
+                self._log_error(
+                    f"- Failed to process SIRET: {entity.siret}. Error: {e}"
+                )
 
-        self._log_success("✅ Sync completed successfully.")
+            self._log_notice(f"- {len(delivery_points)} delivery point(s) created")
+
+            if consents:
+                send_notification_for_awaiting_consents(entity)
+
+        self._log_success("\n✅ Sync completed successfully.")
