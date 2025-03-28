@@ -10,11 +10,13 @@ from apps.auth.factories import UserFactory
 from apps.consent.helpers import (
     _get_checking_date,
     _get_renewal_end_date,
+    generate_missing_consents,
     send_notification_for_awaiting_consents,
 )
 from apps.consent.models import Consent
+from apps.consent.utils import consent_end_date
 from apps.core.factories import DeliveryPointFactory, EntityFactory
-from apps.core.models import Entity
+from apps.core.models import DeliveryPoint, Entity
 
 
 @pytest.mark.django_db
@@ -138,3 +140,45 @@ def test_get_checking_date_with_upcoming_days_limit(patch_timezone_now, monkeypa
     ) + datetime.timedelta(days=upcoming_days)
 
     assert _get_checking_date() == expected_date
+
+
+@pytest.mark.django_db
+def test_generate_missing_consents():
+    """Test `generate_missing_consents` with no active consents."""
+    assert Consent.active_objects.count() == 0
+    assert DeliveryPoint.active_objects.count() == 0
+
+    DeliveryPointFactory.create_batch(5)
+
+    assert DeliveryPoint.active_objects.count() == 5  # noqa: PLR2004
+    assert Consent.active_objects.count() == 5  # noqa: PLR2004
+
+    # test generate missing consents should not generate new consents
+    new_consents = generate_missing_consents()
+    assert len(new_consents) == 0
+    assert DeliveryPoint.active_objects.count() == 5  # noqa: PLR2004
+    assert Consent.active_objects.count() == 5  # noqa: PLR2004
+
+    # change start/end date of consents to put it outside the active period.
+    consent = Consent.objects.first()
+    consent.start = "2023-01-01"
+    consent.end = "2023-12-31"
+    consent.save()
+    consent.refresh_from_db()
+    assert Consent.active_objects.count() == 4  # noqa: PLR2004
+    assert DeliveryPoint.active_objects.count() == 5  # noqa: PLR2004
+
+    # test generate missing consents should generate a new consent
+    new_consents = generate_missing_consents()
+    assert len(new_consents) == 1
+    expected_end_date = consent_end_date()
+    for new_consent in new_consents:
+        assert new_consent.delivery_point.id == consent.delivery_point.id
+        assert new_consent.start.year == timezone.now().year
+        assert new_consent.start.month == timezone.now().month
+        assert new_consent.start.day == timezone.now().day
+        assert new_consent.end == expected_end_date
+
+    assert Consent.objects.all().count() == 6  # noqa: PLR2004
+    assert Consent.active_objects.count() == 5  # noqa: PLR2004
+    assert DeliveryPoint.active_objects.count() == 5  # noqa: PLR2004
