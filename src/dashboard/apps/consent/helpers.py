@@ -12,7 +12,7 @@ from django.utils import timezone
 
 from apps.consent.models import Consent
 from apps.consent.utils import consent_end_date
-from apps.core.models import Entity
+from apps.core.models import DeliveryPoint, Entity
 
 from .settings import CONSENT_NUMBER_DAYS_END_DATE, CONSENT_UPCOMING_DAYS_LIMIT
 
@@ -168,3 +168,35 @@ def _get_renewal_end_date():
         renewal_end_date = renewal_end_date.replace(year=renewal_end_date.year + 1)
 
     return renewal_end_date
+
+
+def generate_missing_consents():
+    """Create consents for delivery points that do not have active consents."""
+    # Get delivery points that have active consents
+    active_consents = Consent.active_objects.all()
+    dp_with_active_consents = active_consents.values_list(
+        "delivery_point_id", flat=True
+    )
+
+    # Get delivery points without active consents
+    delivery_points = DeliveryPoint.active_objects.all()
+    dp_without_consents = delivery_points.exclude(id__in=dp_with_active_consents)
+
+    # create a list of new consents to create
+    consents_to_create = []
+    for dp in dp_without_consents:
+        consents_to_create.append(
+            Consent(
+                delivery_point=dp,
+                id_station_itinerance=dp.id_station_itinerance,
+                station_name=dp.station_name,
+                provider_assigned_id=dp.provider_assigned_id,
+            )
+        )
+
+    # Bulk create the new consents if exists
+    results = []
+    if consents_to_create:
+        with transaction.atomic():
+            results = Consent.objects.bulk_create(consents_to_create)
+    return results
