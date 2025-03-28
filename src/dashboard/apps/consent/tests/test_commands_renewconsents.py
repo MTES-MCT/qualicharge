@@ -1,11 +1,13 @@
 """Dashboard consent command duplicates consents tests."""
 
 import datetime
+from unittest.mock import MagicMock, patch
 
 import pytest
 
 from apps.consent import AWAITING, VALIDATED
 from apps.consent.helpers import renew_expiring_consents
+from apps.consent.management.commands.renewconsents import Command
 from apps.consent.models import Consent
 from apps.core.factories import DeliveryPointFactory
 
@@ -163,3 +165,36 @@ def test_renew_expiring_consents(monkeypatch, settings):  # noqa: PLR0915
     assert duplicated_consents[0].provider_assigned_id == consent.provider_assigned_id
     assert duplicated_consents[0].start == end
     assert duplicated_consents[0].end == futur_period_end_date
+
+
+@pytest.mark.django_db
+def test_handle_generates_missing_consents(monkeypatch):
+    """Test the `handle` method calls `generate_missing_consents` successfully."""
+    mock_generate = MagicMock()
+    monkeypatch.setattr(
+        "apps.consent.management.commands.renewconsents.generate_missing_consents",
+        mock_generate,
+    )
+
+    command = Command()
+    command.handle()
+    mock_generate.assert_called_once_with()
+
+
+@pytest.mark.django_db
+def test_handle_handles_exceptions(monkeypatch):
+    """Test `handle` method captures and logs exceptions during execution."""
+    mock_generate = MagicMock()
+    monkeypatch.setattr(
+        "apps.consent.management.commands.renewconsents.generate_missing_consents",
+        mock_generate,
+    )
+
+    mock_generate.side_effect = Exception("Error")
+
+    with patch("sentry_sdk.capture_exception") as mock_capture_exception:
+        command = Command()
+        command.handle()
+        mock_generate.assert_called_once_with()
+
+        mock_capture_exception.assert_called_once()
