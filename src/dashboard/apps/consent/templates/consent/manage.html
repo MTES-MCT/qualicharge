@@ -8,46 +8,59 @@
 {% load i18n static %}
 
 {% block dashboard_content %}
-  <h2>Gérer les autorisations</h2>
+  <div class="fr-grid-row">
+    <div class="fr-col">
+      <h2>Gérer les autorisations</h2>
 
-  <p>
-    Indiquez les points de livraison pour lesquels vous autorisez la DGEC à interroger
-    le gestionnaire du réseau de distribution.
-  </p>
+      <p>
+        Indiquez les points de livraison pour lesquels vous autorisez la DGEC à interroger
+        le gestionnaire du réseau de distribution.
+      </p>
 
-  {% if entity %}
-    <form action="" method="post">
-      {% csrf_token %}
+      {% if entity %}
+        <form action="" method="post">
+          {% csrf_token %}
 
-      {% if form.errors %}
-        <div class="fr-messages-group" id="error-messages" aria-live="assertive">
-          <div class="{% if form.consent_agreed.errors %}fr-pl-3v{% endif %} fr-mb-6v">
-            <ul id="message-non-field-error">
-              <li class="fr-message fr-message--error" id="message-error">
-                {% trans "The form contains errors" %}
-              </li>
-              {% if form.non_field_errors %}
-                {% for error in form.non_field_errors %}
-                  <li class="fr-message fr-message--error">{{ error }}</li>
-                {% endfor %}
-              {% endif %}
-            </ul>
+          {% if form.errors %}
+            <div class="fr-messages-group" id="error-messages" aria-live="assertive">
+              <div class="{% if form.consent_agreed.errors %}fr-pl-3v{% endif %} fr-mb-6v">
+                <ul id="message-non-field-error">
+                  <li class="fr-message fr-message--error" id="message-error">
+                    {% trans "The form contains errors" %}
+                  </li>
+                  {% if form.non_field_errors %}
+                    {% for error in form.non_field_errors %}
+                      <li class="fr-message fr-message--error">{{ error }}</li>
+                    {% endfor %}
+                  {% endif %}
+                </ul>
+              </div>
           </div>
-      </div>
+          {% endif %}
+
+          {% include "consent/includes/_manage_consents.html" %}
+          {% include "consent/includes/_manage_company_informations.html" %}
+          {% include "consent/includes/_manage_consents_control_authority.html" %}
+          {% include "consent/includes/_manage_authorisations.html" %}
+
+          <div id="alert-validate" class="fr-alert fr-alert--warning fr-alert--sm fr-mb-2w">
+              <p>
+                Vous devez visualiser l'ensemble des PDLs présents à la section
+                <a href="#pdl-component">"A. Points de livraison (PDL) à valider"</a>
+                pour soumettre ce formulaire.
+              </p>
+          </div>
+
+          <button id="btn-validate" type="submit" class="fr-btn" title="{% trans "submit" %}" name="submit" disabled>
+            {% trans "submit" %}
+          </button>
+
+        </form>
+      {% else %}
+        <p>{% trans "No consents to validate" %}</p>
       {% endif %}
-
-      {% include "consent/includes/_manage_consents.html" %}
-      {% include "consent/includes/_manage_company_informations.html" %}
-      {% include "consent/includes/_manage_consents_control_authority.html" %}
-      {% include "consent/includes/_manage_authorisations.html" %}
-
-      <button type="submit" class="fr-btn" title="{% trans "submit" %}" name="submit">
-        {% trans "submit" %}
-      </button>
-    </form>
-  {% else %}
-    <p>{% trans "No consents to validate" %}</p>
-  {% endif %}
+    </div>
+  </div>
 {% endblock dashboard_content %}
 
 {% block dashboard_extra_js %}
