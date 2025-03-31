@@ -9,7 +9,7 @@ from apps.core.abstract_models import DashboardBase
 from . import AWAITING, CONSENT_STATUS_CHOICE, REVOKED, VALIDATED
 from .exceptions import ConsentWorkflowError
 from .managers import ConsentManager, UpcomingConsentManager, ValidatedConsentManager
-from .utils import consent_end_date
+from .utils import consent_end_date, consent_start_date
 from .validators import (
     validate_company_schema,
     validate_contract_holder_schema,
@@ -143,7 +143,7 @@ class Consent(DashboardBase):
     )
 
     # Validity period
-    start = models.DateTimeField(_("start date"), default=timezone.now)
+    start = models.DateTimeField(_("start date"), default=consent_start_date)
     end = models.DateTimeField(_("end date"), default=consent_end_date)
     revoked_at = models.DateTimeField(_("revoked at"), null=True, blank=True)
 
