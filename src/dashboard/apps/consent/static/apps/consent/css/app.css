@@ -6,3 +6,9 @@
 .consent-wrapper__inner {
   padding: 0 1.5rem;
 }
+
+.fr-table__overflow {
+  max-height: 500px;
+  overflow-y: auto;
+  position: relative;
+}
