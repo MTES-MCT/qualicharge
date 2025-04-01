@@ -22,7 +22,8 @@ if [ ${debug} == 1 ]; then
 else
   extra_opts=(
     "--workers ${workers}" \
-    "--log-config logging-config.prod.yaml"
+    "--log-config logging-config.prod.yaml" \
+    "--no-access-log"
   )
 fi
 
