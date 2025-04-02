@@ -10,11 +10,13 @@ and this project adheres to
 
 ### Changed
 
+- Upgrade alembic to `1.15.2`
 - Upgrade fastapi to `0.115.12`
 - Upgrade psycopg to `3.2.6`
+- Upgrade pydantic to `2.11.1`
 - Upgrade pydantic-extra-types to `2.10.3`
-- Upgrade sentry-sdk to `2.24.0`
-- Upgrade setuptools to `77.0.3`
+- Upgrade sentry-sdk to `2.25.0`
+- Upgrade setuptools to `78.1.0`
 
 ## [0.20.0] - 2025-03-19
 
