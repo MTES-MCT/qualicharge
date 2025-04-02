@@ -7,7 +7,7 @@ name = "pypi"
 geoalchemy2 = {extras = ["shapely"], version = "==0.17.1"}
 geopandas = "==1.0.1"
 great_expectations = {extras = ["postgresql"], version = "==1.3.12"}
-pandas = "==2.2.3"
+pandas = "==2.1.4"
 prefect = "==3.3.1"
 psycopg = {extras = ["pool", "binary"], version = "==3.2.6"}
 pyarrow = "==19.0.1"
