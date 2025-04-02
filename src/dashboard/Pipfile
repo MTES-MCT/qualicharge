@@ -6,7 +6,7 @@ name = "pypi"
 [packages]
 Django = "==5.1.7"
 django-anymail = "==12.0"
-django-dsfr = "==2.2.0"
+django-dsfr = "==2.3.0"
 django-environ = "==0.12.0"
 django-extensions = "==3.2.3"
 django-stubs = {extras = ["compatible-mypy"], version = "==5.1.3"}
@@ -16,8 +16,7 @@ mozilla-django-oidc = "==4.0.1"
 psycopg = {extras = ["pool", "binary"], version = "==3.2.6"}
 qualicharge-client = "==0.3.0"
 requests = "==2.32.3"
-sentry-sdk = {extras = ["django"], version = "==2.24.0"}
-types-requests = "==2.32.0.20250306"
+sentry-sdk = {extras = ["django"], version = "==2.25.0"}
 whitenoise = "==6.9.0"
 
 [dev-packages]
@@ -29,13 +28,14 @@ honcho = "==2.0.0"
 mock = "==5.2.0"
 mypy = "==1.15.0"
 pytest = "==8.3.5"
-pytest-asyncio = "==0.25.3"
-pytest-cov = "==6.0.0"
-pytest-django = "==4.10.0"
+pytest-asyncio = "==0.26.0"
+pytest-cov = "==6.1.0"
+pytest-django = "==4.11.0"
 pytest-httpx = "==0.35.0"
 responses = "==0.25.7"
 ruff = "==0.11.2"
 types-mock = "==5.2.0.20250306"
+types-requests = "==2.32.0.20250328"
 
 [requires]
 python_version = "3.12"
