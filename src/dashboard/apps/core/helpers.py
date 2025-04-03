@@ -90,23 +90,26 @@ def sync_delivery_points_from_qualicharge_api(
     after: datetime | None = None if not entity.synced_at else entity.synced_at
 
     qcc = QualiChargeApi()
-    stations = qcc.manage_stations_list(siren=siren, after=after)
+    stations_list = qcc.manage_stations_list(siren=siren, after=after)
+
+    # retrieve only unique PDLs from the station list
+    pdls_in_stations_list = list(
+        {item.num_pdl: item for item in stations_list}.values()
+    )
 
     # get existing delivery points
     existing_delivery_points = DeliveryPoint.objects.filter(
-        provider_assigned_id__in=[station.num_pdl for station in stations]
+        provider_assigned_id__in=[pdl.num_pdl for pdl in pdls_in_stations_list]
     ).values_list("provider_assigned_id", flat=True)
 
     # deduce delivery points that should be created
     delivery_points_to_create = [
         DeliveryPoint(
-            id_station_itinerance=station.id_station_itinerance,
-            station_name=station.nom_station,
             entity=entity,
-            provider_assigned_id=station.num_pdl,
+            provider_assigned_id=pdl.num_pdl,
         )
-        for station in stations
-        if station.num_pdl not in existing_delivery_points
+        for pdl in pdls_in_stations_list
+        if pdl.num_pdl not in existing_delivery_points
     ]
 
     if delivery_points_to_create:
@@ -120,8 +123,6 @@ def sync_delivery_points_from_qualicharge_api(
         consents_to_create = [
             Consent(
                 delivery_point=delivery_point,
-                id_station_itinerance=delivery_point.id_station_itinerance,
-                station_name=delivery_point.station_name,
                 provider_assigned_id=delivery_point.provider_assigned_id,
             )
             for delivery_point in created_delivery_points

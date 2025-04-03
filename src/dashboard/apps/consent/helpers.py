@@ -117,8 +117,6 @@ def renew_expiring_consents() -> list[Consent]:
     existing_renewed_consents = Consent.objects.filter(
         start__gte=OuterRef("end"),
         delivery_point=OuterRef("delivery_point"),
-        id_station_itinerance=OuterRef("id_station_itinerance"),
-        station_name=OuterRef("station_name"),
         provider_assigned_id=OuterRef("provider_assigned_id"),
     ).values("provider_assigned_id")
 
@@ -138,8 +136,6 @@ def renew_expiring_consents() -> list[Consent]:
         consents_to_renewed.append(
             Consent(
                 delivery_point=consent.delivery_point,
-                id_station_itinerance=consent.id_station_itinerance,
-                station_name=consent.station_name,
                 provider_assigned_id=consent.provider_assigned_id,
                 start=consent.end,
                 end=renewal_end_date,
@@ -188,8 +184,6 @@ def generate_missing_consents() -> list[Consent]:
         consents_to_create.append(
             Consent(
                 delivery_point=dp,
-                id_station_itinerance=dp.id_station_itinerance,
-                station_name=dp.station_name,
                 provider_assigned_id=dp.provider_assigned_id,
             )
         )

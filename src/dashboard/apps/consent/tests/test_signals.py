@@ -30,11 +30,5 @@ def test_handle_new_delivery_point(patch_datetime_now):
     assert consent.end.year == expected_end_date.year
     assert consent.end.month == expected_end_date.month
     assert consent.end.day == expected_end_date.day
-
-    assert consent.id_station_itinerance is not None
-    assert consent.station_name is not None
     assert consent.provider_assigned_id is not None
-
-    assert consent.id_station_itinerance == delivery_point.id_station_itinerance
-    assert consent.station_name == delivery_point.station_name
     assert consent.provider_assigned_id == delivery_point.provider_assigned_id
