@@ -159,7 +159,6 @@ class Entity(DashboardBase):
         return self.get_consents(obj=Consent.validated_objects).order_by(
             "-start",
             "-end",
-            "delivery_point__station_name",
             "delivery_point__provider_assigned_id",
         )
 
@@ -174,17 +173,15 @@ class DeliveryPoint(DashboardBase):
     - is_active (BooleanField): indicating the active status of the delivery point.
     """
 
-    provider_assigned_id = models.CharField(_("provider assigned id"), max_length=64)
+    provider_assigned_id = models.CharField(
+        _("provider assigned id"), max_length=64, unique=True
+    )
     entity = models.ForeignKey(
         Entity,
         on_delete=models.CASCADE,
         related_name="delivery_points",
         verbose_name=_("entity"),
     )
-    id_station_itinerance = models.CharField(
-        _("id station itinerance"), max_length=35, blank=True
-    )
-    station_name = models.CharField(_("station name"), max_length=255, blank=True)
     is_active = models.BooleanField(_("is active"), default=True)
 
     active_objects = DeliveryPointManager()
@@ -194,12 +191,6 @@ class DeliveryPoint(DashboardBase):
         verbose_name = _("delivery point")
         verbose_name_plural = _("delivery points")
         ordering = ["provider_assigned_id"]
-        constraints = [
-            models.UniqueConstraint(
-                fields=["provider_assigned_id", "id_station_itinerance"],
-                name="unique_provider_station",
-            )
-        ]
 
     def __str__(self):  # noqa: D105
         return self.provider_assigned_id

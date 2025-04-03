@@ -1,6 +1,6 @@
 """Dashboard core helpers tests."""
 
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import pytest
 from django.core.exceptions import ValidationError
@@ -134,6 +134,12 @@ def test_create_deliverypoint_from_qualicharge_api(mock_qualicharge_api):
             num_pdl="50088800000002",
             updated_at="2025-03-12T15:49:43.477800Z",
         ),
+        ManageStationsAdapter(
+            id_station_itinerance="FR073P02STC",
+            nom_station="Station b2",
+            num_pdl="50088800000002",
+            updated_at="2025-03-12T15:49:43.477800Z",
+        ),
     ]
     # mock ManageStationClient.list()
     mock_qualicharge_api.return_value.manage_stations_list.return_value = mock_response
@@ -144,10 +150,6 @@ def test_create_deliverypoint_from_qualicharge_api(mock_qualicharge_api):
     expected_count = 3
     assert len(delivery_points) == expected_count
     assert len(consents) == expected_count
-    for dp, expected in zip(delivery_points, mock_response, strict=True):
-        assert dp.id_station_itinerance == expected.id_station_itinerance
-    for consent, expected in zip(consents, mock_response, strict=True):
-        assert consent.id_station_itinerance == expected.id_station_itinerance
 
     entity.refresh_from_db()
     delivery_points = DeliveryPoint.objects.all()
@@ -159,17 +161,27 @@ def test_create_deliverypoint_from_qualicharge_api(mock_qualicharge_api):
     assert consents.count() == expected_delivery_points_count
 
     # check created delivery points
-    for dp, expected in zip(delivery_points, mock_response, strict=True):
-        assert dp.id_station_itinerance == expected.id_station_itinerance
-        assert dp.station_name == expected.nom_station
+    mock_obj1 = Mock()
+    mock_obj1.num_pdl = "50088800000000"
+    mock_obj1.updated_at = "2025-03-12T15:49:43.477800Z"
+
+    mock_obj2 = Mock()
+    mock_obj2.num_pdl = "50088800000001"
+    mock_obj2.updated_at = "2025-03-12T15:49:43.477800Z"
+
+    mock_obj3 = Mock()
+    mock_obj3.num_pdl = "50088800000002"
+    mock_obj3.updated_at = "2025-03-12T15:49:43.477800Z"
+
+    expected_created = [mock_obj1, mock_obj2, mock_obj3]
+
+    for dp, expected in zip(delivery_points, expected_created, strict=True):
         assert dp.provider_assigned_id == expected.num_pdl
         assert dp.entity == entity
 
     # check created consents
     for consent, dp in zip(consents, delivery_points, strict=True):
         assert consent.delivery_point == dp
-        assert consent.id_station_itinerance == dp.id_station_itinerance
-        assert consent.station_name == dp.station_name
         assert consent.provider_assigned_id == dp.provider_assigned_id
         assert consent.status == AWAITING
 

@@ -3,8 +3,11 @@
 import random
 
 import factory
+from faker import Faker
 
 from .models import DeliveryPoint, Entity
+
+fake = Faker()
 
 
 class EntityFactory(factory.django.DjangoModelFactory):
@@ -46,16 +49,18 @@ class EntityFactory(factory.django.DjangoModelFactory):
         self.proxy_for.add(*extracted)
 
 
+def generate_provider_assigned_id() -> str:
+    """Generate a unique provider-assigned ID."""
+    base_id = fake.bothify(text="FR???P#####", letters="ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+    random_digit = random.randint(0, 9)  # noqa: S311
+
+    return f"{base_id}{random_digit}"
+
+
 class DeliveryPointFactory(factory.django.DjangoModelFactory):
     """Factory class for creating instances of the DeliveryPoint model."""
 
-    id_station_itinerance = factory.Faker(
-        "bothify", text="FR???P#####", letters="ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-    )
-    station_name = factory.Faker("company")
-    provider_assigned_id = factory.LazyAttribute(
-        lambda o: f"{o.id_station_itinerance}{random.randint(0, 9)}"  # noqa: S311
-    )
+    provider_assigned_id = factory.LazyFunction(lambda: generate_provider_assigned_id())
     entity = factory.SubFactory(EntityFactory)
 
     class Meta:  # noqa: D106
