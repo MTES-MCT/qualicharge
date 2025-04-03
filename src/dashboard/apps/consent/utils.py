@@ -8,7 +8,9 @@ from .settings import CONSENT_NUMBER_DAYS_END_DATE
 def consent_start_date() -> datetime.datetime:
     """Calculate the start date of the consent period."""
     current_year = datetime.datetime.now().year
-    return datetime.datetime(year=current_year, month=1, day=1)
+    return datetime.datetime(
+        year=current_year, month=1, day=1, tzinfo=datetime.timezone.utc
+    )
 
 
 def consent_end_date(

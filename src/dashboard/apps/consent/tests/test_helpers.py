@@ -175,7 +175,9 @@ def test_generate_missing_consents():
     for new_consent in new_consents:
         assert new_consent.delivery_point.id == consent.delivery_point.id
         current_year = datetime.datetime.now().year
-        assert new_consent.start == datetime.datetime(year=current_year, month=1, day=1)
+        assert new_consent.start == datetime.datetime(
+            year=current_year, month=1, day=1, tzinfo=datetime.timezone.utc
+        )
         assert new_consent.end == expected_end_date
 
     assert Consent.objects.all().count() == 6  # noqa: PLR2004
