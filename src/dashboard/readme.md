@@ -139,20 +139,22 @@ The third-party service **BREVO** is used to send emails.
 
 ### List of Emails Sent
 
-| **Description**     | **Target**       | **BREVO Template ID** |
-|----------------------|------------------|------------------------|
-| New user creation    | Admins           | 4                      |
-| Admin validation     | Users            | 5                      |
-| Consents awaiting    | Users            | 6                      |
-| Consents validated   | Users            | 3                      |
+| **Description**    | **Target** | **BREVO Template ID** |
+|--------------------|------------|-----------------------|
+| New user creation  | Admins     | 4                     |
+| Admin validation   | Users      | 5                     |
+| Consents awaiting  | Users      | 6                     |
+| Consents validated | Users      | 3                     |
 
 ## Django Commands
 
 ### Commands used with Cron Job
 
-- `syncdeliverypoints`: Synchronize delivery points from the QualiCharge API 
-- `renewconsents`: Renew consents (duplicate expiring consents and generate new consents)
-- `notifawaitingconsents`: Notify users of their pending consents
+| **Task**                | **Description**                                                       | **Execution Frequency**  |
+|-------------------------|-----------------------------------------------------------------------|--------------------------|
+| `syncdeliverypoints`    | Synchronizes delivery points from the QualiCharge API                 | Daily at 02:12 AM        |
+| `renewconsents`         | Renews consents (duplicates expiring consents and generates new ones) | Hourly at 00:42          |
+| `notifawaitingconsents` | Notifies users of their pending consents                              | Every Monday at 05:51 AM |
 
 ### Commands used in development only
 
