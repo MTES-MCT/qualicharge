@@ -110,8 +110,6 @@ def test_renew_expiring_consents(monkeypatch, settings):  # noqa: PLR0915
     consent_with_duplicated = _create_consent(start_date, end, VALIDATED)
     Consent.objects.create(
         delivery_point=consent_with_duplicated.delivery_point,
-        id_station_itinerance=consent_with_duplicated.id_station_itinerance,
-        station_name=consent_with_duplicated.station_name,
         provider_assigned_id=consent_with_duplicated.provider_assigned_id,
         start=consent_with_duplicated.end,
         end=futur_period_end_date,
