@@ -7,7 +7,6 @@ name = "pypi"
 alembic = "==1.15.2"
 annotated-types = "==0.7.0"
 asyncpg = "==0.30.0"
-cachetools = "==5.5.2"
 email-validator = "==2.2.0"
 fastapi = "==0.115.12"
 geoalchemy2 = {extras = ["shapely"], version = "==0.17.1"}
@@ -31,6 +30,7 @@ sqlalchemy = {extras = ["asyncio"], version = "==2.0.39"}
 sqlalchemy-timescaledb = "==0.4.1"
 sqlalchemy-utils = "==0.41.2"
 sqlmodel = "==0.0.24"
+theine = "==0.4.4"
 typer = "==0.15.2"
 uvicorn = {extras = ["standard"] }
 

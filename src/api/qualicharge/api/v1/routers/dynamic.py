@@ -1,12 +1,10 @@
 """QualiCharge API v1 dynamique router."""
 
 import logging
-from threading import Lock
 from typing import Annotated, List, cast
 from uuid import UUID, uuid4
 
 from annotated_types import Len
-from cachetools import LRUCache, cached
 from fastapi import (
     APIRouter,
     BackgroundTasks,
@@ -21,6 +19,7 @@ from pydantic import UUID4, BaseModel, PastDatetime, StringConstraints
 from sqlalchemy import func
 from sqlalchemy.schema import Column as SAColumn
 from sqlmodel import Session, join, select
+from theine import Cache, Memoize
 
 from qualicharge.api.utils import GzipRoute
 from qualicharge.auth.oidc import get_user
@@ -70,17 +69,12 @@ class DynamiqueItemsCreatedResponse(BaseModel):
     items: List[UUID4]
 
 
-@cached(
-    LRUCache(
-        maxsize=settings.API_GET_PDC_ID_CACHE_MAXSIZE,
-    ),
-    lock=Lock(),
-    key=lambda id_pdc_itinerance, session: id_pdc_itinerance,
-    info=settings.API_GET_PDC_ID_CACHE_INFO,
+@Memoize(
+    Cache("tlfu", settings.API_GET_PDC_ID_CACHE_MAXSIZE), None
 )
-def get_pdc_id(id_pdc_itinerance: str, session: Session) -> UUID:
+async def get_pdc_id(id_pdc_itinerance: str, session: Session) -> UUID:
     """Get PointDeCharge.id from an `id_pdc_itinerance`."""
-    pdc_id = session.exec(
+    pdc_id = await session.exec(
         select(PointDeCharge.id).where(
             PointDeCharge.id_pdc_itinerance == id_pdc_itinerance
         )
@@ -93,6 +87,12 @@ def get_pdc_id(id_pdc_itinerance: str, session: Session) -> UUID:
         status_code=fa_status.HTTP_404_NOT_FOUND,
         detail="Point of charge does not exist",
     )
+
+
+@get_pdc_id.key
+def _(id_pdc_itinerance: str, session: Session) -> str:
+    """Set `get_pdc_id` cache key."""
+    return id_pdc_itinerance
 
 
 @router.get("/status/", tags=["Status"])

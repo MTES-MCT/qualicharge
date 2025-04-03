@@ -63,18 +63,17 @@ async def test_whoami_auth(client_auth):
 )
 async def test_whoami_auth_get_user_cache(client_auth, db_async_session):
     """Test the get_user cache on the whoami endpoint."""
-    cache_info = get_user_from_db.cache_info()
-    assert cache_info.hits == 0
-    assert cache_info.currsize == 0
+    cache = get_user_from_db._cache
+    assert cache._hit == 0
+    assert cache.core.len() == 0
 
     async with SAQueryCounter(db_async_session.sync_session.connection()) as counter:
         response = await client_auth.get("/auth/whoami")
     expected = 2
     assert counter.count == expected
     assert response.status_code == status.HTTP_200_OK
-    cache_info = get_user_from_db.cache_info()
-    assert cache_info.hits == 0
-    assert cache_info.currsize == 1
+    assert cache._hit == 0
+    assert cache.core.len() == 1
 
     user = UserRead(**response.json())
     assert user.email == "jane@doe.com"
@@ -85,16 +84,16 @@ async def test_whoami_auth_get_user_cache(client_auth, db_async_session):
             db_async_session.sync_session.connection()
         ) as counter:
             response = await client_auth.get("/auth/whoami")
-        cache_info = get_user_from_db.cache_info()
         assert counter.count == 0
-        assert cache_info.hits == hit
-        assert cache_info.currsize == 1
+        assert cache._hit == hit
+        assert cache.core.len() == 1
         assert response.status_code == status.HTTP_200_OK
         user = UserRead(**response.json())
         assert user.email == "jane@doe.com"
 
 
-def test_whoami_expired_signature(
+@pytest.mark.anyio
+async def test_whoami_expired_signature(
     client, httpx_mock, monkeypatch, id_token_factory=IDTokenFactory
 ):
     """Test the whoami endpoint when user's token expired."""
@@ -121,14 +120,17 @@ def test_whoami_expired_signature(
         key="secret",
         algorithm="HS256",
     )
-    response = client.get("/auth/whoami", headers={"Authorization": f"Bearer {token}"})
+    response = await client.get(
+        "/auth/whoami", headers={"Authorization": f"Bearer {token}"}
+    )
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
     assert response.json() == {
         "message": "Authentication failed: Token signature expired"
     }
 
 
-def test_whoami_with_bad_token_claims(
+@pytest.mark.anyio
+async def test_whoami_with_bad_token_claims(
     client, httpx_mock, monkeypatch, id_token_factory=IDTokenFactory
 ):
     """Test the whoami endpoint with bad token claims."""
@@ -154,12 +156,15 @@ def test_whoami_with_bad_token_claims(
         key="secret",
         algorithm="HS256",
     )
-    response = client.get("/auth/whoami", headers={"Authorization": f"Bearer {token}"})
+    response = await client.get(
+        "/auth/whoami", headers={"Authorization": f"Bearer {token}"}
+    )
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
     assert response.json() == {"message": "Authentication failed: Invalid audience"}
 
 
-def test_whoami_jwt_decoding_error(client, httpx_mock, monkeypatch):
+@pytest.mark.anyio
+async def test_whoami_jwt_decoding_error(client, httpx_mock, monkeypatch):
     """Test the whoami endpoint when JWT decoding fails."""
     monkeypatch.setenv("QUALICHARGE_OIDC_PROVIDER_BASE_URL", "http://oidc")
     httpx_mock.add_response(
@@ -178,16 +183,19 @@ def test_whoami_jwt_decoding_error(client, httpx_mock, monkeypatch):
         ],
     )
     token = "faketoken"  # noqa: S105
-    response = client.get("/auth/whoami", headers={"Authorization": f"Bearer {token}"})
+    response = await client.get(
+        "/auth/whoami", headers={"Authorization": f"Bearer {token}"}
+    )
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
     assert response.json() == {
         "message": "Authentication failed: Unable to decode ID token"
     }
 
 
-def test_login_with_invalid_user(client):
+@pytest.mark.anyio
+async def test_login_with_invalid_user(client):
     """Test the login endpoint with invalid user."""
-    response = client.post(
+    response = await client.post(
         "/auth/token", data={"username": "johndoe", "password": "foo"}
     )
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
@@ -196,7 +204,8 @@ def test_login_with_invalid_user(client):
     }
 
 
-def test_login_with_invalid_password(client, db_session):
+@pytest.mark.anyio
+async def test_login_with_invalid_password(client, db_async_session):
     """Test the login endpoint with invalid password."""
     user = User(
         **UserCreate(
@@ -210,9 +219,9 @@ def test_login_with_invalid_password(client, db_session):
             is_active=True,
         ).model_dump()
     )
-    db_session.add(user)
+    db_async_session.add(user)
 
-    response = client.post(
+    response = await client.post(
         "/auth/token", data={"username": "johndoe", "password": "bar"}
     )
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
@@ -221,7 +230,8 @@ def test_login_with_invalid_password(client, db_session):
     }
 
 
-def test_login_with_inactive_user(client, db_session):
+@pytest.mark.anyio
+async def test_login_with_inactive_user(client, db_async_session):
     """Test the login endpoint with an inactive user."""
     user = User(
         **UserCreate(
@@ -235,16 +245,17 @@ def test_login_with_inactive_user(client, db_session):
             is_active=False,
         ).model_dump()
     )
-    db_session.add(user)
+    db_async_session.add(user)
 
-    response = client.post(
+    response = await client.post(
         "/auth/token", data={"username": "johndoe", "password": "foo"}
     )
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
     assert response.json() == {"message": "Authentication failed: User is not active"}
 
 
-def test_login(client, db_session, monkeypatch):
+@pytest.mark.anyio
+async def test_login(client, db_async_session, monkeypatch):
     """Test the login endpoint."""
     user = User(
         **UserCreate(
@@ -259,7 +270,7 @@ def test_login(client, db_session, monkeypatch):
         ).model_dump(),
         last_login=None,
     )
-    db_session.add(user)
+    db_async_session.add(user)
 
     # User never logged in
     assert user.last_login is None
@@ -274,7 +285,7 @@ def test_login(client, db_session, monkeypatch):
 
     monkeypatch.setattr(datetime, "datetime", Freezed)
 
-    response = client.post(
+    response = await client.post(
         "/auth/token", data={"username": "johndoe", "password": "foo"}
     )
     assert response.status_code == status.HTTP_200_OK
@@ -291,6 +302,6 @@ def test_login(client, db_session, monkeypatch):
     assert id_token.email == "john@doe.com"
 
     # last_login field should have been updated
-    db_session.refresh(user)
+    db_async_session.refresh(user)
     assert user.last_login is not None
     assert user.last_login == frozen

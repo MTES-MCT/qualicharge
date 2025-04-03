@@ -81,5 +81,5 @@ def clear_lru_cache():
     yield
 
     # Clear the LRU cache.
-    get_user_from_db.cache_clear()
-    get_pdc_id.cache_clear()
+    get_user_from_db._cache.clear()
+    get_pdc_id._cache.clear()
