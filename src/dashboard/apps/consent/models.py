@@ -124,6 +124,7 @@ class Consent(DashboardBase):
     provider_assigned_id = models.CharField(
         _("provider assigned id"), max_length=64, blank=True
     )
+    # todo: change id_station_itinerance and station_name with a jsonfield
     id_station_itinerance = models.CharField(
         _("id station itinerance"), max_length=35, blank=True
     )
@@ -216,7 +217,7 @@ class Consent(DashboardBase):
     validated_objects = ValidatedConsentManager()
 
     class Meta:  # noqa: D106
-        ordering = ["delivery_point__station_name", "provider_assigned_id", "start"]
+        ordering = ["provider_assigned_id", "start"]
 
     def __str__(self):  # noqa: D105
         return f"{self.delivery_point} - {self.updated_at}: {self.status}"

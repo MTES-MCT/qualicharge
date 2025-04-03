@@ -1,8 +1,9 @@
 """Dashboard core helpers."""
-
+import json
 from datetime import datetime
 from typing import Optional
 
+from django.core.serializers.json import DjangoJSONEncoder
 from django.utils import timezone
 
 from apps.auth.models import DashboardUser
@@ -12,7 +13,7 @@ from apps.core.annuaire_entreprise_api.adapters import (
     CompanyInformationAdapter,
 )
 from apps.core.annuaire_entreprise_api.clients import AnnuaireDesEntreprises
-from apps.core.models import DeliveryPoint, Entity
+from apps.core.models import DeliveryPoint, Entity, Station
 from apps.core.qualicharge_api.clients import QualiChargeApi
 from apps.core.utils import siret2siren
 
@@ -91,28 +92,12 @@ def sync_delivery_points_from_qualicharge_api(
 
     qcc = QualiChargeApi()
     stations = qcc.manage_stations_list(siren=siren, after=after)
+    print(len(stations))
 
-    # get existing delivery points
-    existing_delivery_points = DeliveryPoint.objects.filter(
-        provider_assigned_id__in=[station.num_pdl for station in stations]
-    ).values_list("provider_assigned_id", flat=True)
+    created_delivery_points = create_delivery_point_from_station(stations, entity)
+    created_stations = create_stations_from_station(stations)
 
-    # deduce delivery points that should be created
-    delivery_points_to_create = [
-        DeliveryPoint(
-            id_station_itinerance=station.id_station_itinerance,
-            station_name=station.nom_station,
-            entity=entity,
-            provider_assigned_id=station.num_pdl,
-        )
-        for station in stations
-        if station.num_pdl not in existing_delivery_points
-    ]
-
-    if delivery_points_to_create:
-        created_delivery_points = DeliveryPoint.objects.bulk_create(
-            delivery_points_to_create
-        )
+    if created_delivery_points:
 
         # `Signals` don't work with `bulk_create`, so we manually create the
         # associated consents.
@@ -120,8 +105,6 @@ def sync_delivery_points_from_qualicharge_api(
         consents_to_create = [
             Consent(
                 delivery_point=delivery_point,
-                id_station_itinerance=delivery_point.id_station_itinerance,
-                station_name=delivery_point.station_name,
                 provider_assigned_id=delivery_point.provider_assigned_id,
             )
             for delivery_point in created_delivery_points
@@ -130,7 +113,64 @@ def sync_delivery_points_from_qualicharge_api(
         if consents_to_create:
             consents = Consent.objects.bulk_create(consents_to_create)
 
+    if created_stations:
+        # todo récupérer les delivery_point qui ont des stations qui viennent d'être ajoutées
+        # todo mettre à jour le json field avec les nouvelles stations
+        dp = DeliveryPoint.objects.filter(station__in=created_stations).distinct("provider_assigned_id")
+        stations_data = created_stations.values("id_station_itinerance", "station_name")
+        stations_json = json.dumps(list(stations_data), cls=DjangoJSONEncoder)
+
     entity.synced_at = timezone.now()
     entity.save(update_fields=["synced_at"])
 
     return created_delivery_points, consents
+
+
+def create_delivery_point_from_station(stations, entity: Entity):
+    deduplicated_pdl = list({item["num_pdl"]: item for item in stations}.values())
+    print(len(deduplicated_pdl))
+    # get existing delivery points
+    existing_delivery_points = DeliveryPoint.objects.filter(
+        provider_assigned_id__in=[pdl.num_pdl for pdl in deduplicated_pdl]
+    ).values_list("provider_assigned_id", flat=True)
+
+    # deduce delivery points that should be created
+    delivery_points_to_create = [
+        DeliveryPoint(
+            entity=entity,
+            provider_assigned_id=pdl.num_pdl,
+        )
+        for pdl in existing_delivery_points
+        if pdl.num_pdl not in existing_delivery_points
+    ]
+
+    if delivery_points_to_create:
+        created_delivery_points = DeliveryPoint.objects.bulk_create(
+            delivery_points_to_create
+        )
+    return created_delivery_points
+
+
+def create_stations_from_station(stations):
+    # get existing stations
+    existing_stations = Station.objects.filter(
+        id_station_itinerance__in=[st.id_station_itinerance for st in stations]
+    ).values_list("id_station_itinerance", flat=True)
+    print(existing_stations)
+
+    # deduce stations that should be created
+    stations_to_create = [
+        Station(
+            id_station_itinerance=station.id_station_itinerance,
+            station_name=station.nom_station,
+            delivery_point=DeliveryPoint.objects.get(provider_assigned_id=station.num_pdl),
+        )
+        for station in stations
+        if station.id_station_itinerance not in existing_stations
+    ]
+
+    if stations_to_create:
+        created_stations = Station.objects.bulk_create(
+            stations_to_create
+        )
+    return created_stations

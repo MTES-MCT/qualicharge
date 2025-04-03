@@ -159,7 +159,6 @@ class Entity(DashboardBase):
         return self.get_consents(obj=Consent.validated_objects).order_by(
             "-start",
             "-end",
-            "delivery_point__station_name",
             "delivery_point__provider_assigned_id",
         )
 
@@ -174,17 +173,15 @@ class DeliveryPoint(DashboardBase):
     - is_active (BooleanField): indicating the active status of the delivery point.
     """
 
-    provider_assigned_id = models.CharField(_("provider assigned id"), max_length=64)
+    provider_assigned_id = models.CharField(
+        _("provider assigned id"), max_length=64, unique=True
+    )
     entity = models.ForeignKey(
         Entity,
         on_delete=models.CASCADE,
         related_name="delivery_points",
         verbose_name=_("entity"),
     )
-    id_station_itinerance = models.CharField(
-        _("id station itinerance"), max_length=35, blank=True
-    )
-    station_name = models.CharField(_("station name"), max_length=255, blank=True)
     is_active = models.BooleanField(_("is active"), default=True)
 
     active_objects = DeliveryPointManager()
@@ -194,12 +191,60 @@ class DeliveryPoint(DashboardBase):
         verbose_name = _("delivery point")
         verbose_name_plural = _("delivery points")
         ordering = ["provider_assigned_id"]
-        constraints = [
-            models.UniqueConstraint(
-                fields=["provider_assigned_id", "id_station_itinerance"],
-                name="unique_provider_station",
-            )
-        ]
 
     def __str__(self):  # noqa: D105
         return self.provider_assigned_id
+
+    def get_first_station(self):
+        """Return the first station of the delivery point.
+
+        todo: to remove
+        """
+        stations = self.stations.all()
+        if stations.exists():
+            return stations[0]
+        return None
+
+    @property
+    def id_station_itinerance(self) -> str | None:
+        """Return the id_station_itinerance of the first station.
+
+        todo: to remove
+        """
+        first_station = self.get_first_station()
+        if first_station:
+            return first_station.id_station_itinerance
+        return ""
+
+    @property
+    def station_name(self) -> str | None:
+        """Return the station_name of the first station.
+
+        todo: to remove
+        """
+        first_station = self.get_first_station()
+        if first_station:
+            return first_station.station_name
+        return ""
+
+
+class Station(DashboardBase):
+    """Represents a station for electric vehicles."""
+    id_station_itinerance = models.CharField(
+        _("id station itinerance"), max_length=35, blank=True, unique=True
+    )
+    station_name = models.CharField(_("station name"), max_length=255, blank=True)
+    delivery_point = models.ForeignKey(
+        DeliveryPoint,
+        on_delete=models.CASCADE,
+        related_name="stations",
+        verbose_name=_("delivery point"),
+    )
+
+    class Meta:  # noqa: D106
+        verbose_name = _("station")
+        verbose_name_plural = _("stations")
+        ordering = ["id_station_itinerance"]
+
+    def __str__(self):  # noqa: D105
+        return self.station_name
