@@ -56,5 +56,6 @@ to the `REVOKED` status
 - add a command to retrieve company information from its SIRET using the 
 "Annuaire des Entreprises" API (for development only)
 - add a command to seed consents (for development only)
+- add cron job configuration to schedule management tasks
 
 [unreleased]: https://github.com/MTES-MCT/qualicharge/compare/main...bootstrap-dashboard-project
