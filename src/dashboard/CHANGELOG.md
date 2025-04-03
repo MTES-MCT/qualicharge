@@ -11,39 +11,50 @@ and this project adheres to
 ### Added
 
 - bootstrap dashboard project
-- add custom user model
-- add core app with Entity and DeliveryPoint models
-- add consent app with Consent model
-- add ProConnect authentication system
-- add `UserValidationMixin` to ensure access restrictions for unvalidated users.
 - add a base view combining mixins for consistency
 - add dashboard homepage
-- add consent form to manage consents of one entity
-- add consent form to manage upcoming consents
-- added a validated consent page allowing consultation of validated consent for the 
-  current period.
-- add an email notification to users (via Brevo) after they have validated their consents.
-- add en email notification to users if they have awaiting consents.
-- add admin integration for Entity, DeliveryPoint and Consent
-- add mass admin action (make revoked) for consents
+- integrate custom 403, 404, and 500 error pages
+- add API connector for the "Annuaire des Entreprises" API
+- add API connector for the QualiCharge API
+- add Sentry integration
+- add custom user model
+- add ProConnect authentication system
+- add `UserValidationMixin` to ensure access restrictions for unvalidated users
+- add a specific restricted view for unvalidated users
 - add mass admin action to validate users
-- add validators for SIRET, NAF code and Zip code 
-- add API connector to the "Annuaire des Entreprises" API
-- add API connector to the QualiCharge API
-- add a command to sync delivery points from qualicharge API  
-- add a command to duplicate expiring consents
-- add a signal on the creation of a delivery point. This signal allows the creation 
-of the consent corresponding to the delivery point
-- retrieve company information from its SIRET using the "Annuaire des Entreprises" API
-- disallow mass action "delete" for consents in admin
-- block the updates of all new data if a consent has the status `REVOKED`
-- block the updates of all new data if a consent has the status `VALIDATED`
-- allow selected consent fields update if status changes from `VALIDATED` to  `REVOKED`
-- block the deletion of consent if it has the status `VALIDATED` or `REVOKED` 
-- block consent updates (via the consent form) if the consent status is not `AWAITING`
-- integration of custom 403, 404 and 500 pages 
-- sentry integration
-
+- add core app with `Entity` and `DeliveryPoint` models
+- add admin integration for `Entity` and `DeliveryPoint`
+- add a helper function to sync delivery points from the QualiCharge API 
+- add a helper function to retrieve company information from its SIRET using the 
+"Annuaire des Entreprises" API
+- add validators for SIRET, SIREN, NAF code and Zip code
+- add a utility function to extract SIREN from a SIRET
+- add the consent app with `Consent` model
+- add a consent form to manage consents for a given entity
+- add a consent form to manage upcoming consents
+- add a validated consent page, allowing users to consult validated consents for the current period
+- add admin integration for `Consent`
+- add a mass admin action to "revoke" multiple consents
+- allow selected consent fields to be updated when transitioning from the `VALIDATED` 
+to the `REVOKED` status
+- disallow the "delete" mass action on consents in admin
+- disallow the updates of all new data if a consent has the status `REVOKED`
+- disallow the updates of all new data if a consent has the status `VALIDATED`
+- disallow the deletion of consent if it has the status `VALIDATED` or `REVOKED` 
+- disallow consent updates (via the consent form) if the consent status is not `AWAITING`
+- add a signal upon creation of a delivery point to automatically create the corresponding consent.
+- add a helper function to renew expiring consents
+- add a helper function to create consents for delivery points with no active consents
+- add Brevo integration to send mail
+- add an email notification to admins upon new user creation
+- add an email notification to users upon validation by an admin
+- add en email notification to users with pending consents awaiting validation
+- add an email notification to users after their consents have been validated
+- add a command to sync delivery points from the QualiCharge API
+- add a command to renew consents (duplicate expiring consents and generate new consents)
+- add a command to notify users about their pending consents
+- add a command to retrieve company information from its SIRET using the 
+"Annuaire des Entreprises" API (for development only)
+- add a command to seed consents (for development only)
 
 [unreleased]: https://github.com/MTES-MCT/qualicharge/compare/main...bootstrap-dashboard-project
-
