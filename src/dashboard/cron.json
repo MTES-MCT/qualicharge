@@ -1,0 +1,13 @@
+{
+  "jobs": [
+    {
+      "command": "12 2 * * * python manage.py syncdeliverypoints"
+    },
+    {
+      "command": "42 * * * * python manage.py renewconsents"
+    },
+    {
+      "command": "51 5 * * 1 python manage.py notifawaitingconsents"
+    }
+  ]
+}
