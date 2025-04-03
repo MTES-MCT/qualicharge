@@ -24,9 +24,11 @@ from indicators.types import Environment
 from indicators.utils import (
     export_indicators,
     get_num_for_level_query_params,
+    get_period_start_from_pit,
     get_targets_for_level,
 )
 
+HISTORY_STRATEGY_FIELD: str = "mean"
 NUM_POCS_FOR_LEVEL_QUERY_TEMPLATE = """
 SELECT
     COUNT(DISTINCT id_pdc_itinerance) AS value,
@@ -92,6 +94,7 @@ def i1_for_level(
         "period": timespan.period,
         "timestamp": timespan.start.isoformat(),
         "category": None,
+        # "extras": [NULL_EXTRAS] * len(merged),
         "extras": None,
     }
     return pd.DataFrame(indicators)
@@ -115,6 +118,7 @@ def i1_national(timespan: IndicatorTimeSpan, environment: Environment) -> pd.Dat
         "timestamp": timespan.start.isoformat(),
         "category": None,
         "extras": None,
+        # "extras": [NULL_EXTRAS],
     }
     return pd.DataFrame(indicators)
 
@@ -133,8 +137,7 @@ def calculate(  # noqa: PLR0913
     persist: bool = False,
 ) -> pd.DataFrame:
     """Run all i1 subflows."""
-    if start is None:
-        start = pd.Timestamp.now()
+    start = datetime.now() if start is None else get_period_start_from_pit(start)
     timespan = IndicatorTimeSpan(period=period.value, start=start)
     subflows_results = [
         i1_for_level(level, timespan, environment, chunk_size=chunk_size)
