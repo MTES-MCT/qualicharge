@@ -28,11 +28,22 @@ class Settings(BaseSettings):
     # (used at least by everything that is alembic-configuration-related)
     ROOT_PATH: Path = Path(__file__).parent
 
+    # API server
+    SERVER_PROTOCOL: str = "http"
+    SERVER_HOST: str = "localhost"
+    SERVER_PORT: int = 8010
+
+    @property
+    def SERVER_URL(self) -> str:
+        """Get the full server URL."""
+        return f"{self.SERVER_PROTOCOL}://{self.SERVER_HOST}:{self.SERVER_PORT}"
+
     # Alembic
     ALEMBIC_CFG_PATH: Path = ROOT_PATH / "alembic.ini"
 
     # Database
-    DB_ENGINE: str = "postgresql"
+    DB_ENGINE: str = "postgresql+psycopg"
+    DB_ASYNC_ENGINE: str = "postgresql+asyncpg"
     DB_HOST: str
     DB_NAME: str
     DB_USER: str
@@ -42,18 +53,28 @@ class Settings(BaseSettings):
     DB_CONNECTION_MAX_OVERFLOW: int = 10
     TEST_DB_NAME: str = "test-qualicharge-api"
 
-    @computed_field  # type: ignore[misc]
-    @property
-    def DATABASE_URL(self) -> PostgresDsn:
-        """Get the database URL as required by SQLAlchemy."""
+    def _build_db_url(self, async_: bool = False) -> PostgresDsn:
+        """A private method that build the database URL."""
         return PostgresDsn.build(
-            scheme=self.DB_ENGINE,
+            scheme=self.DB_ASYNC_ENGINE if async_ else self.DB_ENGINE,
             username=self.DB_USER,
             password=self.DB_PASSWORD,
             host=self.DB_HOST,
             port=self.DB_PORT,
             path=self.DB_NAME,
         )
+
+    @computed_field  # type: ignore[misc]
+    @property
+    def DATABASE_URL(self) -> PostgresDsn:
+        """Get the database URL as required by SQLAlchemy."""
+        return self._build_db_url(async_=False)
+
+    @computed_field  # type: ignore[misc]
+    @property
+    def ASYNC_DATABASE_URL(self) -> PostgresDsn:
+        """Get the asynchronous database URL as required by SQLAlchemy."""
+        return self._build_db_url(async_=True)
 
     @computed_field  # type: ignore[misc]
     @property
@@ -130,9 +151,7 @@ class Settings(BaseSettings):
     API_STATUS_BULK_CREATE_MAX_SIZE: int = 10
     API_GET_USER_CACHE_MAXSIZE: int = 256
     API_GET_USER_CACHE_TTL: int = 1800
-    API_GET_USER_CACHE_INFO: bool = False
     API_GET_PDC_ID_CACHE_MAXSIZE: int = 5000
-    API_GET_PDC_ID_CACHE_INFO: bool = False
 
     model_config = SettingsConfigDict(
         case_sensitive=True, env_nested_delimiter="__", env_prefix="QUALICHARGE_"

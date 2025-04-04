@@ -6,22 +6,22 @@ from uuid import UUID, uuid4
 
 from pydantic import EmailStr, PastDatetime
 from sqlalchemy.types import ARRAY, DateTime, String
-from sqlmodel import Field, Relationship, SQLModel
+from sqlmodel import Field, Relationship
 
 from qualicharge.conf import settings
-from qualicharge.schemas import BaseAuditableSQLModel
+from qualicharge.schemas import BaseAsyncModel, BaseAuditableSQLModel
 from qualicharge.schemas.core import OperationalUnit
 
 
 # -- Many-to-many relationships
-class UserGroup(SQLModel, table=True):
+class UserGroup(BaseAsyncModel, table=True):
     """M2M User-Group intermediate table."""
 
     user_id: UUID = Field(foreign_key="user.id", primary_key=True)
     group_id: UUID = Field(foreign_key="group.id", primary_key=True)
 
 
-class GroupOperationalUnit(SQLModel, table=True):
+class GroupOperationalUnit(BaseAsyncModel, table=True):
     """M2M Group-OperationalUnit intermediate table."""
 
     group_id: UUID = Field(foreign_key="group.id", primary_key=True)

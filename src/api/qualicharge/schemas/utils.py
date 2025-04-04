@@ -10,6 +10,7 @@ from sqlalchemy import func
 from sqlalchemy.exc import MultipleResultsFound
 from sqlalchemy.schema import Column as SAColumn
 from sqlmodel import Session, SQLModel, select
+from sqlmodel.ext.asyncio.session import AsyncSession
 
 from qualicharge.auth.schemas import User
 from qualicharge.schemas import BaseAuditableSQLModel
@@ -248,8 +249,8 @@ def update_statique(
     return save_statique(session, to_update, update=True, author=author)
 
 
-def save_statiques(
-    db_session: Session, statiques: List[Statique], author: Optional[User] = None
+async def save_statiques(
+    db_session: AsyncSession, statiques: List[Statique], author: Optional[User] = None
 ):
     """Save input statiques to database."""
     df = pd.read_json(
@@ -261,8 +262,8 @@ def save_statiques(
         engine="pyarrow",
         dtype_backend="pyarrow",
     )
-    importer = StatiqueImporter(df, db_session.connection(), author=author)
-    importer.save()
+    importer = StatiqueImporter(df, await db_session.connection(), author=author)
+    await importer.save()
 
 
 def build_statique(session: Session, id_pdc_itinerance: str) -> Statique:
@@ -280,6 +281,9 @@ def build_statique(session: Session, id_pdc_itinerance: str) -> Statique:
 
 
 # TODO add filters support
+#
+# FIXME: dead code to remove
+#
 def list_statique(
     session: Session,
     offset: int = 0,

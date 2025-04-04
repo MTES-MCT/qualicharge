@@ -13,7 +13,7 @@ from shapely import to_wkt
 from shapely.geometry import Point
 from sqlalchemy import Table
 from sqlalchemy.dialects.postgresql import insert
-from sqlalchemy.engine import Connection
+from sqlalchemy.ext.asyncio import AsyncConnection
 from sqlalchemy.schema import MetaData
 from typing_extensions import Optional
 
@@ -37,7 +37,10 @@ class StatiqueImporter:
     """Statique importer from a Pandas Dataframe."""
 
     def __init__(
-        self, df: pd.DataFrame, connection: Connection, author: Optional[User] = None
+        self,
+        df: pd.DataFrame,
+        connection: AsyncConnection,
+        author: Optional[User] = None,
     ):
         """Add table cache keys."""
         logger.info("Loading input dataframe containing %d rows", len(df))
@@ -55,7 +58,7 @@ class StatiqueImporter:
 
         self._operational_units: Optional[pd.DataFrame] = None
 
-        self.connection: Connection = connection
+        self.connection: AsyncConnection = connection
         self.author: Optional[User] = author
 
     def __len__(self):
@@ -122,14 +125,23 @@ class StatiqueImporter:
         right = saved[fields + [self._schema_fk(schema)]]
         self._statique_with_fk = left.merge(right, how="left", on=fields)
 
-    def _load_operational_units(self):
+    async def _load_operational_units(self):
         """Query database to get Operational Units."""
         logger.info("Loading operational units from database")
-        self._operational_units = pd.read_sql_table(
-            "operationalunit", self.connection, columns=["id", "code"]
+        # self._operational_units = pd.read_sql_table(
+        #     "operationalunit",
+        #     (await self.connection).sync_connection,
+        #     columns=["id", "code"],
+        # )
+        self._operational_units = await self.connection.run_sync(
+            lambda sync_conn: pd.read_sql_table(
+                "operationalunit",
+                sync_conn,
+                columns=["id", "code"],
+            )
         )
 
-    def _add_operational_units_fk(self):
+    async def _add_operational_units_fk(self):
         """Add operational units fk in statique with fk dataframe."""
         logger.info("Merging operational unit foreign keys")
 
@@ -137,7 +149,7 @@ class StatiqueImporter:
             logger.warning("Operational unit foreign keys have already been set")
             return
 
-        self._load_operational_units()
+        await self._load_operational_units()
 
         left = self._statique_with_fk
         left["code"] = left["id_station_itinerance"].str.slice(stop=5)
@@ -196,7 +208,7 @@ class StatiqueImporter:
             self._station = self._get_dataframe_for_schema(Station, with_fk=True)
         return self._station
 
-    def _save_schema(
+    async def _save_schema(
         self,
         df: pd.DataFrame,
         schema: type[BaseAuditableSQLModel],
@@ -215,10 +227,12 @@ class StatiqueImporter:
                 )
             )
 
-        schema_table = Table(
-            schema.__table__.name,  # type: ignore[attr-defined]
-            MetaData(),
-            autoload_with=self.connection,
+        schema_table = await self.connection.run_sync(
+            lambda conn: Table(
+                schema.__table__.name,  # type: ignore[attr-defined]
+                MetaData(),
+                autoload_with=conn,
+            )
         )
 
         fks = pd.Series()
@@ -241,7 +255,7 @@ class StatiqueImporter:
             )
             stmt_ret = stmt.returning(schema_table.c.id)
 
-            result = self.connection.execute(stmt_ret)
+            result = await self.connection.execute(stmt_ret)
             fks = pd.concat(
                 [
                     fks,
@@ -257,36 +271,36 @@ class StatiqueImporter:
 
         return cp
 
-    def save(self):
+    async def save(self):
         """Save (or update) statique entries."""
-        self._add_operational_units_fk()
+        await self._add_operational_units_fk()
 
-        self._save_schema(
+        await self._save_schema(
             self.amenageur,
             Amenageur,
             constraint="amenageur_nom_amenageur_siren_amenageur_contact_amenageur_key",
         )
-        self._save_schema(
+        await self._save_schema(
             self.operateur,
             Operateur,
             constraint="operateur_nom_operateur_contact_operateur_telephone_operate_key",
         )
-        self._save_schema(
+        await self._save_schema(
             self.enseigne,
             Enseigne,
             constraint="enseigne_nom_enseigne_key",
         )
-        self._save_schema(
+        await self._save_schema(
             self.localisation,
             Localisation,
             constraint="localisation_coordonneesXY_key",
         )
-        self._save_schema(
+        await self._save_schema(
             self.station,
             Station,
             index_elements=["id_station_itinerance"],
         )
-        self._save_schema(
+        await self._save_schema(
             self.pdc,
             PointDeCharge,
             index_elements=["id_pdc_itinerance"],
