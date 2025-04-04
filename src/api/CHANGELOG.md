@@ -10,6 +10,7 @@ and this project adheres to
 
 ### Added
 
+- Add a configurable retention policy for `Status` and `Session` data
 - Create new database indexes:
   - `ix_pointdecharge_station_id`
   - `ix_station_amenageur_id`
