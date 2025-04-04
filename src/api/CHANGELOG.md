@@ -10,6 +10,10 @@ and this project adheres to
 
 ### Changed
 
+- Add time and fk-related missing database indexes for status & session tables
+
+#### Dependencies
+
 - Upgrade alembic to `1.15.2`
 - Upgrade fastapi to `0.115.12`
 - Upgrade psycopg to `3.2.6`
@@ -32,6 +36,8 @@ and this project adheres to
 ## [0.19.1] - 2025-03-10
 
 ### Changed
+
+#### Dependencies
 
 - Upgrade alembic to `1.15.1`
 - Upgrade fastapi to `0.115.11`
@@ -56,6 +62,9 @@ and this project adheres to
 - Improve bulk endpoints documentation
 - Improve `/dynamique` (bulk) create endpoint performance by using background
   tasks
+
+#### Dependencies
+
 - Upgrade cachetools to `5.5.2`
 - Upgrade geoalchemy2 to `0.17.1`
 - Upgrade psycopg to `3.2.5`
@@ -72,6 +81,9 @@ and this project adheres to
 ### Changed
 
 - Update the list of active operational units
+
+#### Dependencies
+
 - Upgrade fastapi to `0.115.8`
 - Upgrade pydantic to `2.10.6`
 - Upgrade pyinstrument to `5.0.1`
@@ -100,6 +112,9 @@ and this project adheres to
 - Add default values for optional Statique model fields
 - Migrate database enum types from names to values
 - Improve API performance by integrating the `Statique` materialized view
+
+#### Dependencies
+
 - Upgrade alembic to `1.14.1`
 - Upgrade geoalchemy2 to `0.17.0`
 - Upgrade psycopg to `3.2.4`
@@ -124,6 +139,8 @@ and this project adheres to
 
 ### Changed
 
+#### Dependencies
+
 - Upgrade fastapi to `0.115.6`
 - Upgrade httpx to `0.28.1`
 - Upgrade pyarrow to `18.1.0`
@@ -142,13 +159,16 @@ and this project adheres to
 
 ### Changed
 
+- Send DB query details on Statique API errors only in debug mode
+- Move `num_pdl` field to a 64-chars string
+- Return created objects UUIDs for statuses and sessions
+
+#### Dependencies
+
 - Upgrade fastapi to `0.115.5`
 - Upgrade geoalchemy2 to `0.16.0`
 - Upgrade pyjwt to `2.10.0`
 - Upgrade setuptools to `75.5.0`
-- Send DB query details on Statique API errors only in debug mode
-- Move `num_pdl` field to a 64-chars string
-- Return created objects UUIDs for statuses and sessions
 
 ## [0.14.0] - 2024-11-15
 
@@ -162,6 +182,10 @@ and this project adheres to
 
 ### Changed
 
+- Set fk to `NULL` when related table entry is deleted for the `Station` table
+
+#### Dependencies
+
 - Upgrade alembic to `1.14.0`
 - Upgrade fastapi to `0.115.4`
 - Upgrade pyarrow to `18.0.0`
@@ -170,7 +194,6 @@ and this project adheres to
 - Upgrade pyinstrument to `5.0.0`
 - Upgrade python-multipart to `0.0.17`
 - Upgrade sentry-sdk to `2.18.0`
-- Set fk to `NULL` when related table entry is deleted for the `Station` table
 
 ### Fixed
 
@@ -181,6 +204,9 @@ and this project adheres to
 ### Changed
 
 - Add geo-boundaries population and area fields
+
+#### Dependencies
+
 - Upgrade alembic to `1.13.3`
 - Upgrade fastapi to `0.115.0`
 - Upgrade pandas to `2.2.3`
@@ -216,6 +242,9 @@ and this project adheres to
 - Allow to submit a single item in bulk endpoints
 - Add create or update support for the `/statique/bulk` endpoints (with improved
   performances)
+
+#### Dependencies
+
 - Upgrade fastapi to `0.112.2`
 - Upgrade typer to `0.12.5`
 - Upgrade sqlmodel to `0.0.22`
@@ -230,13 +259,16 @@ and this project adheres to
 
 ### Changed
 
+- Switched to Psycopg 3.x
+
+#### Dependencies
+
 - Upgrade fastapi to `0.112.0`
 - Upgrade geoalchemy2 to `0.15.2`
 - Upgrade pydantic-settings to `2.4.0`
 - Upgrade PyJWT to `2.9.0`
 - Upgrade sentry-sdk to `2.13.0`
 - Upgrade SQLModel to `0.0.21`
-- Switched to Psycopg 3.x
 
 ### Fixed
 
@@ -249,6 +281,9 @@ and this project adheres to
 ### Changed
 
 - API dynamique bulk requests now returns the number of created items
+
+#### Dependencies
+
 - Upgrade alembic to `1.13.2`
 - Upgrade Pydantic to `2.7.4`
 - Upgrade pydantic-settings to `2.3.4`
@@ -264,6 +299,8 @@ and this project adheres to
 - Document API data schemas
 
 ### Changed
+
+#### Dependencies
 
 - Upgrade `pydantic-extra-types` to `2.8.0`
 - Upgrade `pydantic-settings` to `2.3.1`
@@ -327,6 +364,9 @@ and this project adheres to
 ### Changed
 
 - Switch to TimescaleDB
+
+#### Dependencies
+
 - Upgrade FastAPI to 0.111.0
 
 ## [0.4.0] - 2024-04-23
