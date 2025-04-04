@@ -18,14 +18,15 @@ from fastapi import status as fa_status
 from pydantic import UUID4, BaseModel, PastDatetime, StringConstraints
 from sqlalchemy import func
 from sqlalchemy.schema import Column as SAColumn
-from sqlmodel import Session, join, select
+from sqlmodel import join, select
+from sqlmodel.ext.asyncio.session import AsyncSession
 from theine import Cache, Memoize
 
 from qualicharge.api.utils import GzipRoute
 from qualicharge.auth.oidc import get_user
 from qualicharge.auth.schemas import ScopesEnum, User
 from qualicharge.conf import settings
-from qualicharge.db import get_session
+from qualicharge.db import get_async_session
 from qualicharge.exceptions import PermissionDenied
 from qualicharge.models.dynamic import (
     SessionCreate,
@@ -69,14 +70,14 @@ class DynamiqueItemsCreatedResponse(BaseModel):
     items: List[UUID4]
 
 
-@Memoize(
-    Cache("tlfu", settings.API_GET_PDC_ID_CACHE_MAXSIZE), None
-)
-async def get_pdc_id(id_pdc_itinerance: str, session: Session) -> UUID:
+@Memoize(Cache("tlfu", settings.API_GET_PDC_ID_CACHE_MAXSIZE), None)
+async def get_pdc_id(id_pdc_itinerance: str, session: AsyncSession) -> UUID:
     """Get PointDeCharge.id from an `id_pdc_itinerance`."""
-    pdc_id = await session.exec(
-        select(PointDeCharge.id).where(
-            PointDeCharge.id_pdc_itinerance == id_pdc_itinerance
+    pdc_id = (
+        await session.exec(
+            select(PointDeCharge.id).where(
+                PointDeCharge.id_pdc_itinerance == id_pdc_itinerance
+            )
         )
     ).one_or_none()
 
@@ -90,7 +91,7 @@ async def get_pdc_id(id_pdc_itinerance: str, session: Session) -> UUID:
 
 
 @get_pdc_id.key
-def _(id_pdc_itinerance: str, session: Session) -> str:
+def _(id_pdc_itinerance: str, session: AsyncSession) -> str:
     """Set `get_pdc_id` cache key."""
     return id_pdc_itinerance
 
@@ -125,7 +126,7 @@ async def list_statuses(
             ),
         ),
     ] = None,
-    session: Session = Depends(get_session),
+    session: AsyncSession = Depends(get_async_session),
 ) -> List[StatusRead]:
     """List last known points of charge status."""
     pdc_ids_filter = set()
@@ -133,26 +134,30 @@ async def list_statuses(
     # Filter by station
     if station:
         pdc_ids_filter = set(
-            session.exec(
-                select(PointDeCharge.id)
-                .select_from(
-                    join(
-                        PointDeCharge,
-                        Station,
-                        cast(SAColumn, PointDeCharge.station_id)
-                        == cast(SAColumn, Station.id),
+            (
+                await session.exec(
+                    select(PointDeCharge.id)
+                    .select_from(
+                        join(
+                            PointDeCharge,
+                            Station,
+                            cast(SAColumn, PointDeCharge.station_id)
+                            == cast(SAColumn, Station.id),
+                        )
                     )
+                    .filter(cast(SAColumn, Station.id_station_itinerance).in_(station))
                 )
-                .filter(cast(SAColumn, Station.id_station_itinerance).in_(station))
             ).all()
         )
 
     # Filter by point of charge
     if pdc:
         pdc_ids_filter = pdc_ids_filter | set(
-            session.exec(
-                select(PointDeCharge.id).filter(
-                    cast(SAColumn, PointDeCharge.id_pdc_itinerance).in_(pdc)
+            (
+                await session.exec(
+                    select(PointDeCharge.id).filter(
+                        cast(SAColumn, PointDeCharge.id_pdc_itinerance).in_(pdc)
+                    )
                 )
             ).all()
         )
@@ -196,7 +201,7 @@ async def list_statuses(
         latest_db_statuses_stmt,
         Status.id == latest_db_statuses_stmt.c.status_id,  # type: ignore[arg-type]
     )
-    db_statuses = session.exec(db_statuses_stmt).all()
+    db_statuses = (await session.exec(db_statuses_stmt)).all()
 
     return [
         StatusRead(
@@ -224,14 +229,14 @@ async def read_status(
             ),
         ),
     ],
-    session: Session = Depends(get_session),
+    session: AsyncSession = Depends(get_async_session),
 ) -> StatusRead:
     """Read last known point of charge status."""
     if not is_pdc_allowed_for_user(id_pdc_itinerance, user):
         raise PermissionDenied("You cannot read the status of this point of charge")
 
     # Get target point de charge
-    pdc_id = get_pdc_id(id_pdc_itinerance, session)
+    pdc_id = await get_pdc_id(id_pdc_itinerance, session)
 
     # Get latest status (if any)
     latest_db_status_stmt = (
@@ -241,7 +246,7 @@ async def read_status(
         .where(Status.point_de_charge_id == pdc_id)
         .subquery()
     )
-    db_status = session.exec(
+    db_status = await session.exec(
         select(Status).join_from(
             Status,
             latest_db_status_stmt,
@@ -284,13 +289,13 @@ async def read_status_history(
             description="The datetime from when we want statuses to be collected",
         ),
     ] = None,
-    session: Session = Depends(get_session),
+    session: AsyncSession = Depends(get_async_session),
 ) -> List[StatusRead]:
     """Read point of charge status history."""
     if not is_pdc_allowed_for_user(id_pdc_itinerance, user):
         raise PermissionDenied("You cannot read statuses of this point of charge")
 
-    pdc_id = get_pdc_id(id_pdc_itinerance, session)
+    pdc_id = await get_pdc_id(id_pdc_itinerance, session)
 
     # Get latest statuses
     db_statuses_stmt = select(Status).where(Status.point_de_charge_id == pdc_id)
@@ -298,7 +303,7 @@ async def read_status_history(
     if from_:
         db_statuses_stmt = db_statuses_stmt.where(Status.horodatage >= from_)
 
-    db_statuses = session.exec(
+    db_statuses = await session.exec(
         db_statuses_stmt.order_by(cast(SAColumn, Status.horodatage))
     ).all()
 
@@ -320,14 +325,14 @@ async def read_status_history(
     ]
 
 
-def _create_status(
-    session: Session, status: StatusCreate, status_id: UUID, pdc_id: UUID
+async def _create_status(
+    session: AsyncSession, status: StatusCreate, status_id: UUID, pdc_id: UUID
 ) -> None:
     """Background task that creates a POC status."""
     db_status = Status(id=status_id, **status.model_dump(exclude={"id_pdc_itinerance"}))
     db_status.point_de_charge_id = pdc_id
     session.add(db_status)
-    session.commit()
+    await session.commit()
 
 
 @router.post("/status/", status_code=fa_status.HTTP_201_CREATED, tags=["Status"])
@@ -335,21 +340,21 @@ async def create_status(
     user: Annotated[User, Security(get_user, scopes=[ScopesEnum.DYNAMIC_CREATE.value])],
     background_tasks: BackgroundTasks,
     status: StatusCreate,
-    session: Session = Depends(get_session),
+    session: AsyncSession = Depends(get_async_session),
 ) -> DynamiqueItemCreatedResponse:
     """Create a status."""
     if not is_pdc_allowed_for_user(status.id_pdc_itinerance, user):
         raise PermissionDenied("You cannot create statuses for this point of charge")
 
-    pdc_id = get_pdc_id(status.id_pdc_itinerance, session)
+    pdc_id = await get_pdc_id(status.id_pdc_itinerance, session)
     status_id = uuid4()
     background_tasks.add_task(_create_status, session, status, status_id, pdc_id)
 
     return DynamiqueItemCreatedResponse(id=status_id)
 
 
-def _create_status_bulk(
-    session: Session,
+async def _create_status_bulk(
+    session: AsyncSession,
     statuses: List[StatusCreate],
     status_ids: List[UUID],
     db_pdcs: dict,
@@ -363,7 +368,7 @@ def _create_status_bulk(
         db_status.point_de_charge_id = db_pdcs[status.id_pdc_itinerance]
         db_statuses.append(db_status)
     session.add_all(db_statuses)
-    session.commit()
+    await session.commit()
 
 
 @router.post("/status/bulk", status_code=fa_status.HTTP_201_CREATED, tags=["Status"])
@@ -371,7 +376,7 @@ async def create_status_bulk(
     user: Annotated[User, Security(get_user, scopes=[ScopesEnum.DYNAMIC_CREATE.value])],
     background_tasks: BackgroundTasks,
     statuses: BulkStatusCreateList,
-    session: Session = Depends(get_session),
+    session: AsyncSession = Depends(get_async_session),
 ) -> DynamiqueItemsCreatedResponse:
     """Create a statuses batch.
 
@@ -387,7 +392,7 @@ async def create_status_bulk(
     # Create a dict with keys as id_pdc_itinerance and values as PDC id
     # for existing PDCs
     db_pdcs = dict(
-        session.exec(
+        await session.exec(
             select(PointDeCharge.id_pdc_itinerance, PointDeCharge.id).filter(
                 cast(SAColumn, PointDeCharge.id_pdc_itinerance).in_(ids_pdc_itinerance)
             )
@@ -414,8 +419,8 @@ async def create_status_bulk(
     )
 
 
-def _create_session(
-    db_session: Session,
+async def _create_session(
+    db_session: AsyncSession,
     session: SessionCreate,
     session_id: UUID,
     pdc_id: UUID,
@@ -430,7 +435,7 @@ def _create_session(
     # Store session id so that we do not need to perform another request
     qc_session.point_de_charge_id = pdc_id
     db_session.add(qc_session)
-    db_session.commit()
+    await db_session.commit()
 
 
 @router.post("/session/", status_code=fa_status.HTTP_201_CREATED, tags=["Session"])
@@ -438,7 +443,7 @@ async def create_session(
     user: Annotated[User, Security(get_user, scopes=[ScopesEnum.DYNAMIC_CREATE.value])],
     background_tasks: BackgroundTasks,
     session: SessionCreate,
-    db_session: Session = Depends(get_session),
+    db_session: AsyncSession = Depends(get_async_session),
 ) -> DynamiqueItemCreatedResponse:
     """Create a session."""
     if not is_pdc_allowed_for_user(session.id_pdc_itinerance, user):
@@ -448,7 +453,7 @@ async def create_session(
     #
     # - `db_session` / `Session` refers to the database session, while,
     # - `session` / `QCSession` / `SessionCreate` refers to qualicharge charging session
-    pdc_id = get_pdc_id(session.id_pdc_itinerance, db_session)
+    pdc_id = await get_pdc_id(session.id_pdc_itinerance, db_session)
 
     qc_session_id = uuid4()
     background_tasks.add_task(
@@ -458,8 +463,8 @@ async def create_session(
     return DynamiqueItemCreatedResponse(id=qc_session_id)
 
 
-def _create_session_bulk(
-    db_session: Session,
+async def _create_session_bulk(
+    db_session: AsyncSession,
     sessions: List[SessionCreate],
     session_ids: List[UUID],
     db_pdcs: dict,
@@ -476,7 +481,7 @@ def _create_session_bulk(
         qc_session.point_de_charge_id = db_pdcs[session.id_pdc_itinerance]
         qc_sessions.append(qc_session)
     db_session.add_all(qc_sessions)
-    db_session.commit()
+    await db_session.commit()
 
 
 @router.post("/session/bulk", status_code=fa_status.HTTP_201_CREATED, tags=["Session"])
@@ -484,7 +489,7 @@ async def create_session_bulk(
     user: Annotated[User, Security(get_user, scopes=[ScopesEnum.DYNAMIC_CREATE.value])],
     background_tasks: BackgroundTasks,
     sessions: BulkSessionCreateList,
-    db_session: Session = Depends(get_session),
+    db_session: AsyncSession = Depends(get_async_session),
 ) -> DynamiqueItemsCreatedResponse:
     """Create a sessions batch.
 
@@ -500,7 +505,7 @@ async def create_session_bulk(
     # Create a dict with keys as id_pdc_itinerance and values as PDC id
     # for existing PDCs
     db_pdcs = dict(
-        db_session.exec(
+        await db_session.exec(
             select(PointDeCharge.id_pdc_itinerance, PointDeCharge.id).filter(
                 cast(SAColumn, PointDeCharge.id_pdc_itinerance).in_(ids_pdc_itinerance)
             )
@@ -531,7 +536,7 @@ async def create_session_bulk(
 async def check_session(
     user: Annotated[User, Security(get_user, scopes=[ScopesEnum.DYNAMIC_READ.value])],
     session_id: UUID,
-    db_session: Session = Depends(get_session),
+    db_session: AsyncSession = Depends(get_async_session),
 ) -> None:
     """Check if a session exists."""
     # ⚠️ Please pay attention to the semantic:
@@ -541,6 +546,6 @@ async def check_session(
     stmt = select(func.count(cast(SAColumn, QCSession.id))).where(
         QCSession.id == session_id
     )
-    counter = db_session.exec(stmt).one()
+    counter = await db_session.exec(stmt).one()
     if counter == 0:
         raise HTTPException(status_code=fa_status.HTTP_404_NOT_FOUND)

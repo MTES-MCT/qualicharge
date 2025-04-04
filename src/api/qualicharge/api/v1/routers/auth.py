@@ -7,8 +7,8 @@ from typing import Annotated
 import jwt
 from fastapi import APIRouter, Depends, Security
 from fastapi.security import OAuth2PasswordRequestForm
-from sqlmodel import Session as SMSession
 from sqlmodel import select
+from sqlmodel.ext.asyncio.session import AsyncSession
 
 from qualicharge.auth.models import IDToken, Token, UserRead
 from qualicharge.auth.oidc import get_user
@@ -36,7 +36,7 @@ async def me(user: Annotated[User, Security(get_user)]) -> UserRead:
 async def login(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     session: Annotated[
-        SMSession,
+        AsyncSession,
         Depends(get_async_session),
     ],
 ) -> Token:

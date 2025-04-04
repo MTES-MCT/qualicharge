@@ -39,26 +39,28 @@ from qualicharge.schemas.core import (
 from qualicharge.schemas.utils import save_statique, save_statiques
 
 
-def test_get_pdc_id(db_session):
+@pytest.mark.anyio
+async def test_get_pdc_id(db_async_session):
     """Test the get_pdc_id utility."""
     id_pdc_itinerance = "FRALLE0123456"
     with pytest.raises(HTTPException, match="Point of charge does not exist"):
-        get_pdc_id(id_pdc_itinerance, db_session)
+        await get_pdc_id(id_pdc_itinerance, db_async_session)
 
     n_pdc = 4
-    save_statiques(db_session, StatiqueFactory.batch(n_pdc))
-    pdcs = db_session.exec(select(PointDeCharge)).all()
+    await save_statiques(db_async_session, StatiqueFactory.batch(n_pdc))
+    pdcs = (await db_async_session.exec(select(PointDeCharge))).all()
     assert len(pdcs) == n_pdc
 
     for pdc in pdcs:
-        assert pdc.id == get_pdc_id(pdc.id_pdc_itinerance, db_session)
+        assert pdc.id == await get_pdc_id(pdc.id_pdc_itinerance, db_async_session)
 
 
-def test_get_pdc_id_cache(db_session):
+@pytest.mark.anyio
+async def test_get_pdc_id_cache(db_async_session):
     """Test the get_pdc_id utility cache."""
     n_pdc = 4
-    save_statiques(db_session, StatiqueFactory.batch(n_pdc))
-    pdcs = db_session.exec(select(PointDeCharge)).all()
+    await save_statiques(db_async_session, StatiqueFactory.batch(n_pdc))
+    pdcs = (await db_async_session.exec(select(PointDeCharge))).all()
     assert len(pdcs) == n_pdc
 
     hits_by_pdc = 9
@@ -66,23 +68,27 @@ def test_get_pdc_id_cache(db_session):
         pdc = pdcs[pdc_index]
 
         # First call: feed the cache
-        with SAQueryCounter(db_session.connection()) as counter:
-            pdc_id = get_pdc_id(pdc.id_pdc_itinerance, db_session)
+        async with SAQueryCounter(
+            db_async_session.sync_session.connection()
+        ) as counter:
+            pdc_id = await get_pdc_id(pdc.id_pdc_itinerance, db_async_session)
         assert pdc_id == pdc.id
-        cache_info = get_pdc_id.cache_info()  # type: ignore[attr-defined]
+        cache = get_pdc_id._cache
         assert counter.count == 1
-        assert cache_info.hits == pdc_index * hits_by_pdc
-        assert cache_info.currsize == pdc_index + 1
+        assert cache._hit == pdc_index * hits_by_pdc
+        assert cache.core.len() == pdc_index + 1
 
         # Test cached entry
         for hit in range(1, hits_by_pdc + 1):
-            with SAQueryCounter(db_session.connection()) as counter:
-                pdc_id = get_pdc_id(pdc.id_pdc_itinerance, db_session)
+            async with SAQueryCounter(
+                db_async_session.sync_session.connection()
+            ) as counter:
+                pdc_id = await get_pdc_id(pdc.id_pdc_itinerance, db_async_session)
             assert pdc_id == pdc.id
-            cache_info = get_pdc_id.cache_info()  # type: ignore[attr-defined]
+            cache = get_pdc_id._cache
             assert counter.count == 0
-            assert cache_info.hits == (pdc_index * hits_by_pdc) + hit
-            assert cache_info.currsize == pdc_index + 1
+            assert cache._hit == (pdc_index * hits_by_pdc) + hit
+            assert cache.core.len() == pdc_index + 1
 
 
 @pytest.mark.parametrize(
@@ -97,51 +103,62 @@ def test_get_pdc_id_cache(db_session):
     ),
     indirect=True,
 )
-def test_list_statuses_with_missing_scopes(client_auth):
+@pytest.mark.anyio
+async def test_list_statuses_with_missing_scopes(client_auth):
     """Test the /status/ get endpoint scopes."""
-    response = client_auth.get("/dynamique/status/")
+    response = await client_auth.get("/dynamique/status/")
     assert response.status_code == status.HTTP_403_FORBIDDEN
 
 
-def test_list_statuses_for_superuser(db_session, client_auth):
+@pytest.mark.anyio
+async def test_list_statuses_for_superuser(db_async_session, client_auth):
     """Test the /status/ get endpoint (superuser case)."""
-    StatusFactory.__session__ = db_session
+    StatusFactory.__async_session__ = db_async_session
 
     # No status exists
-    response = client_auth.get("/dynamique/status/")
+    response = await client_auth.get("/dynamique/status/")
     assert response.status_code == status.HTTP_200_OK
     assert response.json() == []
 
     # Create points of charge and statuses
     n_pdc = 2
     n_status_by_pdc = 10
-    save_statiques(db_session, StatiqueFactory.batch(n_pdc))
-    pdcs = db_session.exec(select(PointDeCharge)).all()
+    await save_statiques(db_async_session, StatiqueFactory.batch(n_pdc))
+    pdcs = (await db_async_session.exec(select(PointDeCharge))).all()
     assert len(pdcs) == n_pdc
+    ids = [pdc.id for pdc in pdcs]
 
-    StatusFactory.create_batch_sync(n_status_by_pdc, point_de_charge_id=pdcs[0].id)
-    StatusFactory.create_batch_sync(n_status_by_pdc, point_de_charge_id=pdcs[1].id)
-    assert db_session.exec(select(func.count(Status.id))).one() == (
+    await StatusFactory.create_batch_async(
+        n_status_by_pdc, point_de_charge_id=ids[0]
+    )
+    await StatusFactory.create_batch_async(
+        n_status_by_pdc, point_de_charge_id=ids[1]
+    )
+    assert (await db_async_session.exec(select(func.count(Status.id)))).one() == (
         n_pdc * n_status_by_pdc
     )
 
     # List latest statuses by pdc
-    response = client_auth.get("/dynamique/status/")
+    response = await client_auth.get("/dynamique/status/")
     assert response.status_code == status.HTTP_200_OK
     statuses = [StatusRead(**s) for s in response.json()]
     assert len(statuses) == n_pdc
 
     # Check status
     for response_status in statuses:
-        pdc = db_session.exec(
-            select(PointDeCharge).where(
-                PointDeCharge.id_pdc_itinerance == response_status.id_pdc_itinerance
+        pdc = (
+            await db_async_session.exec(
+                select(PointDeCharge).where(
+                    PointDeCharge.id_pdc_itinerance == response_status.id_pdc_itinerance
+                )
             )
         ).one()
-        db_status = db_session.exec(
-            select(Status)
-            .where(Status.point_de_charge_id == pdc.id)
-            .order_by(cast(SAColumn, Status.horodatage).desc())
+        db_status = (
+            await db_async_session.exec(
+                select(Status)
+                .where(Status.point_de_charge_id == pdc.id)
+                .order_by(cast(SAColumn, Status.horodatage).desc())
+            )
         ).first()
         assert db_status.etat_pdc == response_status.etat_pdc
         assert db_status.occupation_pdc == response_status.occupation_pdc
