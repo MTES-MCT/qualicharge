@@ -8,6 +8,10 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Added
+
+- Add a 2 months retention policy for `Status` and `Session` data
+
 ### Changed
 
 - Upgrade alembic to `1.15.2`
