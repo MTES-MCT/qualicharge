@@ -7,14 +7,14 @@ from typing import Annotated
 import jwt
 from fastapi import APIRouter, Depends, Security
 from fastapi.security import OAuth2PasswordRequestForm
-from sqlmodel import Session as SMSession
 from sqlmodel import select
+from sqlmodel.ext.asyncio.session import AsyncSession
 
 from qualicharge.auth.models import IDToken, Token, UserRead
 from qualicharge.auth.oidc import get_user
 from qualicharge.auth.schemas import User
 from qualicharge.conf import settings
-from qualicharge.db import get_session
+from qualicharge.db import get_async_session
 from qualicharge.exceptions import AuthenticationError
 
 logger = logging.getLogger(__name__)
@@ -36,14 +36,14 @@ async def me(user: Annotated[User, Security(get_user)]) -> UserRead:
 async def login(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     session: Annotated[
-        SMSession,
-        Depends(get_session),
+        AsyncSession,
+        Depends(get_async_session),
     ],
 ) -> Token:
     """Log user in by forging an oauth2 jwt token."""
     # Get registered user
-    user = session.exec(
-        select(User).where(User.username == form_data.username)
+    user = (
+        await session.exec(select(User).where(User.username == form_data.username))
     ).one_or_none()
 
     # User does not exist: raise an error
@@ -68,15 +68,15 @@ async def login(
     now_timestamp: int = int(now.timestamp())
     user.last_login = now
     session.add(user)
-    session.commit()
+    await session.commit()
 
     # Forge Token
     id_token = IDToken(
         iss=str(settings.OAUTH2_TOKEN_ISSUER),
-        sub=user.username,
+        sub=await user.awaitable_attrs.username,
         exp=now_timestamp + settings.OAUTH2_TOKEN_LIFETIME,
         iat=now_timestamp,
-        email=user.email,
+        email=await user.awaitable_attrs.email,
         aud=settings.OIDC_EXPECTED_AUDIENCE,
         scope="",
     )

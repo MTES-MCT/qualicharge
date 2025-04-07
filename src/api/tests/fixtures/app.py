@@ -2,6 +2,7 @@
 
 import pytest
 from fastapi.testclient import TestClient
+from httpx import ASGITransport, AsyncClient
 from sqlmodel import Session
 
 from qualicharge.api.v1 import app
@@ -9,16 +10,24 @@ from qualicharge.api.v1.routers.dynamic import get_pdc_id
 from qualicharge.auth.factories import GroupFactory, IDTokenFactory, UserFactory
 from qualicharge.auth.oidc import get_token, get_user_from_db
 from qualicharge.auth.schemas import UserGroup
+from qualicharge.conf import settings
 
 
 @pytest.fixture
-def client():
+@pytest.mark.anyio
+async def client():
     """A test client configured for the /api/v1 application."""
-    yield TestClient(app)
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url=settings.SERVER_URL
+    ) as ac:
+        yield ac
 
 
 @pytest.fixture
-def client_auth(request, db_session: Session, id_token_factory=IDTokenFactory):
+@pytest.mark.anyio
+async def client_auth(
+    request, db_async_session: Session, id_token_factory=IDTokenFactory
+):
     """An authenticated test client configured for the /api/v1 application.
 
     Parameter:
@@ -31,8 +40,8 @@ def client_auth(request, db_session: Session, id_token_factory=IDTokenFactory):
 
     Note that by default, we will persist a superuser in database.
     """
-    GroupFactory.__session__ = db_session
-    UserFactory.__session__ = db_session
+    GroupFactory.__async_session__ = db_async_session
+    UserFactory.__async_session__ = db_async_session
 
     persist = True
     fields = {
@@ -46,14 +55,19 @@ def client_auth(request, db_session: Session, id_token_factory=IDTokenFactory):
         fields.update(extras)
     user = UserFactory.build(**fields)
     if persist:
-        group = GroupFactory.create_sync(name="administrators")
-        user = UserFactory.create_sync(**user.model_dump())
-        db_session.add(UserGroup(user_id=user.id, group_id=group.id))
+        group = await GroupFactory.create_async(name="administrators")
+        user = await UserFactory.create_async(**user.model_dump())
+        db_async_session.add(UserGroup(user_id=user.id, group_id=group.id))
 
     app.dependency_overrides[get_token] = lambda: id_token_factory.build(
         email=user.email, scope=" ".join(user.scopes)
     )
-    yield TestClient(app)
+
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url=settings.SERVER_URL
+    ) as ac:
+        yield ac
+
     app.dependency_overrides = {}
 
 
@@ -67,5 +81,5 @@ def clear_lru_cache():
     yield
 
     # Clear the LRU cache.
-    get_user_from_db.cache_clear()
-    get_pdc_id.cache_clear()
+    get_user_from_db._cache.clear()
+    get_pdc_id._cache.clear()

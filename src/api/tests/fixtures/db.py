@@ -1,17 +1,21 @@
 """Fixtures for QualiCharge API database."""
 
+from typing import AsyncGenerator
+
 import pytest
 import sqlalchemy as sa
 from alembic import command
 from alembic.config import Config
 from postgresql_audit.base import VersioningManager
+from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 from sqlalchemy.orm import configure_mappers, declarative_base
 from sqlmodel import Session, SQLModel, create_engine
+from sqlmodel.ext.asyncio.session import AsyncSession
 
 from qualicharge.api.v1 import app as v1
 from qualicharge.auth.schemas import Group, User
 from qualicharge.conf import settings
-from qualicharge.db import get_session
+from qualicharge.db import get_async_session, get_session
 from qualicharge.fixtures.operational_units import operational_units
 from qualicharge.schemas import core
 
@@ -73,6 +77,14 @@ def db_engine(versioning_manager):
     engine.dispose()
 
 
+@pytest.fixture(scope="session")
+async def db_async_engine() -> AsyncGenerator[AsyncEngine, None]:
+    """Test database engine fixture."""
+    engine = create_async_engine(str(settings.TEST_DATABASE_URL), echo=False)
+    yield engine
+    await engine.dispose()
+
+
 @pytest.fixture(scope="function")
 def db_session(db_engine):
     """Test session fixture."""
@@ -95,6 +107,26 @@ def db_session(db_engine):
     connection.close()
 
 
+@pytest.fixture(scope="function")
+async def db_async_session(db_async_engine) -> AsyncGenerator[AsyncSession, None]:
+    """Test session fixture."""
+    # Setup
+    #
+    # Connect to the database and create a non-ORM transaction. Our connection
+    # is bound to the test session.
+    connection = await db_async_engine.connect()
+    transaction = await connection.begin()
+    async with AsyncSession(bind=connection) as session:
+        yield session
+
+    # Teardown
+    #
+    # Rollback everything that happened with the Session above (including
+    # explicit commits).
+    await transaction.rollback()
+    await connection.close()
+
+
 @pytest.fixture(autouse=True)
 def override_db_test_session(db_session):
     """Use test database along with a test session by default."""
@@ -103,6 +135,18 @@ def override_db_test_session(db_session):
         return db_session
 
     v1.dependency_overrides[get_session] = get_session_override
+
+    yield
+
+
+@pytest.fixture(autouse=True)
+async def override_db_async_test_session(db_async_session):
+    """Use test database along with an asynchronous test session by default."""
+
+    async def get_session_override():
+        return db_async_session
+
+    v1.dependency_overrides[get_async_session] = get_session_override
 
     yield
 
