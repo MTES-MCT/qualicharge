@@ -194,3 +194,26 @@ class DeliveryPoint(DashboardBase):
 
     def __str__(self):  # noqa: D105
         return self.provider_assigned_id
+
+
+class Station(DashboardBase):
+    """Represents a station for electric vehicles."""
+
+    id_station_itinerance = models.CharField(
+        _("id station itinerance"), max_length=35, blank=True, unique=True
+    )
+    station_name = models.CharField(_("station name"), max_length=255, blank=True)
+    delivery_point = models.ForeignKey(
+        DeliveryPoint,
+        on_delete=models.CASCADE,
+        related_name="stations",
+        verbose_name=_("delivery point"),
+    )
+
+    class Meta:  # noqa: D106
+        verbose_name = _("station")
+        verbose_name_plural = _("stations")
+        ordering = ["station_name", "id_station_itinerance"]
+
+    def __str__(self):  # noqa: D105
+        return f"{self.station_name}: {self.id_station_itinerance}"
