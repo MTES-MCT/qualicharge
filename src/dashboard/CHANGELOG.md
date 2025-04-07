@@ -23,7 +23,7 @@ and this project adheres to
 - add a specific restricted view for unvalidated users
 - add mass admin action to validate users
 - add core app with `Entity` and `DeliveryPoint` models
-- add admin integration for `Entity` and `DeliveryPoint`
+- add admin integration for `Entity`, `DeliveryPoint` and `Station`
 - add a helper function to sync delivery points from the QualiCharge API 
 - add a helper function to retrieve company information from its SIRET using the 
 "Annuaire des Entreprises" API
