@@ -1,9 +1,11 @@
 """Dashboard consent dev fixture."""
 
+import random
+
 from apps.auth.factories import UserFactory
 from apps.consent import VALIDATED
 from apps.consent.factories import ConsentFactory
-from apps.core.factories import DeliveryPointFactory, EntityFactory
+from apps.core.factories import DeliveryPointFactory, EntityFactory, StationFactory
 from apps.core.models import DeliveryPoint
 
 
@@ -35,6 +37,12 @@ def seed_consent():
     DeliveryPointFactory.create_batch(size, entity=entity2)
     DeliveryPointFactory.create_batch(size, entity=entity3)
     DeliveryPointFactory.create_batch(size, entity=entity4)
+
+    # create stations for delivery points
+    for dl in DeliveryPoint.objects.all():
+        # create Stations
+        size = random.randint(1, 3)  # noqa: S311
+        StationFactory.create_batch(size, delivery_point=dl)
 
     # create past consents with validated status
     for dl in DeliveryPoint.objects.filter(entity=entity1):

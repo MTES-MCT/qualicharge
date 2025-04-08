@@ -37,7 +37,7 @@
                     <td class="fr-cell--center">
                       <p class="fr-badge fr-badge--success">
                         {% with consent_total=entity.get_consents.count consent_count=entity.count_validated_consents pluralize=entity.count_validated_consents|pluralize %}
-                        {{ consent_count }} PDL{{ pluralize }} suivi{{ pluralize }}
+                        {{ consent_count }} PDL{{ pluralize }} suivi{{ pluralize }} sur {{ consent_total }}
                         {% endwith %}
                       </p>
                     </td>

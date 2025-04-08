@@ -3,7 +3,7 @@
 from django.contrib import admin
 from django.utils.translation import gettext_lazy as _
 
-from .models import DeliveryPoint, Entity
+from .models import DeliveryPoint, Entity, Station
 
 
 @admin.register(Entity)
@@ -35,3 +35,15 @@ class DeliveryPointAdmin(admin.ModelAdmin):
     list_display = ["provider_assigned_id", "entity", "is_active"]
     search_fields = ["provider_assigned_id", "entity__name"]
     list_filter = ["is_active"]
+
+
+@admin.register(Station)
+class StationAdmin(admin.ModelAdmin):
+    """Station admin."""
+
+    list_display = ["station_name", "id_station_itinerance", "delivery_point"]
+    search_fields = [
+        "station_name",
+        "id_station_itinerance",
+        "delivery_point__provider_assigned_id",
+    ]

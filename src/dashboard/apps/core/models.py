@@ -1,5 +1,8 @@
 """Dashboard core app models."""
 
+from collections import defaultdict
+from typing import Optional
+
 from django.db import models
 from django.db.models import QuerySet
 from django.utils.translation import gettext_lazy as _
@@ -126,12 +129,16 @@ class Entity(DashboardBase):
         if status:
             queryset_filters["status"] = status
 
-        return obj.filter(
-            delivery_point__entity=self,
-            **queryset_filters,
-        ).select_related(
-            "delivery_point",
-            "delivery_point__entity",
+        return (
+            obj.filter(
+                delivery_point__entity=self,
+                **queryset_filters,
+            )
+            .select_related(
+                "delivery_point",
+                "delivery_point__entity",
+            )
+            .prefetch_related("delivery_point__stations")
         )
 
     def count_awaiting_consents(self) -> int:
@@ -159,9 +166,51 @@ class Entity(DashboardBase):
         return self.get_consents(obj=Consent.validated_objects).order_by(
             "-start",
             "-end",
-            "delivery_point__station_name",
             "delivery_point__provider_assigned_id",
         )
+
+    def get_consents_stations_grouped(
+        self, consents: Optional[QuerySet["Consent"]] = None
+    ) -> list[Consent] | None:
+        """Get all consents for this entity with grouped stations."""
+        structured_consents: list = []
+
+        if not consents:
+            consents = self.get_consents()
+
+        for consent in consents:
+            stations_grouped = defaultdict(list)
+            for station in consent.delivery_point.stations.all():
+                stations_grouped[station.station_name].append(
+                    station.id_station_itinerance
+                )
+
+            consent.stations_grouped = dict(stations_grouped)
+            structured_consents.append(consent)
+
+        sorted_consents = sorted(
+            structured_consents,
+            key=lambda x: (
+                list(x.stations_grouped.keys())[0].lower() if x.stations_grouped else ""
+            ),
+        )
+
+        return sorted_consents
+
+    def get_awaiting_consents_stations_grouped(self) -> list[Consent] | None:
+        """Get all awaiting consents for this entity with grouped stations."""
+        consents = self.get_awaiting_consents()
+        return self.get_consents_stations_grouped(consents)
+
+    def get_upcoming_consents_stations_grouped(self) -> list[Consent] | None:
+        """Get all upcoming consents for this entity with grouped stations."""
+        consents = self.get_upcoming_consents()
+        return self.get_consents_stations_grouped(consents)
+
+    def get_validated_consents_stations_grouped(self) -> list[Consent] | None:
+        """Get all validated consents for this entity with grouped stations."""
+        consents = self.get_validated_consents()
+        return self.get_consents_stations_grouped(consents)
 
 
 class DeliveryPoint(DashboardBase):
@@ -174,17 +223,15 @@ class DeliveryPoint(DashboardBase):
     - is_active (BooleanField): indicating the active status of the delivery point.
     """
 
-    provider_assigned_id = models.CharField(_("provider assigned id"), max_length=64)
+    provider_assigned_id = models.CharField(
+        _("provider assigned id"), max_length=64, unique=True
+    )
     entity = models.ForeignKey(
         Entity,
         on_delete=models.CASCADE,
         related_name="delivery_points",
         verbose_name=_("entity"),
     )
-    id_station_itinerance = models.CharField(
-        _("id station itinerance"), max_length=35, blank=True
-    )
-    station_name = models.CharField(_("station name"), max_length=255, blank=True)
     is_active = models.BooleanField(_("is active"), default=True)
 
     active_objects = DeliveryPointManager()
@@ -194,12 +241,35 @@ class DeliveryPoint(DashboardBase):
         verbose_name = _("delivery point")
         verbose_name_plural = _("delivery points")
         ordering = ["provider_assigned_id"]
+
+    def __str__(self):  # noqa: D105
+        return self.provider_assigned_id
+
+
+class Station(DashboardBase):
+    """Represents a station for electric vehicles."""
+
+    id_station_itinerance = models.CharField(
+        _("id station itinerance"), max_length=35, blank=True
+    )
+    station_name = models.CharField(_("station name"), max_length=255, blank=True)
+    delivery_point = models.ForeignKey(
+        DeliveryPoint,
+        on_delete=models.CASCADE,
+        related_name="stations",
+        verbose_name=_("delivery point"),
+    )
+
+    class Meta:  # noqa: D106
+        verbose_name = _("station")
+        verbose_name_plural = _("stations")
+        ordering = ["station_name", "id_station_itinerance"]
         constraints = [
             models.UniqueConstraint(
-                fields=["provider_assigned_id", "id_station_itinerance"],
-                name="unique_provider_station",
+                fields=["id_station_itinerance", "station_name"],
+                name="unique_id_station_itinerance_station_name",
             )
         ]
 
     def __str__(self):  # noqa: D105
-        return self.provider_assigned_id
+        return f"{self.station_name}: {self.id_station_itinerance}"

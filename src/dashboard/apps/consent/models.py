@@ -1,5 +1,7 @@
 """Dashboard consent app models."""
 
+from typing import Dict, List
+
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
@@ -124,11 +126,6 @@ class Consent(DashboardBase):
     provider_assigned_id = models.CharField(
         _("provider assigned id"), max_length=64, blank=True
     )
-    id_station_itinerance = models.CharField(
-        _("id station itinerance"), max_length=35, blank=True
-    )
-    station_name = models.CharField(_("station name"), max_length=255, blank=True)
-
     delivery_point = models.ForeignKey(
         "qcd_core.DeliveryPoint", on_delete=models.CASCADE, related_name="consents"
     )
@@ -209,6 +206,8 @@ class Consent(DashboardBase):
         _("signature location"), max_length=255, blank=True, null=True
     )
 
+    stations_grouped: Dict[str, List[str]]
+
     # models.Manager() must be in first place to ensure django admin expectations.
     objects = models.Manager()
     active_objects = ConsentManager()
@@ -216,7 +215,7 @@ class Consent(DashboardBase):
     validated_objects = ValidatedConsentManager()
 
     class Meta:  # noqa: D106
-        ordering = ["delivery_point__station_name", "provider_assigned_id", "start"]
+        ordering = ["provider_assigned_id", "start"]
 
     def __str__(self):  # noqa: D105
         return f"{self.delivery_point} - {self.updated_at}: {self.status}"

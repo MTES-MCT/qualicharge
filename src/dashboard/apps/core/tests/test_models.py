@@ -1,6 +1,7 @@
 """Dashboard core models tests."""
 
 from datetime import timedelta
+from unittest.mock import patch
 
 import pytest
 from django.db import IntegrityError
@@ -11,7 +12,7 @@ from apps.auth.factories import UserFactory
 from apps.consent import AWAITING, VALIDATED
 from apps.consent.factories import ConsentFactory
 from apps.consent.models import Consent
-from apps.core.factories import DeliveryPointFactory, EntityFactory
+from apps.core.factories import DeliveryPointFactory, EntityFactory, StationFactory
 from apps.core.models import Entity
 
 
@@ -498,3 +499,104 @@ def test_get_consents_shortcuts(settings):
     assertQuerySetEqual(entity1.get_upcoming_consents(), [c_upcoming_1])
     assertQuerySetEqual(entity2.get_upcoming_consents(), [])
     assertQuerySetEqual(entity3.get_upcoming_consents(), [])
+
+
+@pytest.mark.django_db
+def test_get_consents_stations_grouped():
+    """Test that the stations are correctly grouped by station_name."""
+    assert Consent.objects.count() == 0
+
+    # 1 - create entity, delivery points, consents and one station
+    entity1 = EntityFactory()
+    dp_1 = DeliveryPointFactory(entity=entity1)
+    StationFactory(
+        delivery_point=dp_1, station_name="Station A", id_station_itinerance="FRABCP01"
+    )
+
+    # test stations grouped with a unique station
+    result = entity1.get_consents_stations_grouped()
+    expected_grouping = {"Station A": ["FRABCP01"]}
+    assert len(result[0].stations_grouped) == 1
+    assert result[0].stations_grouped == expected_grouping
+
+    # 2 -create entity, delivery points, consents and many stations
+    entity2 = EntityFactory()
+    dp_2 = DeliveryPointFactory(entity=entity2)
+    StationFactory(
+        delivery_point=dp_2, station_name="Station B", id_station_itinerance="FRABCP01"
+    )
+    StationFactory(
+        delivery_point=dp_2, station_name="Station B", id_station_itinerance="FRABCP02"
+    )
+    StationFactory(
+        delivery_point=dp_2, station_name="Station B", id_station_itinerance="FRABCP03"
+    )
+    StationFactory(
+        delivery_point=dp_2, station_name="Station C", id_station_itinerance="FRABCP01"
+    )
+
+    # test stations grouped with many stations
+    result2 = entity2.get_consents_stations_grouped()
+    expected_grouping = {
+        "Station B": ["FRABCP01", "FRABCP02", "FRABCP03"],
+        "Station C": ["FRABCP01"],
+    }
+    assert len(result2[0].stations_grouped) == 2  # noqa: PLR2004
+    assert result2[0].stations_grouped == expected_grouping
+
+    # 3 - create entity, delivery points, consents but without station
+    entity3 = EntityFactory()
+    DeliveryPointFactory(entity=entity3)
+
+    # test stations grouped without station
+    result3 = entity3.get_consents_stations_grouped()
+    expected_grouping = {}
+    assert len(result3[0].stations_grouped) == 0
+    assert result3[0].stations_grouped == expected_grouping
+
+    # 4 - test with a given consents queryset
+    assert Consent.objects.count() == 3  # noqa: PLR2004
+    consents = Consent.objects.filter(delivery_point__entity=entity1)
+    assert consents.count() == 1
+
+    result = entity1.get_consents_stations_grouped(consents)
+    expected_grouping = {"Station A": ["FRABCP01"]}
+    assert len(result[0].stations_grouped) == 1
+    assert result[0].stations_grouped == expected_grouping
+
+
+@pytest.mark.django_db
+def test_get_consents_stations_grouped_empty_consents():
+    """Test that an empty list of consents returns an empty list."""
+    entity = EntityFactory()
+
+    result = entity.get_consents_stations_grouped([])
+    assert result == []
+
+    result = entity.get_consents_stations_grouped(None)
+    assert result == []
+
+
+@pytest.mark.django_db
+def test_get_consents_stations_grouped_shortcuts():
+    """Test get_consents_stations_grouped shortcuts method."""
+    entity = EntityFactory()
+    consents = Consent.objects.none()
+
+    with patch.object(
+        Entity, "get_awaiting_consents", return_value=consents
+    ) as mock_get_awaiting_consents:
+        entity.get_awaiting_consents_stations_grouped()
+        mock_get_awaiting_consents.assert_called_once()
+
+    with patch.object(
+        Entity, "get_upcoming_consents", return_value=consents
+    ) as mock_get_upcoming_consents:
+        entity.get_upcoming_consents_stations_grouped()
+        mock_get_upcoming_consents.assert_called_once()
+
+    with patch.object(
+        Entity, "get_validated_consents", return_value=consents
+    ) as mock_get_validated_consents:
+        entity.get_validated_consents_stations_grouped()
+        mock_get_validated_consents.assert_called_once()
