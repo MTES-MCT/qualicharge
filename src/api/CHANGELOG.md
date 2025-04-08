@@ -10,6 +10,7 @@ and this project adheres to
 
 ### Changed
 
+- Update the list of active operational units
 - Upgrade alembic to `1.15.2`
 - Upgrade fastapi to `0.115.12`
 - Upgrade psycopg to `3.2.6`
