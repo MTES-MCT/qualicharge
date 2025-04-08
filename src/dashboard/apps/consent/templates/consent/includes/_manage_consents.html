@@ -38,10 +38,7 @@
                   </div>
                 </th>
                 <th scope="col">
-                  <div class="fr-cell__title">Nom de la station</div>
-                </th>
-                <th scope="col">
-                  <div class="fr-cell__title">Identifiant de la station</div>
+                  <div class="fr-cell__title">Noms et Identifiants de station</div>
                 </th>
                 <th scope="col">
                   <div class="fr-cell__title">Identifiant du PDL</div>
@@ -94,8 +91,12 @@
                       </label>
                     </div>
                   </th>
-                  <td> {{ consent.delivery_point.station_name }} </td>
-                  <td> {{ consent.delivery_point.id_station_itinerance }}  </td>
+                  <td>
+                    {% for station_name, ids in consent.stations_grouped.items %}
+                      {% if forloop.counter0 > 0 %}<br />{% endif %}
+                      {{ station_name }} {% if ids %}({{ ids|join:", " }}){% endif %}
+                    {% endfor %}
+                  </td>
                   <td> {{ consent.delivery_point.provider_assigned_id }} </td>
                   <td> du {{ consent.start|date:'d/m/Y' }} au {{ consent.end|date:'d/m/Y' }} </td>
                 </tr>
@@ -109,7 +110,7 @@
     <div class="fr-table__footer">
       <div class="fr-table__footer--start">
         <p class="fr-table__detail">
-          <span id="checked-count">0</span> / {{ consents.count }} sélectionné(s)
+          <span id="checked-count">0</span> / {{ consents|length }} sélectionné(s)
         </p>
       </div>
     </div>
