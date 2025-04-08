@@ -1768,10 +1768,6 @@ data: List[Item] = [
         "Citeos pour le compte du réseau de recharge en Bourgogne-Franche-Comté",
     ),
     Item(
-        "FRBLR",
-        "MA BORNE LR",
-    ),
-    Item(
         "FRBPE",
         "bp pulse",
     ),
@@ -1890,6 +1886,59 @@ data: List[Item] = [
     Item(
         "FRZMR",
         "ZEborne Mobility Service - France",
+    ),
+    # Update: 2025/04/08
+    Item(
+        "FR151",
+        "PORT DE CAEN OUISTREHAM",
+    ),
+    Item(
+        "FRBE3",
+        "Bouygues Energies & Services",
+    ),
+    Item(
+        "FRBLR",
+        "MBLR",
+    ),
+    Item(
+        "FRCHF",
+        "CHARGEFACILE",
+    ),
+    Item(
+        "FRCHO",
+        "ChargeHop",
+    ),
+    Item(
+        "FRDLM",
+        "Delmonicos",
+    ),
+    Item(
+        "FRGLY",
+        "IZIVIA Grand Lyon",
+    ),
+    Item(
+        "FRHM1",
+        "HEMERA MOBILITY",
+    ),
+    Item(
+        "FRIMX",
+        "IZIVIA MAX",
+    ),
+    Item(
+        "FRITP",
+        "Interparking France ",
+    ),
+    Item(
+        "FRQVI",
+        "QOVOLTIS Infra",
+    ),
+    Item(
+        "FRSPI",
+        "Spirii FR",
+    ),
+    Item(
+        "FRYES",
+        "YES55",
     ),
 ]
 
