@@ -12,7 +12,8 @@ from apps.core.annuaire_entreprise_api.adapters import (
     CompanyInformationAdapter,
 )
 from apps.core.annuaire_entreprise_api.clients import AnnuaireDesEntreprises
-from apps.core.models import DeliveryPoint, Entity
+from apps.core.models import DeliveryPoint, Entity, Station
+from apps.core.qualicharge_api.adapters import ManageStationsAdapter
 from apps.core.qualicharge_api.clients import QualiChargeApi
 from apps.core.utils import siret2siren
 
@@ -62,14 +63,14 @@ def sync_entity_from_siret(siret: str, user: Optional[DashboardUser] = None) -> 
     return entity
 
 
-def sync_delivery_points_from_qualicharge_api(
+def sync_from_qualicharge_api(
     entity: Entity,
 ) -> tuple[list[DeliveryPoint], list[Consent] | None]:
     """Synchronize delivery points from QualiCharge API for a given entity.
 
     This function retrieves station data from the QualiCharge API based on the
-    entity's SIRET and creates delivery points and associated consents in the database
-     if they do not already exist.
+    entity's SIRET and creates delivery points and associated consents, and stations
+    in the database if they do not already exist.
 
     Parameters:
         entity (Entity): The entity object for which delivery points need to be
@@ -85,12 +86,45 @@ def sync_delivery_points_from_qualicharge_api(
     if not entity.siret:
         raise ValueError("SIRET should be defined when syncing delivery points.")
 
-    created_delivery_points = consents = []
     siren: str = siret2siren(entity.siret)
     after: datetime | None = None if not entity.synced_at else entity.synced_at
 
     qcc = QualiChargeApi()
     stations_list = qcc.manage_stations_list(siren=siren, after=after)
+
+    created_delivery_points, consents = _create_delivery_points_from_stations_list(
+        entity, stations_list
+    )
+    _create_stations_from_station_list(stations_list)
+
+    return created_delivery_points, consents
+
+
+def _create_delivery_points_from_stations_list(
+    entity: Entity, stations_list: list[ManageStationsAdapter]
+) -> tuple[list[DeliveryPoint], list[Consent] | None]:
+    """Creates delivery points and associated consents from a list of stations.
+
+    This function processes a list of stations, extracts unique PDLs (points of
+    delivery), identifies new delivery points that need to be created, and creates
+    them in the database alongside their corresponding consents. Existing delivery
+    points are excluded based on their provider-assigned IDs. The function then
+    updates the `synced_at` timestamp of the associated entity.
+
+    Parameters:
+        entity (Entity): The entity to which the delivery points are associated.
+        stations_list (list[ManageStationsAdapter]): List of station data from
+            which delivery points will be created. Each item represents details of
+            a station.
+
+    Returns:
+        tuple:
+            A tuple containing:
+            - list[DeliveryPoint]: A list of newly created delivery points.
+            - list[Consent] | None: A list of associated consents if any were
+              created. Returns None if no consents were created.
+    """
+    created_delivery_points = consents = []
 
     # retrieve only unique PDLs from the station list
     pdls_in_stations_list = list(
@@ -135,3 +169,52 @@ def sync_delivery_points_from_qualicharge_api(
     entity.save(update_fields=["synced_at"])
 
     return created_delivery_points, consents
+
+
+def _create_stations_from_station_list(
+    stations_list: list[ManageStationsAdapter],
+) -> list[Station]:
+    """Create stations from station list.
+
+    Creates new stations from a given list of station adapter objects if they do not
+    already exist in the database. It ensures that each new station is associated with
+    its corresponding delivery point.
+
+    Parameters:
+        stations_list (list[ManageStationsAdapter]): A list of station adapter objects
+            containing information about the stations to be processed.
+
+    Returns:
+        list[Station]: A list of Station objects that have been newly created in the
+            database.
+    """
+    created_stations = []
+
+    # get existing stations
+    existing_stations = Station.objects.filter(
+        id_station_itinerance__in=[st.id_station_itinerance for st in stations_list]
+    ).values_list("id_station_itinerance", flat=True)
+
+    # Preload all necessary DeliveryPoints
+    delivery_points_dict = {
+        dp.provider_assigned_id: dp
+        for dp in DeliveryPoint.objects.filter(
+            provider_assigned_id__in=[station.num_pdl for station in stations_list]
+        )
+    }
+
+    # deduce stations that should be created
+    stations_to_create = [
+        Station(
+            id_station_itinerance=station.id_station_itinerance,
+            station_name=station.nom_station,
+            delivery_point=delivery_points_dict.get(station.num_pdl),
+        )
+        for station in stations_list
+        if station.id_station_itinerance not in existing_stations
+    ]
+
+    if stations_to_create:
+        created_stations = Station.objects.bulk_create(stations_to_create)
+
+    return created_stations

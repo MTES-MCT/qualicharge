@@ -24,7 +24,7 @@ and this project adheres to
 - add mass admin action to validate users
 - add core app with `Entity` and `DeliveryPoint` models
 - add admin integration for `Entity`, `DeliveryPoint` and `Station`
-- add a helper function to sync delivery points from the QualiCharge API 
+- add a helper function to sync delivery points and stations from the QualiCharge API 
 - add a helper function to retrieve company information from its SIRET using the 
 "Annuaire des Entreprises" API
 - add validators for SIRET, SIREN, NAF code and Zip code

@@ -14,11 +14,39 @@ from apps.core.annuaire_entreprise_api.adapters import (
 )
 from apps.core.factories import EntityFactory
 from apps.core.helpers import (
-    sync_delivery_points_from_qualicharge_api,
     sync_entity_from_siret,
+    sync_from_qualicharge_api,
 )
-from apps.core.models import DeliveryPoint, Entity
+from apps.core.models import DeliveryPoint, Entity, Station
 from apps.core.qualicharge_api.adapters import ManageStationsAdapter
+
+# Simulate QualiCharge API response
+MOCK_RESPONSE = [
+    ManageStationsAdapter(
+        id_station_itinerance="FR073P01STATIONA",
+        nom_station="Station A",
+        num_pdl="50088800000000",
+        updated_at="2025-03-12T15:49:43.477800Z",
+    ),
+    ManageStationsAdapter(
+        id_station_itinerance="FR073P02STB",
+        nom_station="Station B",
+        num_pdl="50088800000001",
+        updated_at="2025-03-12T15:49:43.477800Z",
+    ),
+    ManageStationsAdapter(
+        id_station_itinerance="FR073P02STC",
+        nom_station="Station C",
+        num_pdl="50088800000002",
+        updated_at="2025-03-12T15:49:43.477800Z",
+    ),
+    ManageStationsAdapter(
+        id_station_itinerance="FR073P02STC2",
+        nom_station="Station C2",
+        num_pdl="50088800000002",
+        updated_at="2025-03-12T15:49:43.477800Z",
+    ),
+]
 
 
 class MockCompanyInfo(CompanyInformationAdapter):
@@ -113,39 +141,13 @@ def test_create_deliverypoint_from_qualicharge_api(mock_qualicharge_api):
     assert Entity.objects.all().count() == 1
     assert DeliveryPoint.objects.all().count() == 0
     assert Consent.objects.all().count() == 0
+    assert Station.objects.all().count() == 0
 
-    # Simulate API response
-    mock_response = [
-        ManageStationsAdapter(
-            id_station_itinerance="FR073P01STATIONA",
-            nom_station="Station A",
-            num_pdl="50088800000000",
-            updated_at="2025-03-12T15:49:43.477800Z",
-        ),
-        ManageStationsAdapter(
-            id_station_itinerance="FR073P02STB",
-            nom_station="Station B",
-            num_pdl="50088800000001",
-            updated_at="2025-03-12T15:49:43.477800Z",
-        ),
-        ManageStationsAdapter(
-            id_station_itinerance="FR073P02STB",
-            nom_station="Station B",
-            num_pdl="50088800000002",
-            updated_at="2025-03-12T15:49:43.477800Z",
-        ),
-        ManageStationsAdapter(
-            id_station_itinerance="FR073P02STC",
-            nom_station="Station b2",
-            num_pdl="50088800000002",
-            updated_at="2025-03-12T15:49:43.477800Z",
-        ),
-    ]
     # mock ManageStationClient.list()
-    mock_qualicharge_api.return_value.manage_stations_list.return_value = mock_response
+    mock_qualicharge_api.return_value.manage_stations_list.return_value = MOCK_RESPONSE
 
     # create new delivery points should be ok
-    delivery_points, consents = sync_delivery_points_from_qualicharge_api(entity)
+    delivery_points, consents = sync_from_qualicharge_api(entity)
 
     expected_count = 3
     assert len(delivery_points) == expected_count
@@ -189,8 +191,59 @@ def test_create_deliverypoint_from_qualicharge_api(mock_qualicharge_api):
     assert entity.synced_at is not None
 
     # run function with same delivery points should not create new delivery points.
-    delivery_points, consents = sync_delivery_points_from_qualicharge_api(entity)
+    delivery_points, consents = sync_from_qualicharge_api(entity)
     assert delivery_points == []
     assert consents == []
     assert DeliveryPoint.objects.all().count() == expected_delivery_points_count
     assert Consent.objects.all().count() == expected_delivery_points_count
+
+
+@pytest.mark.django_db
+@patch("apps.core.helpers.QualiChargeApi")
+def test_create_station_from_qualicharge_api(mock_qualicharge_api):
+    """Test create station from QualiCharge API."""
+    entity = EntityFactory(siret="30119246401234")
+    assert Station.objects.all().count() == 0
+
+    # mock ManageStationClient.list()
+    mock_qualicharge_api.return_value.manage_stations_list.return_value = MOCK_RESPONSE
+
+    # create new stations should be ok
+    sync_from_qualicharge_api(entity)
+
+    # 4 stations should be created
+    assert Station.objects.all().count() == 4  # noqa: PLR2004
+
+    # check created stations
+    mock_st1 = Mock(
+        id_station_itinerance="FR073P01STATIONA",
+        nom_station="Station A",
+        num_pdl="50088800000000",
+    )
+    mock_st2 = Mock(
+        id_station_itinerance="FR073P02STB",
+        nom_station="Station B",
+        num_pdl="50088800000001",
+    )
+    mock_st3 = Mock(
+        id_station_itinerance="FR073P02STC",
+        nom_station="Station C",
+        num_pdl="50088800000002",
+    )
+    mock_st4 = Mock(
+        id_station_itinerance="FR073P02STC2",
+        nom_station="Station C2",
+        num_pdl="50088800000002",
+    )
+    stations = Station.objects.all()
+    expected_station_created = [mock_st1, mock_st2, mock_st3, mock_st4]
+    for station, expected in zip(stations, expected_station_created, strict=True):
+        assert station.id_station_itinerance == expected.id_station_itinerance
+        assert station.station_name == expected.nom_station
+        assert station.delivery_point.provider_assigned_id == expected.num_pdl
+
+    entity.refresh_from_db()
+    assert entity.synced_at is not None
+
+    # run function with same delivery points should not create new stations.
+    assert Station.objects.all().count() == 4  # noqa: PLR2004
