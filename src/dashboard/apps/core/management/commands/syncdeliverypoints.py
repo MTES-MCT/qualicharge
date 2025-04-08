@@ -7,7 +7,7 @@ from django.db.models import QuerySet
 
 from apps.consent.helpers import send_notification_for_awaiting_consents
 from apps.consent.models import Consent
-from apps.core.helpers import sync_delivery_points_from_qualicharge_api
+from apps.core.helpers import sync_from_qualicharge_api
 from apps.core.management.commands.base_command import DashboardBaseCommand
 from apps.core.models import DeliveryPoint, Entity
 
@@ -59,9 +59,7 @@ class Command(DashboardBaseCommand):
         for entity in entities:
             self._log_notice(f"⚙️ Processing SIRET: {entity.siret}...")
             try:
-                delivery_points, consents = sync_delivery_points_from_qualicharge_api(
-                    entity
-                )
+                delivery_points, consents = sync_from_qualicharge_api(entity)
             except Exception as e:
                 sentry_sdk.capture_exception(e)
                 self._log_error(

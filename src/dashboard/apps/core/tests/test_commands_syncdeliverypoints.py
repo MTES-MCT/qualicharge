@@ -11,7 +11,7 @@ from apps.core.models import Entity
 
 @pytest.mark.django_db
 def test_sync_delivery_points_invoked_on_entities(monkeypatch):
-    """Tests `sync_delivery_points_from_qualicharge_api` is called for each entity."""
+    """Tests `sync_from_qualicharge_api` is called for each entity."""
     # Create entities
     assert Entity.objects.all().count() == 0
     entity_1 = EntityFactory()
@@ -21,7 +21,7 @@ def test_sync_delivery_points_invoked_on_entities(monkeypatch):
 
     mock_sync = MagicMock()
     monkeypatch.setattr(
-        "apps.core.management.commands.syncdeliverypoints.sync_delivery_points_from_qualicharge_api",
+        "apps.core.management.commands.syncdeliverypoints.sync_from_qualicharge_api",
         mock_sync,
     )
 
@@ -53,11 +53,9 @@ def test_sync_delivery_points_invoked_on_entities(monkeypatch):
 
 
 @pytest.mark.django_db
-@patch(
-    "apps.core.management.commands.syncdeliverypoints.sync_delivery_points_from_qualicharge_api"
-)
+@patch("apps.core.management.commands.syncdeliverypoints.sync_from_qualicharge_api")
 def test_sync_delivery_points_handles_exception(mock_sync_dp):
-    """Tests exceptions in `sync_delivery_points_from_qualicharge_api` are handled."""
+    """Tests exceptions in `sync_from_qualicharge_api` are handled."""
     assert Entity.objects.all().count() == 0
     EntityFactory()
     assert Entity.objects.all().count() == 1
@@ -76,9 +74,7 @@ def test_sync_delivery_points_handles_exception(mock_sync_dp):
 
 
 @pytest.mark.django_db
-@patch(
-    "apps.core.management.commands.syncdeliverypoints.sync_delivery_points_from_qualicharge_api"
-)
+@patch("apps.core.management.commands.syncdeliverypoints.sync_from_qualicharge_api")
 def test_sync_delivery_points_no_entities(mock_sync_dp):
     """Tests that the command is not called when there are no entities."""
     assert Entity.objects.all().count() == 0

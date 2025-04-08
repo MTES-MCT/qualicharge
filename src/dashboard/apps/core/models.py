@@ -180,9 +180,7 @@ class Entity(DashboardBase):
 
         for consent in consents:
             stations_grouped = defaultdict(list)
-            for station in consent.delivery_point.stations.all().order_by(
-                "station_name", "id_station_itinerance"
-            ):
+            for station in consent.delivery_point.stations.all():
                 stations_grouped[station.station_name].append(
                     station.id_station_itinerance
                 )
@@ -190,7 +188,14 @@ class Entity(DashboardBase):
             consent.stations_grouped = dict(stations_grouped)
             structured_consents.append(consent)
 
-        return structured_consents
+        sorted_consents = sorted(
+            structured_consents,
+            key=lambda x: (
+                list(x.stations_grouped.keys())[0].lower() if x.stations_grouped else ""
+            ),
+        )
+
+        return sorted_consents
 
     def get_awaiting_consents_stations_grouped(self) -> list[Consent] | None:
         """Get all awaiting consents for this entity with grouped stations."""
