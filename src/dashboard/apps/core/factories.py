@@ -66,17 +66,9 @@ class StationFactory(factory.django.DjangoModelFactory):
     @factory.lazy_attribute
     def id_station_itinerance(self):
         """Generate a random ID for the station."""
-        entity_name = self.delivery_point.entity.name
-
-        short_name = (
-            entity_name[:3].upper()
-            if len(entity_name) > 3  # noqa: PLR2004
-            else entity_name.upper()
-        )
-
+        short_name = fake.bothify(text="???", letters="ABCDEFGHIJKLMNOPQRSTUVWXYZ")
         base_id = fake.bothify(
             text=f"FR{short_name}P#####",
-            letters="ABCDEFGHIJKLMNOPQRSTUVWXYZ",
         )
 
         return base_id

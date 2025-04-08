@@ -1,4 +1,4 @@
-{% load i18n %}
+{% load i18n consent_filters %}
 
 {% comment %}
     Note: all texts of this page are intended to appear in a contract and must
@@ -38,10 +38,7 @@
                   </div>
                 </th>
                 <th scope="col">
-                  <div class="fr-cell__title">Nom de la station</div>
-                </th>
-                <th scope="col">
-                  <div class="fr-cell__title">Identifiant de la station</div>
+                  <div class="fr-cell__title">Noms et Identifiants de station</div>
                 </th>
                 <th scope="col">
                   <div class="fr-cell__title">Identifiant du PDL</div>
@@ -53,7 +50,7 @@
             </thead>
 
             <tbody>
-              {% for consent in consents %}
+              {% for consent in consents|sort_by_station %}
                 <tr id="table-prm-row-key-{{ forloop.counter }}"
                     data-row-key="{{ forloop.counter }}"
                     aria-labelledby="row-label-{{ forloop.counter }}"
@@ -90,13 +87,17 @@
                         {% elif consent.status == "AWAITING" %}
                           title="Point de livraison en attente de validation."
                         {% endif %}>
-                        Sélectionner le PDL {{ consent.delivery_point.provider_assigned_id }}
+                        Sélectionner le PDL {{ consent.provider_assigned_id }}
                       </label>
                     </div>
                   </th>
-                  <td> {{ consent.delivery_point.station_name }} </td>
-                  <td> {{ consent.delivery_point.id_station_itinerance }}  </td>
-                  <td> {{ consent.delivery_point.provider_assigned_id }} </td>
+                  <td>
+                    {% for station_name, ids in consent.stations_grouped.items %}
+                      {% if forloop.counter0 > 0 %}<br />{% endif %}
+                      {{ station_name }} {% if ids %}({{ ids|join:", " }}){% endif %}
+                    {% endfor %}
+                  </td>
+                  <td> {{ consent.provider_assigned_id }}</td>
                   <td> du {{ consent.start|date:'d/m/Y' }} au {{ consent.end|date:'d/m/Y' }} </td>
                 </tr>
               {% endfor %}
@@ -109,7 +110,7 @@
     <div class="fr-table__footer">
       <div class="fr-table__footer--start">
         <p class="fr-table__detail">
-          <span id="checked-count">0</span> / {{ consents.count }} sélectionné(s)
+          <span id="checked-count">0</span> / {{ consents|length }} sélectionné(s)
         </p>
       </div>
     </div>
