@@ -6,7 +6,7 @@ from http import HTTPStatus
 from unittest.mock import MagicMock, patch
 
 import pytest
-from django.conf import settings
+from django.conf import settings as django_settings
 from django.core.exceptions import PermissionDenied
 from django.http import Http404
 from django.urls import reverse
@@ -101,7 +101,7 @@ def test_bulk_update_consent_status(rf, patch_timezone_now):  # noqa: PLR0915
     assert all(c == VALIDATED for c in Consent.objects.values_list("status", flat=True))
     for c in Consent.objects.all():
         assert c.signed_at == FAKE_TIME
-        assert c.signature_location == settings.CONSENT_SIGNATURE_LOCATION
+        assert c.signature_location == django_settings.CONSENT_SIGNATURE_LOCATION
 
         # check company data are present in company json field
         assert c.company is not None
@@ -124,7 +124,7 @@ def test_bulk_update_consent_status(rf, patch_timezone_now):  # noqa: PLR0915
 
         # check control authority data are presents
         assert c.control_authority is not None
-        control_authority = settings.CONSENT_CONTROL_AUTHORITY
+        control_authority = django_settings.CONSENT_CONTROL_AUTHORITY
         assert c.control_authority["name"] == control_authority["name"]
         assert (
             c.control_authority["represented_by"] == control_authority["represented_by"]
@@ -440,12 +440,15 @@ def test_templates_render_html_content_with_consents(rf, settings):
     # check the context
     assert Consent.objects.count() == size + 1
     consents = entity.get_consents()
-    assert consents.count() == size
+    assert len(consents) == size
 
     context = view.get_context_data()
     assert context["entity"] == entity
     assert len(context["consents"]) == size
-    assert list(context["consents"]) == list(consents)
+    for c, o in zip(context["consents"], consents, strict=True):
+        assert c.id == o.id
+        assert c.status == o.status
+        assert c.delivery_point == o.delivery_point
 
     # get response object
     response = view.dispatch(request)
@@ -456,7 +459,7 @@ def test_templates_render_html_content_with_consents(rf, settings):
     html = rendered.content.decode()
 
     assert (entity.name in html) is True
-    assert all(str(dl.id) in html for dl in consents)
+    assert all(str(c.id) in html for c in consents)
 
 
 @pytest.mark.django_db
@@ -576,7 +579,7 @@ def test_send_email_notification_populated(rf):
         email_send_mock = mock_message.return_value.send
         view._send_email()
 
-        email_config = settings.DASHBOARD_EMAIL_CONFIGS["consent_validation"]
+        email_config = django_settings.DASHBOARD_EMAIL_CONFIGS["consent_validation"]
         mock_message.assert_called_once_with(
             to=[user.email],
             template_id=email_config.get("template_id"),
@@ -646,9 +649,11 @@ def test_get_validated_consents_return_queryset(rf):
     # we expected to retrieve only the 2 VALIDATED consents in the result
     result = view.get_queryset()
     assert len(result) == expected_validated_consent
-    assert consent1 in result
-    assert consent2 in result
-    assert consent3 not in result
+
+    consent_ids = [consent.id for consent in result]
+    assert consent1.id in consent_ids
+    assert consent2.id in consent_ids
+    assert consent3.id not in consent_ids
 
 
 @pytest.mark.django_db
@@ -772,7 +777,7 @@ def test_upcoming_consent_form_get_context_data(rf):
     DeliveryPointFactory.create_batch(size, entity=entity)
 
     # upcoming consent limit
-    settings.CONSENT_UPCOMING_DAYS_LIMIT = 30
+    django_settings.CONSENT_UPCOMING_DAYS_LIMIT = 30
 
     # create upcoming consents in futur period (+30 days)
     dp = DeliveryPoint.objects.first()
@@ -787,12 +792,15 @@ def test_upcoming_consent_form_get_context_data(rf):
     # check the context
     assert Consent.objects.count() == size + 1
     upcoming_consents = entity.get_upcoming_consents()
-    assert upcoming_consents.count() == 1
+    assert len(upcoming_consents) == 1
 
     context = view.get_context_data()
     assert context["entity"] == entity
     assert len(context["consents"]) == 1
-    assert list(context["consents"]) == list(upcoming_consents)
+    for c, o in zip(context["consents"], upcoming_consents, strict=True):
+        assert c.id == o.id
+        assert c.status == o.status
+        assert c.delivery_point == o.delivery_point
 
 
 @pytest.mark.django_db
@@ -839,7 +847,7 @@ def test_upcoming_consent_form_get_awaiting_ids(rf):
     assert Consent.objects.count() == size
 
     # upcoming consent limit
-    settings.CONSENT_UPCOMING_DAYS_LIMIT = 30
+    django_settings.CONSENT_UPCOMING_DAYS_LIMIT = 30
 
     # create upcoming consents in futur period (+30 days)
     for dp in DeliveryPoint.objects.all():

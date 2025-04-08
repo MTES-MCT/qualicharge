@@ -1,8 +1,6 @@
 {% extends "consent/base.html" %}
 
-{% load dsfr_tags %}
-
-{% load i18n static %}
+{% load consent_filters dsfr_tags i18n static %}
 
 {% block dashboard_content %}
   <h2>Stations suivies</h2>
@@ -24,10 +22,7 @@
               <thead>
                 <tr>
                   <th scope="col">
-                    <div class="fr-cell__title">Nom de la station</div>
-                  </th>
-                  <th scope="col">
-                    <div class="fr-cell__title">Identifiant de la station</div>
+                    <div class="fr-cell__title">Noms et Identifiants de station</div>
                   </th>
                   <th scope="col">
                     <div class="fr-cell__title">Identifiant du PDL</div>
@@ -39,14 +34,18 @@
               </thead>
 
               <tbody>
-                {% for consent in consents %}
+                {% for consent in consents|sort_by_station %}
                   <tr id="table-pdl-row-key-{{ forloop.counter }}"
                       data-row-key="{{ forloop.counter }}"
                       aria-labelledby="row-label-{{ forloop.counter }}">
 
-                    <td> {{ consent.delivery_point.station_name }} </td>
-                    <td> {{ consent.delivery_point.id_station_itinerance }} </td>
-                    <td> {{ consent.delivery_point.provider_assigned_id }} </td>
+                    <td>
+                      {% for station_name, ids in consent.stations_grouped.items %}
+                        {% if forloop.counter0 > 0 %}<br />{% endif %}
+                        {{ station_name }} {% if ids %}({{ ids|join:", " }}){% endif %}
+                      {% endfor %}
+                    </td>
+                    <td> {{ consent.provider_assigned_id }} </td>
                     <td>
                       du {{ consent.start|date:'d/m/Y' }} au {{ consent.end|date:'d/m/Y' }} </td>
                   </tr>

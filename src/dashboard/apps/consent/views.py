@@ -1,5 +1,7 @@
 """Dashboard consent app views."""
 
+from typing import Any
+
 import sentry_sdk
 from anymail.exceptions import AnymailRequestsAPIError
 from anymail.message import AnymailMessage
@@ -77,7 +79,7 @@ class ConsentFormView(BaseView, FormView):
 
         return initial
 
-    def form_valid(self, form):
+    def form_valid(self, form) -> HttpResponse:
         """Update the consent status.
 
         Bulk update of the consent status:
@@ -105,10 +107,11 @@ class ConsentFormView(BaseView, FormView):
 
     def get_context_data(self, **kwargs):
         """Add context data for the view."""
+        entity = self._get_entity()
         context = super().get_context_data(**kwargs)
         context["control_authority"] = settings.CONSENT_CONTROL_AUTHORITY
-        context["entity"] = self._get_entity()
-        context["consents"] = self._get_entity().get_consents()
+        context["entity"] = entity
+        context["consents"] = entity.get_awaiting_consents()
         context["signature_location"] = settings.CONSENT_SIGNATURE_LOCATION
 
         return context
@@ -319,7 +322,7 @@ class ValidatedConsentView(BaseView, ListView):
     ]
     breadcrumb_current = _("Followed stations")
 
-    def get_queryset(self):
+    def get_queryset(self) -> Any:
         """Filter queryset to only return validated consents for the current user.
 
         Returns:
@@ -350,7 +353,7 @@ class UpcomingConsentFormView(ConsentFormView):
         We need to only retrieve upcoming consents.
         """
         context = super().get_context_data(**kwargs)
-        context["consents"] = self._get_entity().get_upcoming_consents()
+        context["consents"] = context["entity"].get_upcoming_consents()
 
         return context
 

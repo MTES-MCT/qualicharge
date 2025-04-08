@@ -11,7 +11,7 @@ from apps.auth.factories import UserFactory
 from apps.consent import AWAITING, VALIDATED
 from apps.consent.factories import ConsentFactory
 from apps.consent.models import Consent
-from apps.core.factories import DeliveryPointFactory, EntityFactory
+from apps.core.factories import DeliveryPointFactory, EntityFactory, StationFactory
 from apps.core.models import Entity
 
 
@@ -498,3 +498,54 @@ def test_get_consents_shortcuts(settings):
     assertQuerySetEqual(entity1.get_upcoming_consents(), [c_upcoming_1])
     assertQuerySetEqual(entity2.get_upcoming_consents(), [])
     assertQuerySetEqual(entity3.get_upcoming_consents(), [])
+
+
+@pytest.mark.django_db
+def test_get_linked_stations():
+    """Test get_linked_stations return grouped stations by station_name."""
+    assert Consent.objects.count() == 0
+
+    # 1 - create entity, delivery points, consents and one station
+    entity1 = EntityFactory()
+    dp_1 = DeliveryPointFactory(entity=entity1)
+    StationFactory(
+        delivery_point=dp_1, station_name="Station A", id_station_itinerance="FRABCP01"
+    )
+
+    # test stations grouped with a unique station
+    result = dp_1.get_linked_stations()
+    expected_grouping = {"Station A": ["FRABCP01"]}
+    assert result == expected_grouping
+
+    # 2 -create entity, delivery points, consents and many stations
+    entity2 = EntityFactory()
+    dp_2 = DeliveryPointFactory(entity=entity2)
+    StationFactory(
+        delivery_point=dp_2, station_name="Station B", id_station_itinerance="FRABCP02"
+    )
+    StationFactory(
+        delivery_point=dp_2, station_name="Station B", id_station_itinerance="FRABCP03"
+    )
+    StationFactory(
+        delivery_point=dp_2, station_name="Station B", id_station_itinerance="FRABCP04"
+    )
+    StationFactory(
+        delivery_point=dp_2, station_name="Station C", id_station_itinerance="FRABCP05"
+    )
+
+    # test stations grouped with many stations
+    result2 = dp_2.get_linked_stations()
+    expected_grouping = {
+        "Station B": ["FRABCP02", "FRABCP03", "FRABCP04"],
+        "Station C": ["FRABCP05"],
+    }
+    assert result2 == expected_grouping
+
+    # 3 - create entity, delivery points, consents but without station
+    entity3 = EntityFactory()
+    dp_3 = DeliveryPointFactory(entity=entity3)
+
+    # test stations grouped without station
+    result3 = dp_3.get_linked_stations()
+    expected_grouping = {}
+    assert result3 == expected_grouping
