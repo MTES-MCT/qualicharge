@@ -10,6 +10,8 @@ from prefect.task_runners import ThreadPoolTaskRunner
 from sqlalchemy.orm import Session
 
 from indicators.conf import settings
+
+# from indicators.db import get_api_db_engine
 from indicators.db import get_indicators_db_engine
 from indicators.models import IndicatorPeriod, IndicatorTimeSpan, PeriodDuration
 from indicators.strategy import STRATEGY
@@ -163,7 +165,7 @@ def to_historicization_up(
 
 @flow(
     task_runner=ThreadPoolTaskRunner(max_workers=settings.THREAD_POOL_MAX_WORKERS),
-    flow_run_name="meta-up-{to_period.value}-{start:%y-%m-%d}",
+    flow_run_name="meta-up-{to_period.value}{offset}",
 )
 def calculate(  # noqa: PLR0913
     environment: Environment,
@@ -178,9 +180,9 @@ def calculate(  # noqa: PLR0913
     init_period = (
         datetime.now()
         if not offset and start is None
-        else get_period_start_from_pit(start, offset, period)
+        else get_period_start_from_pit(start, offset, to_period)
     )
-    final_timespan = IndicatorTimeSpan(start=init_period, period=to_period)
+    final_timespan = IndicatorTimeSpan(period=to_period.value, start=init_period)
     query_params = {
         "environment": environment,
         "period": period.value,

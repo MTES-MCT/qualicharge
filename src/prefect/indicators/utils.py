@@ -31,13 +31,11 @@ POWER_RANGE_CTE: dict = {
 }
 
 
-# @typing.no_type_check
-# type: ignore[arg-type]
-def get_period_start_from_pit(  # type: ignore[arg-type]  # noqa: PLR0911
+def get_period_start_from_pit(  # noqa: PLR0911
     pit: datetime | None = None,
     offset: int = 0,
     period: IndicatorPeriod = IndicatorPeriod.DAY,
-) -> datetime:  # type: ignore[arg-type]
+) -> datetime:
     """Return the starting datetime of a period given a point in time (PIT) definition and an offset."""  # noqa: E501
     first_minute = {"minute": 0, "second": 0, "microsecond": 0}
     first_hour = first_minute | {"hour": 0}
