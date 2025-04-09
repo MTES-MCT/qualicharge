@@ -181,7 +181,7 @@ def test_to_historicization_up_extras():
     assert df["value"].equals(df["mean"])
 
 
-def test_flow_up_calculate(db_connection):
+def test_flow_up_calculate():
     """Test the `calculate` flow."""
     indicators = i1.calculate(
         Environment.TEST,
@@ -192,8 +192,8 @@ def test_flow_up_calculate(db_connection):
         persist=True,
     )
     histo_up = up.calculate(
-        Environment.TEST,
-        IndicatorPeriod.MONTH,
+        environment=Environment.TEST,
+        to_period=IndicatorPeriod.MONTH,
         start=TIMESPAN.start,
         offset=0,
         period=IndicatorPeriod.DAY,
@@ -228,8 +228,8 @@ def test_flow_calculate_persistence(indicators_db_engine):
         persist=True,
     )
     up.calculate(
-        Environment.TEST,
-        IndicatorPeriod.MONTH,
+        environment=Environment.TEST,
+        to_period=IndicatorPeriod.MONTH,
         start=TIMESPAN.start,
         offset=0,
         period=IndicatorPeriod.DAY,
@@ -242,3 +242,18 @@ def test_flow_calculate_persistence(indicators_db_engine):
         """
         result = connection.execute(text(query))
         assert result.one()[0] == len(indicators)
+
+
+def test_flow_calculate_up_with_start_none(indicators_db_engine):
+    """Test the `calculate` flow with start=None."""
+    i1.calculate(
+        Environment.TEST,
+        levels=[Level.NATIONAL],
+        start=TIMESPAN.start,
+        period=IndicatorPeriod.DAY,
+        persist=True,
+    )
+    with indicators_db_engine.connect():
+        assert isinstance(
+            up.calculate(Environment.TEST, to_period=IndicatorPeriod.WEEK), pd.DataFrame
+        )
