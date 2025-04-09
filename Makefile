@@ -70,7 +70,8 @@ bootstrap: \
   seed-dashboard \
   jupytext--to-ipynb \
   run-api \
-  seed-api
+  seed-api \
+  post-deploy-prefect
 .PHONY: bootstrap
 
 bootstrap-api: ## bootstrap the api service
@@ -315,6 +316,8 @@ post-deploy-prefect:  ## run prefect post-deployment script
 	@$(COMPOSE_UP) --wait prefect
 	@echo "Running postdeploy script for prefect service…"
 	@$(COMPOSE) exec prefect pipenv run honcho start postdeploy
+	@echo "Creating all deployments…"
+	@$(COMPOSE) exec -T prefect pipenv run ./prefect-deploy-all.sh
 .PHONY: post-deploy-prefect
 
 create-api-superuser: ## create api super user
