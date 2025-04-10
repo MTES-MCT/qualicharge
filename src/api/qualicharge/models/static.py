@@ -67,18 +67,20 @@ class FrenchPhoneNumber(PhoneNumber):
 def to_coordinates_tuple(value):
     """Convert input string to a Coordinate tuple.
 
-    Two string formats are supported:
+    Three string formats are supported:
 
     1. "[longitude: float, latitude: float]"
     2. "POINT(longitude latitude)"
+    3. "SRID=0000;POINT(longitude latitude)"
 
-    In both cases, the input string is converted to a reversed tuple
+    In all cases, the input string is converted to a reversed tuple
     (latitude: float, longitude: float) that will be used as Coordinate input.
     """
     if not isinstance(value, str):
         return value
     if m := re.match(
-        r"POINT\((?P<longitude>-?\d+\.\d+) (?P<latitude>-?\d+\.\d+)\)", value
+        r"(?:SRID=\d{4};)?POINT\((?P<longitude>-?\d+\.\d+) (?P<latitude>-?\d+\.\d+)\)",
+        value,
     ):
         return (m["latitude"], m["longitude"])
     return tuple(reversed(json.loads(value)))

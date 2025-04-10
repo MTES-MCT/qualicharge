@@ -19,6 +19,11 @@ and this project adheres to
 - Upgrade sentry-sdk to `2.25.0`
 - Upgrade setuptools to `78.1.0`
 
+### Fixed
+
+- Update `Localisation` discriminating field to `coordonneesXY` for
+  statique-related helpers
+
 ## [0.20.0] - 2025-03-19
 
 ### Added
