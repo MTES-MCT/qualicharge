@@ -5,6 +5,7 @@ I1: the number of publicly open points of charge.
 
 from datetime import datetime
 
+import pandas as pd
 import pytest  # type: ignore
 from sqlalchemy import text
 
@@ -104,6 +105,11 @@ def test_flow_calculate_persistence(indicators_db_engine):
     with indicators_db_engine.connect() as connection:
         result = connection.execute(text("SELECT COUNT(*) FROM test WHERE code = 'i1'"))
         assert result.one()[0] == len(indicators)
+
+
+def test_flow_calculate_with_start_none():
+    """Test the `calculate` flow with start=None."""
+    assert isinstance(i1.calculate(Environment.TEST, [Level.NATIONAL]), pd.DataFrame)
 
 
 # query used to get N_LEVEL
