@@ -21,6 +21,12 @@ and this project adheres to
 
 ### Added
 
+- add `renewable` app
+
+## [Unreleased]
+
+### Added
+
 - bootstrap dashboard project
 - add a base view combining mixins for consistency
 - add dashboard homepage
