@@ -64,6 +64,7 @@ INSTALLED_APPS = [
     "apps.core",
     "apps.home",
     "apps.consent",
+    "apps.renewable",
 ]
 
 MIDDLEWARE = [
