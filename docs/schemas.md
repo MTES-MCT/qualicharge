@@ -29,10 +29,51 @@ QualiCharge's API:
 The Qualicharge API **will not** accept \* nor any usual separator. Make sure to
 remove all separators before sending IDs through the API.
 
+### Discrepencies with the official schema
+
+For control-purpose, some optional fields of the official schema are
+**required** for QualiCharge API. Discrepencies are listed in the table below:
+
+| name                  | API type                                                        | Rule N° |                                                               Rule |
+| --------------------- | --------------------------------------------------------------- | :-----: | -----------------------------------------------------------------: |
+| `code_insee_commune`  | [Official dataset](https://www.insee.fr/fr/information/7766585) |    2    |                 Should be referenced in the official INSEE dataset |
+| `nom_operateur`       | String                                                          |    6    |                                                Should not be empty |
+| `telephone_operateur` | French phone number                                             |    6    |                                                Should not be empty |
+| `contact_amenageur`   | Email string                                                    |    7    |                                                Should not be empty |
+| `nom_amenageur`       | String                                                          |    7    |                                                Should not be empty |
+| `siren_amenageur`     | 9-integers string                                               |    7    |                                                Should not be empty |
+| `num_pdl`             | Max 64-characters string                                        |   20    |                                                Should not be empty |
+|                       |                                                                 |   34    | Should match energy supplier pattern (_e.g._ 14 digits for ENEDIS) |
+
+> The rule number corresponds to our data-quality control referencial.
+
+### Extra quality controls
+
+Rules for statique data fields:
+
+| name                    | API type                              | Rule N° |                                                   Rule |
+| ----------------------- | ------------------------------------- | :-----: | -----------------------------------------------------: |
+| `id_pdc_itinerance`     | EVSE AFIREV-based pattern             |   24    |              Must match AFIREV pattern (`FRXXXEXXXXX`) |
+| `id_station_itinerance` | Pool AFIREV-based pattern             |   23    |              Must match AFIREV pattern (`FRXXXPXXXXX`) |
+| `coordonneesXY`         | `"[longitude,latitude]"` array string |    3    | Coordinates should be included in the French territory |
+| `puissance_nominale`    | Positive float                        |    1    |                         Must be **lower than 4000 kW** |
+|                         |                                       |   39    |                        Must be **greater than 1.3 kW** |
+
+Specific rules applies for submitted datasets consistency:
+
+| Rule N° | Rule                                                                                                                                  |
+| :------ | :------------------------------------------------------------------------------------------------------------------------------------ |
+| 30      | A station should associated with less than **50** charging points                                                                     |
+| 46      | The number of stations per location should be less than **1.5**                                                                       |
+| 47      | The difference between the number of charging points per station and the `nbre_pdc` value should be less than **20%**                 |
+| 48      | Two stations with identical first 5 characters of the `id_station_itinerance` should not be associated with two different operators   |
+
+> The rule number corresponds to our data-quality control referencial.
+
 ### Consistency rules for batch submissions (bulk endpoint)
 
-When sending a set of static data, using the dedicated `POST /statique/bulk` endpoint,
-consistency rules applies!
+When sending a set of static data, using the dedicated `POST /statique/bulk`
+endpoint, consistency rules applies!
 
 - **Consistency rule one**: given a particular `id_station_itinerance`, we
   expect the following fields to be identical:
@@ -85,6 +126,22 @@ French 🇫🇷) at:
 
 > :bulb: This standard may also evolve in a near future. Stay tuned!
 
+### Extra quality controls
+
+| name         | API type       | Rule N° |                                                                         Rule |
+| ------------ | -------------- | :-----: | ---------------------------------------------------------------------------: |
+| `horodatage` | Past date-time |   43    | Freshness should be lower than _5 minutes_ (compared to the submission date) |
+
+Specific rules applies for submitted datasets consistency:
+
+| Rule N° | Rule                                                                                                                            |
+| :------ | :------------------------------------------------------------------------------------------------------------------------------ |
+| 21      | A status with `occupation_pdc="occupe"` should be associated with a session                                                     |
+| 37      | A status with `etat_pdc="hors_service"` cannot define `occupation_pdc="occupe"` (the later is reserved for charging activities) |
+| 44      | Statuses cannot be duplicated (identical `horodatage` values for a target charging point)                                       |
+
+> The rule number corresponds to our data-quality control referencial.
+
 ### Sessions
 
 Charging sessions are used by QualiCharge along with statuses to assess the
@@ -110,3 +167,26 @@ An exemple JSON-formatted charging session may be serialized as follow:
   "energy": "12.34567"
 }
 ```
+
+### Extra quality controls
+
+| name     | API type       | Rule N° |                                                                       Rule |
+| -------- | -------------- | :-----: | -------------------------------------------------------------------------: |
+| `energy` | Positive float |   11    |                                                 Must be lower than 500 kWh |
+| `start`  | Past date-time |   42    | Freshness should be lower than _15 days_ (compared to the submission date) |
+
+Specific rules applies for submitted datasets consistency:
+
+| Rule N° | Rule                                                                                                                                        |
+| :------ | :------------------------------------------------------------------------------------------------------------------------------------------ |
+| 10      | Sessions cannot overlap                                                                                                                     |
+| 13      | The number of sessions at a charging point should be lower than **50 per day**                                                              |
+| 14      | A session cannot end before it starts                                                                                                       |
+| 15      | A session should last more than **3 days**                                                                                                  |
+| 17      | Sessions cannot be duplicated (identical start/end dates and energy for a target charging point)                                            |
+| 22      | A session should start when a status with `occupation_pdc="occupe"` is issued and end when a status with `occupation_pdc="libre"` is issued |
+| 38      | The energy of a session should not exceed the charging point's nominal power multiplied by the session duration                             |
+| 40      | A session of zero duration cannot have an energy greater than **1 kWh**                                                                     |
+| 41      | The energy cannot exceed twice the charging point's nominal power multiplied by the session duration and cannot be greated than **50 kWh**  |
+
+> The rule number corresponds to our data-quality control referencial.

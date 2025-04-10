@@ -8,6 +8,11 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Changed
+
+- Docs: update data schema restrictions
+- Docs: add usage section
+
 ## [0.21.0] - 2025-04-11
 
 ### Changed
