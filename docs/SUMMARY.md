@@ -3,6 +3,7 @@
 ## API user
 
 * [Data schemas](schemas.md)
+* [Data rules](rules.md)
 * [API usage](user/README.md)
     * [Authentication](user/auth.md)
 
