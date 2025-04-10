@@ -18,6 +18,7 @@ from qualicharge.exceptions import (
 )
 from qualicharge.factories.static import (
     AmenageurFactory,
+    LocalisationFactory,
     StationFactory,
     StatiqueFactory,
 )
@@ -126,6 +127,28 @@ def test_get_or_create_with_multiple_existing_entries(db_session):
         match="Multiple results found for input fields {'nom_amenageur'}",
     ):
         get_or_create(db_session, amenageurs[0], fields={"nom_amenageur"})
+
+
+def test_get_or_create_for_localisation_coordinates(db_session):
+    """Test the get_or_create utility using coordinates."""
+    coordonneesXY = Coordinate(-1.0, 1.0)
+    localisation = LocalisationFactory.build(coordonneesXY=coordonneesXY)
+
+    # Create the localisation
+    status, db_entry = get_or_create(db_session, localisation, fields={"coordonneesXY"})
+    assert status == EntryStatus.CREATED
+    assert db_entry.id == localisation.id
+    assert db_entry.adresse_station == localisation.adresse_station
+    assert db_entry.code_insee_commune == localisation.code_insee_commune
+    assert db_entry.coordonneesXY == localisation.coordonneesXY
+
+    # Get the localisation
+    status, db_entry = get_or_create(db_session, localisation, fields={"coordonneesXY"})
+    assert status == EntryStatus.EXISTS
+    assert db_entry.id == localisation.id
+    assert db_entry.adresse_station == localisation.adresse_station
+    assert db_entry.code_insee_commune == localisation.code_insee_commune
+    assert db_entry.coordonneesXY == localisation.coordonneesXY
 
 
 def test_save_schema_from_statique(db_session):
@@ -247,14 +270,63 @@ def test_update_statique(db_session):
     assert db_statique.station_deux_roues
     assert db_statique.cable_t2_attache
 
-    # We expect to create a new operator that will be linked to this statique
+    # We expect to create a new operator that will be linked to this statique and new
+    # Localisation as we changed the coordinates
     expected = 2
     assert db_session.exec(select(func.count(Operateur.id))).one() == expected
     assert db_session.exec(select(func.count(Enseigne.id))).one() == expected
     assert db_session.exec(select(func.count(Amenageur.id))).one() == expected
-    assert db_session.exec(select(func.count(Localisation.id))).one() == 1
+    assert db_session.exec(select(func.count(Localisation.id))).one() == expected
     assert db_session.exec(select(func.count(Station.id))).one() == 1
     assert db_session.exec(select(func.count(PointDeCharge.id))).one() == 1
+
+
+def test_update_statique_localisation_unique_contraints(db_session):
+    """Test update_statique localisation unique constraints management.
+
+    When trying to update Localisation coordonneesXY and two localisations exists with
+    the same address but different coordinates, we should not raise an error as only
+    Coordinates are unique.
+    """
+    # The address
+    address = "42 Avenue du Dr Jones 75000 PARIS"
+    id_pdc_itinerance_1 = "FR911E1111ER1"
+    id_pdc_itinerance_2 = "FR911E1111ER2"
+    coordinates_1 = Coordinate(-1.0, 1.0)
+    coordinates_2 = Coordinate(1.0, 2.0)
+
+    # Create a first statique
+    statique_1 = StatiqueFactory.build(
+        id_pdc_itinerance=id_pdc_itinerance_1,
+        adresse_station=address,
+        coordonneesXY=coordinates_1,
+    )
+    db_statique_1 = save_statique(db_session, statique_1)
+    assert statique_1 == db_statique_1
+
+    # Create a second statique with the same address
+    statique_2 = StatiqueFactory.build(
+        id_pdc_itinerance=id_pdc_itinerance_2,
+        adresse_station=address,
+        coordonneesXY=coordinates_2,
+    )
+    db_statique_2 = save_statique(db_session, statique_2)
+    assert statique_2 == db_statique_2
+
+    expected = 2
+    assert db_session.exec(select(func.count(Localisation.id))).one() == expected
+
+    # Update statique fields
+    statique_1.coordonneesXY = Coordinate(1.0, 2.1)
+    assert statique_1.adresse_station == "42 Avenue du Dr Jones 75000 PARIS"
+
+    db_statique = update_statique(db_session, id_pdc_itinerance_1, statique_1)
+    assert db_statique.coordonneesXY == Coordinate(1.0, 2.1)
+    assert db_statique.adresse_station == "42 Avenue du Dr Jones 75000 PARIS"
+
+    # We expect to have created a new localisation as coordinates changed
+    expected = 3
+    assert db_session.exec(select(func.count(Localisation.id))).one() == expected
 
 
 def test_update_statique_with_wrong_pdc_id_itinerance(db_session):

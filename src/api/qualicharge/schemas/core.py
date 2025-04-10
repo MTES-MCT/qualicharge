@@ -59,6 +59,8 @@ mapper_registry = registry()
 
 STATIQUE_MV_TABLE_NAME: str = "statique"
 
+DEFAULT_SRID: int = 4326
+
 
 class OperationalUnitTypeEnum(IntEnum):
     """Operational unit types."""
@@ -194,7 +196,7 @@ class Localisation(BaseAuditableSQLModel, table=True):
         sa_type=Geometry(
             geometry_type="POINT",
             # WGS84 coordinates system
-            srid=4326,
+            srid=DEFAULT_SRID,
             spatial_index=True,
         ),
         unique=True,
@@ -211,7 +213,7 @@ class Localisation(BaseAuditableSQLModel, table=True):
     @staticmethod
     def _coordinates_to_geometry_point(value: Coordinate):
         """Convert coordinate to Geometry point."""
-        return f"POINT({value.longitude} {value.latitude})"
+        return f"SRID={DEFAULT_SRID};POINT({value.longitude} {value.latitude})"
 
     @staticmethod
     def _wkb_to_coordinates(value: WKBElement):

@@ -87,7 +87,7 @@ def test_localisation_schema_coordonneesXY_serializer(db_session):
         coordonneesXY=Coordinate(longitude=-3.129447, latitude=45.700327),
     )
     assert loc.model_dump(include={"coordonneesXY"}) == {
-        "coordonneesXY": "POINT(-3.129447 45.700327)",
+        "coordonneesXY": "SRID=4326;POINT(-3.129447 45.700327)",
     }
 
     db_session.add(loc)
@@ -106,7 +106,7 @@ def test_localisation_schema_coordonneesXY_serializer(db_session):
     # Test update case
     db_loc.coordonneesXY = Coordinate(longitude=-3.129447, latitude=-55.700327)
     assert db_loc.model_dump(include={"coordonneesXY"}) == {
-        "coordonneesXY": "POINT(-3.129447 -55.700327)",
+        "coordonneesXY": "SRID=4326;POINT(-3.129447 -55.700327)",
     }
 
     db_session.add(loc)
@@ -126,7 +126,9 @@ def test_localisation_factory():
     localisation = LocalisationFactory.build()
     assert localisation.coordonneesXY is not None
     assert (
-        re.match(r"^POINT\(-?\d+\.\d+ -?\d+\.\d+\)$", localisation.coordonneesXY)
+        re.match(
+            r"^SRID=4326;POINT\(-?\d+\.\d+ -?\d+\.\d+\)$", localisation.coordonneesXY
+        )
         is not None
     )
 

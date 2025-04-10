@@ -198,7 +198,7 @@ def save_statique(
         Localisation,
         statique,
         fields={
-            "adresse_station",
+            "coordonneesXY",
         },
         update=update,
         author=author,
