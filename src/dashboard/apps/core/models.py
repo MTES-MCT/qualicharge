@@ -1,5 +1,7 @@
 """Dashboard core app models."""
 
+from collections import defaultdict
+
 from django.db import models
 from django.db.models import QuerySet
 from django.utils.translation import gettext_lazy as _
@@ -126,12 +128,16 @@ class Entity(DashboardBase):
         if status:
             queryset_filters["status"] = status
 
-        return obj.filter(
-            delivery_point__entity=self,
-            **queryset_filters,
-        ).select_related(
-            "delivery_point",
-            "delivery_point__entity",
+        return (
+            obj.filter(
+                delivery_point__entity=self,
+                **queryset_filters,
+            )
+            .select_related(
+                "delivery_point",
+                "delivery_point__entity",
+            )
+            .prefetch_related("delivery_point__stations")
         )
 
     def count_awaiting_consents(self) -> int:
@@ -194,6 +200,23 @@ class DeliveryPoint(DashboardBase):
 
     def __str__(self):  # noqa: D105
         return self.provider_assigned_id
+
+    def get_linked_stations(self) -> dict[str, list[str]] | None:
+        """Retrieves linked stations grouped by their station names.
+
+        This method queries all available stations and creates a dictionary where
+        station names serve as keys, and the values are lists of corresponding station
+        identifiers.
+
+        Returns:
+            dict[str, list[str]] | None: A dictionary of station names mapped to lists
+            of their respective station identifiers, or None if no stations are found.
+        """
+        stations_grouped = defaultdict(list)
+        for station in self.stations.all():
+            stations_grouped[station.station_name].append(station.id_station_itinerance)
+
+        return dict(stations_grouped)
 
 
 class Station(DashboardBase):

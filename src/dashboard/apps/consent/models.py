@@ -1,5 +1,7 @@
 """Dashboard consent app models."""
 
+from typing import Dict, List
+
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
@@ -203,6 +205,8 @@ class Consent(DashboardBase):
     signature_location = models.CharField(
         _("signature location"), max_length=255, blank=True, null=True
     )
+
+    stations_grouped: Dict[str, List[str]]
 
     # models.Manager() must be in first place to ensure django admin expectations.
     objects = models.Manager()

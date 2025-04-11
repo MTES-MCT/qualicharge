@@ -17,6 +17,7 @@ from apps.consent import AWAITING, REVOKED, VALIDATED
 from apps.consent.factories import ConsentFactory
 from apps.consent.models import Consent
 from apps.consent.tests.conftest import FAKE_TIME
+from apps.consent.utils import order_consents_by_station
 from apps.consent.views import (
     ConsentFormView,
     UpcomingConsentFormView,
@@ -439,13 +440,17 @@ def test_templates_render_html_content_with_consents(rf, settings):
 
     # check the context
     assert Consent.objects.count() == size + 1
-    consents = entity.get_consents()
-    assert consents.count() == size
+    consents = order_consents_by_station(entity.get_consents())
+    assert len(consents) == size
 
     context = view.get_context_data()
     assert context["entity"] == entity
     assert len(context["consents"]) == size
-    assert list(context["consents"]) == list(consents)
+    for c, o in zip(context["consents"], consents, strict=True):
+        assert c["id"] == o["id"]
+        assert c["status"] == o["status"]
+        assert c["delivery_point"] == o["delivery_point"]
+        assert c["stations_grouped"] == o["stations_grouped"]
 
     # get response object
     response = view.dispatch(request)
@@ -456,7 +461,7 @@ def test_templates_render_html_content_with_consents(rf, settings):
     html = rendered.content.decode()
 
     assert (entity.name in html) is True
-    assert all(str(dl.id) in html for dl in consents)
+    assert all(str(c["id"]) in html for c in consents)
 
 
 @pytest.mark.django_db
@@ -646,9 +651,11 @@ def test_get_validated_consents_return_queryset(rf):
     # we expected to retrieve only the 2 VALIDATED consents in the result
     result = view.get_queryset()
     assert len(result) == expected_validated_consent
-    assert consent1 in result
-    assert consent2 in result
-    assert consent3 not in result
+
+    consent_ids = [consent["id"] for consent in result]
+    assert consent1.id in consent_ids
+    assert consent2.id in consent_ids
+    assert consent3.id not in consent_ids
 
 
 @pytest.mark.django_db
@@ -786,13 +793,17 @@ def test_upcoming_consent_form_get_context_data(rf):
 
     # check the context
     assert Consent.objects.count() == size + 1
-    upcoming_consents = entity.get_upcoming_consents()
-    assert upcoming_consents.count() == 1
+    upcoming_consents = order_consents_by_station(entity.get_upcoming_consents())
+    assert len(upcoming_consents) == 1
 
     context = view.get_context_data()
     assert context["entity"] == entity
     assert len(context["consents"]) == 1
-    assert list(context["consents"]) == list(upcoming_consents)
+    for c, o in zip(context["consents"], upcoming_consents, strict=True):
+        assert c["id"] == o["id"]
+        assert c["status"] == o["status"]
+        assert c["delivery_point"] == o["delivery_point"]
+        assert c["stations_grouped"] == o["stations_grouped"]
 
 
 @pytest.mark.django_db
