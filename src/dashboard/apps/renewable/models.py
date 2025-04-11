@@ -1,5 +1,35 @@
 """Dashboard renewable app models."""
 
 from django.db import models
+from django.utils.translation import gettext_lazy as _
 
-# Create your models here.
+from apps.core.abstract_models import DashboardBase
+
+
+class Renewable(DashboardBase):
+    """Renewable model."""
+
+    meter_reading = models.FloatField(_("meter reading"))
+    collected_at = models.DateTimeField(_("collection date"))
+    delivery_point = models.ForeignKey(
+        "qcd_core.DeliveryPoint", on_delete=models.CASCADE, related_name="renewables"
+    )
+    created_by = models.ForeignKey(
+        "qcd_auth.DashboardUser",
+        on_delete=models.SET_NULL,
+        null=True,
+        verbose_name=_("created by"),
+    )
+
+    # contractual information
+    signed_at = models.DateTimeField(_("signature date"))
+    signature_location = models.CharField(_("signature location"), max_length=255)
+
+    class Meta:  # noqa: D106
+        ordering = ["delivery_point__provider_assigned_id", "collected_at"]
+
+    def __str__(self):  # noqa: D105
+        return (
+            f"{self.delivery_point.provider_assigned_id} - {self.collected_at}: "
+            f"{self.meter_reading}"
+        )
