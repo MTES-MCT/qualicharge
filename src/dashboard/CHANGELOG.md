@@ -21,7 +21,8 @@ and this project adheres to
 
 ### Added
 
-- add `renewable` app
+- add `renewable` app with `Renewable` model
+- add admin integration for `Renewable` model
 
 ## [Unreleased]
 
