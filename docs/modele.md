@@ -158,11 +158,11 @@ Ce chapitre présente les informations associées à chacune des entités défin
 >
 >*Chacun des attributs représenté par un nom est défini par trois paramètres :*
 >
->- type : format de l'attribut (ex. string pour une chaîne de caractères)
->- libellé : le nom de l'attribut
->- rôle : le rôle de l'attribut pour l'entité:
->   - la lettre "I" indique que l'attribut est l'identifiant de l'entité (l'attribut est unique et obligatoire)
->   - la lettre "M" indique que l'attribut est obligatoire.
+>- *type : format de l'attribut (ex. string pour une chaîne de caractères)*
+>- *libellé : le nom de l'attribut*
+>- *rôle : le rôle de l'attribut pour l'entité:*
+>   - *la lettre "I" indique que l'attribut est l'identifiant de l'entité (l'attribut est unique et obligatoire)*
+>   - *la lettre "M" indique que l'attribut est obligatoire.*
 
 Les attributs sont définis par le PAN dans le [Schéma de données IRVE statique](https://schema.data.gouv.fr/etalab/schema-irve-statique/2.3.1/documentation.html) ainsi que dans le [Schéma de données IRVE dynamique](https://schema.data.gouv.fr/etalab/schema-irve-dynamique/2.3.1/documentation.html) pour les statuts.
 
