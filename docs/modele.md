@@ -175,7 +175,7 @@ Le modèle de données Qualicharge respecte (sauf exception indiquée explicitem
 ```mermaid
 erDiagram
 OPERATEUR {
-  string **nom_operateur** "I"
+  string "`**nom_operateur**`" "I"
   string contact_operateur  "M"
   string telephone_operateur "M"
   }
