@@ -161,7 +161,7 @@ Ce chapitre présente les informations associées à chacune des entités défin
 >- type : format de l'attribut (ex. string pour une chaîne de caractères)
 >- libellé : le nom de l'attribut
 >- rôle : le rôle de l'attribut pour l'entité:
->   - la lettre "I" indique que l'attribut (en gras) est l'identifiant de l'entité (l'attribut est unique et obligatoire)
+>   - la lettre "I" indique que l'attribut est l'identifiant de l'entité (l'attribut est unique et obligatoire)
 >   - la lettre "M" indique que l'attribut est obligatoire.
 
 Les attributs sont définis par le PAN dans le [Schéma de données IRVE statique](https://schema.data.gouv.fr/etalab/schema-irve-statique/2.3.1/documentation.html) ainsi que dans le [Schéma de données IRVE dynamique](https://schema.data.gouv.fr/etalab/schema-irve-dynamique/2.3.1/documentation.html) pour les statuts.
@@ -175,7 +175,7 @@ Le modèle de données Qualicharge respecte (sauf exception indiquée explicitem
 ```mermaid
 erDiagram
 OPERATEUR {
-  string "`**nom_operateur**`" "I"
+  string nom_operateur "I"
   string contact_operateur  "M"
   string telephone_operateur "M"
   }
@@ -190,7 +190,7 @@ L'opérateur est identifié par son nom.
 ```mermaid
 erDiagram
 AMENAGEUR {
-  string **nom_amenageur** "I"
+  string nom_amenageur "I"
   string siren_amenageur "M"
   string contact_amenageur "M"
   }
@@ -205,7 +205,7 @@ L'aménageur est identifié par son nom.
 ```mermaid
 erDiagram
 ENSEIGNE {
-  string **nom_enseigne** "I"
+  string nom_enseigne "I"
   }
 ```
 
@@ -216,7 +216,7 @@ ENSEIGNE {
 ```mermaid
 erDiagram
 "UNITE D'EXPLOITATION" {
-  string **code** "I"
+  string code "I"
   string name "M"
   }
 ```
@@ -233,7 +233,7 @@ Ces attributs ne sont pas définis dans le [Schéma de données IRVE](https://sc
 ```mermaid
 erDiagram
 "POINT DE LIVRAISON" {
-  string **num_pdl** "I"
+  string num_pdl "I"
   enum    raccordement
   }
 ```
@@ -247,7 +247,7 @@ L'entité `point de livraison` est identifié par un code (attribut num_pdl).
 ```mermaid
 erDiagram
 LOCALISATION {
-  array   **coordonneesXY** "I"
+  array   coordonneesXY "I"
   string  adresse_station "M"
   string  code_insee_commune "M"
   }
@@ -260,7 +260,7 @@ LOCALISATION {
 ```mermaid
 erDiagram
 "STATION DE RECHARGE" {
-  string  **id_station_itinerance** "I"
+  string  id_station_itinerance "I"
   string  nom_station "M"
   enum    implantation_station "M"
   integer nbre_pdc "M"
@@ -280,7 +280,7 @@ L'identifiant d'une `station de recharge` suit une codification spécifique ([co
 ```mermaid
 erDiagram
 "POINT DE RECHARGE" {
-    string **id_pdc_itinerance** "I"
+    string id_pdc_itinerance "I"
     number puissance_nominale "M"
     boolean prise_type_ef "M"
     boolean prise_type_2 "M" 
@@ -351,33 +351,33 @@ Le modèle ci-dessous regroupe l'ensemble des données présentées.
 ```mermaid
 erDiagram
   OPERATEUR {
-  string **nom_operateur** "I"
+  string nom_operateur "I"
   string contact_operateur  "M"
   string telephone_operateur "M"
   }
   AMENAGEUR {
-  string **nom_amenageur** "I"
+  string nom_amenageur "I"
   string siren_amenageur "M"
   string contact_amenageur "M"
   }
   ENSEIGNE {
-  string **nom_enseigne** "I"
+  string nom_enseigne "I"
   }
   "UNITE D'EXPLOITATION" {
-  string **code** "I"
+  string code "I"
   string name "M"
   }
   "POINT DE LIVRAISON" {
-  string **num_pdl** "I"
+  string num_pdl "I"
   enum    raccordement
   }
   LOCALISATION {
-  array   **coordonneesXY** "I"
+  array   coordonneesXY "I"
   string  adresse_station "M"
   string  code_insee_commune "M"
   }
   "STATION DE RECHARGE" {
-  string  **id_station_itinerance** "I"
+  string  id_station_itinerance "I"
   string  nom_station "M"
   enum    implantation_station "M"
   integer nbre_pdc "M"
@@ -389,7 +389,7 @@ erDiagram
   date    date_mise_en_service 
   }
   "POINT DE RECHARGE" {
-    string **id_pdc_itinerance** "I"
+    string id_pdc_itinerance "I"
     number puissance_nominale "M"
     boolean prise_type_ef "M"
     boolean prise_type_2 "M" 
