@@ -87,10 +87,12 @@ Ceci implique que deux points de recharge d'une même station ne peuvent avoir d
 
 ### Structure de gestion
 
-La gestion des stations de recharge est effectuée par deux catégories principales d'acteurs :
+La gestion des stations de recharge est effectuée par deux types d'entités :
 
 - **aménageur** : entité publique ou privée propriétaire des infrastructures (définition du schéma de données),
-- **opérateur** : personne qui exploite l'infrastructure de recharge pour le compte d'un aménageur dans le cadre d'un contrat ou pour son propre compte s'il est l'aménageur (définition du schéma de données)
+- **opérateur** : personne qui exploite l'infrastructure de recharge pour le compte d'un aménageur dans le cadre d'un contrat ou pour son propre compte s'il est l'aménageur (définition du schéma de données).
+
+Un acteur public ou privé peut cumuler le rôle d'aménageur et celui d'opérateur.
 
 Elle introduit également deux notions :
 
@@ -101,13 +103,14 @@ Le modèle ci-dessous représente la gestion des stations.
 
 ```mermaid
 erDiagram
-    AMENAGEUR ||..|{ "STATION DE RECHARGE" : "est le propropriétaire"
+    AMENAGEUR ||--|{ "UNITE D'EXPLOITATION" : "est responsable de"
     ENSEIGNE ||--|{ "STATION DE RECHARGE": "héberge"
-    OPERATEUR ||--|{ "UNITE D'EXPLOITATION": "exploite"
+    OPERATEUR ||--|{ "UNITE D'EXPLOITATION": "supervise"
+    AMENAGEUR |{--|| OPERATEUR: "délègue l'exploitation à"
     "UNITE D'EXPLOITATION" ||--|{ "STATION DE RECHARGE": "contient"
 ```
 
-Une station de recharge est associée à un seul opérateur (au travers de son unité d'exploitation), un seul aménageur et une seule enseigne. De même, une unité d'exploitation n'est gérée que par un seul opérateur.
+Une station de recharge est associée à un seul opérateur (au travers de son unité d'exploitation), un seul aménageur et une seule enseigne. De même, une unité d'exploitation n'est gérée que par un seul aménageur et supervisée par un seul opérateur.
 
 On notera que le terme réseau utilisé à la fois dans la définition de l'enseigne et dans celle de l'unité d'exploitation ne fait pas référence aux mêmes réseaux. Par exemple, une enseige pourra faire référence à une chaîne d'entités commerciales répartie géographiquement alors qu'une unité d'exploitation pourra faire référence à l'ensemble du périmètre géré par un opérateur.
 
