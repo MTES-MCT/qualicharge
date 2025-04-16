@@ -83,7 +83,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       postgresql:
-        image: timescale/timescaledb-ha:pg14-ts2.14-oss
+        image: timescale/timescaledb-ha:pg15-ts2.19-oss
         env:
           POSTGRES_DB: qualicharge-api
           POSTGRES_USER: qualicharge
@@ -302,7 +302,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       postgresql:
-        image: timescale/timescaledb-ha:pg14-ts2.14-oss
+        image: timescale/timescaledb-ha:pg15-ts2.19-oss
         env:
           POSTGRES_DB: test-qualicharge-api
           POSTGRES_USER: qualicharge
@@ -352,7 +352,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       postgresql:
-        image: timescale/timescaledb-ha:pg14-ts2.14-oss
+        image: timescale/timescaledb-ha:pg15-ts2.19-oss
         env:
           POSTGRES_DB: test-qualicharge-api
           POSTGRES_USER: qualicharge
