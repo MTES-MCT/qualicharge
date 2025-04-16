@@ -8,6 +8,10 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Added
+
+- Clean database static orphan entries using a SQL script ran as a cronjob task
+
 ### Changed
 
 - Add time and fk-related missing database indexes for status & session tables
