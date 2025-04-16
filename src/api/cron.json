@@ -2,6 +2,9 @@
   "jobs": [
     {
       "command": "*/10 * * * * python -m qualicharge refresh-static --concurrently"
+    },
+    {
+      "command": "19 * * * * dbclient-fetcher psql && psql $SCALINGO_POSTGRESQL_URL -f scripts/clean-orphans.sql"
     }
   ]
 }
