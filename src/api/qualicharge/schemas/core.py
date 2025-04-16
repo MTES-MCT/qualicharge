@@ -19,7 +19,7 @@ from pydantic import (
 )
 from pydantic_extra_types.coordinate import Coordinate
 from shapely.geometry import mapping
-from sqlalchemy import Select, event
+from sqlalchemy import PrimaryKeyConstraint, Select, event
 from sqlalchemy import cast as SA_cast
 from sqlalchemy.dialects.postgresql import ENUM as PgEnum
 from sqlalchemy.orm import registry
@@ -446,10 +446,11 @@ class Status(BaseTimestampedSQLModel, StatusBase, table=True):
     """IRVE recharge session."""
 
     __table_args__ = BaseTimestampedSQLModel.__table_args__ + (
+        PrimaryKeyConstraint("id", "horodatage", name="ix_status_id_horodatage"),
         {"timescaledb_hypertable": {"time_column_name": "horodatage"}},
     )
 
-    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    id: UUID = Field(default_factory=uuid4)
     horodatage: PastDatetime = Field(
         sa_type=DateTime(timezone=True),
         description="The timestamp indicating when the status changed.",

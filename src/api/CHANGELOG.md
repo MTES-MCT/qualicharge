@@ -14,6 +14,10 @@ and this project adheres to
 - Docs: update data schema restrictions
 - Docs: add usage section
 
+### Fixed
+
+- Switch `Status` table to a TimescaleDB hypertable
+
 ## [0.21.0] - 2025-04-11
 
 ### Changed
