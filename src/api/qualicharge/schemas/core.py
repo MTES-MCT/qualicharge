@@ -422,10 +422,11 @@ class Session(BaseAuditableSQLModel, SessionBase, table=True):
     """IRVE recharge session."""
 
     __table_args__ = BaseAuditableSQLModel.__table_args__ + (
+        PrimaryKeyConstraint("id", "start", name="ix_session_id_start"),
         {"timescaledb_hypertable": {"time_column_name": "start"}},
     )
 
-    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    id: UUID = Field(default_factory=uuid4)
     start: PastDatetime = Field(
         sa_type=DateTime(timezone=True),
         description="The timestamp indicating when the session started.",
@@ -443,7 +444,7 @@ class Session(BaseAuditableSQLModel, SessionBase, table=True):
 
 
 class Status(BaseTimestampedSQLModel, StatusBase, table=True):
-    """IRVE recharge session."""
+    """IRVE recharge status."""
 
     __table_args__ = BaseTimestampedSQLModel.__table_args__ + (
         PrimaryKeyConstraint("id", "horodatage", name="ix_status_id_horodatage"),
