@@ -2,6 +2,10 @@
   "jobs": [
     {
       "command": "*/10 * * * * python -m qualicharge refresh-static --concurrently"
+    },
+    {
+      "command": "14 4 * * * dbclient-fetcher psql && psql $SCALINGO_POSTGRESQL_URL -f data_retention_procedure.sql",
+      "size": "S"
     }
   ]
 }
