@@ -8,6 +8,10 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Fixed
+
+- Switch `Session` table to a TimescaleDB hypertable
+
 ## [0.22.0] - 2025-04-17
 
 ### Added
