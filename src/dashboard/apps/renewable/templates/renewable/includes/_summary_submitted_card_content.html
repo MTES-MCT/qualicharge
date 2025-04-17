@@ -1,0 +1,56 @@
+{% load i18n %}
+{# todo: review the useful cols and data to display in the table #}
+{# todo: add real text content #}
+
+{% if entities %}
+  <strong class="fr-mt-2w">Points de livraison suivis</strong>
+
+  <div class="fr-table fr-table--no-caption fr-table--bordered">
+    <div class="fr-table__wrapper">
+      <div class="fr-table__container">
+        <div class="fr-table__content">
+
+          <table>
+            <caption>Points de livraison suivis</caption>
+
+            <thead>
+              <tr>
+                <th scope="col">
+                  <div class="fr-cell__title">
+                    Entreprise
+                  </div>
+                </th>
+                <th scope="col">
+                  <div class="fr-cell__title fr-cell--center">
+                    Consulter la liste
+                  </div>
+                </th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {# todo: replace consents with renewable meters functionalities #}
+              {% for entity in entities %}
+                {% if entity.count_validated_consents %}
+                  <tr id="undefined-row-key-{{ forloop.counter }}" data-row-key="forloop.counter">
+                    <td>
+                      <p>{{ entity.name }}</p>
+                    </td>
+                    <td class="fr-cell--center">
+                        <a class="fr-link fr-icon-arrow-right-line fr-link--icon-right"
+                           href=""
+                           data-fr-js-link-actionee="true">
+                          Consulter la liste
+                        </a>
+                    </td>
+                  </tr>
+                {% endif %}
+              {% endfor %}
+            </tbody>
+          </table>
+
+        </div>
+      </div>
+    </div>
+  </div>
+{% endif %}
