@@ -24,6 +24,23 @@ deployments:
       name: indicators
       work_queue_name: default
 
+  - name: i4-daily
+    entrypoint: indicators/run.py:i4_calculate
+    concurrency_limit: 10
+    schedules:
+      - cron: "2 14 * * *"
+        timezone: "Europe/Paris"
+        active: true
+    parameters:
+      environment: production
+      levels: [0, 1, 2, 3, 4]
+      period: d
+      create_artifact: true
+      persist: true
+    work_pool:
+      name: indicators
+      work_queue_name: default
+
   - name: t1-daily
     entrypoint: indicators/run.py:t1_calculate
     concurrency_limit: 10
