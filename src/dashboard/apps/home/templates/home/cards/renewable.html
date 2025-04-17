@@ -1,0 +1,13 @@
+{% load i18n dsfr_tags static %}
+{# todo: add real text content #}
+
+{% url "renewable:index" as index_url %}
+{% static "/dashboard/img/wind-turbine.svg" as illustration_img %}
+
+{% with card_title="Gestion des relevés de production d'énergie renouvelable" card_description="Saisissez vos relevés trimestriels de production d'énergie renouvelable." %}
+{% with extra_class="fr-card--horizontal" %}
+
+  {% dsfr_card title=card_title link=index_url description=card_description extra_class=extra_class image_url=illustration_img top_detail=renewable_top_detail %}
+
+{% endwith %}
+{% endwith %}
