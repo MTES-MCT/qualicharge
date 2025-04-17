@@ -4,6 +4,7 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 
 from apps.core.abstract_models import DashboardBase
+from apps.renewable.managers import RenewableManager
 
 
 class Renewable(DashboardBase):
@@ -24,6 +25,9 @@ class Renewable(DashboardBase):
     # contractual information
     signed_at = models.DateTimeField(_("signature date"))
     signature_location = models.CharField(_("signature location"), max_length=255)
+
+    objects = models.Manager()
+    active_objects = RenewableManager()
 
     class Meta:  # noqa: D106
         ordering = ["delivery_point__provider_assigned_id", "collected_at"]
