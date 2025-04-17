@@ -21,4 +21,8 @@ and this project adheres to
 
 - Integrate Great-Expectations
 
+### Changed
+
+- Upgrade API database to PG 15 / TimescaleDB 2.19
+
 [unreleased]: https://github.com/MTES-MCT/qualicharge/
