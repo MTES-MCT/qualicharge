@@ -8,6 +8,8 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.22.1] - 2025-04-17
+
 ### Fixed
 
 - Switch `Session` table to a TimescaleDB hypertable
@@ -437,7 +439,8 @@ and this project adheres to
 
 - Implement base FastAPI app
 
-[unreleased]: https://github.com/MTES-MCT/qualicharge/compare/v0.22.0...main
+[unreleased]: https://github.com/MTES-MCT/qualicharge/compare/v0.22.1...main
+[0.22.1]: https://github.com/MTES-MCT/qualicharge/compare/v0.22.0...v0.22.1
 [0.22.0]: https://github.com/MTES-MCT/qualicharge/compare/v0.21.0...v0.22.0
 [0.21.0]: https://github.com/MTES-MCT/qualicharge/compare/v0.20.0...v0.21.0
 [0.20.0]: https://github.com/MTES-MCT/qualicharge/compare/v0.19.1...v0.20.0
