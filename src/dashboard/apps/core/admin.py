@@ -32,7 +32,12 @@ class EntityAdmin(admin.ModelAdmin):
 class DeliveryPointAdmin(admin.ModelAdmin):
     """Delivery point admin."""
 
-    list_display = ["provider_assigned_id", "entity", "is_active"]
+    list_display = [
+        "provider_assigned_id",
+        "entity",
+        "is_active",
+        "has_renewable",
+    ]
     search_fields = ["provider_assigned_id", "entity__name"]
     list_filter = ["is_active"]
 
