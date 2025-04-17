@@ -26,6 +26,7 @@ urlpatterns = [
     path("oidc/", include("mozilla_django_oidc.urls")),
     # apps
     path("consent/", include("apps.consent.urls")),
+    path("renewable/", include("apps.renewable.urls")),
     path("", include("apps.home.urls")),
     # internationalization
     path("i18n/", include("django.conf.urls.i18n")),
