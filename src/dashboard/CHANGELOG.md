@@ -14,6 +14,9 @@ and this project adheres to
 
 - add `renewable` app with `Renewable` model
 - add admin integration for `Renewable` model
+- add `get_current_quarter_date_range` utility
+- add `has_renewable` field to delivery points model
+- add `python-dateutil`
 
 ## [Unreleased]
 

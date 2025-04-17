@@ -1,7 +1,8 @@
 """Dashboard core models tests."""
 
-from datetime import timedelta
+from datetime import datetime, timedelta
 
+import factory
 import pytest
 from django.db import IntegrityError
 from django.utils import timezone
@@ -13,6 +14,8 @@ from apps.consent.factories import ConsentFactory
 from apps.consent.models import Consent
 from apps.core.factories import DeliveryPointFactory, EntityFactory, StationFactory
 from apps.core.models import Entity
+from apps.renewable.factories import RenewableFactory
+from apps.renewable.models import Renewable
 
 
 @pytest.mark.django_db
@@ -549,3 +552,95 @@ def test_get_linked_stations():
     result3 = dp_3.get_linked_stations()
     expected_grouping = {}
     assert result3 == expected_grouping
+
+
+@pytest.mark.django_db
+def test_get_renewables():
+    """Test Entity.get_renawables method."""
+    INITIAL_SIZE = 4
+
+    # Setup test entities
+    entity_with_renewables = EntityFactory()
+    entity_without_renewables = EntityFactory()
+
+    # create active delivery points
+    dps = DeliveryPointFactory.create_batch(
+        INITIAL_SIZE, has_renewable=True, is_active=True, entity=entity_with_renewables
+    )
+
+    # create renewables
+    assert Renewable.objects.count() == 0
+    RenewableFactory.create_batch(
+        size=len(dps),
+        delivery_point=factory.Iterator(dps),
+        collected_at="2024-01-01",
+    )
+    assert Renewable.objects.count() == INITIAL_SIZE
+
+    # test initial state
+    renewables = entity_with_renewables.get_renewables()
+    assert renewables.count() == INITIAL_SIZE
+    for r in renewables:
+        assert r.delivery_point.has_renewable is True
+        assert r.delivery_point.is_active is True
+
+    # test entity without renewables
+    renewables = entity_without_renewables.get_renewables()
+    assert renewables.count() == 0
+
+    # Test with non-renewable delivery point
+    dps[0].has_renewable = False
+    dps[0].save()
+    renewables = entity_with_renewables.get_renewables()
+    expected_size = 3
+    assert renewables.count() == expected_size
+    assert all(r.delivery_point.id != dps[0].id for r in renewables)
+
+    # Test with inactive delivery point
+    dps[1].is_active = False
+    dps[1].save()
+    renewables = entity_with_renewables.get_renewables()
+    expected_size = 2
+    assert renewables.count() == expected_size
+    assert all(r.delivery_point.id not in [dps[0].id, dps[1].id] for r in renewables)
+
+
+@pytest.mark.django_db
+def test_get_unsubmitted_quarterly_renewables(monkeypatch):
+    """Test Entity.get_unsubmitted_quarterly_renewables method."""
+    INITIAL_SIZE = 4
+    mock_now = datetime(2025, 3, 6)
+    monkeypatch.setattr(timezone, "now", lambda: mock_now)
+
+    # Setup test entities
+    entity_with_renewables = EntityFactory()
+    entity_without_renewables = EntityFactory()
+
+    # create active delivery points
+    dps = DeliveryPointFactory.create_batch(
+        INITIAL_SIZE, has_renewable=True, is_active=True, entity=entity_with_renewables
+    )
+
+    # create renewables
+    assert Renewable.objects.count() == 0
+    RenewableFactory.create_batch(
+        size=len(dps),
+        delivery_point=factory.Iterator(dps),
+        collected_at="2024-01-01",
+    )
+    # create renewables for the current quarter
+    RenewableFactory(
+        delivery_point=dps[0],
+        collected_at="2025-02-21",
+    )
+    assert Renewable.objects.count() == INITIAL_SIZE + 1
+
+    # test entity without renewables
+    renewable_dps = entity_without_renewables.get_unsubmitted_quarterly_renewables()
+    assert renewable_dps.count() == 0
+
+    # test entity with renewables
+    renewable_dps = entity_with_renewables.get_unsubmitted_quarterly_renewables()
+    expected_size = 3
+    assert renewable_dps.count() == expected_size
+    assert all(r.id != dps[0].id for r in renewable_dps)
