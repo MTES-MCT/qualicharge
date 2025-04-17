@@ -8,6 +8,8 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.22.0] - 2025-04-17
+
 ### Added
 
 - Clean database static orphan entries using a SQL script ran as a cronjob task
@@ -431,7 +433,8 @@ and this project adheres to
 
 - Implement base FastAPI app
 
-[unreleased]: https://github.com/MTES-MCT/qualicharge/compare/v0.21.0...main
+[unreleased]: https://github.com/MTES-MCT/qualicharge/compare/v0.22.0...main
+[0.22.0]: https://github.com/MTES-MCT/qualicharge/compare/v0.21.0...v0.22.0
 [0.21.0]: https://github.com/MTES-MCT/qualicharge/compare/v0.20.0...v0.21.0
 [0.20.0]: https://github.com/MTES-MCT/qualicharge/compare/v0.19.1...v0.20.0
 [0.19.1]: https://github.com/MTES-MCT/qualicharge/compare/v0.19.0...v0.19.1
