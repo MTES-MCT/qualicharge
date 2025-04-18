@@ -14,6 +14,7 @@ from .usage.u5 import HISTORY_STRATEGY_FIELD as U5_STRATEGY
 from .usage.u6 import HISTORY_STRATEGY_FIELD as U6_STRATEGY
 from .usage.u9 import HISTORY_STRATEGY_FIELD as U9_STRATEGY
 from .usage.u10 import HISTORY_STRATEGY_FIELD as U10_STRATEGY
+from .usage.u11 import HISTORY_STRATEGY_FIELD as U11_STRATEGY
 
 STRATEGY = {
     "i1": I1_STRATEGY,
@@ -25,4 +26,5 @@ STRATEGY = {
     "u6": U6_STRATEGY,
     "u9": U9_STRATEGY,
     "u10": U10_STRATEGY,
+    "u11": U11_STRATEGY,
 }
