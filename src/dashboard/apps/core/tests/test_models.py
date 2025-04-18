@@ -644,3 +644,85 @@ def test_get_unsubmitted_quarterly_renewables(monkeypatch):
     expected_size = 3
     assert renewable_dps.count() == expected_size
     assert all(r.id != dps[0].id for r in renewable_dps)
+
+
+@pytest.mark.django_db
+def test_count_renewables():
+    """Test Entity.count_renawables method."""
+    INITIAL_SIZE = 4
+
+    # Setup test entities
+    entity_with_renewables = EntityFactory()
+    entity_without_renewables = EntityFactory()
+
+    # create active delivery points
+    dps = DeliveryPointFactory.create_batch(
+        INITIAL_SIZE, has_renewable=True, is_active=True, entity=entity_with_renewables
+    )
+
+    # create renewables
+    assert Renewable.objects.count() == 0
+    RenewableFactory.create_batch(
+        size=len(dps),
+        delivery_point=factory.Iterator(dps),
+        collected_at="2024-01-01",
+    )
+    assert Renewable.objects.count() == INITIAL_SIZE
+
+    # test initial state
+    assert entity_with_renewables.count_renewables() == INITIAL_SIZE
+
+    # test entity without renewables
+    assert entity_without_renewables.count_renewables() == 0
+
+    # Test with non-renewable delivery point
+    dps[0].has_renewable = False
+    dps[0].save()
+    expected_size = 3
+    assert entity_with_renewables.count_renewables() == expected_size
+
+    # Test with inactive delivery point
+    dps[1].is_active = False
+    dps[1].save()
+    expected_size = 2
+    assert entity_with_renewables.count_renewables() == expected_size
+
+
+@pytest.mark.django_db
+def test_count_unsubmitted_quarterly_renewables(monkeypatch):
+    """Test Entity.count_unsubmitted_quarterly_renewables method."""
+    INITIAL_SIZE = 4
+    mock_now = datetime(2025, 3, 6)
+    monkeypatch.setattr(timezone, "now", lambda: mock_now)
+
+    # Setup test entities
+    entity_with_renewables = EntityFactory()
+    entity_without_renewables = EntityFactory()
+
+    # create active delivery points
+    dps = DeliveryPointFactory.create_batch(
+        INITIAL_SIZE, has_renewable=True, is_active=True, entity=entity_with_renewables
+    )
+
+    # create renewables
+    assert Renewable.objects.count() == 0
+    RenewableFactory.create_batch(
+        size=len(dps),
+        delivery_point=factory.Iterator(dps),
+        collected_at="2024-01-01",
+    )
+    # create renewables for the current quarter
+    RenewableFactory(
+        delivery_point=dps[0],
+        collected_at="2025-02-21",
+    )
+    assert Renewable.objects.count() == INITIAL_SIZE + 1
+
+    # test entity without renewables
+    assert entity_without_renewables.count_unsubmitted_quarterly_renewables() == 0
+
+    # test entity with renewables
+    expected_size = 3
+    assert (
+        entity_with_renewables.count_unsubmitted_quarterly_renewables() == expected_size
+    )
