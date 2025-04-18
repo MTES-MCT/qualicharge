@@ -211,6 +211,14 @@ class Entity(DashboardBase):
             id__in=submitted_renewables,
         )
 
+    def count_renewables(self) -> int:
+        """Counts the number of renewables for this entity."""
+        return self.get_renewables().count()
+
+    def count_unsubmitted_quarterly_renewables(self) -> int:
+        """Count delivery points with pending renewable, within the current quarter."""
+        return self.get_unsubmitted_quarterly_renewables().count()
+
 
 class DeliveryPoint(DashboardBase):
     """Represents a delivery point for electric vehicles.
