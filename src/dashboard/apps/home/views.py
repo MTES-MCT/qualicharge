@@ -15,8 +15,12 @@ class IndexView(UserValidationMixin, TemplateView):
         context = super().get_context_data(**kwargs)
 
         entities = self.request.user.get_entities()
-        has_awaiting_consent = any(entity.get_consents() for entity in entities)
-        has_pending_renewable = True  # todo: add the logic
+        has_awaiting_consent = any(
+            entity.get_consents().exists() for entity in entities
+        )
+        has_pending_renewable = any(
+            entity.count_unsubmitted_quarterly_renewables() for entity in entities
+        )
 
         if has_awaiting_consent:
             label = _("Pending consents")
