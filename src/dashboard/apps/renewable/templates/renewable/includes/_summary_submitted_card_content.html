@@ -29,9 +29,8 @@
             </thead>
 
             <tbody>
-              {# todo: replace consents with renewable meters functionalities #}
               {% for entity in entities %}
-                {% if entity.count_validated_consents %}
+                {% if entity.count_renewables %}
                   <tr id="undefined-row-key-{{ forloop.counter }}" data-row-key="forloop.counter">
                     <td>
                       <p>{{ entity.name }}</p>
