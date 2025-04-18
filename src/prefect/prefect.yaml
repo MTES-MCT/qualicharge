@@ -177,6 +177,23 @@ deployments:
       name: indicators
       work_queue_name: default
 
+  - name: u12-daily
+    entrypoint: indicators/run.py:u12_calculate
+    concurrency_limit: 10
+    schedules:
+      - cron: "12 15 * * *"
+        timezone: "Europe/Paris"
+        active: true
+    parameters:
+      environment: production
+      levels: [0, 1]
+      period: d
+      create_artifact: true
+      persist: true
+    work_pool:
+      name: indicators
+      work_queue_name: default
+
   # offset (default -1): 0 -> init period = start value 
   - name: up-monthly
     entrypoint: indicators/run.py:up_calculate

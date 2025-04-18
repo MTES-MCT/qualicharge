@@ -20,3 +20,4 @@ from .usage.u6 import calculate as u6_calculate
 from .usage.u9 import calculate as u9_calculate
 from .usage.u10 import calculate as u10_calculate
 from .usage.u11 import calculate as u11_calculate
+from .usage.u12 import calculate as u12_calculate
