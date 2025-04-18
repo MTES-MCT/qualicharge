@@ -15,6 +15,7 @@ and this project adheres to
 - Implement t1 workflow
 - Implement i1 workflow
 - Implement i4 workflow
+- Implement i7 workflow
 - Implement e4 workflow
 - Implement up workflow
 - Implement u5 workflow
