@@ -1,0 +1,78 @@
+{% load i18n %}
+
+{# todo: review the useful cols and data to display in the table #}
+{# todo: add real text content #}
+
+<div class="fr-fieldset__element fr-my-4w" id="pdl-component">
+  <legend class="fr-fieldset__legend" id="text-legend">
+    Relevés de production à communiquer
+  </legend>
+
+  <p>
+    Remplissez les relevés de production correspondant aux PDL.
+  </p>
+
+  <div class="fr-table fr-table--no-caption" id="table-prm-component">
+    <div class="fr-table__wrapper">
+      <div class="fr-table__container">
+        <div class="fr-table__content fr-table__overflow" tabindex="0">
+
+          <table id="table-prm" aria-labelledby="table-prm-caption">
+            <caption id="table-prm-caption"> Points de livraison à valider </caption>
+
+            <thead>
+              <tr>
+                  <th scope="col">
+                  <div class="fr-cell__title">Nom / identifiants de la station</div>
+                </th>
+                <th scope="col">
+                  <div class="fr-cell__title">Identifiant du PDL</div>
+                </th>
+                <th scope="col">
+                  <div class="fr-cell__title">Période d'autorisation</div>
+                </th>
+                <th scope="col">
+                  <div class="fr-cell__title">Relevé précédent (kWh)</div>
+                </th>
+                <th>
+                  <div class="fr-cell__title">Date du relevé</div>
+                </th>
+                <th scope="col">
+                  <div class="fr-cell__title">Relevé de production (kWh)</div>
+                </th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {% for i in '123'|make_list %}
+              <tr id="table-prm-row-key-{{ forloop.counter }}"
+                  data-row-key="{{ forloop.counter }}"
+                  aria-labelledby="row-label-{{ forloop.counter }}">
+                <td> Station {{ forloop.counter }} (FRMIRP17359) </td>
+                <td> 31472430812876 </td>
+                <td>
+                  1er trimestre 2025<br />
+                  du 01/01/2025 au 31/03/2025
+                </td>
+                <td>
+                  5698.45 kWh
+                </td>
+                <td>
+                  <div class="fr-input-group">
+                    <input type="date" name="" class="fr-input" required="">
+                  </div>
+                </td>
+                <td>
+                  <div class="fr-input-group">
+                    <input type="text" name="" maxlength="150" class="fr-input" required="" placeholder="0">
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
