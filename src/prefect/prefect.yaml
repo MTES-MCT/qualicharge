@@ -138,7 +138,6 @@ deployments:
       name: indicators
       work_queue_name: default
 
-
   - name: u10-daily
     entrypoint: indicators/run.py:u10_calculate
     concurrency_limit: 10
@@ -150,6 +149,23 @@ deployments:
       period: d
       create_artifact: true
       chunk_size: 1000
+    work_pool:
+      name: indicators
+      work_queue_name: default
+
+  - name: u11-daily
+    entrypoint: indicators/run.py:u11_calculate
+    concurrency_limit: 10
+    schedules:
+      - cron: "12 15 * * *"
+        timezone: "Europe/Paris"
+        active: true
+    parameters:
+      environment: production
+      levels: [0, 1]
+      period: d
+      create_artifact: true
+      persist: true
     work_pool:
       name: indicators
       work_queue_name: default
