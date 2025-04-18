@@ -1,0 +1,55 @@
+{% extends "renewable/base.html" %}
+
+{# todo: add real text content #}
+
+{% load i18n static %}
+
+{% block dashboard_content %}
+  <div class="fr-grid-row">
+    <div class="fr-col">
+      <h2>Saisissez vos relevés de production d'énergie renouvelable</h2>
+
+      <p>
+        Saisissez vos relevés de production d'énergie renouvelable pour chaque point
+        de livraison.
+      </p>
+
+      {% if entity %}
+        <form action="" method="post">
+          {% csrf_token %}
+
+          {% if form.errors %}
+            <div class="fr-messages-group" id="error-messages" aria-live="assertive">
+              <div class="{% if form.renewable.errors %}fr-pl-3v{% endif %} fr-mb-6v">
+                <ul id="message-non-field-error">
+                  <li class="fr-message fr-message--error" id="message-error">
+                    {% trans "The form contains errors" %}
+                  </li>
+                  {% if form.non_field_errors %}
+                    {% for error in form.non_field_errors %}
+                      <li class="fr-message fr-message--error">{{ error }}</li>
+                    {% endfor %}
+                  {% endif %}
+                </ul>
+              </div>
+          </div>
+          {% endif %}
+
+          {% include "renewable/includes/_manage_meters.html" %}
+
+          <div class="fr-fieldset__element fr-my-4w">
+            {% include "renewable/includes/_manage_meters_date_place.html" %}
+            {% include "renewable/includes/_manage_meters_authorisations.html" %}
+          </div>
+
+          <button id="btn-validate" type="submit" class="fr-btn" title="{% trans "submit" %}" name="submit">
+            {% trans "submit" %}
+          </button>
+
+        </form>
+      {% else %}
+        <p>{% trans "No production statement to enter." %}</p>
+      {% endif %}
+    </div>
+  </div>
+{% endblock dashboard_content %}

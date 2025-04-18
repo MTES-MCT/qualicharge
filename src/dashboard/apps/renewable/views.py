@@ -1,5 +1,6 @@
 """Dashboard renewable meter app views."""
 
+from django.urls import reverse_lazy as reverse
 from django.utils.translation import gettext_lazy as _
 from django.views.generic import TemplateView
 
@@ -22,5 +23,25 @@ class IndexView(BaseView, TemplateView):
         # todo : add logic
         context["has_pending_renewable"] = True
         context["has_submitted_renewable"] = True
+
+        return context
+
+
+class RenewableMetterReadingFormView(BaseView, TemplateView):
+    """Manage renewable meters."""
+
+    template_name = "renewable/manage.html"
+    success_url = reverse("renewable:index")
+
+    breadcrumb_links = [
+        {"url": reverse("renewable:index"), "title": BREADCRUMB_CURRENT_LABEL},
+    ]
+    breadcrumb_current = _("Manage renewable meter reading")
+
+    def get_context_data(self, **kwargs):
+        """Add user's entities to the context."""
+        # todo : add logic
+        context = super().get_context_data(**kwargs)
+        context["entity"] = True
 
         return context
