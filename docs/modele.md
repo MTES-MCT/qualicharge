@@ -81,7 +81,12 @@ erDiagram
     "POINT DE LIVRAISON" ||..|{ "STATION DE RECHARGE" : "raccorde électriquement"
     LOCALISATION ||--|{ "STATION DE RECHARGE": "localise"
 ```
+Ce modèle prend en compte plusieurs configurations possibles :
 
+- plusieurs stations avec un même point de livraison et une même localisation (ex. une station par niveau d'un parking sur plusieurs niveaux),
+- plusieurs stations avec un même point de livraison et des localisations différentes (ex. stations d'un même site),
+- plusieurs stations avec des points de livraison différents et une même localisation (ex. augmentation de capacité par ajout d'une station et d'un point de livraison)
+  
 Il est à noter que ces deux notions sont associées à la station de recharge et non au point de recharge.
 Ceci implique que deux points de recharge d'une même station ne peuvent avoir des localisations différentes ni être raccordés à des points de livraison différents.
 
