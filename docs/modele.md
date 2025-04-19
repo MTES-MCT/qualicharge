@@ -198,13 +198,13 @@ L'opérateur est identifié par son nom.
 ```mermaid
 erDiagram
 AMENAGEUR {
-  string nom_amenageur "I"
-  string siren_amenageur "M"
+  string siren_amenageur "I"
+  string nom_amenageur "M"
   string contact_amenageur "M"
   }
 ```
 
-L'aménageur est identifié par son nom.
+L'aménageur est identifié par son code SIREN.
 
 > :bulb: Les attributs sont obligatoires pour Qualicharge contrairement au [Schéma de données IRVE](https://schema.data.gouv.fr/etalab/schema-irve-statique/2.3.1/documentation.html)
 
@@ -275,13 +275,18 @@ erDiagram
   string  condition_acces "M"
   string  horaires "M"
   boolean station_deux_roues "M"
+  enum    type_courant "M"
   date    date_maj "M"
+  number  puissance_maxi "M"
   string  id_station_local
-  date    date_mise_en_service 
+  date    date_mise_en_service
   }
 ```
 
 L'identifiant d'une `station de recharge` suit une codification spécifique ([code AFIREV](https://afirev.fr/fr/informations-generales/)).
+
+> :bulb: L'attribut `type_courant` n'est pas présent dans le schéma de données IRVE. Il est calculé à partir du `type_courant` de chaque `point de recharge` (la valeur sera 'DC' si un des `points de charge` est de type 'DC')
+>  L'attribut `puissance_maxi` correspond à la puissance maximale qui peut être délivrée à un instant donné (non présent dans le schéma de données IRVE). Il est actuellement calculé à partir de la `puissance_nominale` de chaque `point de charge` (somme). Dans une version ultérieure, il devra être documenté à partir de la capacité installée.
 
 ### Point de recharge
 
@@ -299,6 +304,7 @@ erDiagram
     boolean reservation "M"
     enum    accessibilite_pmr "M"
     string  restriction_gabarit "M"
+    enum    type_courant "M"
     string  id_pdc_local
     boolean gratuit
     boolean paiement_cb
@@ -310,6 +316,8 @@ erDiagram
 ```
 
 L'identifiant d'un `point de recharge` suit une codification spécifique ([code AFIREV](https://afirev.fr/fr/informations-generales/)).
+
+> :bulb: L'attribut `type_courant` est actuellement calculé à partir de la puissance nominale et du type de connecteurs ( `type_courant` est 'DC' si `puissance_nominale` >= 50 ou si `prise_type_combo_ccs` est vraie ou si `prise_type_chademo` est vraie). Dans une version ultérieure, il devra être documenté à partir des caractéristiques techniques du `point de recharge`.
 
 ### Status
 
