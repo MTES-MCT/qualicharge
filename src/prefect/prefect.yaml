@@ -75,7 +75,6 @@ deployments:
       name: indicators
       work_queue_name: default
 
-
   - name: e4-daily
     entrypoint: indicators/run.py:e4_calculate
     concurrency_limit: 10
@@ -101,9 +100,11 @@ deployments:
         timezone: "Europe/Paris"
         active: true
     parameters:
+      environment: production
+      levels: [0, 1]
       period: d
       create_artifact: true
-      chunk_size: 1000
+      persist: true
     work_pool:
       name: indicators
       work_queue_name: default
@@ -116,9 +117,11 @@ deployments:
         timezone: "Europe/Paris"
         active: true
     parameters:
+      environment: production
+      levels: [0, 1]
       period: d
       create_artifact: true
-      chunk_size: 1000
+      persist: true
     work_pool:
       name: indicators
       work_queue_name: default
@@ -131,13 +134,14 @@ deployments:
         timezone: "Europe/Paris"
         active: true
     parameters:
+      environment: production
+      levels: [0, 1]
       period: d
       create_artifact: true
-      chunk_size: 1000
+      persist: true
     work_pool:
       name: indicators
       work_queue_name: default
-
 
   - name: u10-daily
     entrypoint: indicators/run.py:u10_calculate
@@ -147,9 +151,11 @@ deployments:
         timezone: "Europe/Paris"
         active: true
     parameters:
+      environment: production
+      levels: [0, 1]
       period: d
       create_artifact: true
-      chunk_size: 1000
+      persist: true
     work_pool:
       name: indicators
       work_queue_name: default
@@ -171,7 +177,6 @@ deployments:
     work_pool:
       name: indicators
       work_queue_name: default
-
 
   - name: up-weekly
     entrypoint: indicators/run.py:up_calculate
