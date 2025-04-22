@@ -1,5 +1,6 @@
 """Dashboard renewable app models."""
 
+from django.core.validators import MinValueValidator
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
@@ -10,7 +11,10 @@ from apps.renewable.managers import RenewableManager
 class Renewable(DashboardBase):
     """Renewable model."""
 
-    meter_reading = models.FloatField(_("meter reading"))
+    meter_reading = models.FloatField(
+        _("meter reading"),
+        validators=[MinValueValidator(0.0, message=_("The value must be positive"))],
+    )
     collected_at = models.DateTimeField(_("collection date"))
     delivery_point = models.ForeignKey(
         "qcd_core.DeliveryPoint", on_delete=models.CASCADE, related_name="renewables"
@@ -25,6 +29,9 @@ class Renewable(DashboardBase):
     # contractual information
     signed_at = models.DateTimeField(_("signature date"))
     signature_location = models.CharField(_("signature location"), max_length=255)
+    has_confirmed_information_accuracy = models.BooleanField(
+        _("has confirmed information accuracy"), default=False
+    )
 
     objects = models.Manager()
     active_objects = RenewableManager()

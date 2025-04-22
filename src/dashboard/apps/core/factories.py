@@ -52,6 +52,7 @@ class DeliveryPointFactory(factory.django.DjangoModelFactory):
 
     provider_assigned_id = factory.Faker("numerify", text="##############")
     entity = factory.SubFactory(EntityFactory)
+    has_renewable = True
 
     class Meta:  # noqa: D106
         model = DeliveryPoint

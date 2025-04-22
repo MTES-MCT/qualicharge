@@ -1,4 +1,4 @@
-{% load i18n %}
+{% load i18n dashboard_filters %}
 
 {# todo: review the useful cols and data to display in the table #}
 {# todo: add real text content #}
@@ -44,28 +44,64 @@
             </thead>
 
             <tbody>
-              {% for i in '123'|make_list %}
+              {% for renewable_dp in renewable_delivery_points|sort_by_station %}
               <tr id="table-prm-row-key-{{ forloop.counter }}"
                   data-row-key="{{ forloop.counter }}"
                   aria-labelledby="row-label-{{ forloop.counter }}">
-                <td> Station {{ forloop.counter }} (FRMIRP17359) </td>
-                <td> 31472430812876 </td>
                 <td>
-                  1er trimestre 2025<br />
-                  du 01/01/2025 au 31/03/2025
+                  {% for station_name, ids in renewable_dp.stations_grouped.items %}
+                    {% if forloop.counter0 > 0 %}<br />{% endif %}
+                    {{ station_name }} {% if ids %}({{ ids|join:", " }}){% endif %}
+                  {% endfor %}
+                </td>
+                <td id="provider_assigned_id">
+                  {{ renewable_dp.provider_assigned_id }}
+                  <input type="hidden" name="delivery_point_ids" value="{{ renewable_dp.id }}">
                 </td>
                 <td>
-                  5698.45 kWh
+                  {# todo: add templatetag to get actual period #}
+                  -
+                  {# 1er trimestre 2025<br />#}
+                  {# du 01/01/2025 au 31/03/2025#}
                 </td>
                 <td>
-                  <div class="fr-input-group">
-                    <input type="date" name="" class="fr-input" required="">
+                {# todo: add the previous renewable meters and their date #}
+                  -
+                  {# 5698.45 kWh#}
+                </td>
+                <td>
+                  {% with field_name="collected_at_"|concatenate:renewable_dp.id %}
+                    <div class="fr-input-group{% if form.field_errors|get_item:field_name %} fr-input-group--error{% endif %}">
+                    <input type="date"
+                       name="collected_at_{{ renewable_dp.id }}"
+                       class="fr-input{% if form.field_errors|get_item:field_name %} fr-input--error{% endif %}"
+                       {% if form.field_errors|get_item:field_name %}aria-describedby="{{ field_name }}-desc-error"{% endif %}
+                       value="{% if form.is_bound %}{{ form.data|get_item:field_name }}{% endif %}" />
+
+                    {% if form.field_errors|get_item:field_name %}
+                      <p class="fr-error-text">{{ form.field_errors|get_item:field_name }}</p>
+                    {% endif %}
                   </div>
+                  {% endwith %}
                 </td>
                 <td>
-                  <div class="fr-input-group">
-                    <input type="text" name="" maxlength="150" class="fr-input" required="" placeholder="0">
+                  {% with field_name="meter_reading_"|concatenate:renewable_dp.id %}
+                    <div class="fr-input-group{% if form.field_errors|get_item:field_name %} fr-input-group--error{% endif %}">
+                    <input type="number"
+                           step="0.01"
+                           min="0"
+                           name="meter_reading_{{ renewable_dp.id }}"
+                           maxlength="150"
+                           class="fr-input{% if form.field_errors|get_item:field_name %} fr-input--error{% endif %}"
+                           {% if form.field_errors|get_item:field_name %}aria-describedby="{{ field_name }}-desc-error"{% endif %}
+                           placeholder="0"
+                           value="{% if form.is_bound %}{{ form.data|get_item:field_name }}{% endif %}" />
+
+                    {% if form.field_errors|get_item:field_name %}
+                      <p id="{{ field_name }}-desc-error" class="fr-error-text">{{ form.field_errors|get_item:field_name }}</p>
+                    {% endif %}
                   </div>
+                  {% endwith %}
                 </td>
               </tr>
               {% endfor %}
