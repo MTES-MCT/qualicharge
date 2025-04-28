@@ -14,7 +14,7 @@
         de livraison.
       </p>
 
-      {% if entity %}
+      {% if entity and renewable_delivery_points %}
         <form action="" method="post">
           {% csrf_token %}
 
@@ -22,9 +22,6 @@
             <div class="fr-messages-group" id="error-messages" aria-live="assertive">
               <div class="{% if form.renewable.errors %}fr-pl-3v{% endif %} fr-mb-6v">
                 <ul id="message-non-field-error">
-                  <li class="fr-message fr-message--error" id="message-error">
-                    {% trans "The form contains errors" %}
-                  </li>
                   {% if form.non_field_errors %}
                     {% for error in form.non_field_errors %}
                       <li class="fr-message fr-message--error">{{ error }}</li>
@@ -48,7 +45,7 @@
 
         </form>
       {% else %}
-        <p>{% trans "No production statement to enter." %}</p>
+        {% include "renewable/includes/_no_data_card.html" with description="Aucun relevé en attente." %}
       {% endif %}
     </div>
   </div>
