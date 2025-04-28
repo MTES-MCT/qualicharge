@@ -17,16 +17,13 @@
       {% if entity and renewable_delivery_points %}
         <form action="" method="post">
           {% csrf_token %}
+          {{ formset.management_form }}
 
-          {% if form.errors %}
+          {% if formset.non_form_errors %}
             <div class="fr-messages-group" id="error-messages" aria-live="assertive">
-              <div class="{% if form.renewable.errors %}fr-pl-3v{% endif %} fr-mb-6v">
-                <ul id="message-non-field-error">
-                  {% if form.non_field_errors %}
-                    {% for error in form.non_field_errors %}
-                      <li class="fr-message fr-message--error">{{ error }}</li>
-                    {% endfor %}
-                  {% endif %}
+              <div class=" fr-mb-6v">
+                <ul id="message-non-field-error" class="fr-message fr-message--error">
+                    {{ formset.non_form_errors }}
                 </ul>
               </div>
           </div>
