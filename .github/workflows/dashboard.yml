@@ -11,6 +11,9 @@ on:
     paths:
       - "src/dashboard/**"
 
+permissions:
+  contents: read
+
 jobs:
   build-dashboard:
     runs-on: ubuntu-latest
