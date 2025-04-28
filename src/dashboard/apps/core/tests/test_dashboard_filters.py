@@ -4,7 +4,11 @@ import pytest
 
 from apps.core.factories import DeliveryPointFactory, EntityFactory, StationFactory
 from apps.core.models import DeliveryPoint
-from apps.core.templatetags.dashboard_filters import sort_by_station
+from apps.core.templatetags.dashboard_filters import (
+    concatenate,
+    get_item,
+    sort_by_station,
+)
 
 
 @pytest.mark.django_db
@@ -55,3 +59,47 @@ def test_sort_by_station():
         list(result["stations_grouped"].keys())[0] for result in results
     ]
     assert ordered_station_names == sorted(ordered_station_names, key=str.casefold)
+
+
+@pytest.mark.parametrize(
+    "dictionary, key, expected",
+    [
+        ({"a": 1, "b": 2, "c": 3}, "a", 1),
+        ({"a": 1, "b": 2, "c": 3}, "b", 2),
+        ({"a": 1, "b": 2, "c": 3}, "d", ""),  # Key does not exist
+        ({}, "a", ""),  # Empty dictionary
+    ],
+)
+def test_get_item_valid_and_invalid_keys(dictionary, key, expected):
+    """Test get_item with valid and invalid keys."""
+    result = get_item(dictionary, key)
+    assert result == expected
+
+
+@pytest.mark.parametrize(
+    "dictionary, key",
+    [
+        (None, "a"),  # None dictionary
+        (None, "b"),  # None dictionary with another key
+    ],
+)
+def test_get_item_empty_or_none_dictionary(dictionary, key):
+    """Test get_item with empty or None dictionaries."""
+    result = get_item(dictionary, key)
+    assert result == ""
+
+
+@pytest.mark.parametrize(
+    "value, arg, expected",
+    [
+        ("Hello", "World", "HelloWorld"),  # Two strings
+        ("123", 456, "123456"),  # String and integer
+        ("Value:", 3.14, "Value:3.14"),  # String and float
+        ("Active:", True, "Active:True"),  # String and boolean
+        ("", "", ""),  # Two empty strings
+    ],
+)
+def test_concatenate_with_various_inputs(value, arg, expected):
+    """Test concatenate with various types of inputs."""
+    result = concatenate(value, arg)
+    assert result == expected

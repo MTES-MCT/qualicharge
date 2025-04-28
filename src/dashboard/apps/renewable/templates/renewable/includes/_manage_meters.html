@@ -54,7 +54,10 @@
                     {{ station_name }} {% if ids %}({{ ids|join:", " }}){% endif %}
                   {% endfor %}
                 </td>
-                <td> {{ renewable_dp.provider_assigned_id }} </td>
+                <td id="provider_assigned_id">
+                  {{ renewable_dp.provider_assigned_id }}
+                  <input type="hidden" name="delivery_point_ids" value="{{ renewable_dp.id }}">
+                </td>
                 <td>
                   {# todo: add templatetag to get actual period #}
                   -
@@ -66,15 +69,39 @@
                   -
                   {# 5698.45 kWh#}
                 </td>
-                <td>
-                  <div class="fr-input-group">
-                    <input type="date" name="" class="fr-input" required="">
+                               <td>
+                  {% with field_name="collected_at_"|concatenate:renewable_dp.id %}
+                    <div class="fr-input-group{% if form.field_errors|get_item:field_name %} fr-input-group--error{% endif %}">
+                    <input type="date"
+                       name="collected_at_{{ renewable_dp.id }}"
+                       class="fr-input{% if form.field_errors|get_item:field_name %} fr-input--error{% endif %}"
+                       {% if form.field_errors|get_item:field_name %}aria-describedby="{{ field_name }}-desc-error"{% endif %}
+                       value="{% if form.is_bound %}{{ form.data|get_item:field_name }}{% endif %}" />
+
+                    {% if form.field_errors|get_item:field_name %}
+                      <p class="fr-error-text">{{ form.field_errors|get_item:field_name }}</p>
+                    {% endif %}
                   </div>
+                  {% endwith %}
                 </td>
                 <td>
-                  <div class="fr-input-group">
-                    <input type="text" name="" maxlength="150" class="fr-input" required="" placeholder="0">
+                  {% with field_name="meter_reading_"|concatenate:renewable_dp.id %}
+                    <div class="fr-input-group{% if form.field_errors|get_item:field_name %} fr-input-group--error{% endif %}">
+                    <input type="number"
+                           step="0.01"
+                           min="0"
+                           name="meter_reading_{{ renewable_dp.id }}"
+                           maxlength="150"
+                           class="fr-input{% if form.field_errors|get_item:field_name %} fr-input--error{% endif %}"
+                           {% if form.field_errors|get_item:field_name %}aria-describedby="{{ field_name }}-desc-error"{% endif %}
+                           placeholder="0"
+                           value="{% if form.is_bound %}{{ form.data|get_item:field_name }}{% endif %}" />
+
+                    {% if form.field_errors|get_item:field_name %}
+                      <p id="{{ field_name }}-desc-error" class="fr-error-text">{{ form.field_errors|get_item:field_name }}</p>
+                    {% endif %}
                   </div>
+                  {% endwith %}
                 </td>
               </tr>
               {% endfor %}
