@@ -1,4 +1,4 @@
-{% load i18n %}
+{% load i18n dashboard_filters %}
 
 {# todo: review the useful cols and data to display in the table #}
 {# todo: add real text content #}
@@ -44,11 +44,16 @@
             </thead>
 
             <tbody>
-              {% for renewable_dp in renewable_delivery_points %}
+              {% for renewable_dp in renewable_delivery_points|sort_by_station %}
               <tr id="table-prm-row-key-{{ forloop.counter }}"
                   data-row-key="{{ forloop.counter }}"
                   aria-labelledby="row-label-{{ forloop.counter }}">
-                <td> Station {{ forloop.counter }} (FRMIRP17359) </td>
+                <td>
+                  {% for station_name, ids in renewable_dp.stations_grouped.items %}
+                    {% if forloop.counter0 > 0 %}<br />{% endif %}
+                    {{ station_name }} {% if ids %}({{ ids|join:", " }}){% endif %}
+                  {% endfor %}
+                </td>
                 <td> {{ renewable_dp.provider_assigned_id }} </td>
                 <td>
                   {# todo: add templatetag to get actual period #}

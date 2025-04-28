@@ -1,18 +1,19 @@
-"""Dashboard consent templatags tests."""
+"""Dashboard core mixins tests."""
 
 import pytest
 
-from apps.consent import AWAITING
-from apps.consent.templatetags.consent_filters import sort_by_station
 from apps.core.factories import DeliveryPointFactory, EntityFactory, StationFactory
+from apps.core.models import DeliveryPoint
+from apps.core.templatetags.dashboard_filters import sort_by_station
 
 
 @pytest.mark.django_db
 def test_sort_by_station():
     """Test `order_consents_by_station` function."""
     # test order_consents_by_station() without station
-    consents = []
-    results = sort_by_station(consents)
+    assert DeliveryPoint.objects.all().count() == 0
+    delivery_points = DeliveryPoint.objects.all()
+    results = sort_by_station(delivery_points)
     assert results == []
 
     # create entity, delivery points, consents and stations
@@ -41,28 +42,27 @@ def test_sort_by_station():
         delivery_point=dp_3, station_name="d", id_station_itinerance="FRGHIP01"
     )
 
-    consents = entity1.get_awaiting_consents()
-    results = sort_by_station(consents)
+    delivery_points = DeliveryPoint.objects.all()
+    results = sort_by_station(delivery_points)
 
     for result in results:
         # test retrieving the “standard” information from a consent
-        assert result["delivery_point_id"] in [dp_1.id, dp_2.id, dp_3.id]
+        assert result["id"] in [dp_1.id, dp_2.id, dp_3.id]
         assert result["provider_assigned_id"] is not None
-        assert result["status"] == AWAITING
 
-    # Extract provider_assigned_id, station_name and id_station_itinerance
-    # from grouped stations for comparison.
+    # Extract id, station_name and id_station_itinerance from grouped stations
+    # for comparison.
     delivery_point_stations = {
-        result["provider_assigned_id"]: result["stations_grouped"] for result in results
+        result["id"]: result["stations_grouped"] for result in results
     }
 
     assert delivery_point_stations == {
-        dp_2.provider_assigned_id: {
+        dp_2.id: {
             "A": ["FRDEFP03"],
             "C": ["FRDEFP05"],
             "p": ["FRDEFP04"],
             "y": ["FRDEFP02"],
         },
-        dp_1.provider_assigned_id: {"B": ["FRABCP01"]},
-        dp_3.provider_assigned_id: {"d": ["FRGHIP01"]},
+        dp_1.id: {"B": ["FRABCP01"]},
+        dp_3.id: {"d": ["FRGHIP01"]},
     }
