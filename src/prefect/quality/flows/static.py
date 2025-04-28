@@ -135,7 +135,7 @@ def run_api_db_validation(environment, report_by_email: bool = False):
         validation_definitions=[
             validation,
         ],
-        actions=action_list,
+        actions=action_list,  # type: ignore[arg-type]
         result_format={"result_format": "COMPLETE"},
     )
     result = checkpoint.run()
@@ -220,7 +220,7 @@ def run_api_db_validation_by_amenageur(
             validation_definitions=[
                 validation,
             ],
-            actions=action_list,
+            actions=action_list,  # type: ignore[arg-type]
             result_format={"result_format": "COMPLETE"},
         )
         result = checkpoint.run()
@@ -234,7 +234,8 @@ def run_api_db_validation_by_amenageur(
             for r in v.results:
                 qc_results.suite.append(
                     QCExpectationResult(
-                        code=r.expectation_config.meta.get("code"), success=r.success
+                        code=r.expectation_config.meta.get("code"),  # type: ignore[union-attr]
+                        success=r.success,
                     )
                 )
         report.results.append(qc_results)
