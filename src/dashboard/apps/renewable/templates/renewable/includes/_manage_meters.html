@@ -44,18 +44,22 @@
             </thead>
 
             <tbody>
-              {% for i in '123'|make_list %}
+              {% for renewable_dp in renewable_delivery_points %}
               <tr id="table-prm-row-key-{{ forloop.counter }}"
                   data-row-key="{{ forloop.counter }}"
                   aria-labelledby="row-label-{{ forloop.counter }}">
                 <td> Station {{ forloop.counter }} (FRMIRP17359) </td>
-                <td> 31472430812876 </td>
+                <td> {{ renewable_dp.provider_assigned_id }} </td>
                 <td>
-                  1er trimestre 2025<br />
-                  du 01/01/2025 au 31/03/2025
+                  {# todo: add templatetag to get actual period #}
+                  -
+                  {# 1er trimestre 2025<br />#}
+                  {# du 01/01/2025 au 31/03/2025#}
                 </td>
                 <td>
-                  5698.45 kWh
+                {# todo: add the previous renewable meters and their date #}
+                  -
+                  {# 5698.45 kWh#}
                 </td>
                 <td>
                   <div class="fr-input-group">
