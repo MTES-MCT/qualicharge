@@ -8,6 +8,11 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Changed
+
+- Upgrade Pydantic to `2.11.3`
+- Upgrade pydantic-settings to `2.9.1`
+
 ### Fixed
 
 - Fix copy/pasta in manage endpoint doc strings

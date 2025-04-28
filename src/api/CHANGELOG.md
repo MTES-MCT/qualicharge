@@ -8,6 +8,17 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Changed
+
+#### Dependencies
+
+- Upgrade `pyarrow` to `20.0.0`
+- Upgrade `pydantic` to `2.11.3`
+- Upgrade `pydantic-extra-types` to `2.10.4`
+- Upgrade `pydantic-settings` to `2.9.1`
+- Upgrade `sentry-sdk` to `2.27.0`
+- Upgrade `setuptools` to `80.0.0`
+
 ## [0.22.1] - 2025-04-17
 
 ### Fixed
