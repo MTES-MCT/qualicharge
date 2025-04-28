@@ -9,6 +9,9 @@ on:
       - "src/api/**"
       - "src/client/**"
 
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
