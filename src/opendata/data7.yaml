@@ -31,7 +31,7 @@ default:
         FROM
           Status
           INNER JOIN recent_statuses ON Status.id = recent_statuses.latest_id
-          INNER JOIN PointDeCharge ON PointDeCharge.id = status.point_de_charge_id
+          RIGHT JOIN PointDeCharge ON PointDeCharge.id = status.point_de_charge_id
         ORDER BY
           Status.horodatage DESC
     - basename: statiques
