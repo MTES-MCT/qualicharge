@@ -245,6 +245,13 @@ CONSENT_CONTROL_AUTHORITY = {
 CONSENT_SIGNATURE_LOCATION = env.str("CONSENT_SIGNATURE_LOCATION")
 
 
+## Renewable app
+
+# Defines the time window (in days) before the end of the previous quarter
+# during which meter readings are accepted.
+RENEWABLE_MIN_DAYS_FOR_METER_READING = env.int("RENEWABLE_MIN_DAYS_FOR_METER_READING")
+
+
 ## EMAIL
 
 # Email to contact the QualiCharge team

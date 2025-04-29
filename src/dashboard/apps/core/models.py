@@ -4,6 +4,7 @@ from collections import defaultdict
 
 from django.db import models
 from django.db.models import QuerySet
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from django_extensions.db.fields import AutoSlugField
 
@@ -13,7 +14,7 @@ from apps.renewable.models import Renewable
 
 from .abstract_models import DashboardBase
 from .managers import ActiveRenewableDeliveryPointManager, DeliveryPointManager
-from .utils import get_current_quarter_date_range
+from .utils import get_previous_quarter_date_range
 from .validators import validate_naf_code, validate_siret, validate_zip_code
 
 
@@ -180,13 +181,13 @@ class Entity(DashboardBase):
         )
 
     def get_unsubmitted_quarterly_renewables(self) -> QuerySet:
-        """Retrieve delivery points with pending renewable, within the current quarter.
+        """Retrieve delivery points with pending renewable, within the previous quarter.
 
         This method identifies renewable delivery points that have not yet been included
-        in the submissions for the current quarter.
+        in the submissions for the previous quarter to the current own.
         It does so by determining:
-            - the date range for the current quarter,
-            - fetching already submitted renewable delivery points for the current
+            - the date range for the previous quarter,
+            - fetching already submitted renewable delivery points for the previous
             quarter,
             - and excluding them from the available renewable delivery points.
 
@@ -194,8 +195,8 @@ class Entity(DashboardBase):
             QuerySet: A QuerySet of renewable delivery points that still need to be
             submitted.
         """
-        quarter_start_date, quarter_end_date = get_current_quarter_date_range()
-
+        now = timezone.now()
+        quarter_start_date, quarter_end_date = get_previous_quarter_date_range(now)
         submitted_renewables = (
             self.get_renewables()
             .filter(

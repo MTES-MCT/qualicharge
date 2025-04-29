@@ -94,7 +94,7 @@
                            maxlength="150"
                            class="fr-input{% if form.field_errors|get_item:field_name %} fr-input--error{% endif %}"
                            {% if form.field_errors|get_item:field_name %}aria-describedby="{{ field_name }}-desc-error"{% endif %}
-                           placeholder="0"
+                           placeholder="-"
                            value="{% if form.is_bound %}{{ form.data|get_item:field_name }}{% endif %}" />
 
                     {% if form.field_errors|get_item:field_name %}
