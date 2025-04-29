@@ -32,10 +32,12 @@ class Engine(metaclass=Singleton):
 
     _engine: Optional[SAEngine] = None
 
-    def get_engine(
+    def get_engine(  # noqa: PLR0913
         self,
         url: PostgresDsn,
         echo: bool = False,
+        pool_check: bool = False,
+        pool_recycle: int = -1,
         pool_size: int = 10,
         max_overflow: int = 20,
     ) -> SAEngine:
@@ -43,7 +45,12 @@ class Engine(metaclass=Singleton):
         if self._engine is None:
             logger.debug("Create a new engine")
             self._engine = create_engine(
-                str(url), echo=echo, pool_size=pool_size, max_overflow=max_overflow
+                str(url),
+                echo=echo,
+                pool_pre_ping=pool_check,
+                pool_recycle=pool_recycle,
+                pool_size=pool_size,
+                max_overflow=max_overflow,
             )
         logger.debug("Getting database engine %s", self._engine)
         return self._engine
@@ -80,6 +87,8 @@ def get_engine() -> SAEngine:
     return Engine().get_engine(
         url=settings.DATABASE_URL,
         echo=settings.DEBUG,
+        pool_check=settings.DB_CONNECTION_POOL_CHECK,
+        pool_recycle=settings.DB_CONNECTION_POOL_RECYCLE,
         pool_size=settings.DB_CONNECTION_POOL_SIZE,
         max_overflow=settings.DB_CONNECTION_MAX_OVERFLOW,
     )
