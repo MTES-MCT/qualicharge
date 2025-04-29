@@ -39,20 +39,3 @@ def sort_by_station(delivery_points: QuerySet) -> list[Any]:
             else ""
         ),
     )
-
-
-@register.filter
-def get_item(dictionary: dict, key: str | int):
-    """Get an item from a dictionary.
-
-    Allows retrieving the value of a dictionary if its key is a variable.
-    """
-    if not dictionary:
-        return ""
-    return dictionary.get(key, "")
-
-
-@register.filter
-def concatenate(value: str, arg: str | int | float | bool) -> str:
-    """Concatenate two strings."""
-    return str(value) + str(arg)
