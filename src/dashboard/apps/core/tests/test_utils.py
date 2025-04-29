@@ -26,7 +26,7 @@ PREVIOUS_QUARTER_TEST_CASES = [
     (
         date(2025, 1, 6),  # testing date
         date(2024, 10, 1),  # expected start date
-        date(2024, 12, 31),  # expected end dat
+        date(2024, 12, 31),  # expected end date
     ),
     (date(2025, 3, 6), date(2024, 10, 1), date(2024, 12, 31)),
     (date(2025, 5, 6), date(2025, 1, 1), date(2025, 3, 31)),
