@@ -8,6 +8,12 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Added
+
+- Introduce two new database connection settings:
+  - `DB_CONNECTION_POOL_CHECK`
+  - `DB_CONNECTION_POOL_RECYCLE`
+
 ### Changed
 
 #### Dependencies
