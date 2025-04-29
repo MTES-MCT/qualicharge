@@ -621,19 +621,20 @@ def test_get_unsubmitted_quarterly_renewables(monkeypatch):
         INITIAL_SIZE, has_renewable=True, is_active=True, entity=entity_with_renewables
     )
 
-    # create renewables
+    # create renewables for all delivery points
     assert Renewable.objects.count() == 0
     RenewableFactory.create_batch(
         size=len(dps),
         delivery_point=factory.Iterator(dps),
         collected_at="2024-01-01",
     )
-    # create renewables for the current quarter
+    # create submitted renewable for the testing quarter (so, the previous from now)
     RenewableFactory(
         delivery_point=dps[0],
-        collected_at="2025-02-21",
+        collected_at="2024-12-21",
     )
-    assert Renewable.objects.count() == INITIAL_SIZE + 1
+    expected_size = 5
+    assert Renewable.objects.count() == expected_size
 
     # test entity without renewables
     renewable_dps = entity_without_renewables.get_unsubmitted_quarterly_renewables()
@@ -704,7 +705,7 @@ def test_count_unsubmitted_quarterly_renewables(monkeypatch):
         INITIAL_SIZE, has_renewable=True, is_active=True, entity=entity_with_renewables
     )
 
-    # create renewables
+    # create old renewables
     assert Renewable.objects.count() == 0
     RenewableFactory.create_batch(
         size=len(dps),
@@ -714,9 +715,10 @@ def test_count_unsubmitted_quarterly_renewables(monkeypatch):
     # create renewables for the current quarter
     RenewableFactory(
         delivery_point=dps[0],
-        collected_at="2025-02-21",
+        collected_at="2024-12-21",
     )
-    assert Renewable.objects.count() == INITIAL_SIZE + 1
+    expected_size = 5
+    assert Renewable.objects.count() == expected_size
 
     # test entity without renewables
     assert entity_without_renewables.count_unsubmitted_quarterly_renewables() == 0
