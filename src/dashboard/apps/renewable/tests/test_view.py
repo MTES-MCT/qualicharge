@@ -1,6 +1,7 @@
 """Dashboard renewable views tests."""
 
-from datetime import date
+import datetime as dt
+from datetime import date, datetime
 from http import HTTPStatus
 
 import pytest
@@ -161,6 +162,8 @@ def test_manage_views_post(client, monkeypatch):
     expected_renewable_count = 2
     expected_renewable_metter_reading_0 = 100.5
     expected_renewable_metter_reading_1 = 99.5
+    # collected date should be within x days prior to the previous quarter's end date
+    expected_collected_at = datetime(2025, 3, 28, tzinfo=dt.timezone.utc).date()
 
     user = UserFactory()
     entity = EntityFactory(users=(user,), name=ENTITY_NAME)
@@ -174,10 +177,10 @@ def test_manage_views_post(client, monkeypatch):
         "form-MAX_NUM_FORMS": "1000",
         "form-0-delivery_point": dp.id,
         "form-0-meter_reading": expected_renewable_metter_reading_0,
-        "form-0-collected_at": timezone.now().strftime("%Y-%m-%d"),
+        "form-0-collected_at": expected_collected_at,
         "form-1-delivery_point": dp2.id,
         "form-1-meter_reading": expected_renewable_metter_reading_1,
-        "form-1-collected_at": timezone.now().strftime("%Y-%m-%d"),
+        "form-1-collected_at": expected_collected_at,
         "has_confirmed_information_accuracy": True,
     }
 
@@ -185,7 +188,8 @@ def test_manage_views_post(client, monkeypatch):
 
     assert Renewable.objects.count() == 0
     response = client.post(
-        reverse("renewable:manage", kwargs={"slug": ENTITY_NAME}), data=form_data
+        reverse("renewable:manage", kwargs={"slug": ENTITY_NAME}),
+        data=form_data,
     )
 
     assert response.status_code == HTTPStatus.FOUND

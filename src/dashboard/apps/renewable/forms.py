@@ -1,14 +1,19 @@
 """Dashboard renewable app forms."""
 
-import datetime
+from datetime import date, timedelta
+from typing import Tuple
 
 from django import forms
 from django.conf import settings
 from django.forms import BaseModelFormSet
 from django.utils import timezone
+from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 
+from apps.core.utils import get_previous_quarter_date_range
 from apps.renewable.models import Renewable
+
+DateRange = Tuple[date, date]
 
 
 class RenewableCheckboxInput(forms.CheckboxInput):
@@ -71,7 +76,14 @@ class RenewableForm(forms.ModelForm):
                 )
 
     def clean_collected_at(self):
-        """Validates the collected_at field."""
+        """Validates the collected_at field.
+
+        - collected_at is required when a meter reading is provided
+        - collected_at must be within the authorized date range
+        - authorized date range:
+            [previous_quarter_end - x_days] and [previous_quarter_end]
+        - collected_at cannot be a future date
+        """
         collected_at = self.cleaned_data.get("collected_at")
         meter_reading = self.cleaned_data.get("meter_reading")
 
@@ -83,21 +95,54 @@ class RenewableForm(forms.ModelForm):
         if not collected_at:
             return collected_at
 
-        # TODO: This logic should be moved to the models or a helper function.
-        # TODO: Review the logic: readings meters should be taken between the last day
-        #  of the previous quarter and 'x' days before the end of the previous quarter.
-        # TODO: the 'x' days should be configurable via the settings.
-        today = datetime.datetime.now().date()
-        min_date = today - datetime.timedelta(days=10)
+        min_date, end_date = self._get_authorized_date_range()
 
-        if collected_at > today:
-            raise forms.ValidationError(_("The date cannot be in the future"))
+        if collected_at > end_date:
+            raise forms.ValidationError(
+                mark_safe(  # noqa: S308
+                    _(
+                        f"The date cannot be in the future. <br />"
+                        f"Collected date should be "
+                        f"between {min_date.strftime("%d/%m/%Y")} "
+                        f"and {end_date.strftime("%d/%m/%Y")}."
+                    )
+                )
+            )
         elif collected_at < min_date:
             raise forms.ValidationError(
-                _(f"The date cannot be earlier than {min_date}")
+                mark_safe(  # noqa: S308
+                    _(
+                        f"The date cannot be earlier than "
+                        f"{min_date.strftime("%d/%m/%Y")}."
+                        f"<br />"
+                        f"Collected date should be "
+                        f"between {min_date.strftime("%d/%m/%Y")} "
+                        f"and {end_date.strftime("%d/%m/%Y")}."
+                    )
+                )
             )
 
         return collected_at
+
+    @staticmethod
+    def _get_authorized_date_range() -> DateRange:
+        """Returns the authorized date range for the meter reading.
+
+        The method calculates the quarter date range based on the current date
+        and ensures the start date aligns with the minimum required days for readings.
+
+        Returns:
+            Tuple[datetime, datetime]: A tuple containing the min date and end date
+            for the authorized date range.
+        """
+        now = timezone.now()
+
+        start_date, end_date = get_previous_quarter_date_range(now)
+        min_date = end_date - timedelta(
+            days=settings.RENEWABLE_MIN_DAYS_FOR_METER_READING
+        )
+
+        return min_date, end_date
 
 
 class RenewableFormSet(BaseModelFormSet):
