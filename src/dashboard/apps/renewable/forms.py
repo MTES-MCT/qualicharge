@@ -1,14 +1,19 @@
 """Dashboard renewable app forms."""
 
-import datetime
-import uuid
+from datetime import date, datetime, timedelta
+from typing import Tuple
 
 from django import forms
+from django.conf import settings
 from django.forms import ModelForm
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 from apps.consent.forms import ConsentCheckboxInput
+from apps.core.utils import get_previous_quarter_date_range
 from apps.renewable.models import Renewable
+
+DateRange = Tuple[date, date]
 
 
 class RenewableReadingForm(ModelForm):
@@ -77,11 +82,14 @@ class RenewableReadingForm(ModelForm):
                 )
 
     def clean(self):
-        """Cleans the data of the form and particularly the dynamic fields."""
+        """Cleans the data of the form and add custom clean for the dynamic fields."""
         cleaned_data = super().clean()
 
         for dp in self.delivery_points:
-            self._clean_collected_at(dp.id)
+            collected_at_key = f"collected_at_{dp.id}"
+            meter_reading_key = f"meter_reading_{dp.id}"
+
+            self._clean_collected_at(collected_at_key, meter_reading_key)
             self._clean_meter_reading(dp.id)
 
         if self.field_errors:
@@ -91,21 +99,22 @@ class RenewableReadingForm(ModelForm):
 
         return cleaned_data
 
-    def _clean_collected_at(self, dp_id: uuid.UUID) -> bool:
+    def _clean_collected_at(
+        self, collected_at_key: str, meter_reading_key: str
+    ) -> bool:
         """Cleans and validates the dynamic 'collected_at' field.
 
         - Collected date is required if a meter reading is provided
-        - The date cannot be in the future
-        - The date cannot be earlier than x days
+        - The collected date must not exceed the end date of the previous quarter
+        - The collected date must not be earlier than x days before the end date of the
+        previous quarter.
+        - x is defined in the settings.RENEWABLE_MIN_DAYS_FOR_METER_READING
         """
-        collected_at_key = f"collected_at_{dp_id}"
-        meter_reading_key = f"meter_reading_{dp_id}"
-
         collected_at = self.data.get(collected_at_key)
         meter_reading = self.data.get(meter_reading_key)
 
         if meter_reading and not collected_at:
-            self.field_errors[f"collected_at_{dp_id}"] = _(
+            self.field_errors[collected_at_key] = _(
                 "Collected date is required if a meter reading is provided"
             )
             return True
@@ -113,33 +122,50 @@ class RenewableReadingForm(ModelForm):
         if not collected_at:
             return False
 
-        # TODO: This logic should be moved to the models or a helper function.
-        # TODO: Review the logic: readings meters should be taken between the last day
-        #  of the previous quarter and 'x' days before the end of the previous quarter.
-        # TODO: the 'x' days should be configurable via the settings.
-        date_value = datetime.datetime.strptime(collected_at, "%Y-%m-%d").date()
-        today = datetime.datetime.now().date()
-        min_date = today - datetime.timedelta(days=10)
+        collected_date = datetime.strptime(collected_at, "%Y-%m-%d").date()
+        min_date, end_date = self._get_authorized_date_range()
 
-        if date_value > today:
-            self.field_errors[collected_at_key] = _("The date cannot be in the future")
-            return True
-        elif date_value < min_date:
+        if collected_date > end_date:
             self.field_errors[collected_at_key] = _(
-                "The date cannot be earlier than 10 days"
+                f"The date cannot be in the future. "
+                f"Collected date should be between {min_date} and {end_date}."
+            )
+            return True
+        elif collected_date < min_date:
+            self.field_errors[collected_at_key] = _(
+                f"The date cannot be earlier than {min_date}. "
+                f"Collected date should be between {min_date} and {end_date}."
             )
             return True
 
         return False
 
-    def _clean_meter_reading(self, dp_id: uuid.UUID) -> bool:
+    @staticmethod
+    def _get_authorized_date_range() -> DateRange:
+        """Returns the authorized date range for the meter reading.
+
+        The method calculates the quarter date range based on the current date
+        and ensures the start date aligns with the minimum required days for readings.
+
+        Returns:
+            Tuple[datetime, datetime]: A tuple containing the min date and end date
+            for the authorized date range.
+        """
+        now = timezone.now()
+
+        start_date, end_date = get_previous_quarter_date_range(now)
+        min_date = end_date - timedelta(
+            days=settings.RENEWABLE_MIN_DAYS_FOR_METER_READING
+        )
+
+        return min_date, end_date
+
+    def _clean_meter_reading(self, meter_reading_key: str) -> bool:
         """Cleans and validates the dynamic 'meter_reading' field.
 
         - The value must be a positive float number
-
-        todo : if value is inferior as the previous meter reading, raise an error
+        - todo : if value is inferior as the previous meter reading, raise an error
         """
-        meter_reading_key = f"meter_reading_{dp_id}"
         meter_reading = self.data.get(meter_reading_key)
 
         if not meter_reading:
