@@ -1,4 +1,4 @@
-{% load i18n dashboard_filters %}
+{% load i18n dashboard_filters renewable_tags %}
 
 {# todo: review the useful cols and data to display in the table #}
 {# todo: add real text content #}
@@ -59,10 +59,7 @@
                   <input type="hidden" name="delivery_point_ids" value="{{ renewable_dp.id }}">
                 </td>
                 <td>
-                  {# todo: add templatetag to get actual period #}
-                  -
-                  {# 1er trimestre 2025<br />#}
-                  {# du 01/01/2025 au 31/03/2025#}
+                  {% quarter_period %}
                 </td>
                 <td>
                 {# todo: add the previous renewable meters and their date #}

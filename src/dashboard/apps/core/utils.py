@@ -20,9 +20,9 @@ def siret2siren(siret: str) -> str:
 
 def get_quarter_date_range(reference_date: date) -> DateRange:
     """Get the start and end day of a quarter for a given date."""
-    current_quarter = (reference_date.month - 1) // 3
+    current_quarter = (reference_date.month - 1) // MONTHS_PER_QUARTER
     first_day: date = date(reference_date.year, current_quarter * 3 + 1, 1)
-    last_day: date = first_day + relativedelta(months=3, days=-1)
+    last_day: date = first_day + relativedelta(months=MONTHS_PER_QUARTER, days=-1)
 
     return first_day, last_day
 
@@ -38,3 +38,21 @@ def get_previous_quarter_date_range(reference_date: date) -> DateRange:
     previous_day = first_day - relativedelta(days=1)
 
     return get_quarter_date_range(previous_day)
+
+
+def get_quarter_number(reference_date: date) -> int:
+    """Determines the quarter number for a given date.
+
+    Args:
+        reference_date: The date for which to calculate the quarter.
+              If None, uses the current date.
+
+    Returns:
+        int: The quarter number (1-4).
+              Q1: January-March
+              Q2: April-June
+              Q3: July-September
+              Q4: October-December
+    """
+    first_day, _ = get_quarter_date_range(reference_date)
+    return (first_day.month - 1) // MONTHS_PER_QUARTER + 1
