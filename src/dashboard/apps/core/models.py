@@ -206,10 +206,40 @@ class Entity(DashboardBase):
             .values_list("delivery_point__id", flat=True)
         )
 
-        return DeliveryPoint.renewable_objects.filter(
-            entity=self,
-        ).exclude(
-            id__in=submitted_renewables,
+        last_meter_reading_subquery = (
+            Renewable.active_objects.filter(
+                delivery_point=models.OuterRef("id"),
+                collected_at__lt=quarter_start_date,
+            )
+            .order_by("-collected_at")
+            .values("meter_reading")[:1]
+        )
+
+        last_collected_at_subquery = (
+            Renewable.active_objects.filter(
+                delivery_point=models.OuterRef("id"),
+                collected_at__lt=quarter_start_date,
+            )
+            .order_by("-collected_at")
+            .values("collected_at")[:1]
+        )
+
+        return (
+            DeliveryPoint.renewable_objects.filter(
+                entity=self,
+            )
+            .exclude(
+                id__in=submitted_renewables,
+            )
+            .annotate(
+                last_meter_reading=models.Subquery(
+                    last_meter_reading_subquery, output_field=models.FloatField()
+                ),
+                last_collected_at=models.Subquery(
+                    last_collected_at_subquery, output_field=models.DateTimeField()
+                ),
+            )
+            .select_related("entity")
         )
 
 

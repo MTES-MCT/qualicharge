@@ -62,9 +62,19 @@
                   {% quarter_period %}
                 </td>
                 <td>
-                {# todo: add the previous renewable meters and their date #}
-                  -
-                  {# 5698.45 kWh#}
+                  {{ renewable_dp.last_meter_reading }}
+                  <button class="fr-btn--tooltip fr-btn"
+                          type="button"
+                          id="button-{{ renewable_dp.provider_assigned_id }}"
+                          aria-describedby="tooltip-{{ renewable_dp.provider_assigned_id }}">
+                      date du relevé précèdent
+                  </button>
+                  <span class="fr-tooltip fr-placement"
+                        id="tooltip-{{ renewable_dp.provider_assigned_id }}"
+                        role="tooltip"
+                        aria-hidden="true">
+                    relevé du {{ renewable_dp.last_collected_at|date:"d/m/Y" }}
+                  </span>
                 </td>
                                <td>
                   {% with field_name="collected_at_"|concatenate:renewable_dp.id %}
