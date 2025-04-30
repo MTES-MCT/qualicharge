@@ -29,7 +29,7 @@
                   <div class="fr-cell__title">Identifiant du PDL</div>
                 </th>
                 <th scope="col">
-                  <div class="fr-cell__title">Période d'autorisation</div>
+                  <div class="fr-cell__title">Période</div>
                 </th>
                 <th scope="col">
                   <div class="fr-cell__title">Relevé précédent (kWh)</div>
@@ -59,7 +59,7 @@
                   <input type="hidden" name="delivery_point_ids" value="{{ renewable_dp.id }}">
                 </td>
                 <td>
-                  {% quarter_period %}
+                  {% display_renewable_reading_period %}
                 </td>
                 <td>
                   {{ renewable_dp.last_meter_reading }}

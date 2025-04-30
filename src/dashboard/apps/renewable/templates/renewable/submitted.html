@@ -1,0 +1,74 @@
+{% extends "renewable/base.html" %}
+
+{% load dsfr_tags %}
+
+{% load i18n static dashboard_filters renewable_tags %}
+
+{% block dashboard_content %}
+  <h2>Relevés de production transmis</h2>
+
+  <p>
+    Retrouver ici la liste des relevés de production que vous avez transmis.
+  </p>
+
+  {% if renewables %}
+    <div class="fr-table fr-table--no-caption" id="table-pdl-component">
+      <div class="fr-table__wrapper">
+        <div class="fr-table__container">
+          <div class="fr-table__content">
+
+            <table id="table-pdl" aria-labelledby="table-pdl-caption">
+              <caption id="table-pdl-caption"> Relevés de production transmis </caption>
+
+              <thead>
+                <tr>
+                  <th scope="col">
+                    <div class="fr-cell__title">Nom / Identifiant de la station</div>
+                  </th>
+                  <th scope="col">
+                    <div class="fr-cell__title">Identifiant du PDL</div>
+                  </th>
+                  <th scope="col">
+                    <div class="fr-cell__title">Période</div>
+                  </th>
+                  <th scope="col">
+                    <div class="fr-cell__title">date du relevé</div>
+                  </th>
+                  <th scope="col">
+                    <div class="fr-cell__title">Relevé de production (kWh)</div>
+                  </th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {% for renewable_dp in renewables|sort_submitted_renewable_by_station %}
+                <tr id="table-pdl-row-key-{{ forloop.counter }}"
+                    data-row-key="{{ forloop.counter }}"
+                    aria-labelledby="row-label-{{ forloop.counter }}">
+                  <td>
+                    {% for station_name, ids in renewable_dp.stations_grouped.items %}
+                      {% if forloop.counter0 > 0 %}<br />{% endif %}
+                      {{ station_name }} {% if ids %}({{ ids|join:", " }}){% endif %}
+                    {% endfor %}
+                  </td>
+                  <td> {{ renewable_dp.provider_assigned_id }} </td>
+                  <td> {% display_quarter_period renewable_dp.collected_at %} </td>
+                  <td> {{ renewable_dp.collected_at|date:"d/m/Y" }} </td>
+                  <td> {{ renewable_dp.meter_reading }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {% dsfr_pagination page_obj %}
+
+  {% else %}
+    {% include "consent/includes/_no_data_card.html" with description="Aucun relevé de production transmis." %}
+  {% endif %}
+
+{% endblock dashboard_content %}

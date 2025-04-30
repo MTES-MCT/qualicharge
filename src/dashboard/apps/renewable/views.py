@@ -8,7 +8,7 @@ from django.http import HttpResponse
 from django.urls import reverse_lazy as reverse
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
-from django.views.generic import FormView, TemplateView
+from django.views.generic import FormView, ListView, TemplateView
 
 from apps.core.mixins import EntityMixin
 from apps.core.models import DeliveryPoint
@@ -119,3 +119,20 @@ class RenewableMetterReadingFormView(EntityMixin, BaseView, FormView):
             raise ValidationError(_("The form contains errors.")) from e
 
         return Renewable.objects.bulk_create(update_objects)
+
+
+class SubmittedRenewableView(EntityMixin, BaseView, ListView):
+    """Submitted renewable view."""
+
+    context_object_name = "renewables"
+    template_name = "renewable/submitted.html"
+
+    breadcrumb_current = _("Submitted renewable meter reading")
+    breadcrumb_links = [
+        {"url": reverse("renewable:index"), "title": BREADCRUMB_CURRENT_LABEL},
+    ]
+
+    def get_queryset(self):
+        """Filter queryset to only return submitted renewables for the current user."""
+        entity = self.get_entity()
+        return entity.get_renewables()

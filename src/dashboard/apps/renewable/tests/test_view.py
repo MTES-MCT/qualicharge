@@ -14,7 +14,7 @@ from apps.core.factories import DeliveryPointFactory, EntityFactory
 from apps.core.mixins import EntityMixin
 from apps.core.models import DeliveryPoint
 from apps.renewable.models import Renewable
-from apps.renewable.views import RenewableMetterReadingFormView
+from apps.renewable.views import RenewableMetterReadingFormView, SubmittedRenewableView
 
 
 @pytest.mark.django_db
@@ -346,3 +346,10 @@ def test_manage_views_bulk_update_renewables_invalid_inputs(rf, invalid_input):
         result = view._bulk_create_renewables(expected_renewable_dps, mock_form)
         assert len(result) == 0
     assert Renewable.objects.all().count() == 0
+
+
+@pytest.mark.django_db
+def test_submitted_renewable_view_inherits_mixins():
+    """Test SubmittedRenewableView inherits mixins."""
+    assert issubclass(SubmittedRenewableView, EntityMixin)
+    assert issubclass(SubmittedRenewableView, UserValidationMixin)
