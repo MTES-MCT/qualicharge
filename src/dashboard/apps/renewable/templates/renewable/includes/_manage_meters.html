@@ -1,4 +1,4 @@
-{% load i18n dashboard_filters %}
+{% load i18n dashboard_filters renewable_tags %}
 
 {# todo: review the useful cols and data to display in the table #}
 {# todo: add real text content #}
@@ -63,10 +63,8 @@
                 </td>
 
                 <td>
-                  {# todo: add templatetag to get actual period #}
-                  -
-                  {# 1er trimestre 2025<br />#}
-                  {# du 01/01/2025 au 31/03/2025#}
+                  {% previous_quarter_period %}<br />
+                  {% previous_quarter_period_dates %}
                 </td>
 
                 <td>
