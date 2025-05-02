@@ -125,7 +125,7 @@ def calculate_historicization_up(
         + df_up["mean"] ** 2
         - grp_sum["size_mean"] * 2 * df_up["mean"] / df_up["size"]
         + grp_sum["size_mean_square"] / df_up["size"]
-    )
+    ).apply(lambda x: max(x, 0))
     df_up["std"] = df_up["var"].pow(0.5)
     df_up["sum"] = df_up["mean"] * df_up["size"]
     df_up["from"] = from_period.value
@@ -163,6 +163,16 @@ def to_historicization_up(
     return encode_historicization_format(histo_up_df, timespan_up)
 
 
+@task(task_run_name="get-indicators", cache_policy=NONE)
+def get_indicators(query_template: Template, query_params: dict) -> pd.DataFrame:
+    """Return indicators to historicize."""
+    with Session(get_indicators_db_engine()) as session:
+        histo_df = pd.read_sql_query(
+            query_template.substitute(query_params), con=session.connection()
+        )
+    return histo_df
+
+
 @flow(
     task_runner=ThreadPoolTaskRunner(max_workers=settings.THREAD_POOL_MAX_WORKERS),
     flow_run_name="meta-up-{to_period.value}{offset}",
@@ -190,10 +200,7 @@ def calculate(  # noqa: PLR0913
         "end": init_period + PeriodDuration[to_period.name].value,
     }
     query_template = Template(QUERY_HISTORICIZE)
-    with Session(get_indicators_db_engine()) as session:
-        histo_df = pd.read_sql_query(
-            query_template.substitute(query_params), con=session.connection()
-        )
+    histo_df = get_indicators(query_template, query_params)
     histo_indicator = to_historicization_up(histo_df, period, final_timespan)
     description = (
         f"up report at {final_timespan.start} (period: {final_timespan.period.value})"

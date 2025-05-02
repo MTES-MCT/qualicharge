@@ -110,6 +110,7 @@ def get_targets_for_level(level: Level, environment: Environment) -> pd.DataFram
         return pd.read_sql_table(level.name.lower(), con=session.connection())
 
 
+@task(task_run_name="export-indicators")
 def export_indicators(  # noqa: PLR0913
     indicators: pd.DataFrame,
     environment: Environment,
