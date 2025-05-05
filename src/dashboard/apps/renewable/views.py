@@ -1,5 +1,7 @@
 """Dashboard renewable meter app views."""
-
+import sentry_sdk
+from anymail.exceptions import AnymailRequestsAPIError
+from anymail.message import AnymailMessage
 from django.conf import settings
 from django.contrib import messages
 from django.core.exceptions import ValidationError
@@ -10,6 +12,7 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from django.views.generic import FormView, ListView, TemplateView
 
+from apps.core.mails import send_mail
 from apps.core.mixins import EntityMixin
 from apps.core.models import DeliveryPoint
 from apps.core.views import BaseView
@@ -119,6 +122,34 @@ class RenewableMetterReadingFormView(EntityMixin, BaseView, FormView):
             raise ValidationError(_("The form contains errors.")) from e
 
         return Renewable.objects.bulk_create(update_objects)
+
+    def _send_email(self) -> None:
+        """Email the user after the renewable meter reading has been submitted.
+
+        This method constructs and sends an email using the Anymail library based on
+        predefined configurations.
+        It logs errors with Sentry and fails silently if API errors.
+        The email contains user information and a link to return in the dashboard.
+
+        Raises:
+            AnymailRequestsAPIError: If an error occurs while sending the email.
+
+            todo : add DASHBOARD_EMAIL_CONFIGS["renewable_validation"]
+            todo : add deprecation warning for the consent.helpers.send_mail
+        """
+        user = self.request.user
+        email_config = settings.DASHBOARD_EMAIL_CONFIGS["renewable_validation"]
+        template_id = email_config.get("template_id")
+
+        email_data = {
+            user.email: {  # type: ignore[union-attr]
+                "last_name": user.last_name,  # type: ignore[union-attr]
+                "first_name": user.first_name,  # type: ignore[union-attr]
+                "link": email_config.get("link"),
+            }
+        }
+
+        send_mail([user.email], template_id=template_id, email_data=email_data)
 
 
 class SubmittedRenewableView(EntityMixin, BaseView, ListView):
