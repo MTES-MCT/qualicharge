@@ -16,6 +16,6 @@ and this project adheres to
 
 ### Changed
 
-- Upgrade Psycopg to `3.2.6`
+- Upgrade Psycopg to `3.2.7`
 
 [unreleased]: https://github.com/MTES-MCT/qualicharge/

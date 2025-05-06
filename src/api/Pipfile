@@ -15,9 +15,9 @@ httpx = {extras = ["cli"], version = "==0.28.1"}
 pandas = "==2.2.3"
 passlib = {extras = ["bcrypt"], version = "==1.7.4"}
 postgresql-audit = "==0.17.1"
-psycopg = {extras = ["pool", "binary"], version = "==3.2.6"}
+psycopg = {extras = ["pool", "binary"], version = "==3.2.7"}
 pyarrow = "==20.0.0"
-pydantic = "==2.11.3"
+pydantic = "==2.11.4"
 pydantic-extra-types = {extras = ["all"], version = "==2.10.4"}
 pydantic-settings = "==2.9.1"
 pyinstrument = "==5.0.1"
@@ -25,18 +25,18 @@ pyjwt = "==2.10.1"
 python-multipart = "==0.0.20"
 questionary = "==2.1.0"
 sentry-sdk = {extras = ["fastapi"], version = "==2.27.0"}
-setuptools = "==80.0.0"
+setuptools = "==80.3.1"
 sqlalchemy-timescaledb = "==0.4.1"
 sqlalchemy-utils = "==0.41.2"
 sqlmodel = "==0.0.24"
-typer = "==0.15.2"
+typer = "==0.15.3"
 uvicorn = {extras = ["standard"] }
 
 [dev-packages]
 black = "==25.1.0"
 csvkit = "==2.1.0"
 honcho = "==2.0.0"
-locust = "==2.36.2"
+locust = "==2.37.0"
 mypy = "==1.15.0"
 pandas-stubs = "==2.2.3.250308"
 polyfactory = "==2.21.0"
@@ -44,7 +44,7 @@ pytest = "==8.3.5"
 pytest-cov = "==6.1.1"
 pytest-httpx = "==0.35.0"
 qualicharge = {path = ".", editable = true}
-ruff = "==0.11.7"
+ruff = "==0.11.8"
 types-cachetools = "==5.5.0.20240820"
 types-passlib = "==1.7.7.20250408"
 types-python-jose = "==3.4.0.20250224"

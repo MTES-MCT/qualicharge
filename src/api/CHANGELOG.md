@@ -8,6 +8,15 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Changed
+
+#### Dependencies
+
+- Upgrade `psycopg` to `3.2.7`
+- Upgrade `pydantic` to `2.11.4`
+- Upgrade `setuptools` to `80.3.1`
+- Upgrade `typer` to `0.15.3`
+
 ## [0.23.0] - 2025-04-30
 
 ### Added

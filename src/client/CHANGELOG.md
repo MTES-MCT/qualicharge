@@ -10,8 +10,11 @@ and this project adheres to
 
 ### Changed
 
-- Upgrade Pydantic to `2.11.3`
+#### Dependencies
+
+- Upgrade Pydantic to `2.11.4`
 - Upgrade pydantic-settings to `2.9.1`
+- Upgrade `typer` to `0.15.3`
 
 ### Fixed
 
@@ -25,6 +28,8 @@ and this project adheres to
 
 ### Changed
 
+#### Dependencies
+
 - Upgrade anyio to `4.6.1`
 - Upgrade httpx to `0.28.0`
 - Upgrade Pydantic to `2.9.1`
@@ -36,6 +41,9 @@ and this project adheres to
 ### Changed
 
 - Compress requests for bulk endpoints
+
+#### Dependencies
+
 - Upgrade Pydantic to `2.7.4`
 - Upgrade pydantic-settings to `2.8.0`
 - Upgrade typer to `0.12.5`
