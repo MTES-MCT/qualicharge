@@ -75,6 +75,7 @@ function create_user() {
     --scopes "static:read" \
     --scopes "static:update" \
     --scopes "dynamic:create" \
+    --scopes "dynamic:read" \
     "${username}"
 }
 
