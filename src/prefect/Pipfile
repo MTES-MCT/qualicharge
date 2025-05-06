@@ -7,11 +7,11 @@ name = "pypi"
 geoalchemy2 = {extras = ["shapely"], version = "==0.17.1"}
 geopandas = "==1.0.1"
 great_expectations = {extras = ["postgresql"], version = "==1.4.2"}
-pandas = "==2.1.4"
-prefect = "==3.1.5"
-psycopg = {extras = ["pool", "binary"], version = "==3.2.6"}
+pandas = "==2.2.3"
+prefect = "==3.4.0"
+psycopg = {extras = ["pool", "binary"], version = "==3.2.7"}
 pyarrow = "==20.0.0"
-pydantic = "==2.10.6"
+pydantic = "==2.11.4"
 tabulate = "==0.9.0"
 
 [dev-packages]
@@ -21,8 +21,8 @@ mypy = "==1.15.0"
 pandas-stubs = "==2.2.3.250308"
 pytest = "==8.3.5"
 pytest-cov = "==6.1.1"
-ruff = "==0.11.7"
-setuptools = "==80.0.0"
+ruff = "==0.11.8"
+setuptools = "==80.3.1"
 types-python-dateutil = "*"
 
 [requires]
