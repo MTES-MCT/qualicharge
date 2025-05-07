@@ -8,6 +8,8 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.1.0] - 2025-05-07
+
 ### Added
 
 - bootstrap dashboard project
@@ -58,4 +60,5 @@ to the `REVOKED` status
 - add a command to seed consents (for development only)
 - add cron job configuration to schedule management tasks
 
-[unreleased]: https://github.com/MTES-MCT/qualicharge/compare/main...bootstrap-dashboard-project
+[unreleased]: https://github.com/MTES-MCT/qualicharge/compare/v0.1.0-dashboard...main
+[0.1.0]: https://github.com/MTES-MCT/qualicharge/releases/tag/v0.1.0-dashboard
