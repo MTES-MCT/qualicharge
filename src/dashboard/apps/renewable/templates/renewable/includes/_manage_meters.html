@@ -44,42 +44,58 @@
             </thead>
 
             <tbody>
-              {% for renewable_dp in renewable_delivery_points|sort_by_station %}
-              <tr id="table-prm-row-key-{{ forloop.counter }}"
-                  data-row-key="{{ forloop.counter }}"
-                  aria-labelledby="row-label-{{ forloop.counter }}">
+              {% for form in formset %}
+              <input type="hidden" name="form-{{ forloop.counter0 }}-delivery_point" value="{{ form.delivery_point_obj.id }}">
+              <tr id="table-prm-row-key-{{ forloop.counter0 }}"
+                  data-row-key="{{ forloop.counter0 }}"
+                  aria-labelledby="row-label-{{ forloop.counter0 }}">
+
                 <td>
-                  {% for station_name, ids in renewable_dp.stations_grouped.items %}
+                  {% for station_name, ids in form.stations_grouped.items %}
                     {% if forloop.counter0 > 0 %}<br />{% endif %}
                     {{ station_name }} {% if ids %}({{ ids|join:", " }}){% endif %}
                   {% endfor %}
                 </td>
-                <td> {{ renewable_dp.provider_assigned_id }} </td>
+
+                <td id="provider_assigned_id">
+                  {{ form.delivery_point_obj.provider_assigned_id }}
+                  <input type="hidden" name="delivery_point_ids" value="{{ form.delivery_point_obj.id }}">
+                </td>
+
                 <td>
                   {# todo: add templatetag to get actual period #}
                   -
                   {# 1er trimestre 2025<br />#}
                   {# du 01/01/2025 au 31/03/2025#}
                 </td>
+
                 <td>
                 {# todo: add the previous renewable meters and their date #}
                   -
                   {# 5698.45 kWh#}
                 </td>
                 <td>
-                  <div class="fr-input-group">
-                    <input type="date" name="" class="fr-input" required="">
+                  <div class="fr-input-group{% if form.collected_at.errors %} fr-input-group--error{% endif %}">
+                    {{ form.collected_at }}
+                    {% if form.collected_at.errors %}
+                      <ul class="fr-error-text">{{ form.collected_at.errors }}</ul>
+                    {% endif %}
                   </div>
                 </td>
+
                 <td>
-                  <div class="fr-input-group">
-                    <input type="text" name="" maxlength="150" class="fr-input" required="" placeholder="0">
+                  <div class="fr-input-group{% if form.meter_reading.errors %} fr-input-group--error{% endif %}">
+                    {{ form.meter_reading }}
+                    {% if form.meter_reading.errors %}
+                        <ul class="fr-error-text">{{ form.meter_reading.errors }}</ul>
+                    {% endif %}
                   </div>
                 </td>
               </tr>
               {% endfor %}
             </tbody>
           </table>
+
         </div>
       </div>
     </div>

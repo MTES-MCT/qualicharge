@@ -3,7 +3,10 @@
 from django.urls import path
 from django.views.generic.base import RedirectView
 
-from .views import IndexView, RenewableMetterReadingFormView
+from .views import (
+    IndexView,
+    RenewableMetterReadingFormView,
+)
 
 app_name = "renewable"
 

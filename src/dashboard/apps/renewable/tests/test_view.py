@@ -1,15 +1,18 @@
 """Dashboard renewable views tests."""
 
+from datetime import date
 from http import HTTPStatus
 
 import pytest
 from django.urls import reverse
+from django.utils import timezone
 
 from apps.auth.factories import UserFactory
 from apps.auth.mixins import UserValidationMixin
 from apps.core.factories import DeliveryPointFactory, EntityFactory
 from apps.core.mixins import EntityViewMixin
 from apps.core.models import DeliveryPoint
+from apps.renewable.models import Renewable
 from apps.renewable.views import RenewableMetterReadingFormView
 
 
@@ -148,3 +151,107 @@ def test_manage_views_get_context_data(rf, settings):
         renewable_dps, expected_renewable_dps, strict=True
     ):
         assert renewable.id == expected_renewable.id
+
+
+@pytest.mark.django_db
+def test_manage_views_post(client, monkeypatch):
+    """Test post() method of RenewableMetterReadingFormView."""
+    monkeypatch.setattr(timezone, "now", lambda: date(2025, 5, 6))
+    ENTITY_NAME = "entity-1"
+    expected_renewable_count = 2
+    expected_renewable_metter_reading_0 = 100.5
+    expected_renewable_metter_reading_1 = 99.5
+
+    user = UserFactory()
+    entity = EntityFactory(users=(user,), name=ENTITY_NAME)
+    dp = DeliveryPointFactory(entity=entity, has_renewable=True, is_active=True)
+    dp2 = DeliveryPointFactory(entity=entity, has_renewable=True, is_active=True)
+
+    form_data = {
+        "form-TOTAL_FORMS": "2",
+        "form-INITIAL_FORMS": "0",
+        "form-MIN_NUM_FORMS": "0",
+        "form-MAX_NUM_FORMS": "1000",
+        "form-0-delivery_point": dp.id,
+        "form-0-meter_reading": expected_renewable_metter_reading_0,
+        "form-0-collected_at": timezone.now().strftime("%Y-%m-%d"),
+        "form-1-delivery_point": dp2.id,
+        "form-1-meter_reading": expected_renewable_metter_reading_1,
+        "form-1-collected_at": timezone.now().strftime("%Y-%m-%d"),
+        "has_confirmed_information_accuracy": True,
+    }
+
+    client.force_login(user)
+
+    assert Renewable.objects.count() == 0
+    response = client.post(
+        reverse("renewable:manage", kwargs={"slug": ENTITY_NAME}), data=form_data
+    )
+
+    assert response.status_code == HTTPStatus.FOUND
+    assert Renewable.objects.count() == expected_renewable_count
+
+    renewable = Renewable.objects.get(delivery_point=dp)
+    assert renewable.meter_reading == expected_renewable_metter_reading_0
+
+    renewable = Renewable.objects.get(delivery_point=dp2)
+    assert renewable.meter_reading == expected_renewable_metter_reading_1
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "meter_reading, collected_at, has_confirmed, form_error_key",
+    [
+        # test case for meter_reading
+        ("abc", "2024-03-20 10:00:00", True, "meter_reading"),
+        ("-100", "2024-03-20 10:00:00", True, "meter_reading"),
+        # test case for collected_at
+        ("100.5", None, True, "collected_at"),
+        ("100.5", "invalid_date", True, "collected_at"),
+        ("100.5", "2099-03-20 10:00:00", True, "collected_at"),  # in futur
+        ("100.5", "2024-03-20 10:00:00", True, "collected_at"),  # in past
+    ],
+)
+def test_manage_views_post_with_invalid_data(  # noqa: PLR0913
+    meter_reading,
+    collected_at,
+    has_confirmed,
+    form_error_key,
+    client,
+    monkeypatch,
+):
+    """Test post() method of RenewableMetterReadingFormView with invalid data."""
+    monkeypatch.setattr(timezone, "now", lambda: date(2025, 5, 6))
+    ENTITY_NAME = "entity-1"
+
+    user = UserFactory()
+    entity = EntityFactory(users=(user,), name=ENTITY_NAME)
+    dp = DeliveryPointFactory(entity=entity, has_renewable=True, is_active=True)
+
+    form_data = {
+        "form-TOTAL_FORMS": "1",
+        "form-INITIAL_FORMS": "0",
+        "form-MIN_NUM_FORMS": "0",
+        "form-MAX_NUM_FORMS": "1000",
+        "form-0-delivery_point": dp.id,
+    }
+
+    if meter_reading is not None:
+        form_data["form-0-meter_reading"] = meter_reading
+
+    if collected_at is not None:
+        form_data["form-0-collected_at"] = collected_at
+
+    if has_confirmed is not None:
+        form_data["form-0-has_confirmed_information_accuracy"] = has_confirmed
+
+    assert Renewable.objects.count() == 0
+    client.force_login(user)
+    response = client.post(
+        reverse("renewable:manage", kwargs={"slug": ENTITY_NAME}), data=form_data
+    )
+    assert response.status_code == HTTPStatus.OK
+    assert Renewable.objects.count() == 0
+
+    formset = response.context["formset"]
+    assert formset.errors[0].get(form_error_key) is not None

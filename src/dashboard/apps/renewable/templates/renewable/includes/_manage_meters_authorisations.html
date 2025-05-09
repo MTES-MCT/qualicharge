@@ -1,14 +1,6 @@
 <div class=" fr-mb-6v">
   <div class="fr-checkbox-group">
-    <input type="checkbox" name="renewable_agreed" required="" id="id_renewable_agreed" data-fr-js-checkbox-input="true">
-
-    <label class="fr-label" for="id_renewable_agreed">
-      <span>
-        <strong>Je confirme l'exactitude des informations du présent formulaire et consent au traitement de mes données Enedis par la DGEC</strong>
-      </span>
-      <span class="fr-hint-text"></span>
-    </label>
-
-    <div class="fr-messages-group" id="id_renewable_agreed--messages" aria-live="assertive"></div>
+    {{ formset.get_has_confirmed_information_accuracy_field }}
+    <div class="fr-messages-group" id="id_has_confirmed_information_accuracy--messages" aria-live="assertive"></div>
   </div>
 </div>
