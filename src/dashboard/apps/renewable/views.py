@@ -2,18 +2,22 @@
 
 from typing import Any
 
+import sentry_sdk
+from anymail.exceptions import AnymailRequestsAPIError
+from anymail.message import AnymailMessage
 from django.conf import settings
 from django.contrib import messages
 from django.core.exceptions import ValidationError
 from django.db.models import QuerySet
 from django.forms import modelformset_factory
 from django.urls import reverse_lazy as reverse
+from django.utils import timezone as django_timezone
 from django.utils.translation import gettext_lazy as _
 from django.views.generic import FormView, ListView, TemplateView
 
 from apps.core.mixins import EntityViewMixin
 from apps.core.models import Entity
-from apps.core.utils import get_quarter_number
+from apps.core.utils import get_previous_quarter_date_range, get_quarter_number
 from apps.core.views import BaseView
 from apps.renewable.forms import RenewableForm, RenewableFormSet
 from apps.renewable.models import Renewable
@@ -133,6 +137,7 @@ class RenewableMetterReadingFormView(EntityViewMixin, BaseView, FormView):
             except ValidationError:
                 self.form_invalid(formset)
 
+            self._send_email()
             messages.success(
                 request,
                 _(f"{len(renewables)} renewable meter reading(s) updated."),
@@ -145,6 +150,50 @@ class RenewableMetterReadingFormView(EntityViewMixin, BaseView, FormView):
         """Handle invalid formset."""
         formset.non_form_errors().append(_("The form contains errors."))
         return self.render_to_response(self.get_context_data(formset=formset))
+
+    def _send_email(self) -> None:
+        """Email the user after the renewable meter reading has been submitted.
+
+        This method constructs and sends an email using the Anymail library based on
+        predefined configurations.
+        It logs errors with Sentry and fails silently if API errors.
+        The email contains user information and a link to go back to the dashboard.
+
+        Raises:
+            AnymailRequestsAPIError: If an error occurs while sending the email.
+        """
+        user = self.request.user
+        email_config_name = settings.DASHBOARD_EMAIL_RENEWABLE_SUBMISSION
+        email_config = settings.DASHBOARD_EMAIL_CONFIGS[email_config_name]
+        template_id = email_config.get("template_id")
+
+        now = django_timezone.now()
+        start_period, end_period = get_previous_quarter_date_range(now)
+
+        email_data = {
+            user.email: {  # type: ignore[union-attr]
+                "last_name": user.last_name,  # type: ignore[union-attr]
+                "first_name": user.first_name,  # type: ignore[union-attr]
+                "start_period": start_period.strftime("%d/%m/%Y"),
+                "end_period": end_period.strftime("%d/%m/%Y"),
+                "link": email_config.get("link"),
+            }
+        }
+
+        email = AnymailMessage(
+            to=[
+                user.email,  # type: ignore[union-attr]
+            ],
+            template_id=template_id,
+            merge_data=email_data,
+        )
+
+        try:
+            email.send()
+        except AnymailRequestsAPIError as e:
+            # fail silently and send a sentry log
+            sentry_sdk.capture_exception(e)
+            return
 
 
 class SubmittedRenewableView(EntityViewMixin, BaseView, ListView):
