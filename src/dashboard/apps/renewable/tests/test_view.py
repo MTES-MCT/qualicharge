@@ -325,6 +325,7 @@ def test_sort_submitted_renewable_by_station():
         {"id": r6.id, "stations_grouped": {"j": ["FRG01"]}},
     ]
 
+
 @pytest.mark.django_db
 def test_send_email_notification_populated(monkeypatch, rf):
     """Test `_send_email` is sent."""
