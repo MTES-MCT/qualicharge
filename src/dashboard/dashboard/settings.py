@@ -271,6 +271,7 @@ DASHBOARD_EMAIL_CONSENT_VALIDATION = "consent_validation"
 DASHBOARD_EMAIL_NEW_SUBSCRIPTION = "new_subscription"
 DASHBOARD_EMAIL_VALIDATED_USER = "validated_user"
 DASHBOARD_EMAIL_AWAITING_EMAIL = "awaiting_email"
+DASHBOARD_EMAIL_RENEWABLE_SUBMISSION = "renewable_submission"
 DASHBOARD_EMAIL_CONFIGS = {
     # Configuration for the notification email sent to the user when
     # they validate their consents.
@@ -291,6 +292,10 @@ DASHBOARD_EMAIL_CONFIGS = {
     },
     DASHBOARD_EMAIL_AWAITING_EMAIL: {
         "template_id": env.int("AWAITING_EMAIL_TEMPLATE_ID"),
+        "link": env.str("DOMAIN"),
+    },
+    DASHBOARD_EMAIL_RENEWABLE_SUBMISSION: {
+        "template_id": env.int("RENEWABLE_SUBMISSION_TEMPLATE_ID"),
         "link": env.str("DOMAIN"),
     },
 }
