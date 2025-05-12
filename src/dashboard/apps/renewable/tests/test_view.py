@@ -3,8 +3,10 @@
 import datetime as dt
 from datetime import date, datetime
 from http import HTTPStatus
+from unittest.mock import patch
 
 import pytest
+from django.conf import settings as django_settings
 from django.urls import reverse
 from django.utils import timezone
 
@@ -322,3 +324,57 @@ def test_sort_submitted_renewable_by_station():
         {"id": r5.id, "stations_grouped": {"B": ["FRA01"], "c": ["FRD05"]}},
         {"id": r6.id, "stations_grouped": {"j": ["FRG01"]}},
     ]
+
+@pytest.mark.django_db
+def test_send_email_notification_populated(monkeypatch, rf):
+    """Test `_send_email` is sent."""
+    monkeypatch.setattr(timezone, "now", lambda: date(2025, 5, 6))
+    entity_name = "entity-1"
+
+    user = UserFactory()
+    expected_renewable_metter_reading = 100.5
+
+    entity = EntityFactory(users=(user,), name=entity_name)
+    dp = DeliveryPointFactory(entity=entity, has_renewable=True, is_active=True)
+
+    form_data = {
+        "form-TOTAL_FORMS": "1",
+        "form-INITIAL_FORMS": "0",
+        "form-MIN_NUM_FORMS": "0",
+        "form-MAX_NUM_FORMS": "1000",
+        "form-0-delivery_point": dp.id,
+        "form-0-meter_reading": expected_renewable_metter_reading,
+        "form-0-collected_at": timezone.now().strftime("%Y-%m-%d"),
+        "form-1-collected_at": timezone.now().strftime("%Y-%m-%d"),
+        "has_confirmed_information_accuracy": True,
+    }
+
+    request = rf.post(
+        reverse("renewable:manage", kwargs={"slug": entity_name}), data=form_data
+    )
+    request.user = user
+
+    view = RenewableMetterReadingFormView()
+    view.setup(request)
+
+    with patch("apps.renewable.views.AnymailMessage") as mock_message:
+        email_send_mock = mock_message.return_value.send
+        view._send_email()
+
+        email_config_name = django_settings.DASHBOARD_EMAIL_RENEWABLE_SUBMISSION
+        email_config = django_settings.DASHBOARD_EMAIL_CONFIGS[email_config_name]
+
+        mock_message.assert_called_once_with(
+            to=[user.email],
+            template_id=email_config.get("template_id"),
+            merge_data={
+                user.email: {
+                    "last_name": user.last_name,
+                    "first_name": user.first_name,
+                    "start_period": "01/01/2025",
+                    "end_period": "31/03/2025",
+                    "link": email_config.get("link"),
+                }
+            },
+        )
+        email_send_mock.assert_called_once()
