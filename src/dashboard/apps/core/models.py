@@ -171,6 +171,10 @@ class Entity(DashboardBase):
             "delivery_point__provider_assigned_id",
         )
 
+    def has_renewable(self) -> bool:
+        """Return True if the entity has at least one renewable delivery_point."""
+        return self.delivery_points.filter(has_renewable=True).exists()
+
     def get_renewables(self) -> QuerySet[Renewable]:
         """Get all renewable for this entity."""
         return Renewable.active_objects.filter(
