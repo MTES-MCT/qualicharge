@@ -742,3 +742,16 @@ def test_count_unsubmitted_quarterly_renewables(monkeypatch):
     assert (
         entity_with_renewables.count_unsubmitted_quarterly_renewables() == expected_size
     )
+
+
+@pytest.mark.django_db
+def test_entity_has_renewable():
+    """Test Entity.has_renewable method."""
+    # create, users, entity and consents
+    entity = EntityFactory()
+    DeliveryPointFactory(has_renewable=True, is_active=True, entity=entity)
+    assert entity.has_renewable() is True
+
+    entity_without_renewable = EntityFactory()
+    DeliveryPointFactory(has_renewable=False, is_active=True, entity=entity)
+    assert entity_without_renewable.has_renewable() is False
