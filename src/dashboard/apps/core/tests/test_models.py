@@ -621,19 +621,28 @@ def test_get_unsubmitted_quarterly_renewables(monkeypatch):
         INITIAL_SIZE, has_renewable=True, is_active=True, entity=entity_with_renewables
     )
 
-    # create renewables for all delivery points
     assert Renewable.objects.count() == 0
+    # Create a previous renewable to test `last_renewable.meter_reading`
+    # and `last_renewable.collected_at`
+    previous_date = "2024-09-20"
+    previous_meter_reading = 1000.5
+    RenewableFactory(
+        delivery_point=dps[1],
+        collected_at=previous_date,
+        meter_reading=previous_meter_reading,
+    )
+    # create older renewables for all delivery points
     RenewableFactory.create_batch(
         size=len(dps),
         delivery_point=factory.Iterator(dps),
-        collected_at="2024-01-01",
+        collected_at="2023-01-01",
     )
     # create submitted renewable for the testing quarter (so, the previous from now)
-    RenewableFactory(
+    submitted_renewable = RenewableFactory(
         delivery_point=dps[0],
         collected_at="2024-12-21",
     )
-    expected_size = 5
+    expected_size = 6
     assert Renewable.objects.count() == expected_size
 
     # test entity without renewables
@@ -644,7 +653,12 @@ def test_get_unsubmitted_quarterly_renewables(monkeypatch):
     renewable_dps = entity_with_renewables.get_unsubmitted_quarterly_renewables()
     expected_size = 3
     assert renewable_dps.count() == expected_size
-    assert all(r.id != dps[0].id for r in renewable_dps)
+    assert all(r.id != submitted_renewable.id for r in renewable_dps)
+
+    # test the `last_renewable.meter_reading` and `last_renewable.collected_at` fields
+    first_dp = renewable_dps.get(id=dps[1].id)
+    assert first_dp.last_renewable[0].meter_reading == previous_meter_reading
+    assert first_dp.last_renewable[0].collected_at.strftime("%Y-%m-%d") == previous_date
 
 
 @pytest.mark.django_db

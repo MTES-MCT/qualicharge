@@ -68,10 +68,23 @@
                 </td>
 
                 <td>
-                {# todo: add the previous renewable meters and their date #}
-                  -
-                  {# 5698.45 kWh#}
+                  {% with last_renewable=form.delivery_point_obj.last_renewable.0 %}
+                    {{ last_renewable.meter_reading }} kWh
+                    <button class="fr-btn--tooltip fr-btn"
+                            type="button"
+                            id="button-{{ form.delivery_point_obj.provider_assigned_id }}"
+                            aria-describedby="tooltip-{{ form.delivery_point_obj.provider_assigned_id }}">
+                        date du relevé précèdent
+                    </button>
+                    <span class="fr-tooltip fr-placement"
+                          id="tooltip-{{ form.delivery_point_obj.provider_assigned_id }}"
+                          role="tooltip"
+                          aria-hidden="true">
+                      relevé du {{ last_renewable.collected_at|date:"d/m/Y" }}
+                    </span>
+                  {% endwith %}
                 </td>
+
                 <td>
                   <div class="fr-input-group{% if form.collected_at.errors %} fr-input-group--error{% endif %}">
                     {{ form.collected_at }}
