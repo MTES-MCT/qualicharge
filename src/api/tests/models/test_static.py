@@ -140,6 +140,18 @@ def test_statique_model_date_mise_en_service():
         StatiqueFactory.build(date_mise_en_service=tomorrow)
 
 
+def test_statique_model_restriction_gabarit_len():
+    """Test the Statique model `restriction_gabarit` field length."""
+    statique = StatiqueFactory.build(restriction_gabarit="Aucune")
+    assert statique.restriction_gabarit == "Aucune"
+
+    for value in ["", " ", "  ", "N"]:
+        with pytest.raises(
+            ValueError, match="String should have at least 2 characters"
+        ):
+            StatiqueFactory.build(restriction_gabarit=value)
+
+
 def test_statique_model_str_fields_strip():
     """Test the Statique model string fields stripping."""
     nom_amenageur = " Foo Inc.  "
