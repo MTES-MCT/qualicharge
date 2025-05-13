@@ -216,7 +216,7 @@ class Statique(ModelSchemaMixin, BaseModel):
     ]
     accessibilite_pmr: AccessibilitePMREnum
     restriction_gabarit: Annotated[
-        str, StringConstraints(strip_whitespace=True)
+        str, StringConstraints(min_length=2, strip_whitespace=True)
     ]
     station_deux_roues: bool
     raccordement: Optional[RaccordementEnum] = None

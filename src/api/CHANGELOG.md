@@ -11,6 +11,7 @@ and this project adheres to
 ### Changed
 
 - `Statique` model string fields are now stripped
+- `Statique.restriction_gabarit` field should be at least 2 characters long
 
 #### Dependencies
 
