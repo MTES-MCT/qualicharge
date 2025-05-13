@@ -7,6 +7,7 @@ from unittest.mock import patch
 
 import pytest
 from django.conf import settings as django_settings
+from django.http import Http404
 from django.urls import reverse
 from django.utils import timezone
 
@@ -17,7 +18,11 @@ from apps.core.mixins import EntityViewMixin
 from apps.core.models import DeliveryPoint
 from apps.renewable.factories import RenewableFactory
 from apps.renewable.models import Renewable
-from apps.renewable.views import RenewableMetterReadingFormView, SubmittedRenewableView
+from apps.renewable.views import (
+    DeliveryPointRenewableFormSetView,
+    RenewableMetterReadingFormView,
+    SubmittedRenewableView,
+)
 
 
 @pytest.mark.django_db
@@ -379,3 +384,213 @@ def test_send_email_notification_populated(monkeypatch, rf):
             },
         )
         email_send_mock.assert_called_once()
+
+
+@pytest.mark.django_db
+def test_delivery_point_renewable_formset_view_inherits_mixins():
+    """Test DeliveryPointRenewableFormSetView inherits mixins."""
+    assert issubclass(DeliveryPointRenewableFormSetView, EntityViewMixin)
+    assert issubclass(DeliveryPointRenewableFormSetView, UserValidationMixin)
+
+
+@pytest.mark.django_db
+def test_delivery_point_renewable_formset_view_without_slug_is_redirected(client):
+    """Test direct access to renewable:delivery-points is redirected to index."""
+    user = UserFactory()
+    client.force_login(user)
+
+    response = client.get(reverse("renewable:delivery-points"))
+    assert response.status_code == HTTPStatus.FOUND
+    assert response.url == reverse("renewable:index")
+
+
+@pytest.mark.django_db
+def test_delivery_point_renewable_formset_view_with_wrong_slug_raised_404(client):
+    """Test direct access to renewable:manage is redirected to index."""
+    user = UserFactory()
+    client.force_login(user)
+
+    entity_name = "entity-1"
+    wrong_slug = "wrong-slug"
+    EntityFactory(name=entity_name, users=[user])
+
+    url = reverse("renewable:delivery-points", kwargs={"slug": wrong_slug})
+    response = client.get(url)
+
+    assert response.status_code == HTTPStatus.NOT_FOUND
+
+
+@pytest.mark.django_db
+def test_delivery_point_renewable_formset_view_without_data(client):
+    """Test DeliveryPointRenewableFormSetView without data."""
+    user = UserFactory()
+    client.force_login(user)
+
+    entity_name = "entity-1"
+    EntityFactory(name=entity_name, users=[user])
+    url = reverse("renewable:delivery-points", kwargs={"slug": entity_name})
+    response = client.get(url)
+    assert response.status_code == HTTPStatus.OK
+
+    # force template rendering
+    rendered = response.render()
+    html = rendered.content.decode()
+
+    expected_html_id = 'id="no-data-card"'
+    assert (expected_html_id in html) is True
+
+
+@pytest.mark.django_db
+def test_delivery_point_renewable_formset_view_with_data(client):
+    """Test DeliveryPointRenewableFormSetView with data."""
+    user = UserFactory()
+    client.force_login(user)
+
+    # create entity and associated delivery points
+    assert DeliveryPoint.objects.all().count() == 0
+    entity_name = "entity-1"
+    entity = EntityFactory(name=entity_name, users=[user])
+
+    size = 2
+    dps = DeliveryPointFactory.create_batch(
+        size=size,
+        entity=entity,
+        has_renewable=True,
+        is_active=True,
+    )
+    dp_3 = DeliveryPointFactory(entity=entity, has_renewable=False, is_active=True)
+    # create an inactive delivery point. It should not be listed.
+    dp_4 = DeliveryPointFactory(entity=entity, has_renewable=True, is_active=False)
+    expected_size = 4
+    assert DeliveryPoint.objects.all().count() == expected_size
+
+    # render manage view
+    url = reverse("renewable:delivery-points", kwargs={"slug": entity_name})
+    response = client.get(url)
+    assert response.status_code == HTTPStatus.OK
+
+    # force template rendering
+    rendered = response.render()
+    html = rendered.content.decode()
+
+    # add all created delivery points to the list
+    active_dps = dps + [dp_3]
+    # test all delivery points are listed
+    assert all(str(dp.provider_assigned_id) in html for dp in active_dps)
+    assert dp_4.provider_assigned_id not in html
+
+
+@pytest.mark.django_db
+def test_delivery_point_renewable_formset_view_get_context_data(client):
+    """Test get_context_data() method of DeliveryPointRenewableFormSetView."""
+    user = UserFactory()
+    client.force_login(user)
+
+    # create entity
+    entity_name = "entity-1"
+    entity = EntityFactory(name=entity_name, users=[user])
+
+    # create delivery points
+    assert DeliveryPoint.objects.all().count() == 0
+    dp1 = DeliveryPointFactory(entity=entity, has_renewable=True, is_active=True)
+    dp2 = DeliveryPointFactory(entity=entity, has_renewable=False, is_active=True)
+    # create an inactive delivery point. It should not be listed.
+    DeliveryPointFactory(entity=entity, has_renewable=True, is_active=False)
+    expected_size = 3
+    assert DeliveryPoint.objects.all().count() == expected_size
+
+    # accessing the view and get context data
+    url = reverse("renewable:delivery-points", kwargs={"slug": entity_name})
+    response = client.get(url)
+    assert response.status_code == HTTPStatus.OK
+
+    # check context
+    context = response.context
+    expected_dp_context_size = 2
+    assert "entity" in context
+    assert "formset" in context
+    assert "delivery_points" in context
+
+    # check context values
+    assert context["entity"] == entity
+
+    # check delivery points
+    delivery_points = context["delivery_points"]
+    assert delivery_points.count() == expected_dp_context_size
+    assert set(delivery_points) == {dp1, dp2}
+
+    # check formset
+    formset = context["formset"]
+    assert len(formset.forms) == expected_dp_context_size
+    for form in formset.forms:
+        assert hasattr(form, "delivery_point_obj")
+        assert hasattr(form, "stations_grouped")
+        assert form.delivery_point_obj in [dp1, dp2]
+
+
+@pytest.mark.django_db
+def test_delivery_point_renewable_formset_view_post_not_found(rf):
+    """Test if post method raises Http404 when entity is not found."""
+    user = UserFactory()
+    entity_name = "no-entity"
+    url = reverse("renewable:delivery-points", kwargs={"slug": entity_name})
+    request = rf.post(url)
+    request.user = user
+    view = DeliveryPointRenewableFormSetView()
+    view.request = request
+    view.kwargs = {"slug": entity_name}
+
+    with pytest.raises(Http404):
+        view.post(request)
+
+
+@pytest.mark.django_db
+def test_delivery_point_renewable_formset_view_post(client):
+    """Test if post method handles formset.
+
+    Test `has_renewable` state changes for delivery points:
+        - dp0: initial=True, form=True → expected=True
+        - dp1: initial=False, form=True → expected=True
+        - dp2: initial=True, form=False → expected=False
+    """
+    entity_name = "entity-1"
+
+    user = UserFactory()
+    entity = EntityFactory(users=(user,), name=entity_name)
+    dp0 = DeliveryPointFactory(entity=entity, has_renewable=True, is_active=True)
+    dp1 = DeliveryPointFactory(entity=entity, has_renewable=False, is_active=True)
+    dp2 = DeliveryPointFactory(entity=entity, has_renewable=True, is_active=True)
+
+    form_data = {
+        "form-TOTAL_FORMS": "3",
+        "form-INITIAL_FORMS": "3",
+        "form-MIN_NUM_FORMS": "0",
+        "form-MAX_NUM_FORMS": "1000",
+        "form-0-id": dp0.id,
+        "form-0-has_renewable": True,
+        "form-0-entity_id": entity.id,
+        "form-1-id": dp1.id,
+        "form-1-has_renewable": True,
+        "form-1-entity_id": entity.id,
+        "form-2-id": dp2.id,
+        "form-2-has_renewable": False,
+        "form-2-entity_id": entity.id,
+    }
+
+    client.force_login(user)
+
+    response = client.post(
+        reverse("renewable:delivery-points", kwargs={"slug": entity_name}),
+        data=form_data,
+    )
+
+    assert response.status_code == HTTPStatus.OK
+
+    dp0.refresh_from_db()
+    assert dp0.has_renewable is True
+
+    dp1.refresh_from_db()
+    assert dp1.has_renewable is True
+
+    dp2.refresh_from_db()
+    assert dp2.has_renewable is False

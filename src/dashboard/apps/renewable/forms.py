@@ -10,6 +10,7 @@ from django.utils import timezone
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 
+from apps.core.models import DeliveryPoint
 from apps.core.utils import get_previous_quarter_date_range
 from apps.renewable.models import Renewable
 
@@ -230,3 +231,11 @@ class RenewableFormSet(BaseModelFormSet):
             Renewable.objects.bulk_create(instances)
 
         return instances
+
+
+class DeliveryPointRenewableForm(forms.ModelForm):
+    """Form for managing renewable delivery points."""
+
+    class Meta:  # noqa: D106
+        model = DeliveryPoint
+        fields = ["has_renewable"]
