@@ -4,6 +4,7 @@ from django.urls import path
 from django.views.generic.base import RedirectView
 
 from .views import (
+    DeliveryPointRenewableFormSetView,
     IndexView,
     RenewableMetterReadingFormView,
     SubmittedRenewableView,
@@ -21,4 +22,15 @@ urlpatterns = [
         name="manage",
     ),
     path("submitted/<slug:slug>", SubmittedRenewableView.as_view(), name="submitted"),
+    path(
+        "delivery-points/<slug:slug>",
+        DeliveryPointRenewableFormSetView.as_view(),
+        name="delivery-points",
+    ),
+    # direct access to `delivery-points/` is not allowed
+    path(
+        "delivery-points/",
+        RedirectView.as_view(pattern_name="renewable:index", permanent=False),
+        name="delivery-points",
+    ),
 ]

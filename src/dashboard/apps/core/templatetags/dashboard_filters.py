@@ -21,7 +21,6 @@ def sort_by_station(delivery_points: QuerySet) -> list[Any]:
     Returns:
         list[Any]: A sorted list of dictionaries, each containing structured data about
             the delivery point and its related stations.
-
     """
     structured_delivery_points = [
         {

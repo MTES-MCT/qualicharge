@@ -1,0 +1,48 @@
+{% extends "renewable/base.html" %}
+
+{# todo: add real text content #}
+
+{% load i18n static %}
+
+{% block dashboard_content %}
+  <div class="fr-grid-row">
+    <div class="fr-col">
+      <h2>Gestion des points de livraison renouvelables</h2>
+
+      {% if delivery_points %}
+        <form action="" method="post">
+          {% csrf_token %}
+          {{ formset.management_form }}
+
+          {% if formset.non_form_errors %}
+            <div class="fr-messages-group" id="error-messages" aria-live="assertive">
+              <div class=" fr-mb-6v">
+                <ul id="message-non-field-error" class="fr-message fr-message--error">
+                    {{ formset.non_form_errors }}
+                </ul>
+              </div>
+          </div>
+          {% endif %}
+
+          {% include "renewable/includes/_manage_delivery_points.html" %}
+
+          <ul class="fr-btns-group fr-btns-group--inline-reverse fr-btns-group--inline-lg">
+            <li>
+              <button id="btn-validate" type="submit" class="fr-btn" title="{% trans "submit" %}" name="submit">
+                {% trans "submit" %}
+              </button>
+            </li>
+            <li>
+              <a class="fr-btn fr-btn--secondary" title="{% trans "back" %}"
+                 href="{% url "renewable:index" %}" data-fr-js-link-actionee="true">
+                retour
+              </a>
+            </li>
+          </ul>
+        </form>
+      {% else %}
+        {% include "renewable/includes/_no_data_card.html" with description="Aucun point de livraison." %}
+      {% endif %}
+    </div>
+  </div>
+{% endblock dashboard_content %}
