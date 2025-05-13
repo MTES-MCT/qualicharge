@@ -1,0 +1,28 @@
+{% load i18n %}
+
+<div class="fr-card">
+  <div class="fr-card__body">
+
+    <div class="fr-card__content">
+      <h3 class="fr-card__title">
+        {{ resume_title }}
+      </h3>
+
+      {% if resume_description %}
+        <p class="fr-card__desc">
+          {{ resume_description }}
+        </p>
+      {% endif %}
+
+      {# awaiting renewable meter - no items #}
+      {% if not has_pending_renewable %}
+        {% include "renewable/includes/_no_data_card.html" with description="Aucun points de livraison." %}
+      {% endif %}
+    </div>
+
+    <div class="fr-card__footer">
+      {% include "renewable/includes/_summary_delivery_points_content.html" %}
+    </div>
+
+  </div>
+</div>

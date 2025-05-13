@@ -16,10 +16,14 @@ from django.utils.translation import gettext_lazy as _
 from django.views.generic import FormView, ListView, TemplateView
 
 from apps.core.mixins import EntityViewMixin
-from apps.core.models import Entity
+from apps.core.models import DeliveryPoint, Entity
 from apps.core.utils import get_previous_quarter_date_range, get_quarter_number
 from apps.core.views import BaseView
-from apps.renewable.forms import RenewableForm, RenewableFormSet
+from apps.renewable.forms import (
+    DeliveryPointRenewableForm,
+    RenewableForm,
+    RenewableFormSet,
+)
 from apps.renewable.models import Renewable
 
 BREADCRUMB_CURRENT_LABEL = _("Renewable meter")
@@ -247,3 +251,72 @@ class SubmittedRenewableView(EntityViewMixin, BaseView, ListView):
                 ),
             ),
         )
+
+
+class DeliveryPointRenewableFormSetView(EntityViewMixin, BaseView, FormView):
+    """Manage delivery points for renewable meters.."""
+
+    template_name = "renewable/manage_delivery_points.html"
+    form_class = DeliveryPointRenewableForm
+
+    breadcrumb_current = _("Manage renewable meter reading")
+    breadcrumb_links = [
+        {"url": reverse("renewable:index"), "title": BREADCRUMB_CURRENT_LABEL},
+    ]
+
+    def get_context_data(self, **kwargs):
+        """Add custom attributes to the context.
+
+        - get the entity
+        - get delivery points associated with the entity that are active
+        - add custom attributes to each form in the formset
+        """
+        entity = self.get_entity()
+        delivery_points = entity.delivery_points.filter(is_active=True)
+
+        formset = kwargs.get("formset")
+        if formset is None:
+            formset_class = self.get_formset_class()
+            formset = formset_class(queryset=delivery_points)
+
+        for form in formset:
+            form.delivery_point_obj = form.instance
+            form.stations_grouped = form.instance.get_linked_stations()
+
+        context = super().get_context_data(**kwargs)
+        context["entity"] = entity
+        context["formset"] = formset
+        context["delivery_points"] = delivery_points
+
+        return context
+
+    @staticmethod
+    def get_formset_class():
+        """Return the formset class."""
+        return modelformset_factory(
+            DeliveryPoint,
+            form=DeliveryPointRenewableForm,
+            extra=0,
+            can_delete=False,
+            fields=["has_renewable"],
+        )
+
+    def post(self, request, *args, **kwargs):
+        """Handle POST requests."""
+        entity = self.get_entity()
+        delivery_points = entity.delivery_points.filter(is_active=True)
+        formset_class = self.get_formset_class()
+        formset = formset_class(request.POST, queryset=delivery_points)
+
+        if formset.is_valid():
+            formset.save()
+            return self.form_valid(formset)
+
+        return self.form_invalid(formset)
+
+    def form_valid(self, form):
+        """Handle valid formset."""
+        messages.success(
+            self.request, _("Delivery points have been successfully updated.")
+        )
+        return self.render_to_response(self.get_context_data(form=form))
