@@ -10,11 +10,12 @@ from django.utils import timezone
 
 from apps.auth.factories import UserFactory
 from apps.auth.mixins import UserValidationMixin
-from apps.core.factories import DeliveryPointFactory, EntityFactory
+from apps.core.factories import DeliveryPointFactory, EntityFactory, StationFactory
 from apps.core.mixins import EntityViewMixin
 from apps.core.models import DeliveryPoint
+from apps.renewable.factories import RenewableFactory
 from apps.renewable.models import Renewable
-from apps.renewable.views import RenewableMetterReadingFormView
+from apps.renewable.views import RenewableMetterReadingFormView, SubmittedRenewableView
 
 
 @pytest.mark.django_db
@@ -259,3 +260,65 @@ def test_manage_views_post_with_invalid_data(  # noqa: PLR0913
 
     formset = response.context["formset"]
     assert formset.errors[0].get(form_error_key) is not None
+
+
+@pytest.mark.django_db
+def test_submitted_renewable_view_inherits_mixins():
+    """Test SubmittedRenewableView inherits mixins."""
+    assert issubclass(SubmittedRenewableView, EntityViewMixin)
+    assert issubclass(SubmittedRenewableView, UserValidationMixin)
+
+
+@pytest.mark.django_db
+def test_sort_submitted_renewable_by_station():
+    """Test `sort_submitted_renewable_by_station` function."""
+    # test order_consents_by_station() without station
+    renewables = Renewable.objects.all()
+    assert renewables.count() == 0
+    queryset = Renewable.objects.all()
+    result = SubmittedRenewableView._order_by_quarter_stations(queryset)
+    assert result == []
+
+    # create entity, delivery points, consents and stations
+    entity1 = EntityFactory()
+    dp_1 = DeliveryPointFactory(entity=entity1)
+    StationFactory(delivery_point=dp_1, station_name="B", id_station_itinerance="FRA01")
+    StationFactory(delivery_point=dp_1, station_name="c", id_station_itinerance="FRD05")
+
+    dp_2 = DeliveryPointFactory(entity=entity1)
+    StationFactory(delivery_point=dp_2, station_name="A", id_station_itinerance="FRD03")
+    StationFactory(delivery_point=dp_2, station_name="P", id_station_itinerance="FRD04")
+
+    dp_3 = DeliveryPointFactory(entity=entity1)
+    StationFactory(delivery_point=dp_3, station_name="j", id_station_itinerance="FRG01")
+
+    # create submitted renewables (in order of collected date and station name)
+    r1 = RenewableFactory(delivery_point=dp_2, collected_at="2025-03-21")
+    r2 = RenewableFactory(delivery_point=dp_1, collected_at="2025-03-21")
+    r3 = RenewableFactory(delivery_point=dp_2, collected_at="2024-06-21")
+    r4 = RenewableFactory(delivery_point=dp_3, collected_at="2024-06-21")
+    r5 = RenewableFactory(delivery_point=dp_1, collected_at="2024-03-21")
+    r6 = RenewableFactory(delivery_point=dp_3, collected_at="2024-03-21")
+
+    expected_renewables_count = 6
+    queryset = Renewable.objects.all()
+    assert renewables.count() == expected_renewables_count
+    result = SubmittedRenewableView._order_by_quarter_stations(queryset)
+
+    # Extract id, collected_at and stations_grouped from result for comparison
+    ordered_renewables = [
+        {
+            "id": item["id"],
+            "stations_grouped": item["stations_grouped"],
+        }
+        for item in result
+    ]
+
+    assert ordered_renewables == [
+        {"id": r1.id, "stations_grouped": {"A": ["FRD03"], "P": ["FRD04"]}},
+        {"id": r2.id, "stations_grouped": {"B": ["FRA01"], "c": ["FRD05"]}},
+        {"id": r3.id, "stations_grouped": {"A": ["FRD03"], "P": ["FRD04"]}},
+        {"id": r4.id, "stations_grouped": {"j": ["FRG01"]}},
+        {"id": r5.id, "stations_grouped": {"B": ["FRA01"], "c": ["FRD05"]}},
+        {"id": r6.id, "stations_grouped": {"j": ["FRG01"]}},
+    ]
