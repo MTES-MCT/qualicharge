@@ -140,6 +140,68 @@ def test_statique_model_date_mise_en_service():
         StatiqueFactory.build(date_mise_en_service=tomorrow)
 
 
+def test_statique_model_str_fields_strip():
+    """Test the Statique model string fields stripping."""
+    nom_amenageur = " Foo Inc.  "
+    contact_amenageur = " contact@foo.org "
+    nom_operateur = " Bar Inc."
+    contact_operateur = "contact@bar.org  "
+    telephone_operateur = " tel:+33-1-44-27-63-50  "
+    nom_enseigne = " Big Company"
+    id_station_itinerance = "FR073P00001  "
+    id_station_local = " id-01  "
+    nom_station = " Station 01  "
+    adresse_station = " 1 baker street 75000 PARIS "
+    code_insee_commune = "74264 "
+    id_pdc_itinerance = "FR073E0042  "
+    id_pdc_local = " pdc-01 "
+    tarification = " It's Free!  "
+    horaires = " Open 24/7  "
+    restriction_gabarit = " None (for now)  "
+    num_pdl = " 12345678901213  "
+    observations = " None (for now)  "
+
+    statique = StatiqueFactory.build(
+        nom_amenageur=nom_amenageur,
+        contact_amenageur=contact_amenageur,
+        nom_operateur=nom_operateur,
+        contact_operateur=contact_operateur,
+        telephone_operateur=telephone_operateur,
+        nom_enseigne=nom_enseigne,
+        id_station_itinerance=id_station_itinerance,
+        id_station_local=id_station_local,
+        nom_station=nom_station,
+        adresse_station=adresse_station,
+        code_insee_commune=code_insee_commune,
+        id_pdc_itinerance=id_pdc_itinerance,
+        id_pdc_local=id_pdc_local,
+        tarification=tarification,
+        horaires=horaires,
+        restriction_gabarit=restriction_gabarit,
+        num_pdl=num_pdl,
+        observations=observations,
+    )
+
+    assert statique.nom_amenageur == nom_amenageur.strip()
+    assert statique.contact_amenageur == contact_amenageur.strip()
+    assert statique.nom_operateur == nom_operateur.strip()
+    assert statique.contact_operateur == contact_operateur.strip()
+    assert statique.telephone_operateur == telephone_operateur.strip()
+    assert statique.nom_enseigne == nom_enseigne.strip()
+    assert statique.id_station_itinerance == id_station_itinerance.strip()
+    assert statique.id_station_local == id_station_local.strip()
+    assert statique.nom_station == nom_station.strip()
+    assert statique.adresse_station == adresse_station.strip()
+    assert statique.code_insee_commune == code_insee_commune.strip()
+    assert statique.id_pdc_itinerance == id_pdc_itinerance.strip()
+    assert statique.id_pdc_local == id_pdc_local.strip()
+    assert statique.tarification == tarification.strip()
+    assert statique.horaires == horaires.strip()
+    assert statique.restriction_gabarit == restriction_gabarit.strip()
+    assert statique.num_pdl == num_pdl.strip()
+    assert statique.observations == observations.strip()
+
+
 def test_statique_model_defaults():
     """Test the Statique model defaut values (when not provided)."""
     example = StatiqueFactory.build()

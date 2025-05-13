@@ -15,6 +15,7 @@ from pydantic import (
     PlainSerializer,
     PositiveFloat,
     PositiveInt,
+    StringConstraints,
     WithJsonSchema,
     model_validator,
 )
@@ -130,41 +131,67 @@ DEFAULT_SIREN_NUMBER: str = "123456789"
 class Statique(ModelSchemaMixin, BaseModel):
     """IRVE static model."""
 
-    nom_amenageur: Optional[str] = DEFAULT_CHAR_VALUE
+    nom_amenageur: Optional[
+        Annotated[str, StringConstraints(strip_whitespace=True)]
+    ] = DEFAULT_CHAR_VALUE
     siren_amenageur: Optional[
         Annotated[
             str,
-            Field(
+            StringConstraints(
                 pattern=r"^\d{9}$",
+            ),
+            Field(
                 examples=[
                     "853300010",
-                ],
+                ]
             ),
         ]
     ] = DEFAULT_SIREN_NUMBER
-    contact_amenageur: Optional[EmailStr] = DEFAULT_EMAIL_ADDRESS
-    nom_operateur: Optional[str] = DEFAULT_CHAR_VALUE
-    contact_operateur: EmailStr
-    telephone_operateur: Optional[FrenchPhoneNumber] = DEFAULT_PHONE_NUMBER
-    nom_enseigne: str
+    contact_amenageur: Optional[
+        Annotated[EmailStr, StringConstraints(strip_whitespace=True)]
+    ] = DEFAULT_EMAIL_ADDRESS
+    nom_operateur: Optional[
+        Annotated[str, StringConstraints(strip_whitespace=True)]
+    ] = DEFAULT_CHAR_VALUE
+    contact_operateur: Annotated[EmailStr, StringConstraints(strip_whitespace=True)]
+    telephone_operateur: Optional[
+        Annotated[FrenchPhoneNumber, StringConstraints(strip_whitespace=True)]
+    ] = DEFAULT_PHONE_NUMBER
+    nom_enseigne: Annotated[str, StringConstraints(strip_whitespace=True)]
     id_station_itinerance: Annotated[
-        str, Field(pattern="(?:(?:^|,)(^[A-Z]{2}[A-Z0-9]{4,33}$|Non concerné))+$")
+        str,
+        StringConstraints(
+            pattern="(?:(?:^|,)(^[A-Z]{2}[A-Z0-9]{4,33}$|Non concerné))+$",
+            strip_whitespace=True,
+        ),
     ]
-    id_station_local: Optional[str] = None
-    nom_station: str
+    id_station_local: Optional[
+        Annotated[str, StringConstraints(strip_whitespace=True)]
+    ] = None
+    nom_station: Annotated[str, StringConstraints(strip_whitespace=True)]
     implantation_station: ImplantationStationEnum
-    adresse_station: str
-    code_insee_commune: Annotated[str, Field(pattern=r"^([013-9]\d|2[AB1-9])\d{3}$")]
+    adresse_station: Annotated[str, StringConstraints(strip_whitespace=True)]
+    code_insee_commune: Annotated[
+        str,
+        StringConstraints(
+            pattern=r"^([013-9]\d|2[AB1-9])\d{3}$", strip_whitespace=True
+        ),
+    ]
     coordonneesXY: DataGouvCoordinate
     nbre_pdc: PositiveInt
     id_pdc_itinerance: Annotated[
         str,
-        Field(
+        StringConstraints(
             pattern="(?:(?:^|,)(^[A-Z]{2}[A-Z0-9]{4,33}$|Non concerné))+$",
+            strip_whitespace=True,
+        ),
+        Field(
             examples=["FR0NXEVSEXB9YG", "FRFASE3300405", "FR073012308585"],
         ),
     ]
-    id_pdc_local: Optional[str] = None
+    id_pdc_local: Optional[Annotated[str, StringConstraints(strip_whitespace=True)]] = (
+        None
+    )
     puissance_nominale: PositiveFloat
     prise_type_ef: bool
     prise_type_2: bool
@@ -175,19 +202,31 @@ class Statique(ModelSchemaMixin, BaseModel):
     paiement_acte: bool
     paiement_cb: Optional[bool] = None
     paiement_autre: Optional[bool] = None
-    tarification: Optional[str] = None
+    tarification: Optional[Annotated[str, StringConstraints(strip_whitespace=True)]] = (
+        None
+    )
     condition_acces: ConditionAccesEnum
     reservation: bool
     horaires: Annotated[
-        str, Field(pattern=r"(.*?)((\d{1,2}:\d{2})-(\d{1,2}:\d{2})|24/7)")
+        str,
+        StringConstraints(
+            pattern=r"(.*?)((\d{1,2}:\d{2})-(\d{1,2}:\d{2})|24/7)",
+            strip_whitespace=True,
+        ),
     ]
     accessibilite_pmr: AccessibilitePMREnum
-    restriction_gabarit: str
+    restriction_gabarit: Annotated[
+        str, StringConstraints(strip_whitespace=True)
+    ]
     station_deux_roues: bool
     raccordement: Optional[RaccordementEnum] = None
-    num_pdl: Optional[Annotated[str, Field(max_length=64)]]
+    num_pdl: Optional[
+        Annotated[str, StringConstraints(strip_whitespace=True, max_length=64)]
+    ]
     date_mise_en_service: Optional[NotFutureDate] = None
-    observations: Optional[str] = None
+    observations: Optional[Annotated[str, StringConstraints(strip_whitespace=True)]] = (
+        None
+    )
     date_maj: NotFutureDate
     cable_t2_attache: Optional[bool] = None
 
