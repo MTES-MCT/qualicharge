@@ -189,7 +189,8 @@ class Entity(DashboardBase):
             - the date range for the previous quarter,
             - fetching already submitted renewable delivery points for the previous
             quarter,
-            - and excluding them from the available renewable delivery points.
+            - excluding them from the available renewable delivery points,
+            - and add previous collected meter reading and last collected at.
 
         Returns:
             QuerySet: A QuerySet of renewable delivery points that still need to be
@@ -206,10 +207,23 @@ class Entity(DashboardBase):
             .values_list("delivery_point__id", flat=True)
         )
 
-        return DeliveryPoint.renewable_objects.filter(
-            entity=self,
-        ).exclude(
-            id__in=submitted_renewables,
+        last_renewable = Renewable.active_objects.filter(
+            collected_at__lt=quarter_start_date
+        ).order_by("-collected_at")[:1]
+
+        return (
+            DeliveryPoint.renewable_objects.filter(
+                entity=self,
+            )
+            .exclude(
+                id__in=submitted_renewables,
+            )
+            .prefetch_related(
+                models.Prefetch(
+                    "renewables", queryset=last_renewable, to_attr="last_renewable"
+                )
+            )
+            .select_related("entity")
         )
 
     def count_renewables(self) -> int:
