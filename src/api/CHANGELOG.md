@@ -10,6 +10,8 @@ and this project adheres to
 
 ### Changed
 
+- `Statique` model string fields are now stripped
+
 #### Dependencies
 
 - Upgrade `psycopg` to `3.2.7`
