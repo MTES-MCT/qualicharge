@@ -6,6 +6,7 @@ from django.views.generic.base import RedirectView
 from .views import (
     IndexView,
     RenewableMetterReadingFormView,
+    SubmittedRenewableView,
 )
 
 app_name = "renewable"
@@ -19,4 +20,5 @@ urlpatterns = [
         RedirectView.as_view(pattern_name="renewable:index", permanent=False),
         name="manage",
     ),
+    path("submitted/<slug:slug>", SubmittedRenewableView.as_view(), name="submitted"),
 ]
