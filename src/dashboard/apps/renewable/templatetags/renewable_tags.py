@@ -62,3 +62,19 @@ def quarter_period_dates(reference_date: date | None = None):
     """Return formatted date range string for current quarter."""
     start_date, end_date = get_quarter_date_range(_get_reference_date(reference_date))
     return _(_format_date_range(start_date, end_date))
+
+
+@register.filter
+def sort_formset_by_station(formset):
+    """Sorts a formset of delivery point forms by their associated station names."""
+    return sorted(
+        formset,
+        key=lambda form: (
+            not form.instance.has_renewable,
+            (
+                list(form.stations_grouped.keys())[0].casefold()
+                if form.stations_grouped
+                else ""
+            ),
+        ),
+    )
