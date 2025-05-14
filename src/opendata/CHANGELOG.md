@@ -10,12 +10,12 @@ and this project adheres to
 
 ### Added
 
-- Configured Data7 0.9.0
+- Configured Data7 0.11.0
 - Use the `Statique` materialized view for the `statiques` dataset
 - Integrate HTTP Basic Authentication using NGINX as a reverse-proxy
 
 ### Changed
 
-- Upgrade Psycopg to `3.2.7`
+- Upgrade Psycopg to `3.2.9`
 
 [unreleased]: https://github.com/MTES-MCT/qualicharge/
