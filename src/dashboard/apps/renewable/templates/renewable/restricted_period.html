@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% load static i18n %}
+
+{% block page_title %}
+  <title>{% trans "Restricted period" %}</title>
+{% endblock page_title %}
+
+{% block content %}
+  <main role="main" id="content">
+    <div class="fr-container">
+      <div class="fr-my-7w fr-mt-md-12w fr-mb-md-10w fr-grid-row fr-grid-row--gutters fr-grid-row--middle fr-grid-row--center">
+        <div class="fr-py-0 fr-col-12 fr-col-md-6">
+          <h1>
+            {% trans "Restricted period" %}
+          </h1>
+          <p class="fr-text fr-mb-3w">
+            {% trans "We are sorry, but your energy statement reporting is closed for this quarter." %}
+          </p>
+          <p class="fr-text fr-mb-3w">
+            {% blocktrans %}
+              The statement entry period must be within the first {{ period_days }} days of the current
+              quarter for the previous quarter <em>(from {{ start_period }} to {{ end_period }} for the current quarter.)</em>.
+            {% endblocktrans %}
+          </p>
+          <p class="fr-text fr-mb-5w">
+            {% trans "If you think this is a mistake, you can contact our team." %}
+          </p>
+
+          <ul class="fr-btns-group fr-btns-group--inline-md">
+            <li>
+              <a class="fr-btn fr-btn--secondary" href="mailto:{{ contact_email }}" target="_blank">
+                {% trans "Contact us" %}
+              </a>
+            </li>
+          </ul>
+
+        </div>
+        <div class="fr-col-12 fr-col-md-3 fr-col-offset-md-1 fr-px-6w fr-px-md-0 fr-py-0">
+          <img src="{% static "/dashboard/img/secure-folder.svg" %}" width="383" height="383" alt=""/>
+        </div>
+      </div>
+    </div>
+  </main>
+{% endblock content %}
