@@ -626,6 +626,43 @@ def test_update_for_superuser(client_auth, db_session):
     assert json_response == json.loads(new_statique.model_dump_json())
 
 
+def test_update_changes_updated_at(client_auth, db_session):
+    """Test if the statique update endpoint changes the updated_at database field."""
+    id_pdc_itinerance = "FR911E1111ER1"
+    statique = save_statique(
+        db_session,
+        StatiqueFactory.build(id_pdc_itinerance=id_pdc_itinerance),
+    )
+    pdc = db_session.exec(
+        select(PointDeCharge).where(
+            PointDeCharge.id_pdc_itinerance == id_pdc_itinerance
+        )
+    ).one()
+    pdc_updated_at = pdc.updated_at
+    station_updated_at = pdc.station.updated_at
+    amenageur_updated_at = pdc.station.amenageur.updated_at
+    operateur_updated_at = pdc.station.operateur.updated_at
+    enseigne_updated_at = pdc.station.enseigne.updated_at
+    localisation_updated_at = pdc.station.localisation.updated_at
+
+    # Update statique with the same data using the API endpoint
+    response = client_auth.put(
+        f"/statique/{id_pdc_itinerance}",
+        json=json.loads(statique.model_dump_json()),
+    )
+    assert response.status_code == status.HTTP_200_OK
+
+    # PDC should have been updated with identical data
+    db_session.refresh(pdc)
+
+    assert pdc_updated_at < pdc.updated_at
+    assert station_updated_at < pdc.station.updated_at
+    assert amenageur_updated_at < pdc.station.amenageur.updated_at
+    assert operateur_updated_at < pdc.station.operateur.updated_at
+    assert enseigne_updated_at < pdc.station.enseigne.updated_at
+    assert localisation_updated_at < pdc.station.localisation.updated_at
+
+
 @pytest.mark.parametrize(
     "client_auth",
     (
@@ -1024,6 +1061,65 @@ def test_bulk_update(client_auth, db_session):
         .one()
         .paiement_cb
     )
+
+
+def test_bulk_changes_updated_at(client_auth, db_session):
+    """Test if the statique bulk endpoint changes the updated_at database field."""
+    id_pdc_itinerance_1 = "FR911E1111ER1"
+    statique_1 = save_statique(
+        db_session,
+        StatiqueFactory.build(id_pdc_itinerance=id_pdc_itinerance_1),
+    )
+    pdc_1 = db_session.exec(
+        select(PointDeCharge).where(
+            PointDeCharge.id_pdc_itinerance == id_pdc_itinerance_1
+        )
+    ).one()
+    pdc_1_updated_at = pdc_1.updated_at
+    station_1_updated_at = pdc_1.station.updated_at
+    amenageur_1_updated_at = pdc_1.station.amenageur.updated_at
+    operateur_1_updated_at = pdc_1.station.operateur.updated_at
+    enseigne_1_updated_at = pdc_1.station.enseigne.updated_at
+    localisation_1_updated_at = pdc_1.station.localisation.updated_at
+
+    id_pdc_itinerance_2 = "FR911E1111ER2"
+    statique_2 = save_statique(
+        db_session,
+        StatiqueFactory.build(id_pdc_itinerance=id_pdc_itinerance_2),
+    )
+    pdc_2 = db_session.exec(
+        select(PointDeCharge).where(
+            PointDeCharge.id_pdc_itinerance == id_pdc_itinerance_2
+        )
+    ).one()
+    pdc_2_updated_at = pdc_2.updated_at
+    station_2_updated_at = pdc_2.station.updated_at
+    amenageur_2_updated_at = pdc_2.station.amenageur.updated_at
+    operateur_2_updated_at = pdc_2.station.operateur.updated_at
+    enseigne_2_updated_at = pdc_2.station.enseigne.updated_at
+    localisation_2_updated_at = pdc_2.station.localisation.updated_at
+
+    # Update statique with the same data using the API endpoint
+    payload = [json.loads(s.model_dump_json()) for s in [statique_1, statique_2]]
+    response = client_auth.post("/statique/bulk", json=payload)
+    assert response.status_code == status.HTTP_201_CREATED
+
+    # PDC should have been updated with identical data
+    db_session.refresh(pdc_1)
+    db_session.refresh(pdc_2)
+
+    assert pdc_1_updated_at < pdc_1.updated_at
+    assert station_1_updated_at < pdc_1.station.updated_at
+    assert amenageur_1_updated_at < pdc_1.station.amenageur.updated_at
+    assert operateur_1_updated_at < pdc_1.station.operateur.updated_at
+    assert enseigne_1_updated_at < pdc_1.station.enseigne.updated_at
+    assert localisation_1_updated_at < pdc_1.station.localisation.updated_at
+    assert pdc_2_updated_at < pdc_2.updated_at
+    assert station_2_updated_at < pdc_2.station.updated_at
+    assert amenageur_2_updated_at < pdc_2.station.amenageur.updated_at
+    assert operateur_2_updated_at < pdc_2.station.operateur.updated_at
+    assert enseigne_2_updated_at < pdc_2.station.enseigne.updated_at
+    assert localisation_2_updated_at < pdc_2.station.localisation.updated_at
 
 
 def test_update_audits(client_auth, db_session, versioning_manager):
