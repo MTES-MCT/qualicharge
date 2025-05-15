@@ -10,7 +10,9 @@ from django.contrib import messages
 from django.core.exceptions import ValidationError
 from django.db.models import QuerySet
 from django.forms import modelformset_factory
+from django.shortcuts import redirect
 from django.urls import reverse_lazy as reverse
+from django.utils import timezone
 from django.utils import timezone as django_timezone
 from django.utils.translation import gettext_lazy as _
 from django.views.generic import FormView, ListView, TemplateView
@@ -24,9 +26,31 @@ from apps.renewable.forms import (
     RenewableForm,
     RenewableFormSet,
 )
+from apps.renewable.helpers import get_opening_period_dates, is_in_opening_period
 from apps.renewable.models import Renewable
 
 BREADCRUMB_CURRENT_LABEL = _("Renewable meter")
+
+
+class RestrictedPeriodView(TemplateView):
+    """Redirect to the restricted period view."""
+
+    template_name = "renewable/restricted_period.html"
+
+    def get_context_data(self, **kwargs):
+        """Add custom attributes to the context."""
+        period_days = settings.RENEWABLE_OPENING_PERIOD_DAYS
+        start_period, end_period = get_opening_period_dates()
+
+        context = super().get_context_data(**kwargs)
+        context.update(
+            {
+                "start_period": start_period,
+                "end_period": end_period,
+                "period_days": period_days,
+            }
+        )
+        return context
 
 
 class IndexView(BaseView, TemplateView):
@@ -37,9 +61,9 @@ class IndexView(BaseView, TemplateView):
 
     def get_context_data(self, **kwargs):
         """Add custom attributes to the context."""
-        context = super().get_context_data(**kwargs)
-
         entities: QuerySet[Entity] = self.request.user.get_entities()
+
+        context = super().get_context_data(**kwargs)
         context["entities"] = entities
         context["has_pending_renewable"] = any(
             entity.count_unsubmitted_quarterly_renewables() for entity in entities
@@ -47,6 +71,25 @@ class IndexView(BaseView, TemplateView):
         context["has_submitted_renewable"] = any(
             entity.count_renewables() for entity in entities
         )
+        context.update(self._get_period_related_context())
+
+        return context
+
+    @staticmethod
+    def _get_period_related_context():
+        """Return the context related to the period."""
+        is_opening_period = is_in_opening_period(timezone.now().date())
+
+        context = {"is_opening_period": is_opening_period}
+
+        if not is_opening_period:
+            start, end = get_opening_period_dates()
+            start_period: str = start.strftime("%d/%m/%Y")
+            end_period: str = end.strftime("%d/%m/%Y")
+            context["period_message"] = _(
+                f"The quarterly submission period for renewable energy readings "
+                f"(<em>from {start_period} to {end_period}</em>) has ended."
+            )
 
         return context
 
@@ -62,6 +105,25 @@ class RenewableMetterReadingFormView(EntityViewMixin, BaseView, FormView):
     breadcrumb_links = [
         {"url": reverse("renewable:index"), "title": BREADCRUMB_CURRENT_LABEL},
     ]
+
+    def dispatch(self, request, *args, **kwargs):
+        """Checks access to the view based on the opening period and entity permissions.
+
+        HttpResponse: Redirect or response from parent view.
+        """
+        if not self._is_access_allowed():
+            return redirect("renewable:restricted_period")
+        return super().dispatch(request, *args, **kwargs)
+
+    def _is_access_allowed(self) -> bool:
+        """Return if access is allowed based on time period and permissions.
+
+        Returns:
+            bool: True if access is allowed, False otherwise
+        """
+        now = timezone.now().date()
+        entity = self.get_entity()
+        return is_in_opening_period(now) or entity.can_bypass_renewable_period
 
     def get_context_data(self, **kwargs):
         """Add custom attributes to the context.

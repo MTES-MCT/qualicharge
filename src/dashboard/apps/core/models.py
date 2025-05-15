@@ -106,6 +106,9 @@ class Entity(DashboardBase):
     synced_at = models.DateTimeField(
         _("Last synchronization with the API occurred at"), null=True, blank=True
     )
+    can_bypass_renewable_period = models.BooleanField(
+        _("can bypass renewable period"), default=False
+    )
 
     class Meta:  # noqa: D106
         verbose_name = "entity"
