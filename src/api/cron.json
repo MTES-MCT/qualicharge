@@ -5,6 +5,9 @@
     },
     {
       "command": "19 * * * * dbclient-fetcher psql && psql $SCALINGO_POSTGRESQL_URL -f scripts/clean-orphans.sql"
+    },
+    {
+      "command": "22 2 * * * ${ACTIVITY_CLEAN} && dbclient-fetcher psql && psql --set=clean_older_than=\"${ACTIVITY_CLEAN_BEFORE}\" $SCALINGO_POSTGRESQL_URL -f scripts/clean-old-activity.sql"
     }
   ]
 }
