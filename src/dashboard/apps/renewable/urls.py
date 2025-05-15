@@ -7,6 +7,7 @@ from .views import (
     DeliveryPointRenewableFormSetView,
     IndexView,
     RenewableMetterReadingFormView,
+    RestrictedPeriodView,
     SubmittedRenewableView,
 )
 
@@ -32,5 +33,8 @@ urlpatterns = [
         "delivery-points/",
         RedirectView.as_view(pattern_name="renewable:index", permanent=False),
         name="delivery-points",
+    ),
+    path(
+        "restricted-period/", RestrictedPeriodView.as_view(), name="restricted_period"
     ),
 ]

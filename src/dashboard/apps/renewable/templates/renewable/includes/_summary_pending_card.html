@@ -15,9 +15,12 @@
       {% endif %}
 
       {# awaiting renewable meter - no items #}
-      {% if not has_pending_renewable %}
-        {% include "renewable/includes/_no_data_card.html" with description="Aucun relevé en attente." %}
+      {% if not has_pending_renewable or not is_opening_period %}
+        {% with message=period_message|default:"Aucun relevé en attente." %}
+          {% include "renewable/includes/_no_data_card.html" with description=message|safe %}
+        {% endwith %}
       {% endif %}
+
     </div>
 
     <div class="fr-card__footer">
