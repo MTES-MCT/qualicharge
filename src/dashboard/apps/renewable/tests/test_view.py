@@ -3,7 +3,7 @@
 import datetime as dt
 from datetime import date, datetime
 from http import HTTPStatus
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import pytest
 from django.conf import settings as django_settings
@@ -20,6 +20,7 @@ from apps.renewable.factories import RenewableFactory
 from apps.renewable.models import Renewable
 from apps.renewable.views import (
     DeliveryPointRenewableFormSetView,
+    IndexView,
     RenewableMetterReadingFormView,
     SubmittedRenewableView,
 )
@@ -72,8 +73,10 @@ def test_manage_views_with_wrong_slug_raised_404(client):
 
 
 @pytest.mark.django_db
-def test_manage_views_rendered_without_data(client):
+@patch("apps.renewable.views.RenewableMetterReadingFormView._is_access_allowed")
+def test_manage_views_rendered_without_data(mock_is_access_allowed, client):
     """Test manage view without data."""
+    mock_is_access_allowed.return_value = True
     user = UserFactory()
     client.force_login(user)
 
@@ -92,8 +95,10 @@ def test_manage_views_rendered_without_data(client):
 
 
 @pytest.mark.django_db
-def test_manage_views_rendered_with_data(client):
+@patch("apps.renewable.views.RenewableMetterReadingFormView._is_access_allowed")
+def test_manage_views_rendered_with_data(mock_is_access_allowed, client):
     """Test manage view with data."""
+    mock_is_access_allowed.return_value = True
     user = UserFactory()
     client.force_login(user)
 
@@ -163,8 +168,11 @@ def test_manage_views_get_context_data(rf, settings):
 
 
 @pytest.mark.django_db
-def test_manage_views_post(client, monkeypatch):
+@patch("apps.renewable.views.RenewableMetterReadingFormView._is_access_allowed")
+def test_manage_views_post(mock_is_access_allowed, client, monkeypatch):
     """Test post() method of RenewableMetterReadingFormView."""
+    mock_is_access_allowed.return_value = True
+
     monkeypatch.setattr(timezone, "now", lambda: date(2025, 5, 6))
     ENTITY_NAME = "entity-1"
     expected_renewable_count = 2
@@ -211,6 +219,7 @@ def test_manage_views_post(client, monkeypatch):
 
 
 @pytest.mark.django_db
+@patch("apps.renewable.views.RenewableMetterReadingFormView._is_access_allowed")
 @pytest.mark.parametrize(
     "meter_reading, collected_at, has_confirmed, form_error_key",
     [
@@ -225,6 +234,7 @@ def test_manage_views_post(client, monkeypatch):
     ],
 )
 def test_manage_views_post_with_invalid_data(  # noqa: PLR0913
+    mock_is_access_allowed,
     meter_reading,
     collected_at,
     has_confirmed,
@@ -233,6 +243,8 @@ def test_manage_views_post_with_invalid_data(  # noqa: PLR0913
     monkeypatch,
 ):
     """Test post() method of RenewableMetterReadingFormView with invalid data."""
+    mock_is_access_allowed.return_value = True
+
     monkeypatch.setattr(timezone, "now", lambda: date(2025, 5, 6))
     ENTITY_NAME = "entity-1"
 
@@ -594,3 +606,88 @@ def test_delivery_point_renewable_formset_view_post(client):
 
     dp2.refresh_from_db()
     assert dp2.has_renewable is False
+
+
+@pytest.mark.django_db
+@patch("apps.renewable.views.is_in_opening_period")
+@patch("apps.renewable.views.get_opening_period_dates")
+def test_index_view_get_period_related_context_opening_period(
+    mock_get_opening_period_dates,
+    mock_is_in_opening_period,
+):
+    """Test IndexView._get_period_related_context."""
+    # Test _get_period_related_context in opening period.
+    mock_is_in_opening_period.return_value = True
+    context = IndexView._get_period_related_context()
+    assert context["is_opening_period"] is True
+    assert "period_message" not in context
+
+    # Test _get_period_related_context outside opening period.
+    mock_is_in_opening_period.return_value = False
+    mock_get_opening_period_dates.return_value = (date(2023, 1, 1), date(2023, 1, 30))
+    context = IndexView._get_period_related_context()
+    assert context["is_opening_period"] is False
+    assert "period_message" in context
+    assert "from 01/01/2023 to 30/01/2023" in context["period_message"]
+
+
+@pytest.mark.django_db
+@patch("apps.renewable.views.RenewableMetterReadingFormView._is_access_allowed")
+def test_manage_view_dispatch_redirects_when_access_denied(mock_is_access_allowed):
+    """Test dispatch method redirects when access is not allowed."""
+    mock_is_access_allowed.return_value = False
+    view = RenewableMetterReadingFormView()
+
+    view.request = Mock()
+    view.request.user = Mock()
+
+    response = view.dispatch(view.request)
+
+    assert response.status_code == HTTPStatus.FOUND
+    assert response.url == reverse("renewable:restricted_period")
+
+
+@pytest.mark.django_db
+@patch("apps.renewable.views.RenewableMetterReadingFormView._is_access_allowed")
+def test_manage_view_dispatch_calls_super_dispatch(mock_is_access_allowed):
+    """Test dispatch method calls super().dispatch when access is allowed."""
+    mock_is_access_allowed.return_value = False
+    with patch("apps.renewable.views.BaseView.dispatch") as mock_super_dispatch:
+        view = RenewableMetterReadingFormView()
+        view._is_access_allowed = Mock(return_value=True)
+        mock_request = Mock()
+        mock_args = ()
+        mock_kwargs = {}
+
+        view.dispatch(mock_request, *mock_args, **mock_kwargs)
+
+        mock_super_dispatch.assert_called_once_with(
+            mock_request, *mock_args, **mock_kwargs
+        )
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "can_bypass_renewable_period, is_in_opening_period, expected_result",
+    [
+        (True, True, True),  # bypass=True, opening=True, access_allowed=True
+        (True, False, True),  # bypass=True, opening=False, access_allowed=True
+        (False, True, True),  # bypass=False, opening=True, access_allowed=True
+        (False, False, False),  # bypass=False, opening=False, access_allowed=False
+    ],
+)
+def test_manage_view__is_access_allowed(
+    can_bypass_renewable_period,
+    is_in_opening_period,
+    expected_result,
+):
+    """Test _is_access_allowed returns True if in opening period."""
+    view = RenewableMetterReadingFormView()
+
+    mock_entity = Mock(can_bypass_renewable_period=can_bypass_renewable_period)
+    view.get_entity = Mock(return_value=mock_entity)
+
+    with patch(
+        "apps.renewable.views.is_in_opening_period", return_value=is_in_opening_period
+    ):
+        assert view._is_access_allowed() is expected_result
