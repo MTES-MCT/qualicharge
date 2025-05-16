@@ -189,6 +189,8 @@ services:
     depends_on:
       prefect:
         condition: service_healthy
+      minio:
+        condition: service_healthy
 
   prefect-test:
     image: "qualicharge:prefect"
@@ -199,7 +201,28 @@ services:
     volumes:
       - ./src/prefect:/app
     depends_on:
-      - postgresql
+      prefect:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+
+  minio:
+    image: "minio/minio"
+    user: ${DOCKER_USER:-1000}
+    env_file:
+      - env.d/minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 1s
+      timeout: 20s
+      retries: 300
+    command: server --console-address :9001 /data
+    volumes:
+      - ./data/archives:/data
+      - ./bin/minio-init:/opt/bin/minio-init
 
   locust:
     build:

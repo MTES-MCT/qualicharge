@@ -72,6 +72,13 @@ jobs:
           --health-retries 5
         ports:
           - 5432:5432
+      minio:
+        image: "bitnami/minio:latest"
+        env:
+          MINIO_ROOT_USER: qualicharge
+          MINIO_ROOT_PASSWORD: password
+        ports:
+          - 9000:9000
     defaults:
       run:
         working-directory: ./src/prefect
@@ -80,6 +87,12 @@ jobs:
       QUALICHARGE_API_ACTIVE_ENVIRONMENTS: '["test"]'
       QUALICHARGE_INDICATORS_DATABASE_URL: "postgresql+psycopg://qualicharge:pass@localhost:5432/qualicharge-indicators"
       QUALICHARGE_API_DATABASE_URL_NO_DRIVER: "postgresql://qualicharge:pass@localhost:5432/qualicharge-api"
+      DATA7_SCHEMA_SNIFFER_SIZE: 1000
+      DATA7_DEFAULT_DTYPE_BACKEND: pyarrow
+      S3_ENDPOINT_URL: "http://localhost:9000"
+      AWS_ACCESS_KEY_ID: qualicharge
+      AWS_SECRET_ACCESS_KEY: password
+      # AWS_REQUEST_CHECKSUM_CALCULATION: WHEN_REQUIRED
     steps:
       - uses: actions/checkout@v4
       - name: Create Indicators database
@@ -90,6 +103,13 @@ jobs:
           pg_restore -s -F c -d "${QUALICHARGE_API_DATABASE_URL_NO_DRIVER}" ../../data/qualicharge-api-schema.sql
           pg_restore -a -F c -d "${QUALICHARGE_API_DATABASE_URL_NO_DRIVER}" ../../data/qualicharge-api-data.sql
           psql "postgresql://qualicharge:pass@localhost:5432/qualicharge-api" -c "REFRESH MATERIALIZED VIEW Statique;"
+      - name: Create expected buckets
+        run: |
+          aws --endpoint-url "${S3_ENDPOINT_URL}" s3 ls
+          aws --endpoint-url "${S3_ENDPOINT_URL}" s3 mb "s3://qualicharge-indicators"
+          aws --endpoint-url "${S3_ENDPOINT_URL}" s3 mb "s3://qualicharge-sessions"
+          aws --endpoint-url "${S3_ENDPOINT_URL}" s3 mb "s3://qualicharge-statuses"
+          aws --endpoint-url "${S3_ENDPOINT_URL}" s3 ls
       - name: Install pipenv
         run: pipx install pipenv
       - name: Set up Python 3.12

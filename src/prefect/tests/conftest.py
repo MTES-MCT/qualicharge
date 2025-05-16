@@ -1,9 +1,11 @@
 """Fixtures for pytest."""
 
+import os
 from typing import Generator
 
 import pytest
 from prefect.testing.utilities import prefect_test_harness
+from s3fs import S3FileSystem
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Connection, Engine
 
@@ -16,7 +18,7 @@ from indicators.types import Environment
 @pytest.fixture(autouse=True, scope="session")
 def prefect_test_fixture():
     """Autouse the prefect test context."""
-    with prefect_test_harness(60):
+    with prefect_test_harness(120):
         yield
 
 
@@ -58,3 +60,19 @@ def indicators_db_connection(indicators_db_engine) -> Generator[Connection, None
     yield connection
     transaction.rollback()
     connection.close()
+
+
+@pytest.fixture(scope="function")
+def clean_s3fs(request):
+    """Yield connected s3fs and remove test.parquet files from S3 bucket.
+
+    NB: the bucket name should be given as a param.
+    """
+    bucket = request.param
+    endpoint_url = os.environ.get("S3_ENDPOINT_URL", None)
+    s3 = S3FileSystem(anon=False, endpoint_url=endpoint_url)
+
+    yield s3
+
+    for archive in s3.glob(f"{bucket}/**/test.parquet"):
+        s3.rm(archive, recursive=True)
