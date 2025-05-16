@@ -30,6 +30,10 @@ and this project adheres to
 
 - Integrate Great-Expectations
 
+#### Cooling
+
+- Extract old statuses
+
 ### Changed
 
 - Upgrade API database to PG 15 / TimescaleDB 2.19
