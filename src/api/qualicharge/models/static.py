@@ -210,7 +210,8 @@ class Statique(ModelSchemaMixin, BaseModel):
     horaires: Annotated[
         str,
         StringConstraints(
-            pattern=r"(.*?)((\d{1,2}:\d{2})-(\d{1,2}:\d{2})|24/7)",
+            # pattern=r"(.*?)((\d{1,2}:\d{2})-(\d{1,2}:\d{2})|24/7)",
+            pattern="(.*?)((\\d{1,2}:\\d{2})-(\\d{1,2}:\\d{2})|24/7)",
             strip_whitespace=True,
         ),
     ]
