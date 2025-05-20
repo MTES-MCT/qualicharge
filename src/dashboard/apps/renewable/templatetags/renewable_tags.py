@@ -23,12 +23,18 @@ def _get_reference_date(reference_date: date | None) -> date:
 def _format_quarter_period(start_date: date) -> str:
     """Format quarter period string."""
     quarter = get_quarter_number(start_date)
-    return _(f"Q{quarter} {start_date.strftime('%Y')}")
+    return _("Q%(quarter)s %(year)s") % {
+        "quarter": quarter,
+        "year": start_date.strftime("%Y"),
+    }
 
 
 def _format_date_range(start_date: date, end_date: date) -> str:
     """Format date range string."""
-    return _(f"{start_date.strftime('%d/%m/%Y')} to {end_date.strftime('%d/%m/%Y')}")
+    return _("%(start_date)s to %(end_date)s") % {
+        "start_date": start_date.strftime("%d/%m/%Y"),
+        "end_date": end_date.strftime("%d/%m/%Y"),
+    }
 
 
 @register.simple_tag
