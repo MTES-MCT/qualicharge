@@ -14,7 +14,7 @@ and this project adheres to
 
 - Upgrade Pydantic to `2.11.4`
 - Upgrade pydantic-settings to `2.9.1`
-- Upgrade `typer` to `0.15.3`
+- Upgrade `typer` to `0.15.4`
 
 ### Fixed
 
