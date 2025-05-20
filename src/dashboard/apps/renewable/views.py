@@ -15,6 +15,7 @@ from django.urls import reverse_lazy as reverse
 from django.utils import timezone
 from django.utils import timezone as django_timezone
 from django.utils.translation import gettext_lazy as _
+from django.utils.translation import ngettext
 from django.views.generic import FormView, ListView, TemplateView
 
 from apps.core.mixins import EntityViewMixin
@@ -87,9 +88,9 @@ class IndexView(BaseView, TemplateView):
             start_period: str = start.strftime("%d/%m/%Y")
             end_period: str = end.strftime("%d/%m/%Y")
             context["period_message"] = _(
-                f"The quarterly submission period for renewable energy readings "
-                f"(<em>from {start_period} to {end_period}</em>) has ended."
-            )
+                "The quarterly submission period for renewable energy readings "
+                "(<em>from %(start_period)s to %(end_period)s</em>) has ended."
+            ) % {"start_period": start_period, "end_period": end_period}
 
         return context
 
@@ -206,7 +207,12 @@ class RenewableMetterReadingFormView(EntityViewMixin, BaseView, FormView):
             self._send_email()
             messages.success(
                 request,
-                _(f"{len(renewables)} renewable meter reading(s) updated."),
+                ngettext(
+                    "%(count)d renewable meter reading updated.",
+                    "%(count)d renewable meter readings updated.",
+                    len(renewables),
+                )
+                % {"count": len(renewables)},
             )
             return self.form_valid(formset)
 
