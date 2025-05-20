@@ -847,10 +847,6 @@ data: List[Item] = [
         "MobilityPlus",
     ),
     Item(
-        "FRMBZ",
-        "MPS France",
-    ),
-    Item(
         "FRMEL",
         "Concession IRVE de la MEL",
     ),
@@ -1939,6 +1935,27 @@ data: List[Item] = [
     Item(
         "FRYES",
         "YES55",
+    ),
+    # Update: 2025/05/20
+    Item(
+        "FRCPB",
+        "Camping Les Pins Bleus",
+    ),
+    Item(
+        "FRIGF",
+        "Izivia Grand Frais",
+    ),
+    Item(
+        "FRILF",
+        "IZIVIA Impact LF",
+    ),
+    Item(
+        "FRMBZ",
+        "Mobilize Power Solutions",
+    ),
+    Item(
+        "FRZET",
+        "INTHY Distribution",
     ),
 ]
 
