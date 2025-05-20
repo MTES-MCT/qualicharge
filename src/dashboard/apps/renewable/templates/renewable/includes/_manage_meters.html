@@ -45,12 +45,12 @@
 
             <tbody>
               {% for form in formset %}
-              <input type="hidden" name="form-{{ forloop.counter0 }}-delivery_point" value="{{ form.delivery_point_obj.id }}">
               <tr id="table-prm-row-key-{{ forloop.counter0 }}"
                   data-row-key="{{ forloop.counter0 }}"
                   aria-labelledby="row-label-{{ forloop.counter0 }}">
 
                 <td>
+                  <input type="hidden" name="form-{{ forloop.counter0 }}-delivery_point" value="{{ form.delivery_point_obj.id }}">
                   {% for station_name, ids in form.stations_grouped.items %}
                     {% if forloop.counter0 > 0 %}<br />{% endif %}
                     {{ station_name }} {% if ids %}({{ ids|join:", " }}){% endif %}
@@ -69,19 +69,23 @@
 
                 <td>
                   {% with last_renewable=form.delivery_point_obj.last_renewable.0 %}
-                    {{ last_renewable.meter_reading }} kWh
-                    <button class="fr-btn--tooltip fr-btn"
-                            type="button"
-                            id="button-{{ form.delivery_point_obj.provider_assigned_id }}"
-                            aria-describedby="tooltip-{{ form.delivery_point_obj.provider_assigned_id }}">
-                        date du relevé précèdent
-                    </button>
-                    <span class="fr-tooltip fr-placement"
-                          id="tooltip-{{ form.delivery_point_obj.provider_assigned_id }}"
-                          role="tooltip"
-                          aria-hidden="true">
-                      relevé du {{ last_renewable.collected_at|date:"d/m/Y" }}
-                    </span>
+                    {% if last_renewable.meter_reading %}
+                      {{ last_renewable.meter_reading }} kWh
+                      <button class="fr-btn--tooltip fr-btn"
+                              type="button"
+                              id="button-{{ form.delivery_point_obj.provider_assigned_id }}"
+                              aria-describedby="tooltip-{{ form.delivery_point_obj.provider_assigned_id }}">
+                          date du relevé précèdent
+                      </button>
+                      <span class="fr-tooltip fr-placement"
+                            id="tooltip-{{ form.delivery_point_obj.provider_assigned_id }}"
+                            role="tooltip"
+                            aria-hidden="true">
+                        relevé du {{ last_renewable.collected_at|date:"d/m/Y" }}
+                      </span>
+                    {% else %}
+                      -
+                    {% endif %}
                   {% endwith %}
                 </td>
 
