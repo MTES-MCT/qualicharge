@@ -16,10 +16,11 @@ and this project adheres to
 
 #### Dependencies
 
-- Upgrade `psycopg` to `3.2.7`
+- Upgrade `psycopg` to `3.2.9`
 - Upgrade `pydantic` to `2.11.4`
-- Upgrade `setuptools` to `80.3.1`
-- Upgrade `typer` to `0.15.3`
+- Upgrade `sentry-sdk` to `2.29.0`
+- Upgrade `setuptools` to `80.8.0`
+- Upgrade `typer` to `0.15.4`
 
 ## [0.23.0] - 2025-04-30
 
