@@ -36,10 +36,10 @@
 
             <tbody>
               {% for form in formset|sort_formset_by_station %}
-                  {{ form.id }}
-                  <input type="hidden" name="form-{{ forloop.counter0 }}-entity_id" value="{{ form.delivery_point_obj.entity.id }}">
                   <tr>
                       <td>
+                        {{ form.id }}
+
                         {% for station_name, ids in form.stations_grouped.items %}
                           {% if forloop.counter0 > 0 %}<br />{% endif %}
                           {{ station_name }} {% if ids %}({{ ids|join:", " }}){% endif %}
