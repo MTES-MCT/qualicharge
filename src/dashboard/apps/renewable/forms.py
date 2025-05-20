@@ -102,24 +102,32 @@ class RenewableForm(forms.ModelForm):
             raise forms.ValidationError(
                 mark_safe(  # noqa: S308
                     _(
-                        f"The date cannot be in the future. <br />"
-                        f"Collected date should be "
-                        f"between {min_date.strftime("%d/%m/%Y")} "
-                        f"and {end_date.strftime("%d/%m/%Y")}."
+                        "The date cannot be in the future. <br />"
+                        "Collected date should be "
+                        "between %(min_date)s "
+                        "and %(end_date)s."
                     )
+                    % {
+                        "min_date": min_date.strftime("%d/%m/%Y"),
+                        "end_date": end_date.strftime("%d/%m/%Y"),
+                    }
                 )
             )
         elif collected_at < min_date:
             raise forms.ValidationError(
                 mark_safe(  # noqa: S308
                     _(
-                        f"The date cannot be earlier than "
-                        f"{min_date.strftime("%d/%m/%Y")}."
-                        f"<br />"
-                        f"Collected date should be "
-                        f"between {min_date.strftime("%d/%m/%Y")} "
-                        f"and {end_date.strftime("%d/%m/%Y")}."
+                        "The date cannot be earlier than %(min_date)s."
+                        "<br />"
+                        "Collected date should be "
+                        "between %(min_date_range)s "
+                        "and %(end_date)s."
                     )
+                    % {
+                        "min_date": min_date.strftime("%d/%m/%Y"),
+                        "min_date_range": min_date.strftime("%d/%m/%Y"),
+                        "end_date": end_date.strftime("%d/%m/%Y"),
+                    }
                 )
             )
 
