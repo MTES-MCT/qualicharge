@@ -8,17 +8,42 @@ and this project adheres to
 
 ## [Unreleased]
 
-## [0.1.0] - 2025-05-07
-
 ### Added
 
-- add `renewable` app with `Renewable` model
-- add admin integration for `Renewable` model
-- add `get_current_quarter_date_range` utility
-- add `has_renewable` field to delivery points model
-- add `python-dateutil`
+#### Renewable Management
+- add renewable app
+- add Renewable model with admin interface
+- add renewable dashboard card
+- add a formset and view for managing renewable delivery point statuses
+- add meter reading management interface with form validation
+- add a view for submitted renewable meter readings
+- add entity handling with EntityMixin
+- add utility functions for quarter-based date operations to handle quarter-specific
+date calculations and conversions
+- add factories and seed commands for renewable app
+- add test coverage for renewable app
 
-## [Unreleased]
+#### Notification System
+- add user email notifications for renewable submission period opening
+- add user email notification for meter reading submissions
+- add helper methods for notification management
+
+#### Restricted Period Management
+- add restricted period feature for renewable reporting
+- add `can_bypass_renewable_period` flag on entities
+- add automatic redirection for users outside reporting period
+- add a restricted period view
+
+#### Environment variables
+- add environment variables for opening period customization
+- add environment variables for the time window during which meter readings are accepted
+- add environment variables for email notifications
+
+### Deprecated
+
+- add a deprecation warning for ConsentFormView._get_entity()
+
+## [0.1.0] - 2025-05-07
 
 ### Added
 
