@@ -246,6 +246,16 @@ deployments:
       name: indicators
       work_queue_name: default
 
+  # -- Data cooling deployments --
+  - name: quality-staging
+    entrypoint: cooling/statuses.py:extract_old_statuses
+    parameters:
+      interval: "1 year"
+      environment: development 
+    work_pool:
+      name: indicators
+      work_queue_name: default
+
   # -- Quality deployments --
 
   - name: quality-staging
