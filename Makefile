@@ -351,10 +351,10 @@ jupytext--to-ipynb: ## convert remote md files into ipynb
 reset-db: ## Reset the PostgreSQL database
 reset-db: \
   reset-api-db \
-  create-metabase-db \
-  seed-metabase \
   create-prefect-db \
   migrate-prefect \
+  create-metabase-db \
+  seed-metabase \
   reset-dashboard-db
 .PHONY: reset-db
 
