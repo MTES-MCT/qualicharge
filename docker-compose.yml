@@ -219,8 +219,7 @@ services:
       interval: 1s
       timeout: 20s
       retries: 300
-    entrypoint: ""
-    command: minio server --console-address :9001 /data
+    command: server --console-address :9001 /data
     volumes:
       - ./data/archives:/data
       - ./bin/minio-init:/opt/bin/minio-init
