@@ -80,6 +80,8 @@ jobs:
       QUALICHARGE_API_ACTIVE_ENVIRONMENTS: '["test"]'
       QUALICHARGE_INDICATORS_DATABASE_URL: "postgresql+psycopg://qualicharge:pass@localhost:5432/qualicharge-indicators"
       QUALICHARGE_API_DATABASE_URL_NO_DRIVER: "postgresql://qualicharge:pass@localhost:5432/qualicharge-api"
+      DATA7_SCHEMA_SNIFFER_SIZE: 1000
+      DATA7_DEFAULT_DTYPE_BACKEND: pyarrow
     steps:
       - uses: actions/checkout@v4
       - name: Create Indicators database
