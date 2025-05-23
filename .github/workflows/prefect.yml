@@ -79,6 +79,8 @@ jobs:
           MINIO_ROOT_PASSWORD: password
         options: >-
           --entrypoint "minio server /data"
+        volumes:
+          - ./data/archives:/data
         ports:
           - 9000:9000
     defaults:
