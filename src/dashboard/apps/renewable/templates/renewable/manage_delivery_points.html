@@ -7,7 +7,7 @@
 {% block dashboard_content %}
   <div class="fr-grid-row">
     <div class="fr-col">
-      <h2>Gestion des points de livraison renouvelables</h2>
+      <h2 id="focus-before-consents" tabindex="0">Gestion des points de livraison renouvelables</h2>
 
       {% if delivery_points %}
         <form action="" method="post">
@@ -26,7 +26,7 @@
 
           {% include "renewable/includes/_manage_delivery_points.html" %}
 
-          <ul class="fr-btns-group fr-btns-group--inline-reverse fr-btns-group--inline-lg">
+          <ul class="fr-btns-group fr-btns-group--inline-reverse fr-btns-group--inline-lg" id="focus-after-consents" tabindex="0">
             <li>
               <button id="btn-validate" type="submit" class="fr-btn" title="{% trans "submit" %}" name="submit">
                 {% trans "submit" %}
@@ -46,3 +46,9 @@
     </div>
   </div>
 {% endblock dashboard_content %}
+
+{% block dashboard_extra_js %}
+  {% if entity %}
+    <script src="{% static 'apps/core/js/app.js' %}"></script>
+  {% endif %}
+{% endblock dashboard_extra_js %}
