@@ -2,10 +2,12 @@
 
 from datetime import date
 from string import Template
+from typing import List
 
 from data7.models import Dataset
 from data7.streamers import sql2parquet
-from prefect import flow, task
+from prefect import task
+from prefect.client.schemas.objects import State
 from prefect.states import Completed, Failed
 from pyarrow import fs
 from pyarrow import parquet as pq
@@ -25,7 +27,7 @@ def extract_data_for_day(
     select_query: Template,
     check_query: Template,
     chunk_size: int = 5000,
-):
+) -> State:
     """Cool data from an environment on a particular day.
 
     This task creates a parquet file per-environment per-day and save it in a S3 bucket.
@@ -52,7 +54,7 @@ def extract_data_for_day(
     with engine.connect() as connection:
         expected = connection.execute(
             text(check_query.substitute({"date": day_iso}))
-        ).first()[0]
+        ).first()._tuple()[0]  # type: ignore[union-attr]
     archive = pq.ParquetFile(file_path, filesystem=s3)
     n_rows = archive.scan_contents()
     archive.close()
@@ -79,7 +81,7 @@ def extract_data_older_than(
     """Extract data older than now - interval to daily archives."""
     db_engine = get_api_db_engine(environment)
 
-    tasks_state = []
+    tasks_state : List[State]= []
     with db_engine.connect() as connection:
         days = [
             row[0]

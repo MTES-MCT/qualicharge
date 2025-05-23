@@ -54,7 +54,7 @@ def extract_old_statuses(
     """Extract statuses older than now - interval to daily archives."""
     s3_endpoint_url = os.environ.get("S3_ENDPOINT_URL", None)
     if s3_endpoint_url is None:
-        return Failed("S3_ENDPOINT_URL environment variable not set.")
+        return Failed(message="S3_ENDPOINT_URL environment variable not set.")
     bucket = "qualicharge-statuses"
     return extract_data_older_than(
         interval,
