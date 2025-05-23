@@ -64,6 +64,7 @@ bootstrap: \
   create-dashboard-db \
   migrate-dashboard \
   seed-metabase \
+  seed-minio \
   seed-oidc \
   create-api-superuser \
   create-dashboard-superuser \
@@ -350,10 +351,10 @@ jupytext--to-ipynb: ## convert remote md files into ipynb
 reset-db: ## Reset the PostgreSQL database
 reset-db: \
   reset-api-db \
-  create-metabase-db \
-  seed-metabase \
   create-prefect-db \
   migrate-prefect \
+  create-metabase-db \
+  seed-metabase \
   reset-dashboard-db
 .PHONY: reset-db
 
@@ -417,6 +418,13 @@ seed-metabase: ## seed the Metabase server
 		  -U qualicharge \
 		  -d metabaseappdb
 .PHONY: seed-metabase
+
+seed-minio: ## seed the Minio server
+	@echo "Running minio service …"
+	@$(COMPOSE_UP) --wait minio
+	@echo "Create Minio user and buckets…"
+	@$(COMPOSE) exec minio /opt/bin/minio-init
+.PHONY: seed-minio
 
 seed-oidc: ## seed the OIDC provider
 	@echo 'Starting OIDC provider…'

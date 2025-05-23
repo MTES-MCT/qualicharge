@@ -55,6 +55,6 @@ files = "./**/*.py"
 
 [[tool.mypy.overrides]]
 module = [
-  "great_expectations.*", "ruamel.*"
+  "great_expectations.*", "ruamel.*", "data7.*", "pyarrow"
 ]
 ignore_missing_imports = true
