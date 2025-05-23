@@ -6,6 +6,11 @@ from indicators.types import Environment
 from quality.flows import static
 
 
+def test_dummy():
+    """A dummy test."""
+    raise True
+
+
 def test_slugify():
     """Test the slugify utility from Django."""
     assert (
