@@ -1,7 +1,8 @@
 """QualiCharge prefect cooling tests: statuses."""
 
-from cooling.statuses import extract_old_statuses
 from prefect.client.schemas.objects import StateType
+
+from cooling.statuses import extract_old_statuses
 
 
 def test_extract_old_statuses_flow():
