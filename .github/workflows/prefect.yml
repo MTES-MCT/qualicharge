@@ -104,11 +104,11 @@ jobs:
           psql "postgresql://qualicharge:pass@localhost:5432/qualicharge-api" -c "REFRESH MATERIALIZED VIEW Statique;"
       - name: Create expected buckets
         run: |
-          aws --endpoint-url "${S3_ENDPOINT_URL}" s3 ls
-          aws --endpoint-url "${S3_ENDPOINT_URL}" s3 mb qualicharge/qualicharge-indicators
-          aws --endpoint-url "${S3_ENDPOINT_URL}" s3 mb qualicharge/qualicharge-sessions
-          aws --endpoint-url "${S3_ENDPOINT_URL}" s3 mb qualicharge/qualicharge-statuses
-          aws --endpoint-url "${S3_ENDPOINT_URL}" s3 ls
+          aws --endpoint-url ${S3_ENDPOINT_URL} s3 ls
+          aws --endpoint-url ${S3_ENDPOINT_URL} s3 mb qualicharge/qualicharge-indicators
+          aws --endpoint-url ${S3_ENDPOINT_URL} s3 mb qualicharge/qualicharge-sessions
+          aws --endpoint-url ${S3_ENDPOINT_URL} s3 mb qualicharge/qualicharge-statuses
+          aws --endpoint-url ${S3_ENDPOINT_URL} s3 ls
       - name: Install pipenv
         run: pipx install pipenv
       - name: Set up Python 3.12
