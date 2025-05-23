@@ -3,11 +3,11 @@
 from datetime import date
 from string import Template
 
-import s3fs
 from data7.models import Dataset
 from data7.streamers import sql2parquet
 from prefect import flow, task
 from prefect.states import Completed, Failed
+from pyarrow import fs
 from pyarrow import parquet as pq
 from sqlalchemy import Engine, text
 
@@ -21,6 +21,7 @@ def extract_data_for_day(
     day: date,
     environment: Environment,
     bucket: str,
+    s3_endpoint_url: str,
     select_query: Template,
     check_query: Template,
     chunk_size: int = 5000,
@@ -37,11 +38,13 @@ def extract_data_for_day(
     dataset = Dataset(basename=basename, query=query)
 
     # Target bucket
-    s3 = s3fs.S3FileSystem(anon=False)
-    file_path = f"{bucket}/{day.year}/{day.month}/{day.day}/{environment}.parquet"
+    s3 = fs.S3FileSystem(endpoint_override=s3_endpoint_url)
+    dir_path = f"{bucket}/{day.year}/{day.month}/{day.day}"
+    file_path = f"{dir_path}/{environment}.parquet"
 
     # Start writing dataset to the target bucket
-    with s3.open(file_path, "wb") as archive:
+    s3.create_dir(dir_path)
+    with s3.open_output_stream(file_path) as archive:
         for chunk in sql2parquet(engine, dataset, chunksize=chunk_size):
             archive.write(chunk)
 
@@ -67,6 +70,7 @@ def extract_data_older_than(
     interval: str,
     environment: Environment,
     bucket: str,
+    s3_endpoint_url: str,
     days_to_extract_query: Template,
     select_query: Template,
     check_query: Template,
@@ -89,6 +93,7 @@ def extract_data_older_than(
             day,
             environment,
             bucket,
+            s3_endpoint_url,
             select_query,
             check_query,
             chunk_size=chunk_size,
