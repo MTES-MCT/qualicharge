@@ -7,7 +7,7 @@
 {% block dashboard_content %}
   <div class="fr-grid-row">
     <div class="fr-col">
-      <h2>Saisissez vos relevés de production d'énergie renouvelable</h2>
+      <h2 id="focus-before-consents" tabindex="0">Saisissez vos relevés de production d'énergie renouvelable</h2>
 
       <p>
         Saisissez vos relevés de production d'énergie renouvelable pour chaque point
@@ -47,3 +47,9 @@
     </div>
   </div>
 {% endblock dashboard_content %}
+
+{% block dashboard_extra_js %}
+  {% if entity %}
+    <script src="{% static 'apps/core/js/app.js' %}"></script>
+  {% endif %}
+{% endblock dashboard_extra_js %}
