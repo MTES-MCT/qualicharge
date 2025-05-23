@@ -2,5 +2,9 @@
 
 {% load static %}
 
+{% block dashboard_extra_css %}
+  <link rel="stylesheet" href="{% static "apps/consent/css/app.css" %}">
+{% endblock dashboard_extra_css %}
+
 {% block dashboard_content %}
 {% endblock dashboard_content %}
