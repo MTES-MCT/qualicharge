@@ -77,10 +77,6 @@ jobs:
         env:
           MINIO_ROOT_USER: qualicharge
           MINIO_ROOT_PASSWORD: password
-        # options: >-
-        #   --entrypoint "minio server /data"
-        # volumes:
-        #   - /data
         ports:
           - 9000:9000
     defaults:
@@ -109,9 +105,9 @@ jobs:
       - name: Create expected buckets
         run: |
           aws --endpoint-url "${S3_ENDPOINT_URL}" s3 ls
-          aws --endpoint-url "${S3_ENDPOINT_URL}" s3 mb qualicharge/qualicharge-indicators
-          aws --endpoint-url "${S3_ENDPOINT_URL}" s3 mb qualicharge/qualicharge-sessions
-          aws --endpoint-url "${S3_ENDPOINT_URL}" s3 mb qualicharge/qualicharge-statuses
+          aws --endpoint-url "${S3_ENDPOINT_URL}" s3 mb "s3://qualicharge/qualicharge-indicators"
+          aws --endpoint-url "${S3_ENDPOINT_URL}" s3 mb "s3://qualicharge/qualicharge-sessions"
+          aws --endpoint-url "${S3_ENDPOINT_URL}" s3 mb "s3://qualicharge/qualicharge-statuses"
           aws --endpoint-url "${S3_ENDPOINT_URL}" s3 ls
       - name: Install pipenv
         run: pipx install pipenv
