@@ -105,9 +105,9 @@ jobs:
       - name: Create expected buckets
         run: |
           aws --endpoint-url "${S3_ENDPOINT_URL}" s3 ls
-          aws --endpoint-url "${S3_ENDPOINT_URL}" s3 mb "s3://qualicharge/qualicharge-indicators"
-          aws --endpoint-url "${S3_ENDPOINT_URL}" s3 mb "s3://qualicharge/qualicharge-sessions"
-          aws --endpoint-url "${S3_ENDPOINT_URL}" s3 mb "s3://qualicharge/qualicharge-statuses"
+          aws --endpoint-url "${S3_ENDPOINT_URL}" s3 mb "s3://qualicharge-indicators"
+          aws --endpoint-url "${S3_ENDPOINT_URL}" s3 mb "s3://qualicharge-sessions"
+          aws --endpoint-url "${S3_ENDPOINT_URL}" s3 mb "s3://qualicharge-statuses"
           aws --endpoint-url "${S3_ENDPOINT_URL}" s3 ls
       - name: Install pipenv
         run: pipx install pipenv
