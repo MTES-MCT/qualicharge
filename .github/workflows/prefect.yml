@@ -73,14 +73,14 @@ jobs:
         ports:
           - 5432:5432
       minio:
-        image: "minio/minio:latest-cicd"
+        image: "minio/minio:edge-cicd"
         env:
           MINIO_ROOT_USER: qualicharge
           MINIO_ROOT_PASSWORD: password
-        options: >-
-          --entrypoint "minio server /data"
-        volumes:
-          - /data
+        # options: >-
+        #   --entrypoint "minio server /data"
+        # volumes:
+        #   - /data
         ports:
           - 9000:9000
     defaults:
