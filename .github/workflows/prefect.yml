@@ -78,7 +78,7 @@ jobs:
           MINIO_ROOT_USER: qualicharge
           MINIO_ROOT_PASSWORD: password
         options: >-
-          server /data
+          --entrypoint "minio server /data"
         ports:
           - 9000:9000
     defaults:
