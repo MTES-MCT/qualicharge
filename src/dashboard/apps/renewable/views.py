@@ -66,6 +66,9 @@ class IndexView(BaseView, TemplateView):
 
         context = super().get_context_data(**kwargs)
         context["entities"] = entities
+        context["has_active_delivery_points"] = any(
+            entity.count_active_delivery_points(update=True) for entity in entities
+        )
         context["has_pending_renewable"] = any(
             entity.count_unsubmitted_quarterly_renewables() for entity in entities
         )

@@ -15,7 +15,7 @@
       {% endif %}
 
       {# awaiting renewable meter - no items #}
-      {% if not has_pending_renewable %}
+      {% if not has_active_delivery_points %}
         {% include "renewable/includes/_no_data_card.html" with description="Aucun points de livraison." %}
       {% endif %}
     </div>
