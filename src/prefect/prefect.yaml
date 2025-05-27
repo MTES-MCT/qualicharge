@@ -16,7 +16,7 @@ deployments:
         active: true
     parameters:
       environment: production
-      levels: [0, 1, 2, 3, 4]
+      levels: [0, 1, 2, 3]
       period: d
       create_artifact: true
       persist: true
@@ -33,7 +33,7 @@ deployments:
         active: true
     parameters:
       environment: production
-      levels: [0, 1, 2, 3, 4]
+      levels: [0, 1, 2, 3]
       period: d
       create_artifact: true
       persist: true
@@ -50,7 +50,7 @@ deployments:
         active: true
     parameters:
       environment: production
-      levels: [0, 1, 2, 3, 4]
+      levels: [0, 1, 2, 3]
       period: d
       create_artifact: true
       persist: true
@@ -67,7 +67,7 @@ deployments:
         active: true
     parameters:
       environment: production
-      levels: [0, 1, 2, 3, 4]
+      levels: [0, 1, 2, 3]
       period: d
       create_artifact: true
       persist: true

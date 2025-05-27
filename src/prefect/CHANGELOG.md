@@ -33,5 +33,6 @@ and this project adheres to
 ### Changed
 
 - Upgrade API database to PG 15 / TimescaleDB 2.19
+- Adjust level of historicization
 
 [unreleased]: https://github.com/MTES-MCT/qualicharge/
