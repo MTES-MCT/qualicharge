@@ -13,7 +13,7 @@ from apps.consent import AWAITING, VALIDATED
 from apps.consent.factories import ConsentFactory
 from apps.consent.models import Consent
 from apps.core.factories import DeliveryPointFactory, EntityFactory, StationFactory
-from apps.core.models import Entity
+from apps.core.models import DeliveryPoint, Entity
 from apps.renewable.factories import RenewableFactory
 from apps.renewable.models import Renewable
 
@@ -755,3 +755,47 @@ def test_entity_has_renewable():
     entity_without_renewable = EntityFactory()
     DeliveryPointFactory(has_renewable=False, is_active=True, entity=entity)
     assert entity_without_renewable.has_renewable() is False
+
+
+@pytest.mark.django_db
+def test_entity_count_active_delivery_points():
+    """Test Entity.count_active_delivery_points method."""
+    entity = EntityFactory()
+    assert entity._count_active_delivery_points is None
+
+    active_dp_size = 3
+    inactive_dp_size = 2
+    expected_size = 5
+    DeliveryPointFactory.create_batch(
+        size=active_dp_size, entity=entity, is_active=True
+    )
+    DeliveryPointFactory.create_batch(
+        size=inactive_dp_size, entity=entity, is_active=False
+    )
+
+    # test the initial count of active delivery points
+    assert DeliveryPoint.objects.count() == expected_size
+    count = entity.count_active_delivery_points()
+    assert entity._count_active_delivery_points is not None
+    assert count == active_dp_size
+
+    # test the value is cached
+    DeliveryPointFactory(entity=entity, is_active=True)
+    cached_active_dp_size = 3
+    expected_size = 6
+    assert DeliveryPoint.objects.count() == expected_size
+    cached_count = entity.count_active_delivery_points()
+    assert cached_count == cached_active_dp_size
+
+    # test the forced count update
+    updated_active_dp_size = 4
+    updated_count = entity.count_active_delivery_points(update=True)
+    assert updated_count == updated_active_dp_size
+
+    # test the status change of a delivery point.
+    dp = DeliveryPoint.objects.filter(is_active=True).first()
+    dp.is_active = False
+    dp.save()
+    new_count = entity.count_active_delivery_points(update=True)
+    expected_new_count = 3
+    assert new_count == expected_new_count

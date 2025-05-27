@@ -115,6 +115,16 @@ class Entity(DashboardBase):
         verbose_name_plural = "entities"
         ordering = ["name"]
 
+    def __init__(self, *args, **kwargs):
+        """Sets up the initial state for count_active_delivery_points.
+
+        Attributes:
+            _count_active_delivery_points (Optional): Tracks the count of active
+                delivery points for the instance.
+        """
+        super().__init__(*args, **kwargs)
+        self._count_active_delivery_points = None
+
     def __str__(self):  # noqa: D105
         return self.name
 
@@ -240,6 +250,15 @@ class Entity(DashboardBase):
     def count_unsubmitted_quarterly_renewables(self) -> int:
         """Count delivery points with pending renewable, within the current quarter."""
         return self.get_unsubmitted_quarterly_renewables().count()
+
+    def count_active_delivery_points(self, update=False) -> int:
+        """Counts the number of active delivery points for this entity."""
+        if self._count_active_delivery_points is None or update:
+            self._count_active_delivery_points = self.delivery_points.filter(
+                is_active=True
+            ).count()
+
+        return self._count_active_delivery_points
 
 
 class DeliveryPoint(DashboardBase):
