@@ -13,7 +13,7 @@ from apps.consent import AWAITING, VALIDATED
 from apps.consent.factories import ConsentFactory
 from apps.consent.models import Consent
 from apps.core.factories import DeliveryPointFactory, EntityFactory, StationFactory
-from apps.core.models import Entity
+from apps.core.models import DeliveryPoint, Entity
 from apps.renewable.factories import RenewableFactory
 from apps.renewable.models import Renewable
 
@@ -755,3 +755,18 @@ def test_entity_has_renewable():
     entity_without_renewable = EntityFactory()
     DeliveryPointFactory(has_renewable=False, is_active=True, entity=entity)
     assert entity_without_renewable.has_renewable() is False
+
+
+@pytest.mark.django_db
+def test_entity_count_active_delivery_points():
+    """Test Entity.count_active_delivery_points method."""
+    entity = EntityFactory()
+    DeliveryPointFactory(entity=entity, is_active=False)
+
+    assert DeliveryPoint.objects.count() == 1
+    assert entity.count_active_delivery_points() == 0
+
+    DeliveryPointFactory(entity=entity, is_active=True)
+    expected_size = 2
+    assert DeliveryPoint.objects.count() == expected_size
+    assert entity.count_active_delivery_points() == 1
