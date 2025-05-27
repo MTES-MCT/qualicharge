@@ -28,20 +28,22 @@
             </thead>
             <tbody>
               {% for entity in entities %}
-                {% if entity.count_unsubmitted_quarterly_renewables %}
                 <tr id="undefined-row-key-{{ forloop.counter }}" data-row-key="forloop.counter">
                   <td>
                     <p>{{ entity.name }}</p>
                   </td>
                   <td class="fr-cell--center">
-                    <a class="fr-link fr-icon-arrow-right-line fr-link--icon-right"
-                       href="{% url "renewable:delivery-points" entity.slug %}"
-                       data-fr-js-link-actionee="true">
-                      Gestion des points de livraison
-                    </a>
+                    {% if entity.count_active_delivery_points %}
+                      <a class="fr-link fr-icon-arrow-right-line fr-link--icon-right"
+                         href="{% url "renewable:delivery-points" entity.slug %}"
+                         data-fr-js-link-actionee="true">
+                        Gestion des points de livraison
+                      </a>
+                      {% else %}
+                        <em>Aucun point de livraison actif</em>
+                    {% endif %}
                   </td>
                 </tr>
-                {% endif %}
               {% endfor %}
             </tbody>
           </table>
