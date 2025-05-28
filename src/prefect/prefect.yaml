@@ -257,6 +257,7 @@ deployments:
       from_now: 
         days: 15
       environment: staging 
+      if_exists: ignore 
     work_pool:
       name: indicators
       work_queue_name: default
@@ -271,6 +272,37 @@ deployments:
       from_now: 
         days: 15
       environment: production
+      if_exists: ignore 
+    work_pool:
+      name: indicators
+      work_queue_name: default
+
+  - name: sessions-cooling-staging
+    entrypoint: cooling/sessions.py:extract_old_sessions
+    schedules:
+      - cron: "34 4 * * *"
+        timezone: "Europe/Paris"
+        active: true
+    parameters:
+      from_now: 
+        days: 15
+      environment: staging 
+      if_exists: ignore 
+    work_pool:
+      name: indicators
+      work_queue_name: default
+
+  - name: sessions-cooling-production
+    entrypoint: cooling/sessions.py:extract_old_sessions
+    schedules:
+      - cron: "43 4 * * *"
+        timezone: "Europe/Paris"
+        active: true
+    parameters:
+      from_now: 
+        days: 15
+      environment: production
+      if_exists: ignore 
     work_pool:
       name: indicators
       work_queue_name: default
