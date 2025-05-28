@@ -250,7 +250,7 @@ deployments:
   - name: status-cooling-staging
     entrypoint: cooling/statuses.py:extract_old_statuses
     parameters:
-      interval: 
+      from_now: 
         days: 15
       environment: staging 
     work_pool:
