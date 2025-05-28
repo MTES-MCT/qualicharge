@@ -249,10 +249,28 @@ deployments:
   # -- Data cooling deployments --
   - name: status-cooling-staging
     entrypoint: cooling/statuses.py:extract_old_statuses
+    schedules:
+      - cron: "2 4 * * *"
+        timezone: "Europe/Paris"
+        active: true
     parameters:
       from_now: 
         days: 15
       environment: staging 
+    work_pool:
+      name: indicators
+      work_queue_name: default
+
+  - name: status-cooling-production
+    entrypoint: cooling/statuses.py:extract_old_statuses
+    schedules:
+      - cron: "18 4 * * *"
+        timezone: "Europe/Paris"
+        active: true
+    parameters:
+      from_now: 
+        days: 15
+      environment: production
     work_pool:
       name: indicators
       work_queue_name: default
