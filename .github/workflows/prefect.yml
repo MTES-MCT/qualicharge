@@ -92,7 +92,6 @@ jobs:
       S3_ENDPOINT_URL: "http://localhost:9000"
       AWS_ACCESS_KEY_ID: qualicharge
       AWS_SECRET_ACCESS_KEY: password
-      # AWS_REQUEST_CHECKSUM_CALCULATION: WHEN_REQUIRED
     steps:
       - uses: actions/checkout@v4
       - name: Create Indicators database
