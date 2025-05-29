@@ -6,11 +6,14 @@ Common indicators functions and constants.
 from datetime import datetime
 from string import Template
 
+import geopandas as gpd  # type: ignore
 import pandas as pd  # type: ignore
 from dateutil.relativedelta import MO, relativedelta
 from prefect import task
 from prefect.artifacts import create_markdown_artifact
 from sqlalchemy.orm import Session
+
+from rtet.interfaces_afir_qualicharge import filter_stations_parcs
 
 from .db import get_api_db_engine, save_indicators
 from .models import IndicatorPeriod, IndicatorTimeSpan, Level, PeriodDuration
@@ -127,3 +130,11 @@ def export_indicators(  # noqa: PLR0913
         create_markdown_artifact(
             key=flow_name, markdown=indicators.to_markdown(), description=description
         )
+
+
+@task(task_run_name="filter-rtet")
+def filter_rtet(stations: pd.DataFrame) -> pd.DataFrame:
+    """Get stations near RTE-T."""
+    rtet_edges = gpd.read_file("../../../../data/V1_rtet_edge.geojson")
+    rtet_nodes = gpd.read_file("../../../../data/V1_rtet_node.geojson")
+    return filter_stations_parcs(rtet_edges, rtet_nodes, stations, simple=True)

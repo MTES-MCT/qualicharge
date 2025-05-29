@@ -22,7 +22,10 @@ CORE = "core"
 
 
 def creation_pandas_stations(
-    data: str | pd.DataFrame, nature="station_irve", first_id=0, source="gireve"
+    data: str | pd.DataFrame,
+    nature="station_irve",
+    first_id: int = 0,
+    source: str = "gireve",
 ) -> pd.DataFrame:
     """Generation d'un DataFrame des stations.
 
@@ -58,7 +61,7 @@ def creation_pandas_stations(
         )
         stations = stations_csl.reset_index()
         stations[GEOM] = stations["coordonneesXY"].apply(
-            lambda x: Point(str.split(x, ","))
+            lambda x: Point(str.split(x, ","))  # type: ignore
         )
         stations = gpd.GeoDataFrame(stations, crs=4326).to_crs(2154)
     elif source == "qualicharge":
@@ -115,7 +118,12 @@ def export_stations_parcs(graph: gnx.GeoGraph, simple: bool = False) -> pd.DataF
 
 
 def filter_stations_parcs(  # noqa: PLR0913
-    rtet_edges, rtet_nodes, stations, pmax=0, pcum=0, simple=False
+    rtet_edges: pd.DataFrame,
+    rtet_nodes: pd.DataFrame,
+    stations: pd.DataFrame,
+    pmax: float = 0,
+    pcum: float = 0,
+    simple: bool = False,
 ) -> pd.DataFrame:
     """Extraction et export des stations et parcs de recharge d'un graphe."""
     # réseau rtet
