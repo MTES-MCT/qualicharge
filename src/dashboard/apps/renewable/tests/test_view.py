@@ -15,7 +15,7 @@ from apps.auth.factories import UserFactory
 from apps.auth.mixins import UserValidationMixin
 from apps.core.factories import DeliveryPointFactory, EntityFactory, StationFactory
 from apps.core.mixins import EntityViewMixin
-from apps.core.models import DeliveryPoint
+from apps.core.models import DeliveryPoint, Entity
 from apps.renewable.factories import RenewableFactory
 from apps.renewable.models import Renewable
 from apps.renewable.views import (
@@ -629,6 +629,55 @@ def test_index_view_get_period_related_context_opening_period(
     assert context["is_opening_period"] is False
     assert "period_message" in context
     assert "from 01/01/2023 to 30/01/2023" in context["period_message"]
+
+
+@pytest.mark.django_db
+def test_index_view_context(rf, monkeypatch):
+    """Test the context data provided by the Index view."""
+    entity_name = "entity-1"
+    user = UserFactory()
+    entity = EntityFactory(users=(user,), name=entity_name)
+    expected_entities = Entity.objects.all()
+
+    # instantiate the view
+    view = IndexView()
+    request = rf.get(reverse("renewable:index"), kwargs={"slug": entity_name})
+    request.user = user
+
+    # test without delivery points and renewables
+    DeliveryPointFactory(entity=entity, has_renewable=False, is_active=False)
+    view.setup(request, slug=entity_name)
+    context = view.get_context_data()
+    assert set(context["entities"]) == set(expected_entities)
+    assert context["has_active_delivery_points"] is False
+    assert context["has_pending_renewable"] is False
+    assert context["has_submitted_renewable"] is False
+
+    # test with one active delivery point
+    DeliveryPointFactory(entity=entity, has_renewable=False, is_active=True)
+    context = view.get_context_data()
+    assert set(context["entities"]) == set(expected_entities)
+    assert context["has_active_delivery_points"] is True
+    assert context["has_pending_renewable"] is False
+    assert context["has_submitted_renewable"] is False
+
+    # test with one pending renewable
+    active_dp = DeliveryPointFactory(entity=entity, has_renewable=True, is_active=True)
+    context = view.get_context_data()
+    assert set(context["entities"]) == set(expected_entities)
+    assert context["has_active_delivery_points"] is True
+    assert context["has_pending_renewable"] is True
+    assert context["has_submitted_renewable"] is False
+
+    # test with one submitted renewable
+    mock_now = datetime(2025, 3, 6)
+    monkeypatch.setattr(timezone, "now", lambda: mock_now)
+    RenewableFactory(delivery_point=active_dp, collected_at="2024-01-01")
+    context = view.get_context_data()
+    assert set(context["entities"]) == set(expected_entities)
+    assert context["has_active_delivery_points"] is True
+    assert context["has_pending_renewable"] is True
+    assert context["has_submitted_renewable"] is True
 
 
 @pytest.mark.django_db
