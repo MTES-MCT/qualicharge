@@ -3,7 +3,7 @@
 from datetime import date
 from enum import StrEnum
 from string import Template
-from typing import List
+from typing import List, Tuple
 
 from data7.models import Dataset
 from data7.streamers import sql2parquet
@@ -23,9 +23,36 @@ class IfExistStrategy(StrEnum):
     """Strategies to apply if archive already exists."""
 
     IGNORE = "ignore"
+    CHECK = "check"
     FAIL = "fail"
     OVERWRITE = "overwrite"
     APPEND = "append"
+
+
+def _check_archive(
+    engine: Engine,
+    day_iso: str,
+    s3: fs.S3FileSystem,
+    file_path: str,
+    check_query: Template,
+) -> Tuple[bool, int, int]:
+    """Check generated archive size."""
+    with engine.connect() as connection:
+        result = connection.execute(
+            text(check_query.substitute({"date": day_iso}))
+        ).first()
+
+        # No entry was found in database.
+        # We do not check archive even if it exists, but in this case we return:
+        # (False, 0, 0)
+        if not result:
+            return not s3.exists(file_path), 0, 0
+
+        expected = result._tuple()[0]
+    archive = pq.ParquetFile(file_path, filesystem=s3)
+    n_rows = archive.scan_contents()
+    archive.close()
+    return n_rows == expected, n_rows, expected
 
 
 @task
@@ -71,6 +98,23 @@ def extract_data_for_day(
                         " Task will be considered as completed."
                     )
                 )
+            case IfExistStrategy.CHECK:
+                ok, n_rows, expected = _check_archive(
+                    engine, day_iso, s3, file_path, check_query
+                )
+                if not ok:
+                    return Failed(
+                        message=(
+                            f"{bucket} archive '{file_path}' and database content"
+                            f" have diverged ({n_rows} vs {expected} expected rows)"
+                        )
+                    )
+                return Completed(
+                    message=(
+                        f"{bucket} archive '{file_path}' already exists and"
+                        f" has been checked. It contains {n_rows} rows."
+                    )
+                )
             case IfExistStrategy.FAIL:
                 return Failed(
                     message=(f"{bucket} archive '{file_path}' already exists!")
@@ -101,20 +145,12 @@ def extract_data_for_day(
             archive.write(chunk)
 
     # Check that the archive contains expected number of records
-    with engine.connect() as connection:
-        result = connection.execute(
-            text(check_query.substitute({"date": day_iso}))
-        ).first()
-        if not result:
-            return Failed(message=f"No records found for date: {day_iso}")
-        expected = result._tuple()[0]
-    archive = pq.ParquetFile(file_path, filesystem=s3)
-    n_rows = archive.scan_contents()
-    archive.close()
-    if n_rows != expected:
+    ok, n_rows, expected = _check_archive(engine, day_iso, s3, file_path, check_query)
+    if not ok:
         return Failed(
             message=(
-                f"{bucket} archive '{file_path}' is incomplete ({n_rows} vs {expected})"
+                f"{bucket} archive '{file_path}' and database content"
+                f" have diverged ({n_rows} vs {expected} expected rows)"
             )
         )
 
