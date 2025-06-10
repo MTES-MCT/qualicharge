@@ -8,6 +8,10 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Fixed
+
+- Update `id_station_itinerance` field examples in the swagger documentation
+
 ### Changed
 
 - `Statique` model string fields are now stripped
