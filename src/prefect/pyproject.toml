@@ -7,7 +7,7 @@ version = "0.0.1"
 
 # Third party packages configuration
 [tool.pytest.ini_options]
-addopts = "-v --cov-report term-missing --cov=indicators --cov=quality"
+addopts = "-v --cov-report term-missing --cov=indicators --cov=quality --cov=cooling"
 python_files = [
     "test_*.py",
     "tests.py",
