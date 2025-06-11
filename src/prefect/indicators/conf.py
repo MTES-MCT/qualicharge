@@ -25,7 +25,6 @@ class Settings(BaseSettings):
     DB_CONNECTION_MAX_OVERFLOW: int = 10
 
     # Workers
-    THREAD_POOL_MAX_WORKERS: int = 5
     WORK_POOL_NAME: str = "indicators"
 
     # Tasks

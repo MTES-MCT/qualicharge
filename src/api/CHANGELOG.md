@@ -20,11 +20,16 @@ and this project adheres to
 
 #### Dependencies
 
+- Upgrade `alembic` to `1.16.1`
+- Upgrade `cachetools` to `6.0.0`
+- Upgrade `geopandas` to `1.1.0`
+- Upgrade `pandas` to `2.3.0`
 - Upgrade `psycopg` to `3.2.9`
-- Upgrade `pydantic` to `2.11.4`
+- Upgrade `pydantic` to `2.11.5`
+- Upgrade `pyinstrument` to `5.0.2`
 - Upgrade `sentry-sdk` to `2.29.0`
-- Upgrade `setuptools` to `80.8.0`
-- Upgrade `typer` to `0.15.4`
+- Upgrade `setuptools` to `80.9.0`
+- Upgrade `typer` to `0.16.0`
 
 ## [0.23.0] - 2025-04-30
 

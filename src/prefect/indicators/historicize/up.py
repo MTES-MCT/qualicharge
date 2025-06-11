@@ -6,12 +6,8 @@ from string import Template
 import pandas as pd
 from prefect import flow, runtime, task
 from prefect.cache_policies import NONE
-from prefect.task_runners import ThreadPoolTaskRunner
 from sqlalchemy.orm import Session
 
-from indicators.conf import settings
-
-# from indicators.db import get_api_db_engine
 from indicators.db import get_indicators_db_engine
 from indicators.models import IndicatorPeriod, IndicatorTimeSpan, PeriodDuration
 from indicators.strategy import STRATEGY
@@ -174,7 +170,6 @@ def get_indicators(query_template: Template, query_params: dict) -> pd.DataFrame
 
 
 @flow(
-    task_runner=ThreadPoolTaskRunner(max_workers=settings.THREAD_POOL_MAX_WORKERS),
     flow_run_name="meta-up-{to_period.value}{offset}",
 )
 def calculate(  # noqa: PLR0913

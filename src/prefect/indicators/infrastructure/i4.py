@@ -13,7 +13,6 @@ import pandas as pd  # type: ignore
 from prefect import flow, runtime, task
 from prefect.cache_policies import NONE
 from prefect.futures import wait
-from prefect.task_runners import ThreadPoolTaskRunner
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
@@ -57,14 +56,13 @@ def get_values_for_targets(
 
 
 @flow(
-    task_runner=ThreadPoolTaskRunner(max_workers=settings.THREAD_POOL_MAX_WORKERS),
     flow_run_name="i4-{timespan.period.value}-{level:02d}-{timespan.start:%y-%m-%d}",
 )
 def i4_for_level(
     level: Level,
     timespan: IndicatorTimeSpan,
     environment: Environment,
-    chunk_size=settings.DEFAULT_CHUNK_SIZE,
+    chunk_size: int = settings.DEFAULT_CHUNK_SIZE,
 ) -> pd.DataFrame:
     """Calculate i4 for a level."""
     if level == Level.NATIONAL:
@@ -101,7 +99,6 @@ def i4_for_level(
 
 
 @flow(
-    task_runner=ThreadPoolTaskRunner(max_workers=settings.THREAD_POOL_MAX_WORKERS),
     flow_run_name="i4-{timespan.period.value}-00-{timespan.start:%y-%m-%d}",
 )
 def i4_national(timespan: IndicatorTimeSpan, environment: Environment) -> pd.DataFrame:
@@ -123,7 +120,6 @@ def i4_national(timespan: IndicatorTimeSpan, environment: Environment) -> pd.Dat
 
 
 @flow(
-    task_runner=ThreadPoolTaskRunner(max_workers=settings.THREAD_POOL_MAX_WORKERS),
     flow_run_name="meta-i4-{period.value}",
 )
 def calculate(  # noqa: PLR0913
