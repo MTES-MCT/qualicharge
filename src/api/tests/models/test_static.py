@@ -214,6 +214,27 @@ def test_statique_model_str_fields_strip():
     assert statique.observations == observations.strip()
 
 
+def test_statique_model_horaires():
+    """Test the Statique model horaires field."""
+    statique = StatiqueFactory.build(horaires="24/7")
+    assert statique.horaires == "24/7"
+
+    for value in [
+        (
+            "Su 07:00:00-20:59:00, "
+            "Sa 07:00:00-20:59:00, "
+            "Fr 07:00:00-20:59:00, "
+            "Th 07:00:00-20:59:00, "
+            "We 07:00:00-20:59:00, "
+            "Tu 07:00:00-20:59:00, "
+            "Mo 07:00:00-20:59:00"
+        ),
+        "08:30-20:30",
+    ]:
+        with pytest.raises(ValueError, match="String should match pattern"):
+            StatiqueFactory.build(horaires=value)
+
+
 def test_statique_model_defaults():
     """Test the Statique model defaut values (when not provided)."""
     example = StatiqueFactory.build()
