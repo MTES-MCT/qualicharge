@@ -8,6 +8,14 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Changed
+
+#### Dependencies
+
+- Upgrade `Django` to `5.2.2`
+- Upgrade `jsonschema` to `4.24.0`
+- Upgrade `requests` to `2.32.4`
+
 ## [0.1.0] - 2025-05-07
 
 ### Added
@@ -26,9 +34,9 @@ and this project adheres to
 - add mass admin action to validate users
 - add core app with `Entity` and `DeliveryPoint` models
 - add admin integration for `Entity`, `DeliveryPoint` and `Station`
-- add a helper function to sync delivery points and stations from the QualiCharge API 
-- add a helper function to retrieve company information from its SIRET using the 
-"Annuaire des Entreprises" API
+- add a helper function to sync delivery points and stations from the QualiCharge API
+- add a helper function to retrieve company information from its SIRET using the
+  "Annuaire des Entreprises" API
 - add validators for SIRET, SIREN, NAF code and Zip code
 - add a utility function to extract SIREN from a SIRET
 - add the consent app with `Consent` model
@@ -37,12 +45,12 @@ and this project adheres to
 - add a validated consent page, allowing users to consult validated consents for the current period
 - add admin integration for `Consent`
 - add a mass admin action to "revoke" multiple consents
-- allow selected consent fields to be updated when transitioning from the `VALIDATED` 
-to the `REVOKED` status
+- allow selected consent fields to be updated when transitioning from the `VALIDATED`
+  to the `REVOKED` status
 - disallow the "delete" mass action on consents in admin
 - disallow the updates of all new data if a consent has the status `REVOKED`
 - disallow the updates of all new data if a consent has the status `VALIDATED`
-- disallow the deletion of consent if it has the status `VALIDATED` or `REVOKED` 
+- disallow the deletion of consent if it has the status `VALIDATED` or `REVOKED`
 - disallow consent updates (via the consent form) if the consent status is not `AWAITING`
 - add a signal upon creation of a delivery point to automatically create the corresponding consent.
 - add a helper function to renew expiring consents
@@ -55,8 +63,8 @@ to the `REVOKED` status
 - add a command to sync delivery points from the QualiCharge API
 - add a command to renew consents (duplicate expiring consents and generate new consents)
 - add a command to notify users about their pending consents
-- add a command to retrieve company information from its SIRET using the 
-"Annuaire des Entreprises" API (for development only)
+- add a command to retrieve company information from its SIRET using the
+  "Annuaire des Entreprises" API (for development only)
 - add a command to seed consents (for development only)
 - add cron job configuration to schedule management tasks
 

@@ -4,7 +4,7 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-Django = "==5.2.1"
+Django = "==5.2.2"
 django-anymail = "==13.0"
 django-dsfr = "==2.4.0"
 django-environ = "==0.12.0"
@@ -15,7 +15,7 @@ jsonschema = "==4.24.0"
 mozilla-django-oidc = "==4.0.1"
 psycopg = {extras = ["pool", "binary"], version = "==3.2.9"}
 qualicharge-client = "==0.3.0"
-requests = "==2.32.3"
+requests = "==2.32.4"
 sentry-sdk = {extras = ["django"], version = "==2.29.1"}
 whitenoise = "==6.9.0"
 
