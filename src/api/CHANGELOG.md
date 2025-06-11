@@ -8,6 +8,8 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.24.0] - 2025-06-11
+
 ### Added
 
 - Clean activity table every day using a cronjob
@@ -485,7 +487,8 @@ and this project adheres to
 
 - Implement base FastAPI app
 
-[unreleased]: https://github.com/MTES-MCT/qualicharge/compare/v0.23.0...main
+[unreleased]: https://github.com/MTES-MCT/qualicharge/compare/v0.24.0...main
+[0.24.0]: https://github.com/MTES-MCT/qualicharge/compare/v0.23.0...v0.24.0
 [0.23.0]: https://github.com/MTES-MCT/qualicharge/compare/v0.22.1...v0.23.0
 [0.22.1]: https://github.com/MTES-MCT/qualicharge/compare/v0.22.0...v0.22.1
 [0.22.0]: https://github.com/MTES-MCT/qualicharge/compare/v0.21.0...v0.22.0
