@@ -94,7 +94,7 @@ bootstrap-dashboard: \
 .PHONY: bootstrap-dashboard
 
 build: ## build services image
-	$(COMPOSE) build
+	$(COMPOSE) build --build-arg DOCKER_UID=1000 --build-arg DOCKER_GID=1000
 .PHONY: build
 
 build-api: ## build the api image
@@ -429,7 +429,8 @@ seed-minio: ## seed the Minio server
 seed-oidc: ## seed the OIDC provider
 	@echo 'Starting OIDC provider…'
 	@$(COMPOSE_UP) keycloak
-	@$(COMPOSE_RUN) dockerize -wait http://keycloak:8080 -timeout 60s
+	@echo 'Waiting for Keycloak to be ready…'
+	@$(COMPOSE_RUN) curl --retry 30 --retry-delay 3 --retry-all-errors --fail http://keycloak:8080/
 	@echo 'Seeding OIDC client…'
 	@$(COMPOSE) exec keycloak /usr/local/bin/kc-init
 .PHONY: seed-oidc

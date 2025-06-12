@@ -83,6 +83,7 @@ services:
 
   keycloak:
     image: quay.io/keycloak/keycloak:26.2
+    platform: linux/x86_64
     env_file:
       - env.d/keycloak
     command: start-dev
@@ -117,8 +118,8 @@ services:
       dockerfile: src/notebook/Dockerfile
     user: ${DOCKER_USER:-1000}
     environment:
-      NB_UID: ${DOCKER_UID:-1000}
-      NB_GID: ${DOCKER_GID:-1000}
+      NB_UID: ${DOCKER_USER:-1000}
+      NB_GID: ${DOCKER_USER:-1000}
       CHOWN_HOME: "yes"
       CHOWN_HOME_OPTS: -R
     env_file:

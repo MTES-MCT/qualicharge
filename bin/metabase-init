@@ -8,7 +8,10 @@
 set -eo pipefail
 
 # Utilities
-declare COMPOSE_RUN="docker compose run --rm -T"
+declare DOCKER_UID=1000
+declare DOCKER_GID=1000
+declare DOCKER_USER="${DOCKER_UID}:${DOCKER_GID}"
+declare COMPOSE_RUN="docker compose run --rm -T -u ${DOCKER_USER}"
 declare CURL="${COMPOSE_RUN} curl"
 declare JQ="${COMPOSE_RUN} jq"
 
@@ -24,6 +27,7 @@ if ! setupToken=$(${CURL} -s --fail "${METABASE_HOST}/api/session/properties" | 
   exit 2
 fi
 
+# TODO - Check if Metabase is already configured to make this script.
 echo "⚙️ Configuring metabase…"
 ${JQ} -n "{ \
   database: null, \
