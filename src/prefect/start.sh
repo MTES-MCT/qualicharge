@@ -7,8 +7,11 @@ echo "${PREFECT_HTPASSWD_CLIENT}" > .htpasswd
 echo "${PREFECT_HTPASSWD_ADMIN}" >> .htpasswd
 echo "${PREFECT_HTPASSWD_USER1}" >> .htpasswd
 
+# Get details about prefect installation
+prefect version
+
 # Run prefect server in the background
-prefect server start &
+prefect server start -b
 
 # Run nginx
 #
