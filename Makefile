@@ -94,7 +94,7 @@ bootstrap-dashboard: \
 .PHONY: bootstrap-dashboard
 
 build: ## build services image
-	$(COMPOSE) build --build-arg DOCKER_UID=1000 --build-arg DOCKER_GID=1000
+	$(COMPOSE) build
 .PHONY: build
 
 build-api: ## build the api image
