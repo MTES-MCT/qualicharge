@@ -55,6 +55,7 @@ bench: ## run API benchmark
 
 bootstrap: ## bootstrap the project for development
 bootstrap: \
+  down-metabase-db \
   build \
   migrate-api \
   create-api-test-db \
@@ -371,6 +372,10 @@ reset-api-db: ## Reset the PostgreSQL API database
 	$(MAKE) create-api-superuser
 	$(MAKE) create-api-test-db
 .PHONY: reset-api-db
+
+down-metabase-db: ## Reset the PostgreSQL metabase database
+	$(COMPOSE) down metabase
+.PHONY: down-metabase-db
 
 reset-dashboard-db: ## Reset the PostgreSQL dashboard database
 	$(MAKE) create-dashboard-db
