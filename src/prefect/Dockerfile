@@ -45,4 +45,4 @@ USER ${PIPENV_USER_NAME}:${PIPENV_GROUP_NAME}
 RUN pipenv install -d
 
 # -- Run --
-CMD ["pipenv", "run", "honcho", "start", "web"]
+CMD pipenv run honcho start -f Procfile.dev
