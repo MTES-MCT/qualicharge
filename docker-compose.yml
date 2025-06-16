@@ -179,7 +179,7 @@ services:
 
   prefect-worker:
     image: "qualicharge:prefect"
-    command: ["pipenv", "run", "honcho", "start", "worker"]
+    command: ["pipenv", "run", "honcho", "start", "-f", "Procfile.dev", "worker"]
     user: ${DOCKER_USER:-1000}
     env_file:
       - env.d/prefect-worker
