@@ -20,7 +20,7 @@ and this project adheres to
 
 - `Statique` model string fields are now stripped
 - `Statique.restriction_gabarit` field should be at least 2 characters long
-- Update the list of active operational units
+- Update the list of active operational units (twice)
 
 #### Dependencies
 
