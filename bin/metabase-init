@@ -27,7 +27,7 @@ if ! setupToken=$(${CURL} -s --fail "${METABASE_HOST}/api/session/properties" | 
   exit 2
 fi
 
-# TODO - Check if Metabase is already configured to make this script.
+# TODO - Check if Metabase is already configured to make this script idempotent.
 echo "⚙️ Configuring metabase…"
 ${JQ} -n "{ \
   database: null, \
