@@ -93,7 +93,7 @@ services:
       - ./bin/kc-init:/usr/local/bin/kc-init
 
   metabase:
-    image: metabase/metabase:v0.54.10
+    image: metabase/metabase:v0.55.3
     ports:
       - 3000:3000
     env_file:
@@ -266,7 +266,7 @@ services:
 
   # -- tools
   curl:
-    image: curlimages/curl:8.13.0
+    image: curlimages/curl:8.14.1
     user: ${DOCKER_USER:-1000}
     env_file:
       - env.d/metabase

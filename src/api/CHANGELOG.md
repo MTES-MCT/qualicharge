@@ -8,6 +8,10 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Added
+
+- Clean activity table every day using a cronjob
+
 ### Fixed
 
 - Update `id_station_itinerance` field examples in the swagger documentation
