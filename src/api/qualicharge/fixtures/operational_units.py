@@ -1953,9 +1953,38 @@ data: List[Item] = [
         "FRMBZ",
         "Mobilize Power Solutions",
     ),
+    # Update: 2025/06/17
+    Item(
+        "FR505",
+        "50five",
+    ),
+    Item(
+        "FREVD",
+        "ENERGYTRONIK",
+    ),
+    Item(
+        "FRPKG",
+        "Indigo Park",
+    ),
+    Item(
+        "FRR3M",
+        "R3",
+    ),
+    Item(
+        "FRSOR",
+        "SOREL ENERGIES",
+    ),
+    Item(
+        "FRTCS",
+        "Erinion",
+    ),
+    Item(
+        "FRTYW",
+        "TyWatt",
+    ),
     Item(
         "FRZET",
-        "INTHY Distribution",
+        "ZETRA",
     ),
 ]
 
