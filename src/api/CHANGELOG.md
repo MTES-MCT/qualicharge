@@ -8,6 +8,21 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Added
+
+- Create new database indexes:
+  - `ix_pointdecharge_station_id`
+  - `ix_station_amenageur_id`
+  - `ix_station_operateur_id`
+
+### Removed
+
+- Drop database indexes:
+  - `status_horodatage_idx`
+  - `ix_status_horodatage_pdc_id`
+  - `session_start_idx`
+  - `ix_session_start_pdc_id`
+
 ## [0.24.0] - 2025-06-11
 
 ### Added

@@ -321,13 +321,12 @@ class Station(BaseAuditableSQLModel, table=True):
         default=None,
         foreign_key="amenageur.id",
         ondelete="SET NULL",
+        index=True,
     )
     amenageur: Amenageur = Relationship(back_populates="stations")
 
     operateur_id: Optional[UUID] = Field(
-        default=None,
-        foreign_key="operateur.id",
-        ondelete="SET NULL",
+        default=None, foreign_key="operateur.id", ondelete="SET NULL", index=True
     )
     operateur: Operateur = Relationship(back_populates="stations")
 
@@ -412,7 +411,9 @@ class PointDeCharge(BaseAuditableSQLModel, table=True):
         return all(getattr(self, field) == getattr(other, field) for field in fields)
 
     # Relationships
-    station_id: Optional[UUID] = Field(default=None, foreign_key="station.id")
+    station_id: Optional[UUID] = Field(
+        default=None, foreign_key="station.id", index=True
+    )
     station: Station = Relationship(back_populates="points_de_charge")
     sessions: List["Session"] = Relationship(back_populates="point_de_charge")
     statuses: List["Status"] = Relationship(back_populates="point_de_charge")
