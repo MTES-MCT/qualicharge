@@ -8,6 +8,9 @@
     },
     {
       "command": "51 5 * * 1 python manage.py notifawaitingconsents"
+    },
+    {
+      "command": "53 1 1,10 * * python manage.py notifopening"
     }
   ]
 }
