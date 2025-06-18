@@ -423,6 +423,7 @@ class Session(BaseAuditableSQLModel, SessionBase, table=True):
 
     __table_args__ = BaseAuditableSQLModel.__table_args__ + (
         PrimaryKeyConstraint("id", "start", name="ix_session_id_start"),
+        Index("ix_session_pdc_id", "point_de_charge_id"),
         {"timescaledb_hypertable": {"time_column_name": "start"}},
     )
 
@@ -448,6 +449,7 @@ class Status(BaseTimestampedSQLModel, StatusBase, table=True):
 
     __table_args__ = BaseTimestampedSQLModel.__table_args__ + (
         PrimaryKeyConstraint("id", "horodatage", name="ix_status_id_horodatage"),
+        Index("ix_status_pdc_id", "point_de_charge_id"),
         {"timescaledb_hypertable": {"time_column_name": "horodatage"}},
     )
 
