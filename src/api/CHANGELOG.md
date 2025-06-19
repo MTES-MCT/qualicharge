@@ -15,6 +15,12 @@ and this project adheres to
   - `ix_station_amenageur_id`
   - `ix_station_operateur_id`
 
+### Changed
+
+#### Dependencies
+
+- Upgrade `urllib3` to `2.5.0`
+
 ### Removed
 
 - Drop database indexes:

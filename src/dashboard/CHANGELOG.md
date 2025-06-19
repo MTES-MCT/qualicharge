@@ -15,6 +15,7 @@ and this project adheres to
 - Upgrade `Django` to `5.2.2`
 - Upgrade `jsonschema` to `4.24.0`
 - Upgrade `requests` to `2.32.4`
+- Upgrade `urllib3` to `2.5.0`
 
 ## [0.1.0] - 2025-05-07
 
