@@ -64,6 +64,7 @@ INSTALLED_APPS = [
     "apps.core",
     "apps.home",
     "apps.consent",
+    "apps.renewable",
 ]
 
 MIDDLEWARE = [
@@ -244,6 +245,16 @@ CONSENT_CONTROL_AUTHORITY = {
 CONSENT_SIGNATURE_LOCATION = env.str("CONSENT_SIGNATURE_LOCATION")
 
 
+## Renewable app
+
+# Defines the time window (in days) before the end of the previous quarter
+# during which meter readings are accepted.
+RENEWABLE_MIN_DAYS_FOR_METER_READING = env.int("RENEWABLE_MIN_DAYS_FOR_METER_READING")
+
+# defines the duration (in days) within which users can submit energy statements,
+# starting from the first day of the current quarter.
+RENEWABLE_OPENING_PERIOD_DAYS = env.int("RENEWABLE_OPENING_PERIOD_DAYS")
+
 ## EMAIL
 
 # Email to contact the QualiCharge team
@@ -263,6 +274,9 @@ DASHBOARD_EMAIL_CONSENT_VALIDATION = "consent_validation"
 DASHBOARD_EMAIL_NEW_SUBSCRIPTION = "new_subscription"
 DASHBOARD_EMAIL_VALIDATED_USER = "validated_user"
 DASHBOARD_EMAIL_AWAITING_EMAIL = "awaiting_email"
+DASHBOARD_EMAIL_RENEWABLE_SUBMISSION = "renewable_submission"
+DASHBOARD_EMAIL_RENEWABLE_OPENING_PERIOD = "renewable_opening_period"
+
 DASHBOARD_EMAIL_CONFIGS = {
     # Configuration for the notification email sent to the user when
     # they validate their consents.
@@ -283,6 +297,14 @@ DASHBOARD_EMAIL_CONFIGS = {
     },
     DASHBOARD_EMAIL_AWAITING_EMAIL: {
         "template_id": env.int("AWAITING_EMAIL_TEMPLATE_ID"),
+        "link": env.str("DOMAIN"),
+    },
+    DASHBOARD_EMAIL_RENEWABLE_SUBMISSION: {
+        "template_id": env.int("RENEWABLE_SUBMISSION_TEMPLATE_ID"),
+        "link": env.str("DOMAIN"),
+    },
+    DASHBOARD_EMAIL_RENEWABLE_OPENING_PERIOD: {
+        "template_id": env.int("RENEWABLE_OPENING_PERIOD_TEMPLATE_ID"),
         "link": env.str("DOMAIN"),
     },
 }

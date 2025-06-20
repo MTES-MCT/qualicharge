@@ -440,6 +440,7 @@ seed-dashboard: ## seed dashboard
 	@echo "Seeding dashboard…"
 	@bin/manage loaddata dashboard/fixtures/dsfr_fixtures.json
 	@bin/manage seed_consent
+	@bin/manage seed_renewable
 .PHONY: seed-dashboard
 
 # -- API

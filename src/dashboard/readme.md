@@ -107,6 +107,10 @@ flowchart LR
     E1 --> E2["User fills fields and verifies information in the consent form"]
     E2 --> E3["Send notification: 'Your consents are validated successfully.'"]
     F1 --> F2["User views validated consents for the active period"]
+    D2 --> G0(["Renewable Management"])
+    G0 --> G1(["Manage renewable for delivery points"]) & H1(["Manage renewable meter reading"]) & H4(["User views submitted renewables"])
+    H1 --> H2["User fills fields and verifies information in the consent form"]
+    H2 --> H3["Send notification: 'Meter readings have been sent successfully.'"]    
 ```
 
 ### Consent management
@@ -133,33 +137,67 @@ Consent revoked.
 - [x] It cannot be modified.
 - [x] It cannot be deleted.
 
+### Renewable management
+
+- Users can add and remove delivery points for which they intend to submit renewable 
+energy declarations.
+- Quarterly submission of renewable energy declarations is enabled for the preceding 
+quarter's data.
+- Users can access a comprehensive view of all previously submitted energy declarations.
+
+#### Renewable Energy Declaration Rules:
+- The declaration submission date must fall within a specific window: starting from the 
+previous quarter's end date up until 'x' days before this end date.
+- The declarations must be submitted within the first 'x' days of the current quarter.
+
+#### Environment Variables 
+
+##### RENEWABLE_MIN_DAYS_FOR_METER_READING
+- **Type**: Integer
+- **Description**: Defines the time window in days before the end of the previous 
+quarter during which meter readings are accepted.
+- **Example**: If set to 15, meter readings will be accepted within the last 15 days
+of the previous quarter.
+
+##### RENEWABLE_OPENING_PERIOD_DAYS
+- **Type**: Integer
+- **Description**: Specifies the duration (in days) during which users can submit their
+energy statements, starting from the first day of the current quarter.
+- **Example**: If set to 30, users will have 30 days from the beginning of each quarter 
+to submit their energy statements.
+
+
 ## Emails
 
 The third-party service **BREVO** is used to send emails.
 
 ### List of Emails Sent
 
-| **Description**    | **Target** | **BREVO Template ID** |
-|--------------------|------------|-----------------------|
-| New user creation  | Admins     | 4                     |
-| Admin validation   | Users      | 5                     |
-| Consents awaiting  | Users      | 6                     |
-| Consents validated | Users      | 3                     |
+| **Description**          | **Target** | **BREVO Template ID** |
+|--------------------------|------------|-----------------------|
+| New user creation        | Admins     | 4                     |
+| Admin validation         | Users      | 5                     |
+| Consents awaiting        | Users      | 6                     |
+| Consents validated       | Users      | 3                     |
+| Renewable submission     | Users      | 7                     |
+| Renewable opening period | Users      | 8                     |
 
 ## Django Commands
 
 ### Commands used with Cron Job
 
-| **Task**                | **Description**                                                       | **Execution Frequency**  |
-|-------------------------|-----------------------------------------------------------------------|--------------------------|
-| `syncdeliverypoints`    | Synchronizes delivery points from the QualiCharge API                 | Daily at 02:12 AM        |
-| `renewconsents`         | Renews consents (duplicates expiring consents and generates new ones) | Hourly at 00:42          |
-| `notifawaitingconsents` | Notifies users of their pending consents                              | Every Monday at 05:51 AM |
+| **Task**                | **Description**                                                       | **Execution Frequency**                  |
+|-------------------------|-----------------------------------------------------------------------|------------------------------------------|
+| `syncdeliverypoints`    | Synchronizes delivery points from the QualiCharge API                 | Daily at 02:12 AM                        |
+| `renewconsents`         | Renews consents (duplicates expiring consents and generates new ones) | Hourly at 00:42                          |
+| `notifawaitingconsents` | Notifies users of their pending consents                              | Every Monday at 05:51 AM                 |
+| `notifopening`          | Notifies users when the meter reading submission period begins        | 1st and 10th day of every month at 01:53 |
 
 ### Commands used in development only
 
 - `populateentity`: Retrieve company information using its SIRET via the "Annuaire des Entreprises" API
 - `seed_consent`: Seed sample consents
+- `seed_renewable`: Seed sample renewables
 
 ## Third Party Services
 

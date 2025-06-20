@@ -1,6 +1,7 @@
 """Dashboard consent app views."""
 
 from typing import Any
+from warnings import warn
 
 import sentry_sdk
 from anymail.exceptions import AnymailRequestsAPIError
@@ -118,6 +119,12 @@ class ConsentFormView(BaseView, FormView):
 
     def _get_entity(self) -> Entity:
         """Return the specific entity with the provided slug."""
+        warn(
+            "This method is deprecated. please use "
+            "core EntityViewMixin.get_entity() instead",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         slug: str | None = self.kwargs.get("slug", None)
         user: DashboardUser = self.request.user  # type: ignore
 

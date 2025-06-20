@@ -50,8 +50,19 @@ def test_sort_by_station():
         assert result["provider_assigned_id"] is not None
         assert result["status"] == AWAITING
 
-    # Extract station names from grouped stations for comparison
-    ordered_station_names = [
-        list(result["stations_grouped"].keys())[0] for result in results
-    ]
-    assert ordered_station_names == sorted(ordered_station_names, key=str.casefold)
+    # Extract provider_assigned_id, station_name and id_station_itinerance
+    # from grouped stations for comparison.
+    delivery_point_stations = {
+        result["provider_assigned_id"]: result["stations_grouped"] for result in results
+    }
+
+    assert delivery_point_stations == {
+        dp_2.provider_assigned_id: {
+            "A": ["FRDEFP03"],
+            "C": ["FRDEFP05"],
+            "p": ["FRDEFP04"],
+            "y": ["FRDEFP02"],
+        },
+        dp_1.provider_assigned_id: {"B": ["FRABCP01"]},
+        dp_3.provider_assigned_id: {"d": ["FRGHIP01"]},
+    }

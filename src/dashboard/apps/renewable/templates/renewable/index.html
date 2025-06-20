@@ -1,0 +1,39 @@
+{% extends "renewable/base.html" %}
+{# todo: add real text content #}
+
+{% load i18n %}
+
+{% block dashboard_content %}
+  {# manage delivery points card #}
+  <div class="fr-grid-row fr-grid-row--gutters fr-mb-1w">
+    <div class="fr-col-md-12 fr-col-12">
+      {% with resume_title="Gestion des points de livraison" %}
+      {% with resume_description="Gérer les points de livraison pour lesquels vous souhaitez soumettre des relevés de production d'énergie renouvelable." %}
+        {% include "renewable/includes/_summary_delivery_points.html" with resume_title=resume_title resume_description=resume_description %}
+      {% endwith %}
+      {% endwith %}
+    </div>
+  </div>
+
+  {# pending renewable meter reading card #}
+  <div class="fr-grid-row fr-grid-row--gutters fr-mb-1w">
+    <div class="fr-col-md-12 fr-col-12">
+      {% with resume_title="Relevés en attente" %}
+      {% with resume_description="Saisissez vos relevés de production d'énergie renouvelable par point de livraison." %}
+        {% include "renewable/includes/_summary_pending_card.html" with resume_title=resume_title resume_description=resume_description %}
+      {% endwith %}
+      {% endwith %}
+    </div>
+  </div>
+
+  {# submitted renewable meter reading card #}
+  <div class="fr-grid-row fr-grid-row--gutters fr-mb-1w">
+    <div class="fr-col-md-12 fr-col-12">
+      {% with resume_title="Relevés envoyés" %}
+      {% with resume_description="Accéder à la liste des points de livraison pour lesquelles vous avez saisi les relevés de production d'énergie renouvelable." %}
+        {% include "renewable/includes/_summary_submitted_card.html" with resume_title=resume_title resume_description=resume_description %}
+      {% endwith %}
+      {% endwith %}
+    </div>
+  </div>
+{% endblock dashboard_content %}

@@ -1,0 +1,118 @@
+{% load i18n dashboard_filters renewable_tags %}
+
+{# todo: review the useful cols and data to display in the table #}
+{# todo: add real text content #}
+
+<div class="fr-fieldset__element fr-my-4w" id="pdl-component">
+  <legend class="fr-fieldset__legend" id="text-legend">
+    Relevés de production à communiquer
+  </legend>
+
+  <p>
+    Remplissez les relevés de production correspondant aux PDL.
+  </p>
+
+  <div class="fr-table fr-table--no-caption" id="table-prm-component">
+    <div class="fr-table__wrapper">
+      <div class="fr-table__container">
+        <div class="fr-table__content fr-table__overflow" tabindex="0">
+
+          <table id="table-prm" aria-labelledby="table-prm-caption">
+            <caption id="table-prm-caption"> Points de livraison à valider </caption>
+
+            <thead>
+              <tr>
+                  <th scope="col">
+                  <div class="fr-cell__title">Nom / identifiants de la station</div>
+                </th>
+                <th scope="col">
+                  <div class="fr-cell__title">Identifiant du PDL</div>
+                </th>
+                <th scope="col">
+                  <div class="fr-cell__title">Période</div>
+                </th>
+                <th scope="col">
+                  <div class="fr-cell__title">Relevé précédent (kWh)</div>
+                </th>
+                <th>
+                  <div class="fr-cell__title">Date du relevé</div>
+                </th>
+                <th scope="col">
+                  <div class="fr-cell__title">Relevé de production (kWh)</div>
+                </th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {% for form in formset %}
+              <tr id="table-prm-row-key-{{ forloop.counter0 }}"
+                  data-row-key="{{ forloop.counter0 }}"
+                  aria-labelledby="row-label-{{ forloop.counter0 }}">
+
+                <td>
+                  <input type="hidden" name="form-{{ forloop.counter0 }}-delivery_point" value="{{ form.delivery_point_obj.id }}">
+                  {% for station_name, ids in form.stations_grouped.items %}
+                    {% if forloop.counter0 > 0 %}<br />{% endif %}
+                    {{ station_name }} {% if ids %}({{ ids|join:", " }}){% endif %}
+                  {% endfor %}
+                </td>
+
+                <td id="provider_assigned_id">
+                  {{ form.delivery_point_obj.provider_assigned_id }}
+                  <input type="hidden" name="delivery_point_ids" value="{{ form.delivery_point_obj.id }}">
+                </td>
+
+                <td>
+                  {% previous_quarter_period %}<br />
+                  {% previous_quarter_period_dates %}
+                </td>
+
+                <td>
+                  {% with last_renewable=form.delivery_point_obj.last_renewable.0 %}
+                    {% if last_renewable.meter_reading %}
+                      {{ last_renewable.meter_reading }} kWh
+                      <button class="fr-btn--tooltip fr-btn"
+                              type="button"
+                              id="button-{{ form.delivery_point_obj.provider_assigned_id }}"
+                              aria-describedby="tooltip-{{ form.delivery_point_obj.provider_assigned_id }}">
+                          date du relevé précèdent
+                      </button>
+                      <span class="fr-tooltip fr-placement"
+                            id="tooltip-{{ form.delivery_point_obj.provider_assigned_id }}"
+                            role="tooltip"
+                            aria-hidden="true">
+                        relevé du {{ last_renewable.collected_at|date:"d/m/Y" }}
+                      </span>
+                    {% else %}
+                      -
+                    {% endif %}
+                  {% endwith %}
+                </td>
+
+                <td>
+                  <div class="fr-input-group{% if form.collected_at.errors %} fr-input-group--error{% endif %}">
+                    {{ form.collected_at }}
+                    {% if form.collected_at.errors %}
+                      <ul class="fr-error-text">{{ form.collected_at.errors }}</ul>
+                    {% endif %}
+                  </div>
+                </td>
+
+                <td>
+                  <div class="fr-input-group{% if form.meter_reading.errors %} fr-input-group--error{% endif %}">
+                    {{ form.meter_reading }}
+                    {% if form.meter_reading.errors %}
+                        <ul class="fr-error-text">{{ form.meter_reading.errors }}</ul>
+                    {% endif %}
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
