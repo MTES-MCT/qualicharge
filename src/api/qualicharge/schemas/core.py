@@ -141,6 +141,10 @@ class Amenageur(BaseAuditableSQLModel, table=True):
         fields = ("nom_amenageur", "siren_amenageur", "contact_amenageur")
         return all(getattr(self, field) == getattr(other, field) for field in fields)
 
+    def __hash__(self) -> int:
+        """Make model hashable."""
+        return hash(self.id)
+
 
 class Operateur(BaseAuditableSQLModel, table=True):
     """Operateur table."""
@@ -164,6 +168,10 @@ class Operateur(BaseAuditableSQLModel, table=True):
         fields = ("nom_operateur", "contact_operateur", "telephone_operateur")
         return all(getattr(self, field) == getattr(other, field) for field in fields)
 
+    def __hash__(self) -> int:
+        """Make model hashable."""
+        return hash(self.id)
+
 
 class Enseigne(BaseAuditableSQLModel, table=True):
     """Enseigne table."""
@@ -180,6 +188,10 @@ class Enseigne(BaseAuditableSQLModel, table=True):
         """Assess instances equality given uniqueness criterions."""
         fields = ("nom_enseigne",)
         return all(getattr(self, field) == getattr(other, field) for field in fields)
+
+    def __hash__(self) -> int:
+        """Make model hashable."""
+        return hash(self.id)
 
 
 class Localisation(BaseAuditableSQLModel, table=True):
@@ -209,6 +221,10 @@ class Localisation(BaseAuditableSQLModel, table=True):
         """Assess instances equality given uniqueness criterions."""
         fields = ("adresse_station",)
         return all(getattr(self, field) == getattr(other, field) for field in fields)
+
+    def __hash__(self) -> int:
+        """Make model hashable."""
+        return hash(self.id)
 
     @staticmethod
     def _coordinates_to_geometry_point(value: Coordinate):
@@ -358,6 +374,10 @@ class Station(BaseAuditableSQLModel, table=True):
         fields = ("id_station_itinerance",)
         return all(getattr(self, field) == getattr(other, field) for field in fields)
 
+    def __hash__(self) -> int:
+        """Make model hashable."""
+        return hash(self.id)
+
 
 @event.listens_for(Station, "before_insert")
 @event.listens_for(Station, "before_update")
@@ -409,6 +429,10 @@ class PointDeCharge(BaseAuditableSQLModel, table=True):
         """Assess instances equality given uniqueness criterions."""
         fields = ("id_pdc_itinerance",)
         return all(getattr(self, field) == getattr(other, field) for field in fields)
+
+    def __hash__(self) -> int:
+        """Make model hashable."""
+        return hash(self.id)
 
     # Relationships
     station_id: Optional[UUID] = Field(

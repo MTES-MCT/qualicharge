@@ -43,3 +43,7 @@ class BaseAuditableSQLModel(BaseTimestampedSQLModel):
 
     created_by_id: Optional[UUID] = Field(default=None, foreign_key="user.id")
     updated_by_id: Optional[UUID] = Field(default=None, foreign_key="user.id")
+
+    def __hash__(self) -> int:
+        """Make model hashable."""
+        return hash(self.id)
