@@ -18,8 +18,8 @@ from apps.core.models import DeliveryPoint
 @pytest.mark.django_db
 def test_create_consent(patch_datetime_now):
     """Tests the creation of a consent."""
-    from apps.consent.factories import ConsentFactory
-    from apps.consent.models import Consent
+    from apps.consent.factories import ConsentFactory  # noqa
+    from apps.consent.models import Consent  # noqa
 
     assert Consent.objects.count() == 0
 
@@ -62,8 +62,8 @@ def test_create_consent(patch_datetime_now):
 @pytest.mark.django_db
 def test_create_consent_with_custom_period_date():
     """Tests the creation of a consent with a custom period date (`start` / `end`)."""
-    from apps.consent.factories import ConsentFactory
-    from apps.consent.models import Consent
+    from apps.consent.factories import ConsentFactory  # noqa
+    from apps.consent.models import Consent  # noqa
 
     expected_start_date = datetime.datetime(
         year=2024,
@@ -114,7 +114,7 @@ def test_is_update_allowed():
     - REVOKED to VALIDATED is not allowed.
     - Create new consent is allowed.
     """
-    from apps.consent.models import Consent
+    from apps.consent.models import Consent  # noqa
 
     # update from AWAITING to VALIDATED
     consent = ConsentFactory(status=AWAITING)
@@ -198,7 +198,7 @@ def test_clean_and_update_awaiting_consent_status():
     - AWAITING to REVOKED is authorized.
     - AWAITING with mixed fields is authorized.
     """
-    from apps.consent.models import Consent
+    from apps.consent.models import Consent  # noqa
 
     # update the status from AWAITING to VALIDATED
     consent = ConsentFactory(status=AWAITING)
@@ -239,7 +239,7 @@ def test_update_validated_consent_status():
     - VALIDATED to REVOKED with not-allowed fields is not authorized.
     - VALIDATED with mixed fields is not authorized.
     """
-    from apps.consent.models import Consent
+    from apps.consent.models import Consent  # noqa
 
     # update the status from VALIDATED to AWAITING raise exception
     consent = ConsentFactory(status=VALIDATED)
@@ -293,7 +293,7 @@ def test_update_revoked_consent_status():
     - REVOKED to VALIDATED is not authorized.
     - REVOKED with mixed fields is not authorized.
     """
-    from apps.consent.models import Consent
+    from apps.consent.models import Consent  # noqa
 
     # update the status from REVOKED to AWAITING
     consent = ConsentFactory(status=REVOKED)
@@ -341,7 +341,7 @@ def test_clean_validated_consent_status():
     - VALIDATED to REVOKED with not-allowed fields is not authorized.
     - VALIDATED with mixed fields is not authorized.
     """
-    from apps.consent.models import Consent
+    from apps.consent.models import Consent  # noqa
 
     # update the status from VALIDATED to AWAITING raise exception
     consent = ConsentFactory(status=VALIDATED)
@@ -396,7 +396,7 @@ def test_clean_revoked_consent_status():
     - REVOKED to VALIDATED is authorized.
     - REVOKED with mixed fields is authorized.
     """
-    from apps.consent.models import Consent
+    from apps.consent.models import Consent  # noqa
 
     # update the status from REVOKED to AWAITING
     consent = ConsentFactory(status=REVOKED)
@@ -447,7 +447,7 @@ def test_is_deletion_allowed():
     - VALIDATED cannot be deleted.
     - REVOKED cannot be deleted.
     """
-    from apps.consent.models import Consent
+    from apps.consent.models import Consent  # noqa
 
     # Delete AWAITING consent
     consent = ConsentFactory(status=AWAITING)
@@ -480,7 +480,7 @@ def test_delete_consent():
     - VALIDATED cannot be deleted.
     - REVOKED cannot be deleted.
     """
-    from apps.consent.models import Consent
+    from apps.consent.models import Consent  # noqa
 
     signals.post_save.disconnect(
         receiver=handle_new_delivery_point,

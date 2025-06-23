@@ -9,8 +9,8 @@ from apps.consent.utils import consent_end_date
 @pytest.mark.django_db
 def test_handle_new_delivery_point(patch_datetime_now):
     """Tests the signal after a new DeliveryPoint is saved."""
-    from apps.consent.models import Consent
-    from apps.core.factories import DeliveryPointFactory
+    from apps.consent.models import Consent  # noqa
+    from apps.core.factories import DeliveryPointFactory  # noqa
 
     assert Consent.objects.count() == 0
 
