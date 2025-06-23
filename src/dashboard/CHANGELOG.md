@@ -16,6 +16,8 @@ and this project adheres to
 - Upgrade `jsonschema` to `4.24.0`
 - Upgrade `requests` to `2.32.4`
 - Upgrade `urllib3` to `2.5.0`
+- Upgrade `pydantic` to `2.10.0` 
+- Upgrade `pygments` to `2.19.2`
 
 ### Added
 
