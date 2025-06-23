@@ -20,6 +20,12 @@ and this project adheres to
 
 #### Dependencies
 
+- Upgrade `alembic` to `1.16.2`
+- Upgrade `cachetools` to `6.1.0`
+- Upgrade `FastAPI` to `0.115.13`
+- Upgrade `Pydantic` to `2.11.7`
+- Upgrade `pydantic-settings` to `2.10.0`
+- Upgrade `sentry-sdk` to `2.30.0`
 - Upgrade `urllib3` to `2.5.0`
 
 ### Removed

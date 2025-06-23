@@ -12,16 +12,17 @@ and this project adheres to
 
 #### Dependencies
 
-- Upgrade `Django` to `5.2.2`
+- Upgrade `Django` to `5.2.3`
 - Upgrade `jsonschema` to `4.24.0`
 - Upgrade `requests` to `2.32.4`
 - Upgrade `urllib3` to `2.5.0`
-- Upgrade `pydantic` to `2.10.0` 
+- Upgrade `pydantic` to `2.10.0`
 - Upgrade `pygments` to `2.19.2`
 
 ### Added
 
 #### Renewable Management
+
 - add `renewable` app
 - add `Renewable` model with admin interface
 - add `get_current_quarter_date_range` utility
@@ -31,30 +32,33 @@ and this project adheres to
 - add a view for submitted renewable meter readings
 - add entity handling with EntityMixin
 - add utility functions for quarter-based date operations to handle quarter-specific
-date calculations and conversions
+  date calculations and conversions
 - add factories and seed commands for renewable app
 - add test coverage for renewable app
 - add `python-dateutil`
 
 #### Notification System
+
 - add user email notifications for renewable submission period opening
 - add user email notification for meter reading submissions
 - add helper methods for notification management
 
 #### Restricted Period Management
+
 - add restricted period feature for renewable reporting
 - add `can_bypass_renewable_period` flag on entities
 - add automatic redirection for users outside reporting period
 - add a restricted period view
 
 #### Environment variables
+
 - add environment variables for opening period customization
 - add environment variables for the time window during which meter readings are accepted
 - add environment variables for email notifications
 
 ### Deprecated
 
-- add a deprecation warning for ConsentFormView._get_entity()
+- add a deprecation warning for ConsentFormView.\_get_entity()
 
 ## [0.1.0] - 2025-05-07
 
