@@ -18,6 +18,8 @@ and this project adheres to
 
 ### Changed
 
+- Update the list of active operational units
+
 #### Dependencies
 
 - Upgrade `alembic` to `1.16.2`
