@@ -911,10 +911,6 @@ data: List[Item] = [
         "Paragon Mobility",
     ),
     Item(
-        "FRPAN",
-        "Securecharge",
-    ),
-    Item(
         "FRPD1",
         "Power Dot",
     ),
@@ -1985,6 +1981,28 @@ data: List[Item] = [
     Item(
         "FRZET",
         "ZETRA",
+    ),
+    # Update: 2025/06/25
+    Item(
+        "FRPAN",
+        "ANYOS",
+    ),
+    Item(
+        "FRPMB",
+        "PARTAGEMABORNE",
+    ),
+    Item(
+        "FRSEA",
+        "SIEA",
+    ),
+    # -- Manually added
+    Item(
+        "FRIDX",
+        "IDEX SOLAR CHARGING STATIONS",
+    ),
+    Item(
+        "FRWEW",
+        "Wewise",
     ),
 ]
 
