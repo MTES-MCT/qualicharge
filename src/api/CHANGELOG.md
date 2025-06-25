@@ -10,6 +10,36 @@ and this project adheres to
 
 ### Added
 
+- Add a configurable retention policy for `Status` and `Session` data
+- Create new database indexes:
+  - `ix_pointdecharge_station_id`
+  - `ix_station_amenageur_id`
+  - `ix_station_operateur_id`
+
+### Changed
+
+#### Dependencies
+
+- Upgrade `alembic` to `1.16.2`
+- Upgrade `cachetools` to `6.1.0`
+- Upgrade `FastAPI` to `0.115.13`
+- Upgrade `Pydantic` to `2.11.7`
+- Upgrade `pydantic-settings` to `2.10.0`
+- Upgrade `sentry-sdk` to `2.30.0`
+- Upgrade `urllib3` to `2.5.0`
+
+### Removed
+
+- Drop database indexes:
+  - `status_horodatage_idx`
+  - `ix_status_horodatage_pdc_id`
+  - `session_start_idx`
+  - `ix_session_start_pdc_id`
+
+## [0.24.0] - 2025-06-11
+
+### Added
+
 - Clean activity table every day using a cronjob
 
 ### Fixed
@@ -20,7 +50,7 @@ and this project adheres to
 
 - `Statique` model string fields are now stripped
 - `Statique.restriction_gabarit` field should be at least 2 characters long
-- Update the list of active operational units
+- Update the list of active operational units (twice)
 
 #### Dependencies
 
@@ -485,7 +515,8 @@ and this project adheres to
 
 - Implement base FastAPI app
 
-[unreleased]: https://github.com/MTES-MCT/qualicharge/compare/v0.23.0...main
+[unreleased]: https://github.com/MTES-MCT/qualicharge/compare/v0.24.0...main
+[0.24.0]: https://github.com/MTES-MCT/qualicharge/compare/v0.23.0...v0.24.0
 [0.23.0]: https://github.com/MTES-MCT/qualicharge/compare/v0.22.1...v0.23.0
 [0.22.1]: https://github.com/MTES-MCT/qualicharge/compare/v0.22.0...v0.22.1
 [0.22.0]: https://github.com/MTES-MCT/qualicharge/compare/v0.21.0...v0.22.0

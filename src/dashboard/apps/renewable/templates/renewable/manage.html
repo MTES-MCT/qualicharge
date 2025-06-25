@@ -1,0 +1,55 @@
+{% extends "renewable/base.html" %}
+
+{# todo: add real text content #}
+
+{% load i18n static %}
+
+{% block dashboard_content %}
+  <div class="fr-grid-row">
+    <div class="fr-col">
+      <h2 id="focus-before-consents" tabindex="0">Saisissez vos relevés de production d'énergie renouvelable</h2>
+
+      <p>
+        Saisissez vos relevés de production d'énergie renouvelable pour chaque point
+        de livraison.
+      </p>
+
+      {% if entity and renewable_delivery_points %}
+        <form action="" method="post">
+          {% csrf_token %}
+          {{ formset.management_form }}
+
+          {% if formset.non_form_errors %}
+            <div class="fr-messages-group" id="error-messages" aria-live="assertive">
+              <div class=" fr-mb-6v">
+                <ul id="message-non-field-error" class="fr-message fr-message--error">
+                    {{ formset.non_form_errors }}
+                </ul>
+              </div>
+          </div>
+          {% endif %}
+
+          {% include "renewable/includes/_manage_meters.html" %}
+
+          <div class="fr-fieldset__element fr-my-4w">
+            {% include "renewable/includes/_manage_meters_date_place.html" %}
+            {% include "renewable/includes/_manage_meters_authorisations.html" %}
+          </div>
+
+          <button id="btn-validate" type="submit" class="fr-btn" title="{% trans "submit" %}" name="submit">
+            {% trans "submit" %}
+          </button>
+
+        </form>
+      {% else %}
+        {% include "renewable/includes/_no_data_card.html" with description="Aucun relevé en attente." %}
+      {% endif %}
+    </div>
+  </div>
+{% endblock dashboard_content %}
+
+{% block dashboard_extra_js %}
+  {% if entity %}
+    <script src="{% static 'apps/core/js/app.js' %}"></script>
+  {% endif %}
+{% endblock dashboard_extra_js %}

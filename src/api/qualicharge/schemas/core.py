@@ -141,6 +141,10 @@ class Amenageur(BaseAuditableSQLModel, table=True):
         fields = ("nom_amenageur", "siren_amenageur", "contact_amenageur")
         return all(getattr(self, field) == getattr(other, field) for field in fields)
 
+    def __hash__(self) -> int:
+        """Make model hashable."""
+        return hash(self.id)
+
 
 class Operateur(BaseAuditableSQLModel, table=True):
     """Operateur table."""
@@ -164,6 +168,10 @@ class Operateur(BaseAuditableSQLModel, table=True):
         fields = ("nom_operateur", "contact_operateur", "telephone_operateur")
         return all(getattr(self, field) == getattr(other, field) for field in fields)
 
+    def __hash__(self) -> int:
+        """Make model hashable."""
+        return hash(self.id)
+
 
 class Enseigne(BaseAuditableSQLModel, table=True):
     """Enseigne table."""
@@ -180,6 +188,10 @@ class Enseigne(BaseAuditableSQLModel, table=True):
         """Assess instances equality given uniqueness criterions."""
         fields = ("nom_enseigne",)
         return all(getattr(self, field) == getattr(other, field) for field in fields)
+
+    def __hash__(self) -> int:
+        """Make model hashable."""
+        return hash(self.id)
 
 
 class Localisation(BaseAuditableSQLModel, table=True):
@@ -209,6 +221,10 @@ class Localisation(BaseAuditableSQLModel, table=True):
         """Assess instances equality given uniqueness criterions."""
         fields = ("adresse_station",)
         return all(getattr(self, field) == getattr(other, field) for field in fields)
+
+    def __hash__(self) -> int:
+        """Make model hashable."""
+        return hash(self.id)
 
     @staticmethod
     def _coordinates_to_geometry_point(value: Coordinate):
@@ -321,13 +337,12 @@ class Station(BaseAuditableSQLModel, table=True):
         default=None,
         foreign_key="amenageur.id",
         ondelete="SET NULL",
+        index=True,
     )
     amenageur: Amenageur = Relationship(back_populates="stations")
 
     operateur_id: Optional[UUID] = Field(
-        default=None,
-        foreign_key="operateur.id",
-        ondelete="SET NULL",
+        default=None, foreign_key="operateur.id", ondelete="SET NULL", index=True
     )
     operateur: Operateur = Relationship(back_populates="stations")
 
@@ -358,6 +373,10 @@ class Station(BaseAuditableSQLModel, table=True):
         """Assess instances equality given uniqueness criterions."""
         fields = ("id_station_itinerance",)
         return all(getattr(self, field) == getattr(other, field) for field in fields)
+
+    def __hash__(self) -> int:
+        """Make model hashable."""
+        return hash(self.id)
 
 
 @event.listens_for(Station, "before_insert")
@@ -411,8 +430,14 @@ class PointDeCharge(BaseAuditableSQLModel, table=True):
         fields = ("id_pdc_itinerance",)
         return all(getattr(self, field) == getattr(other, field) for field in fields)
 
+    def __hash__(self) -> int:
+        """Make model hashable."""
+        return hash(self.id)
+
     # Relationships
-    station_id: Optional[UUID] = Field(default=None, foreign_key="station.id")
+    station_id: Optional[UUID] = Field(
+        default=None, foreign_key="station.id", index=True
+    )
     station: Station = Relationship(back_populates="points_de_charge")
     sessions: List["Session"] = Relationship(back_populates="point_de_charge")
     statuses: List["Status"] = Relationship(back_populates="point_de_charge")
@@ -423,6 +448,7 @@ class Session(BaseAuditableSQLModel, SessionBase, table=True):
 
     __table_args__ = BaseAuditableSQLModel.__table_args__ + (
         PrimaryKeyConstraint("id", "start", name="ix_session_id_start"),
+        Index("ix_session_pdc_id", "point_de_charge_id"),
         {"timescaledb_hypertable": {"time_column_name": "start"}},
     )
 
@@ -448,6 +474,7 @@ class Status(BaseTimestampedSQLModel, StatusBase, table=True):
 
     __table_args__ = BaseTimestampedSQLModel.__table_args__ + (
         PrimaryKeyConstraint("id", "horodatage", name="ix_status_id_horodatage"),
+        Index("ix_status_pdc_id", "point_de_charge_id"),
         {"timescaledb_hypertable": {"time_column_name": "horodatage"}},
     )
 

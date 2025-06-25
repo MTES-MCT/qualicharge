@@ -8,6 +8,9 @@
     },
     {
       "command": "22 2 * * * ${ACTIVITY_CLEAN} && dbclient-fetcher psql && psql --set=clean_older_than=\"${ACTIVITY_CLEAN_BEFORE}\" $SCALINGO_POSTGRESQL_URL -f scripts/clean-old-activity.sql"
+    },
+    {
+      "command": "42 3 * * * ${DYNAMIC_CLEAN} && dbclient-fetcher psql && psql --set=drop_after=\"${DYNAMIC_CLEAN_AFTER}\" $SCALINGO_POSTGRESQL_URL -f scripts/data_retention_procedure.sql"
     }
   ]
 }

@@ -4,14 +4,17 @@ from collections import defaultdict
 
 from django.db import models
 from django.db.models import QuerySet
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from django_extensions.db.fields import AutoSlugField
 
 from apps.consent import AWAITING
 from apps.consent.models import Consent
+from apps.renewable.models import Renewable
 
 from .abstract_models import DashboardBase
-from .managers import DeliveryPointManager
+from .managers import ActiveRenewableDeliveryPointManager, DeliveryPointManager
+from .utils import get_previous_quarter_date_range
 from .validators import validate_naf_code, validate_siret, validate_zip_code
 
 
@@ -103,11 +106,24 @@ class Entity(DashboardBase):
     synced_at = models.DateTimeField(
         _("Last synchronization with the API occurred at"), null=True, blank=True
     )
+    can_bypass_renewable_period = models.BooleanField(
+        _("can bypass renewable period"), default=False
+    )
 
     class Meta:  # noqa: D106
         verbose_name = "entity"
         verbose_name_plural = "entities"
         ordering = ["name"]
+
+    def __init__(self, *args, **kwargs):
+        """Sets up the initial state for count_active_delivery_points.
+
+        Attributes:
+            _count_active_delivery_points (Optional): Tracks the count of active
+                delivery points for the instance.
+        """
+        super().__init__(*args, **kwargs)
+        self._count_active_delivery_points = None
 
     def __str__(self):  # noqa: D105
         return self.name
@@ -168,6 +184,82 @@ class Entity(DashboardBase):
             "delivery_point__provider_assigned_id",
         )
 
+    def has_renewable(self) -> bool:
+        """Return True if the entity has at least one renewable delivery_point."""
+        return self.delivery_points.filter(has_renewable=True).exists()
+
+    def get_renewables(self) -> QuerySet[Renewable]:
+        """Get all renewable for this entity."""
+        return Renewable.active_objects.filter(
+            delivery_point__entity=self,
+        ).select_related(
+            "delivery_point",
+            "delivery_point__entity",
+        )
+
+    def get_unsubmitted_quarterly_renewables(self) -> QuerySet:
+        """Retrieve delivery points with pending renewable, within the previous quarter.
+
+        This method identifies renewable delivery points that have not yet been included
+        in the submissions for the previous quarter to the current own.
+        It does so by determining:
+            - the date range for the previous quarter,
+            - fetching already submitted renewable delivery points for the previous
+            quarter,
+            - excluding them from the available renewable delivery points,
+            - and add previous collected meter reading and last collected at.
+
+        Returns:
+            QuerySet: A QuerySet of renewable delivery points that still need to be
+            submitted.
+        """
+        now = timezone.now()
+        quarter_start_date, quarter_end_date = get_previous_quarter_date_range(now)
+        submitted_renewables = (
+            self.get_renewables()
+            .filter(
+                collected_at__gte=quarter_start_date,
+                collected_at__lte=quarter_end_date,
+            )
+            .values_list("delivery_point__id", flat=True)
+        )
+
+        last_renewable = Renewable.active_objects.filter(
+            collected_at__lt=quarter_start_date
+        ).order_by("-collected_at")[:1]
+
+        return (
+            DeliveryPoint.renewable_objects.filter(
+                entity=self,
+            )
+            .exclude(
+                id__in=submitted_renewables,
+            )
+            .prefetch_related(
+                models.Prefetch(
+                    "renewables", queryset=last_renewable, to_attr="last_renewable"
+                )
+            )
+            .select_related("entity")
+        )
+
+    def count_renewables(self) -> int:
+        """Counts the number of renewables for this entity."""
+        return self.get_renewables().count()
+
+    def count_unsubmitted_quarterly_renewables(self) -> int:
+        """Count delivery points with pending renewable, within the current quarter."""
+        return self.get_unsubmitted_quarterly_renewables().count()
+
+    def count_active_delivery_points(self, update=False) -> int:
+        """Counts the number of active delivery points for this entity."""
+        if self._count_active_delivery_points is None or update:
+            self._count_active_delivery_points = self.delivery_points.filter(
+                is_active=True
+            ).count()
+
+        return self._count_active_delivery_points
+
 
 class DeliveryPoint(DashboardBase):
     """Represents a delivery point for electric vehicles.
@@ -189,9 +281,11 @@ class DeliveryPoint(DashboardBase):
         verbose_name=_("entity"),
     )
     is_active = models.BooleanField(_("is active"), default=True)
+    has_renewable = models.BooleanField(_("has renewable"), default=False)
 
-    active_objects = DeliveryPointManager()
     objects = models.Manager()
+    active_objects = DeliveryPointManager()
+    renewable_objects = ActiveRenewableDeliveryPointManager()
 
     class Meta:  # noqa: D106
         verbose_name = _("delivery point")

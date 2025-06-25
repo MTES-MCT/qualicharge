@@ -1,6 +1,10 @@
 {% extends "dsfr/base.html" %}
 {% load static i18n dsfr_tags %}
 
+{% block opengraph %}
+  <meta name="robots" content="noindex">
+{% endblock opengraph %}
+
 {% block extra_css %}
   {% block dashboard_extra_css %}
   {% endblock dashboard_extra_css %}

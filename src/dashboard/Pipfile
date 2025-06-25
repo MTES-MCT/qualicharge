@@ -4,19 +4,20 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-Django = "==5.2.2"
+Django = "==5.2.3"
 django-anymail = "==13.0"
 django-dsfr = "==2.4.0"
 django-environ = "==0.12.0"
 django-extensions = "==4.1"
-django-stubs = {extras = ["compatible-mypy"], version = "==5.2.0"}
+django-stubs = {extras = ["compatible-mypy"], version = "==5.2.1"}
 gunicorn = "==23.0.0"
 jsonschema = "==4.24.0"
 mozilla-django-oidc = "==4.0.1"
 psycopg = {extras = ["pool", "binary"], version = "==3.2.9"}
+python-dateutil = "==2.9.0.post0"
 qualicharge-client = "==0.3.0"
 requests = "==2.32.4"
-sentry-sdk = {extras = ["django"], version = "==2.29.1"}
+sentry-sdk = {extras = ["django"], version = "==2.30.0"}
 whitenoise = "==6.9.0"
 
 [dev-packages]
@@ -26,15 +27,16 @@ djlint = "==1.36.4"
 factory-boy = "==3.3.3"
 honcho = "==2.0.0"
 mock = "==5.2.0"
-mypy = "==1.16.0"
-pytest = "==8.4.0"
+mypy = "==1.16.1"
+pytest = "==8.4.1"
 pytest-asyncio = "==1.0.0"
-pytest-cov = "==6.1.1"
+pytest-cov = "==6.2.1"
 pytest-django = "==4.11.1"
 pytest-httpx = "==0.35.0"
 responses = "==0.25.7"
-ruff = "==0.11.13"
+ruff = "==0.12.0"
 types-mock = "==5.2.0.20250516"
+types-python-dateutil = "==2.9.0.20250516"
 types-requests = "==2.32.4.20250611"
 
 [requires]

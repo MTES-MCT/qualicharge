@@ -21,7 +21,7 @@ def json_schema_validator(schema):
 
 def validate_company_schema(value):
     """Validate a company JSON object against the company schema."""
-    from .models import COMPANY_SCHEMA
+    from .models import COMPANY_SCHEMA  # noqa
 
     validator = json_schema_validator(COMPANY_SCHEMA)
     return validator(value)
@@ -29,7 +29,7 @@ def validate_company_schema(value):
 
 def validate_representative_schema(value):
     """Validate a representative JSON object against the representative schema."""
-    from .models import REPRESENTATIVE_SCHEMA
+    from .models import REPRESENTATIVE_SCHEMA  # noqa
 
     validator = json_schema_validator(REPRESENTATIVE_SCHEMA)
     return validator(value)
@@ -37,7 +37,7 @@ def validate_representative_schema(value):
 
 def validate_control_authority_schema(value):
     """Validate a control authority JSON object against the control authority schema."""
-    from .models import CONTROL_AUTHORITY_SCHEMA
+    from .models import CONTROL_AUTHORITY_SCHEMA  # noqa
 
     validator = json_schema_validator(CONTROL_AUTHORITY_SCHEMA)
     return validator(value)
@@ -59,7 +59,7 @@ def validate_configured_control_authority():
 
 def validate_contract_holder_schema(value):
     """Validate a contract holder JSON object against the contract holder schema."""
-    from .models import CONTRACT_HOLDER_SCHEMA
+    from .models import CONTRACT_HOLDER_SCHEMA  # noqa
 
     validator = json_schema_validator(CONTRACT_HOLDER_SCHEMA)
     return validator(value)

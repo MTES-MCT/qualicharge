@@ -93,7 +93,7 @@ services:
       - ./bin/kc-init:/usr/local/bin/kc-init
 
   metabase:
-    image: metabase/metabase:v0.55.3
+    image: metabase/metabase:v0.55.4
     ports:
       - 3000:3000
     env_file:
@@ -180,7 +180,7 @@ services:
 
   prefect-worker:
     image: "qualicharge:prefect"
-    command: ["pipenv", "run", "honcho", "start", "worker"]
+    command: ["pipenv", "run", "honcho", "start", "-f", "Procfile.dev", "worker"]
     user: ${DOCKER_USER:-1000}
     env_file:
       - env.d/prefect-worker

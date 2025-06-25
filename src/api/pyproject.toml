@@ -3,7 +3,7 @@
 #
 [project]
 name = "qualicharge"
-version = "0.23.0"
+version = "0.24.0"
 
 # Third party packages configuration
 [tool.coverage.run]
@@ -22,7 +22,7 @@ testpaths = [
 ]
 
 [tool.ruff]
-target-version = "py310"
+target-version = "py312"
 # Exclude a variety of commonly ignored directories.
 exclude = [
   "migrations",
