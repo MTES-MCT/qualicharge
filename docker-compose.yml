@@ -123,6 +123,7 @@ services:
       CHOWN_HOME_OPTS: -R
     env_file:
       - env.d/notebook
+      - env.d/notebook-extras
     ports:
       - 8888:8888
     volumes:

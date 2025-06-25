@@ -40,6 +40,7 @@ data
 .env
 .venv
 env/
+env.d/notebook-extras
 venv/
 ENV/
 env.bak/

@@ -29,6 +29,9 @@ data:
 data/afirev-charging.csv: data
 	@echo "You should download CSV file from $(AFIREV_CHARGING_DATASET_URL)"
 
+env.d/notebook-extras:
+	touch env.d/notebook-extras
+
 # -- Docker/compose
 bench-reset-db: ## Reset API database to run benchmark
 	$(COMPOSE) stop
@@ -55,6 +58,7 @@ bench: ## run API benchmark
 
 bootstrap: ## bootstrap the project for development
 bootstrap: \
+  env.d/notebook-extras \
   build \
   migrate-api \
   create-api-test-db \
