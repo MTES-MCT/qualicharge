@@ -2,6 +2,7 @@
 
 import gzip
 import json
+from datetime import timezone
 from random import sample
 from typing import cast
 from urllib.parse import quote_plus
@@ -18,6 +19,7 @@ from qualicharge.auth.schemas import GroupOperationalUnit, ScopesEnum, User
 from qualicharge.conf import settings
 from qualicharge.db import SAQueryCounter
 from qualicharge.factories.dynamic import (
+    LatestStatusFactory,
     SessionCreateFactory,
     SessionFactory,
     StatusCreateFactory,
@@ -30,6 +32,7 @@ from qualicharge.factories.static import (
 )
 from qualicharge.models.dynamic import StatusRead
 from qualicharge.schemas.core import (
+    LatestStatus,
     OperationalUnit,
     PointDeCharge,
     Session,
@@ -105,7 +108,7 @@ def test_list_statuses_with_missing_scopes(client_auth):
 
 def test_list_statuses_for_superuser(db_session, client_auth):
     """Test the /status/ get endpoint (superuser case)."""
-    StatusFactory.__session__ = db_session
+    LatestStatusFactory.__session__ = db_session
 
     # No status exists
     response = client_auth.get("/dynamique/status/")
@@ -114,16 +117,15 @@ def test_list_statuses_for_superuser(db_session, client_auth):
 
     # Create points of charge and statuses
     n_pdc = 2
-    n_status_by_pdc = 10
     save_statiques(db_session, StatiqueFactory.batch(n_pdc))
     pdcs = db_session.exec(select(PointDeCharge)).all()
     assert len(pdcs) == n_pdc
 
-    StatusFactory.create_batch_sync(n_status_by_pdc, point_de_charge_id=pdcs[0].id)
-    StatusFactory.create_batch_sync(n_status_by_pdc, point_de_charge_id=pdcs[1].id)
-    assert db_session.exec(select(func.count(Status.id))).one() == (
-        n_pdc * n_status_by_pdc
-    )
+    LatestStatusFactory.create_sync(id_pdc_itinerance=pdcs[0].id_pdc_itinerance)
+    LatestStatusFactory.create_sync(id_pdc_itinerance=pdcs[1].id_pdc_itinerance)
+    assert db_session.exec(
+        select(func.count(LatestStatus.id_pdc_itinerance))
+    ).one() == (n_pdc)
 
     # List latest statuses by pdc
     response = client_auth.get("/dynamique/status/")
@@ -139,9 +141,9 @@ def test_list_statuses_for_superuser(db_session, client_auth):
             )
         ).one()
         db_status = db_session.exec(
-            select(Status)
-            .where(Status.point_de_charge_id == pdc.id)
-            .order_by(cast(SAColumn, Status.horodatage).desc())
+            select(LatestStatus)
+            .where(LatestStatus.id_pdc_itinerance == pdc.id_pdc_itinerance)
+            .order_by(cast(SAColumn, LatestStatus.horodatage).desc())
         ).first()
         assert db_status.etat_pdc == response_status.etat_pdc
         assert db_status.occupation_pdc == response_status.occupation_pdc
@@ -204,7 +206,7 @@ def test_list_statuses_for_user_with_no_operational_units(db_session, client_aut
 )
 def test_list_statuses_for_user(db_session, client_auth):
     """Test the /status/ get endpoint."""
-    StatusFactory.__session__ = db_session
+    LatestStatusFactory.__session__ = db_session
     GroupFactory.__session__ = db_session
 
     # Get user requesting the server
@@ -212,7 +214,6 @@ def test_list_statuses_for_user(db_session, client_auth):
 
     # Create points of charge and statuses
     n_pdc = 10
-    n_status_by_pdc = 10
     save_statiques(db_session, StatiqueFactory.batch(n_pdc))
     pdcs = db_session.exec(select(PointDeCharge)).all()
     stations = db_session.exec(select(Station)).all()
@@ -220,10 +221,10 @@ def test_list_statuses_for_user(db_session, client_auth):
     assert len(stations) == n_pdc
 
     for pdc in pdcs:
-        StatusFactory.create_batch_sync(n_status_by_pdc, point_de_charge_id=pdc.id)
-    assert db_session.exec(select(func.count(Status.id))).one() == (
-        n_pdc * n_status_by_pdc
-    )
+        LatestStatusFactory.create_sync(id_pdc_itinerance=pdc.id_pdc_itinerance)
+    assert db_session.exec(
+        select(func.count(LatestStatus.id_pdc_itinerance))
+    ).one() == (n_pdc)
 
     # Create a group that our user will be attached to
     n_selected_stations = 2
@@ -254,22 +255,21 @@ def test_list_statuses_filters(db_session, client_auth):  # noqa: PLR0915
     """Test the /status/ get endpoint filters."""
     StationFactory.__session__ = db_session
     PointDeChargeFactory.__session__ = db_session
-    StatusFactory.__session__ = db_session
+    LatestStatusFactory.__session__ = db_session
 
     # Create stations, points of charge and statuses
     n_station = 2
     n_pdc_by_station = 2
-    n_status_by_pdc = 2
     stations = StationFactory.create_batch_sync(n_station)
     for station in stations:
         PointDeChargeFactory.create_batch_sync(n_pdc_by_station, station_id=station.id)
     pdcs = db_session.exec(select(PointDeCharge)).all()
     assert len(pdcs) == n_station * n_pdc_by_station
     for pdc in pdcs:
-        StatusFactory.create_batch_sync(n_status_by_pdc, point_de_charge_id=pdc.id)
-    assert db_session.exec(select(func.count(Status.id))).one() == (
-        n_station * n_pdc_by_station * n_status_by_pdc
-    )
+        LatestStatusFactory.create_sync(id_pdc_itinerance=pdc.id_pdc_itinerance)
+    assert db_session.exec(
+        select(func.count(LatestStatus.id_pdc_itinerance))
+    ).one() == (n_station * n_pdc_by_station)
 
     # List all latest statuses by pdc
     response = client_auth.get("/dynamique/status/")
@@ -351,7 +351,9 @@ def test_list_statuses_filters(db_session, client_auth):  # noqa: PLR0915
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
     # Filter with only latest status datetime
-    statuses = db_session.exec(select(Status).order_by(Status.horodatage)).all()
+    statuses = db_session.exec(
+        select(LatestStatus).order_by(LatestStatus.horodatage)
+    ).all()
     from_ = quote_plus(statuses[-1].horodatage.isoformat())
     response = client_auth.get(f"/dynamique/status/?from={from_}")
     assert response.status_code == status.HTTP_200_OK
@@ -367,7 +369,9 @@ def test_list_statuses_filters(db_session, client_auth):  # noqa: PLR0915
     assert len(statuses) == 1
 
     # Filter with the oldest status datetime
-    statuses = db_session.exec(select(Status).order_by(Status.horodatage)).all()
+    statuses = db_session.exec(
+        select(LatestStatus).order_by(LatestStatus.horodatage)
+    ).all()
     from_ = quote_plus(statuses[0].horodatage.isoformat())
     response = client_auth.get(f"/dynamique/status/?from={from_}")
     assert response.status_code == status.HTTP_200_OK
@@ -419,33 +423,29 @@ def test_read_status_with_missing_scopes(client_auth):
 
 def test_read_status_for_superuser(db_session, client_auth):
     """Test the /status/{id_pdc_itinerance} endpoint (superuser case)."""
-    StatusFactory.__session__ = db_session
+    LatestStatusFactory.__session__ = db_session
 
     # Create the PointDeCharge
     id_pdc_itinerance = "FR911E1111ER1"
     save_statique(
         db_session, StatiqueFactory.build(id_pdc_itinerance=id_pdc_itinerance)
     )
-    pdc = db_session.exec(
-        select(PointDeCharge).where(
-            PointDeCharge.id_pdc_itinerance == id_pdc_itinerance
-        )
-    ).one()
 
-    # Create 20 attached statuses
-    n_statuses = 20
-    StatusFactory.create_batch_sync(n_statuses, point_de_charge_id=pdc.id)
+    # Create latest statuses
+    LatestStatusFactory.create_sync(id_pdc_itinerance=id_pdc_itinerance)
     assert (
         db_session.exec(
-            select(func.count(Status.id)).where(Status.point_de_charge_id == pdc.id)
+            select(func.count(LatestStatus.id_pdc_itinerance)).where(
+                LatestStatus.id_pdc_itinerance == id_pdc_itinerance
+            )
         ).one()
-        == n_statuses
+        == 1
     )
     # Expected status
     expected_status = db_session.exec(
-        select(Status)
-        .where(Status.point_de_charge_id == pdc.id)
-        .order_by(cast(SAColumn, Status.horodatage).desc())
+        select(LatestStatus)
+        .where(LatestStatus.id_pdc_itinerance == id_pdc_itinerance)
+        .order_by(cast(SAColumn, LatestStatus.horodatage).desc())
         .limit(1)
     ).one()
 
@@ -470,22 +470,16 @@ def test_read_status_for_superuser(db_session, client_auth):
 
 def test_read_status_get_pdc_id_cache(db_session, client_auth):
     """Test the /status/{id_pdc_itinerance} endpoint's get_pdc_id cache usage."""
-    StatusFactory.__session__ = db_session
+    LatestStatusFactory.__session__ = db_session
 
     # Create the PointDeCharge
     id_pdc_itinerance = "FR911E1111ER1"
     save_statique(
         db_session, StatiqueFactory.build(id_pdc_itinerance=id_pdc_itinerance)
     )
-    pdc = db_session.exec(
-        select(PointDeCharge).where(
-            PointDeCharge.id_pdc_itinerance == id_pdc_itinerance
-        )
-    ).one()
 
-    # Create 20 attached statuses
-    n_statuses = 20
-    StatusFactory.create_batch_sync(n_statuses, point_de_charge_id=pdc.id)
+    # Create latest statuses
+    LatestStatusFactory.create_sync(id_pdc_itinerance=id_pdc_itinerance)
 
     # Count queries while getting the latest status
     with SAQueryCounter(db_session.connection()) as counter:
@@ -497,9 +491,8 @@ def test_read_status_get_pdc_id_cache(db_session, client_auth):
     #   1. User authentication
     #   2. get_user injection
     #   3. get_pdc_id
-    #   4. latest db status (sub) queries
-    #   5. get_pdc_id
-    expected = 5
+    #   4. latest db status query
+    expected = 4
     assert counter.count == expected
 
     for hit in range(1, 10):
@@ -527,28 +520,16 @@ def test_read_status_get_pdc_id_cache(db_session, client_auth):
 )
 def test_read_status_for_user(db_session, client_auth):
     """Test the /status/{id_pdc_itinerance} endpoint."""
-    StatusFactory.__session__ = db_session
+    LatestStatusFactory.__session__ = db_session
 
     # Create the PointDeCharge
     id_pdc_itinerance = "FR911E1111ER1"
     save_statique(
         db_session, StatiqueFactory.build(id_pdc_itinerance=id_pdc_itinerance)
     )
-    pdc = db_session.exec(
-        select(PointDeCharge).where(
-            PointDeCharge.id_pdc_itinerance == id_pdc_itinerance
-        )
-    ).one()
 
-    # Create 20 attached statuses
-    n_statuses = 20
-    StatusFactory.create_batch_sync(n_statuses, point_de_charge_id=pdc.id)
-    assert (
-        db_session.exec(
-            select(func.count(Status.id)).where(Status.point_de_charge_id == pdc.id)
-        ).one()
-        == n_statuses
-    )
+    # Create latest statuses
+    LatestStatusFactory.create_sync(id_pdc_itinerance=id_pdc_itinerance)
 
     # User has no assigned operational units
     response = client_auth.get(f"/dynamique/status/{id_pdc_itinerance}")
@@ -556,9 +537,9 @@ def test_read_status_for_user(db_session, client_auth):
 
     # Expected status
     expected_status = db_session.exec(
-        select(Status)
-        .where(Status.point_de_charge_id == pdc.id)
-        .order_by(cast(SAColumn, Status.horodatage).desc())
+        select(LatestStatus)
+        .where(LatestStatus.id_pdc_itinerance == id_pdc_itinerance)
+        .order_by(cast(SAColumn, LatestStatus.horodatage).desc())
         .limit(1)
     ).one()
 
@@ -855,6 +836,52 @@ def test_create_status_for_superuser(db_session, client_auth):
     assert db_status in pdc.statuses
     assert response.json() == {"id": str(db_status.id)}
 
+    # Check latest status duplicate
+    db_latest_status = db_session.exec(select(LatestStatus)).one()
+    assert db_latest_status.id_pdc_itinerance == pdc.id_pdc_itinerance
+
+
+def test_create_status_for_superuser_update_latest(db_session, client_auth):
+    """Test the /status/ create endpoint (focus on latest status update)."""
+    id_pdc_itinerance = "FR911E1111ER1"
+    qc_status = StatusCreateFactory.build(id_pdc_itinerance=id_pdc_itinerance)
+
+    # Create point of charge
+    save_statique(
+        db_session, StatiqueFactory.build(id_pdc_itinerance=id_pdc_itinerance)
+    )
+
+    # Create a new status
+    response = client_auth.post(
+        "/dynamique/status/", json=json.loads(qc_status.model_dump_json())
+    )
+    assert response.status_code == status.HTTP_201_CREATED
+
+    # Check latest status
+    db_latest_status = db_session.exec(select(LatestStatus)).one()
+    assert db_latest_status.id_pdc_itinerance == id_pdc_itinerance
+    assert db_latest_status.horodatage == qc_status.horodatage.replace(
+        tzinfo=timezone.utc
+    )
+    initial_updated_at = db_latest_status.updated_at
+
+    # Create a new status
+    new_qc_status = StatusCreateFactory.build(id_pdc_itinerance=id_pdc_itinerance)
+    assert new_qc_status.horodatage != qc_status.horodatage
+    response = client_auth.post(
+        "/dynamique/status/", json=json.loads(new_qc_status.model_dump_json())
+    )
+    assert response.status_code == status.HTTP_201_CREATED
+
+    # Check latest status update
+    db_latest_status = db_session.exec(select(LatestStatus)).one()
+    assert db_latest_status.id_pdc_itinerance == id_pdc_itinerance
+    assert db_latest_status.horodatage == new_qc_status.horodatage.replace(
+        tzinfo=timezone.utc
+    )
+    new_updated_at = db_latest_status.updated_at
+    assert new_updated_at > initial_updated_at
+
 
 def test_create_status_number_of_queries(db_session, client_auth):
     """Test the /status/ create endpoint number of db queries."""
@@ -876,7 +903,8 @@ def test_create_status_number_of_queries(db_session, client_auth):
     #   1. select request user
     #   2. select point of charge
     #   3. insert status
-    expected = 3
+    #   4. upsert latest status
+    expected = 4
     assert counter.count == expected
 
 
@@ -1037,6 +1065,9 @@ def test_create_status_bulk_for_superuser(db_session, client_auth):
 
     # Assert no status exist
     assert db_session.exec(select(func.count(Status.id))).one() == 0
+    assert (
+        db_session.exec(select(func.count(LatestStatus.id_pdc_itinerance))).one() == 0
+    )
 
     # We expect the same answer as one point of charge does not exist
     response = client_auth.post(
@@ -1052,6 +1083,13 @@ def test_create_status_bulk_for_superuser(db_session, client_auth):
     assert {s.point_de_charge_id for s in db_statuses} == {p.id for p in db_pdcs}
     assert response.json() == {"size": 3, "items": [str(s.id) for s in db_statuses]}
 
+    # Check latest status duplicate
+    db_latest_statuses = db_session.exec(select(LatestStatus)).all()
+    assert len(db_latest_statuses) == len(db_statuses)
+    assert {s.id_pdc_itinerance for s in db_latest_statuses} == {
+        p.id_pdc_itinerance for p in db_pdcs
+    }
+
     # Check foreign keys
     for qc_status in qc_statuses:
         db_pdc = db_session.exec(
@@ -1062,15 +1100,114 @@ def test_create_status_bulk_for_superuser(db_session, client_auth):
         db_status = db_session.exec(
             select(Status).where(Status.point_de_charge_id == db_pdc.id)
         ).one()
-        assert db_status.etat_pdc == qc_status.etat_pdc
-        assert db_status.occupation_pdc == qc_status.occupation_pdc
-        assert db_status.horodatage == qc_status.horodatage.astimezone()
-        assert db_status.etat_prise_type_2 == qc_status.etat_prise_type_2
+        db_latest_status = db_session.exec(
+            select(LatestStatus).where(
+                LatestStatus.id_pdc_itinerance == db_pdc.id_pdc_itinerance
+            )
+        ).one()
+        assert db_status.etat_pdc == qc_status.etat_pdc == db_latest_status.etat_pdc
         assert (
-            db_status.etat_prise_type_combo_ccs == qc_status.etat_prise_type_combo_ccs
+            db_status.occupation_pdc
+            == qc_status.occupation_pdc
+            == db_latest_status.occupation_pdc
         )
-        assert db_status.etat_prise_type_chademo == qc_status.etat_prise_type_chademo
-        assert db_status.etat_prise_type_ef == qc_status.etat_prise_type_ef
+        assert (
+            db_status.horodatage
+            == qc_status.horodatage.astimezone()
+            == db_latest_status.horodatage
+        )
+        assert (
+            db_status.etat_prise_type_2
+            == qc_status.etat_prise_type_2
+            == db_latest_status.etat_prise_type_2
+        )
+        assert (
+            db_status.etat_prise_type_combo_ccs
+            == qc_status.etat_prise_type_combo_ccs
+            == db_latest_status.etat_prise_type_combo_ccs
+        )
+        assert (
+            db_status.etat_prise_type_chademo
+            == qc_status.etat_prise_type_chademo
+            == db_latest_status.etat_prise_type_chademo
+        )
+        assert (
+            db_status.etat_prise_type_ef
+            == qc_status.etat_prise_type_ef
+            == db_latest_status.etat_prise_type_ef
+        )
+
+
+def test_create_status_bulk_for_superuser_update_latest(db_session, client_auth):
+    """Test the /status/bulk create endpoint (superuser case)."""
+    qc_statuses = StatusCreateFactory.batch(3)
+
+    # Create points of charge
+    save_statiques(
+        db_session,
+        [
+            StatiqueFactory.build(id_pdc_itinerance=s.id_pdc_itinerance)
+            for s in qc_statuses
+        ],
+    )
+
+    # Assert no status exist
+    assert (
+        db_session.exec(select(func.count(LatestStatus.id_pdc_itinerance))).one() == 0
+    )
+
+    # We expect the same answer as one point of charge does not exist
+    response = client_auth.post(
+        "/dynamique/status/bulk",
+        json=[json.loads(s.model_dump_json()) for s in qc_statuses],
+    )
+    assert response.status_code == status.HTTP_201_CREATED
+
+    # Check created statuses
+    db_pdcs = db_session.exec(select(PointDeCharge)).all()
+
+    # Check latest status duplicate
+    db_latest_statuses = db_session.exec(select(LatestStatus)).all()
+    assert len(db_latest_statuses) == len(db_pdcs)
+    assert {s.id_pdc_itinerance for s in db_latest_statuses} == {
+        p.id_pdc_itinerance for p in db_pdcs
+    }
+    initial_updated_at = [s.updated_at for s in db_latest_statuses]
+
+    # Generate new statuses (2 statuses per PDCs)
+    new_qc_statuses = StatusCreateFactory.batch(6)
+    for status_, pdc in zip(new_qc_statuses, db_pdcs * 2, strict=True):
+        status_.id_pdc_itinerance = pdc.id_pdc_itinerance
+
+    # Post new statuses
+    response = client_auth.post(
+        "/dynamique/status/bulk",
+        json=[json.loads(s.model_dump_json()) for s in new_qc_statuses],
+    )
+    assert response.status_code == status.HTTP_201_CREATED
+
+    # Check latest status updates
+    db_latest_statuses = db_session.exec(select(LatestStatus)).all()
+    assert len(db_latest_statuses) == len(db_pdcs)
+    assert {s.id_pdc_itinerance for s in db_latest_statuses} == {
+        p.id_pdc_itinerance for p in db_pdcs
+    }
+    new_updated_at = [s.updated_at for s in db_latest_statuses]
+    assert all(n > i for n, i in zip(new_updated_at, initial_updated_at, strict=True))
+
+    # List expected most recent statuses per charge point
+    expected = sorted(
+        new_qc_statuses, key=lambda x: (x.id_pdc_itinerance, x.horodatage)
+    )[1::2]
+
+    # Check expected latest status
+    for qc_status in expected:
+        db_latest_status = db_session.exec(
+            select(LatestStatus).where(
+                LatestStatus.id_pdc_itinerance == qc_status.id_pdc_itinerance
+            )
+        ).one()
+        assert db_latest_status.horodatage == qc_status.horodatage.astimezone()
 
 
 def test_create_status_bulk_number_of_queries(db_session, client_auth):
@@ -1100,7 +1237,8 @@ def test_create_status_bulk_number_of_queries(db_session, client_auth):
     #   1. select request user
     #   2. select points of charge
     #   3. insert statuses
-    expected = 3
+    #   4. upsert latest status
+    expected = 4
     assert counter.count == expected
 
 

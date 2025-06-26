@@ -6,7 +6,7 @@ from polyfactory.factories.pydantic_factory import ModelFactory
 
 from ..fixtures.operational_units import prefixes
 from ..models.dynamic import SessionCreate, StatusCreate
-from ..schemas.core import Session, Status
+from ..schemas.core import LatestStatus, Session, Status
 from . import FrenchDataclassFactory, TimestampedSQLModelFactory
 
 
@@ -34,3 +34,7 @@ class SessionFactory(TimestampedSQLModelFactory[Session]):
 
 class StatusFactory(TimestampedSQLModelFactory[Status]):
     """Status schema factory."""
+
+
+class LatestStatusFactory(TimestampedSQLModelFactory[LatestStatus]):
+    """LatestStatus schema factory."""
