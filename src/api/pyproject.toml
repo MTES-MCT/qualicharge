@@ -3,7 +3,7 @@
 #
 [project]
 name = "qualicharge"
-version = "0.24.0"
+version = "0.25.0"
 
 # Third party packages configuration
 [tool.coverage.run]
