@@ -8,6 +8,10 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Added
+
+- Implement latest status cache in the `LatestStatus` table
+
 ## [0.25.0] - 2025-06-20
 
 ### Added

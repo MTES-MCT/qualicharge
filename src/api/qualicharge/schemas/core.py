@@ -39,6 +39,7 @@ from ..models.dynamic import (
     OccupationPDCEnum,
     SessionBase,
     StatusBase,
+    StatusCreate,
 )
 from ..models.static import (
     AccessibilitePMREnum,
@@ -470,7 +471,7 @@ class Session(BaseAuditableSQLModel, SessionBase, table=True):
 
 
 class Status(BaseTimestampedSQLModel, StatusBase, table=True):
-    """IRVE recharge status."""
+    """EVSE status."""
 
     __table_args__ = BaseTimestampedSQLModel.__table_args__ + (
         PrimaryKeyConstraint("id", "horodatage", name="ix_status_id_horodatage"),
@@ -512,6 +513,36 @@ class Status(BaseTimestampedSQLModel, StatusBase, table=True):
     def id_pdc_itinerance(self) -> str:
         """Return the PointDeCharge.id_pdc_itinerance (used for serialization only)."""
         return self.point_de_charge.id_pdc_itinerance
+
+
+class LatestStatus(BaseTimestampedSQLModel, StatusCreate, table=True):
+    """EVSE latest status."""
+
+    id_pdc_itinerance: str = Field(
+        regex="(?:(?:^|,)(^[A-Z]{2}[A-Z0-9]{4,33}$|Non concerné))+$", primary_key=True
+    )
+    horodatage: PastDatetime = Field(
+        sa_type=DateTime(timezone=True),
+        description="The timestamp indicating when the status changed.",
+        index=True,
+    )  # type: ignore
+
+    etat_pdc: EtatPDCEnum = Field(sa_column=SAColumn(EtatPDCDBEnum, nullable=False))
+    occupation_pdc: OccupationPDCEnum = Field(
+        sa_column=SAColumn(OccupationPDCDBEnum, nullable=False)
+    )
+    etat_prise_type_2: Optional[EtatPriseEnum] = Field(
+        sa_column=SAColumn(EtatPriseDBEnum, nullable=True)
+    )
+    etat_prise_type_combo_ccs: Optional[EtatPriseEnum] = Field(
+        sa_column=SAColumn(EtatPriseDBEnum, nullable=True)
+    )
+    etat_prise_type_chademo: Optional[EtatPriseEnum] = Field(
+        sa_column=SAColumn(EtatPriseDBEnum, nullable=True)
+    )
+    etat_prise_type_ef: Optional[EtatPriseEnum] = Field(
+        sa_column=SAColumn(EtatPriseDBEnum, nullable=True)
+    )
 
 
 class StatiqueMV(Statique, SQLModel):

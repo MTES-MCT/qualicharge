@@ -19,6 +19,7 @@ from fastapi import (
 from fastapi import status as fa_status
 from pydantic import UUID4, BaseModel, PastDatetime, StringConstraints
 from sqlalchemy import func
+from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.schema import Column as SAColumn
 from sqlmodel import Session, join, select
 
@@ -33,7 +34,7 @@ from qualicharge.models.dynamic import (
     StatusCreate,
     StatusRead,
 )
-from qualicharge.schemas.core import PointDeCharge, Station, Status
+from qualicharge.schemas.core import LatestStatus, PointDeCharge, Station, Status
 from qualicharge.schemas.core import Session as QCSession
 from qualicharge.schemas.utils import are_pdcs_allowed_for_user, is_pdc_allowed_for_user
 
@@ -134,7 +135,7 @@ async def list_statuses(
     if station:
         pdc_ids_filter = set(
             session.exec(
-                select(PointDeCharge.id)
+                select(PointDeCharge.id_pdc_itinerance)
                 .select_from(
                     join(
                         PointDeCharge,
@@ -149,39 +150,25 @@ async def list_statuses(
 
     # Filter by point of charge
     if pdc:
-        pdc_ids_filter = pdc_ids_filter | set(
-            session.exec(
-                select(PointDeCharge.id).filter(
-                    cast(SAColumn, PointDeCharge.id_pdc_itinerance).in_(pdc)
-                )
-            ).all()
-        )
+        pdc_ids_filter = pdc_ids_filter | set(pdc)
 
     # Get latest status per point of charge
-    latest_db_statuses_stmt = (
-        select(
-            Status.point_de_charge_id,
-            func.last(Status.id, Status.horodatage).label("status_id"),
-        )
-        .group_by(cast(SAColumn, Status.point_de_charge_id))
-        .subquery()
-    )
-    db_statuses_stmt = select(Status)
+    db_statuses_stmt = select(LatestStatus)
 
     if from_:
-        db_statuses_stmt = db_statuses_stmt.where(Status.horodatage >= from_)
+        db_statuses_stmt = db_statuses_stmt.where(LatestStatus.horodatage >= from_)
 
     if len(pdc_ids_filter):
         db_statuses_stmt = db_statuses_stmt.filter(
-            cast(SAColumn, Status.point_de_charge_id).in_(pdc_ids_filter)
+            cast(SAColumn, LatestStatus.id_pdc_itinerance).in_(pdc_ids_filter)
         )
 
     if not user.is_superuser:
         db_statuses_stmt = (
             db_statuses_stmt.join_from(
-                Status,
+                LatestStatus,
                 PointDeCharge,
-                Status.point_de_charge_id == PointDeCharge.id,  # type: ignore[arg-type]
+                LatestStatus.id_pdc_itinerance == PointDeCharge.id_pdc_itinerance,  # type: ignore[arg-type]
             )
             .join_from(PointDeCharge, Station, PointDeCharge.station_id == Station.id)  # type: ignore[arg-type]
             .filter(
@@ -191,11 +178,6 @@ async def list_statuses(
             )
         )
 
-    db_statuses_stmt = db_statuses_stmt.join_from(
-        Status,
-        latest_db_statuses_stmt,
-        Status.id == latest_db_statuses_stmt.c.status_id,  # type: ignore[arg-type]
-    )
     db_statuses = session.exec(db_statuses_stmt).all()
 
     return [
@@ -230,23 +212,11 @@ async def read_status(
     if not is_pdc_allowed_for_user(id_pdc_itinerance, user):
         raise PermissionDenied("You cannot read the status of this point of charge")
 
-    # Get target point de charge
-    pdc_id = get_pdc_id(id_pdc_itinerance, session)
+    # Ensure charge point exists
+    get_pdc_id(id_pdc_itinerance, session)
 
-    # Get latest status (if any)
-    latest_db_status_stmt = (
-        select(
-            func.last(Status.id, Status.horodatage).label("status_id"),
-        )
-        .where(Status.point_de_charge_id == pdc_id)
-        .subquery()
-    )
     db_status = session.exec(
-        select(Status).join_from(
-            Status,
-            latest_db_status_stmt,
-            Status.id == latest_db_status_stmt.c.status_id,  # type: ignore[arg-type]
-        )
+        select(LatestStatus).where(LatestStatus.id_pdc_itinerance == id_pdc_itinerance)
     ).one_or_none()
     if db_status is None:
         raise HTTPException(
@@ -323,10 +293,27 @@ async def read_status_history(
 def _create_status(
     session: Session, status: StatusCreate, status_id: UUID, pdc_id: UUID
 ) -> None:
-    """Background task that creates a POC status."""
+    """Background task that creates a POC status.
+
+    Nota bene: we expect the last-received status to be the most recent one.
+    This assumption may be false, but it's a good compromise between performance
+    and consistency. Adding this check would be too greedy.
+    """
     db_status = Status(id=status_id, **status.model_dump(exclude={"id_pdc_itinerance"}))
     db_status.point_de_charge_id = pdc_id
     session.add(db_status)
+
+    # Upsert latest status
+    stmt = insert(LatestStatus).values(**status.model_dump())
+    updates_on_conflict = status.model_dump(exclude={"id_pdc_itinerance"})
+    updates_on_conflict.update({"updated_at": stmt.excluded.updated_at})
+    stmt = stmt.on_conflict_do_update(
+        constraint="lateststatus_pkey",
+        set_=updates_on_conflict,
+    )
+    session.execute(stmt)
+
+    # Commit transaction
     session.commit()
 
 
@@ -356,13 +343,39 @@ def _create_status_bulk(
 ) -> None:
     """Background task that creates POCs status batch."""
     db_statuses = []
+    db_latest_statuses: dict[str, dict] = {}
     for status, status_id in zip(statuses, status_ids, strict=True):
         db_status = Status(
             id=status_id, **status.model_dump(exclude={"id_pdc_itinerance"})
         )
         db_status.point_de_charge_id = db_pdcs[status.id_pdc_itinerance]
         db_statuses.append(db_status)
+
+        # If we have multiple statuses for a PDC in this batch, only keep the latest one
+        if (
+            status.id_pdc_itinerance in db_latest_statuses
+            and db_latest_statuses[status.id_pdc_itinerance]["horodatage"]
+            > status.horodatage
+        ):
+            continue
+        db_latest_statuses[status.id_pdc_itinerance] = status.model_dump()
     session.add_all(db_statuses)
+
+    # Upsert latest statuses
+    stmt = insert(LatestStatus).values(list(db_latest_statuses.values()))
+    updates_on_conflict = {
+        f: stmt.excluded.get(f)
+        for f in StatusCreate.model_fields.keys()
+        if f != "id_pdc_itinerance"
+    }
+    updates_on_conflict.update({"updated_at": stmt.excluded.updated_at})
+    stmt = stmt.on_conflict_do_update(
+        constraint="lateststatus_pkey",
+        set_=updates_on_conflict,
+    )
+    session.execute(stmt)
+
+    # Commit transaction
     session.commit()
 
 
