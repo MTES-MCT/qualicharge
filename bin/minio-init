@@ -6,9 +6,9 @@ set -eo pipefail
 mc alias set qualicharge http://minio:9000 qualicharge password
 
 # Create buckets
-mc mb qualicharge/qualicharge-indicators
-mc mb qualicharge/qualicharge-sessions
-mc mb qualicharge/qualicharge-statuses
+mc mb --ignore-existing qualicharge/qualicharge-indicators
+mc mb --ignore-existing qualicharge/qualicharge-sessions
+mc mb --ignore-existing qualicharge/qualicharge-statuses
 mc version enable qualicharge/qualicharge-indicators
 mc version enable qualicharge/qualicharge-sessions
 mc version enable qualicharge/qualicharge-statuses
