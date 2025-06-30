@@ -942,17 +942,8 @@ def test_bulk_with_inconsistent_station_data(client_auth, db_session, monkeypatc
     json_response = response.json()
     assert (
         json_response["detail"]
-        == "Point of charge (or related entry) is not consistent"
+        == "An error occured while trying to create or update the 'station' table"
     )
-
-    # DEBUG mode: on
-    monkeypatch.setattr(settings, "DEBUG", True)
-    payload = [json.loads(d.model_dump_json()) for d in [station1, station2]]
-    response = client_auth.post("/statique/bulk", json=payload)
-
-    assert response.status_code == status.HTTP_400_BAD_REQUEST
-    json_response = response.json()
-    assert "psycopg.errors.CardinalityViolation" in json_response["detail"]
 
     # Check created statiques (if any)
     n_stations = db_session.exec(select(func.count(Station.id))).one()

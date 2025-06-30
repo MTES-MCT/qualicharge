@@ -14,11 +14,13 @@ from shapely.geometry import Point
 from sqlalchemy import Table
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.engine import Connection
+from sqlalchemy.exc import ProgrammingError
 from sqlalchemy.schema import MetaData
 from typing_extensions import Optional
 
 from ..auth.schemas import User
-from ..exceptions import ObjectDoesNotExist, ProgrammingError
+from ..exceptions import IntegrityError, ObjectDoesNotExist
+from ..exceptions import ProgrammingError as QCProgrammingError
 from ..models.static import Statique
 from . import BaseAuditableSQLModel
 from .core import (
@@ -208,7 +210,7 @@ class StatiqueImporter:
         logger.info("Saving schema %s (%d rows)", schema.__qualname__, len(df))
 
         if schema in self._saved_schemas:
-            raise ProgrammingError(
+            raise QCProgrammingError(
                 (
                     "You cannot save the same schema more than once. "
                     "You should create a new StatiqueImporter instance instead."
@@ -241,7 +243,13 @@ class StatiqueImporter:
             )
             stmt_ret = stmt.returning(schema_table.c.id)
 
-            result = self.connection.execute(stmt_ret)
+            try:
+                result = self.connection.execute(stmt_ret)
+            except ProgrammingError as err:
+                raise IntegrityError(
+                    "An error occured while trying to create or update "
+                    f"the '{schema.__tablename__}' table"
+                ) from err
             fks = pd.concat(
                 [
                     fks,
