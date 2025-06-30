@@ -16,6 +16,10 @@ and this project adheres to
 
 - Implement latest status cache in the `LatestStatus` table
 
+### Fixed
+
+- Fix same address / different location bulk importation
+
 ## [0.25.0] - 2025-06-20
 
 ### Added

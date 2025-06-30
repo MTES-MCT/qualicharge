@@ -220,7 +220,7 @@ class Localisation(BaseAuditableSQLModel, table=True):
 
     def __eq__(self, other) -> bool:
         """Assess instances equality given uniqueness criterions."""
-        fields = ("adresse_station",)
+        fields = ("coordonneesXY",)
         return all(getattr(self, field) == getattr(other, field) for field in fields)
 
     def __hash__(self) -> int:

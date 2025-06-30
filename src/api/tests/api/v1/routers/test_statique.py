@@ -924,8 +924,6 @@ def test_bulk_for_unknown_operational_unit(client_auth, db_session):
 
 def test_bulk_with_inconsistent_station_data(client_auth, db_session, monkeypatch):
     """Test the /statique/bulk create endpoint with unconsistent Station data."""
-    # DEBUG mode: off
-    monkeypatch.setattr(settings, "DEBUG", False)
     station1 = StatiqueFactory.build(
         id_pdc_itinerance="FR911E1111ER1", date_mise_en_service="2024-10-14"
     )
@@ -948,6 +946,33 @@ def test_bulk_with_inconsistent_station_data(client_auth, db_session, monkeypatc
     # Check created statiques (if any)
     n_stations = db_session.exec(select(func.count(Station.id))).one()
     assert n_stations == 0
+
+
+def test_bulk_with_two_localisations_with_the_same_address(client_auth, db_session):
+    """Test the /statique/bulk create endpoint with 2 locations at the same address."""
+    station1 = StatiqueFactory.build(
+        id_pdc_itinerance="FR911E1111ER1",
+        id_station_itinerance="FR911P1111ER",
+        nom_station="RELAIS OUEST",
+        coordonneesXY="[1.6374, 50.5766]",
+    )
+    station2 = station1.model_copy(
+        update={
+            "id_pdc_itinerance": "FR911E1111ER2",
+            "id_station_itinerance": "FR911P1111ES",
+            "nom_station=": "RELAIS EST",
+            "coordonneesXY": Coordinate(50.5759, 1.6457),
+        }
+    )
+    payload = [json.loads(d.model_dump_json()) for d in [station1, station2]]
+    response = client_auth.post("/statique/bulk", json=payload)
+
+    assert response.status_code == status.HTTP_201_CREATED
+
+    # Check created statiques (if any)
+    expected = 2
+    n_stations = db_session.exec(select(func.count(Station.id))).one()
+    assert n_stations == expected
 
 
 def test_bulk_with_outbound_sizes(client_auth):

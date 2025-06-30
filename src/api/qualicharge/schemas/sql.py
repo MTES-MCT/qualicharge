@@ -113,15 +113,24 @@ class StatiqueImporter:
         df = self._add_auditable_model_fields(df)
         return df
 
+    @staticmethod
+    def _crds_to_wkt(coordonneesXY: pd.Series):
+        """Transform coordonneesXY series to WKT.
+
+        '[long, lat]' -> 'POINT (long lat)'
+        """
+        return coordonneesXY.map(json.loads).map(Point).map(to_wkt)
+
     def _add_fk_from_saved_schema(
         self, saved: pd.DataFrame, schema: type[BaseAuditableSQLModel]
     ):
         """Add foreign keys to the statique DataFrame using saved schema."""
         fields = self._get_fields_for_schema(schema)
-        # coordonneesXY field cannot be used for merging
-        fields = list(set(fields) - {"coordonneesXY"})
         left = self._statique_with_fk
         right = saved[fields + [self._schema_fk(schema)]]
+        # We need a WKT representation for comparison
+        if "coordonneesXY" in right:
+            left["coordonneesXY"] = self._crds_to_wkt(left["coordonneesXY"])
         self._statique_with_fk = left.merge(right, how="left", on=fields)
 
     def _load_operational_units(self):
@@ -171,9 +180,7 @@ class StatiqueImporter:
         if self._localisation is None:
             df = self._get_dataframe_for_schema(Localisation)
             # We need a WKT representation for bulk insertion
-            df["coordonneesXY"] = (
-                df["coordonneesXY"].map(json.loads).map(Point).map(to_wkt)
-            )
+            df["coordonneesXY"] = self._crds_to_wkt(df["coordonneesXY"])
             self._localisation = df
         return self._localisation
 
