@@ -7,13 +7,11 @@ from typing import Optional, Sequence, cast
 import pandas as pd
 import questionary
 import typer
-from psycopg import Error as PGError
 from rich import print
 from rich.console import Console
 from rich.logging import RichHandler
 from rich.table import Table
 from sqlalchemy import Column as SAColumn
-from sqlalchemy.exc import IntegrityError, OperationalError, ProgrammingError
 from sqlalchemy_utils import refresh_materialized_view
 from sqlmodel import Session as SMSession
 from sqlmodel import select
@@ -450,7 +448,7 @@ def import_static(ctx: typer.Context, input_file: Path):
     console.log("Save to configured database")
     try:
         importer.save()
-    except (ProgrammingError, IntegrityError, OperationalError, PGError) as err:
+    except QCIntegrityError as err:
         session.rollback()
         raise QCIntegrityError("Input file importation failed. Rolling back.") from err
     session.commit()

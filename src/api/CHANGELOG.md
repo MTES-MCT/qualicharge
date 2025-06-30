@@ -8,6 +8,10 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Changed
+
+- Improve bulk importation error message
+
 ### Added
 
 - Implement latest status cache in the `LatestStatus` table

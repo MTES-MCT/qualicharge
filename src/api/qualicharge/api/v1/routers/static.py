@@ -16,15 +16,11 @@ from fastapi import (
     Security,
     status,
 )
-from psycopg import Error as PGError
 from pydantic import AnyHttpUrl, BaseModel, computed_field
 from sqlalchemy import any_, func
 from sqlalchemy.dialects.postgresql import array
 from sqlalchemy.exc import (
-    IntegrityError,
     NoResultFound,
-    OperationalError,
-    ProgrammingError,
 )
 from sqlalchemy.schema import Column as SAColumn
 from sqlmodel import Session, select
@@ -319,18 +315,10 @@ async def bulk(
     importer = StatiqueImporter(df, transaction.session.connection(), author=user)
     try:
         importer.save()
-    except (
-        ProgrammingError,
-        IntegrityError,
-        OperationalError,
-        PGError,
-    ) as err:
+    except QCIntegrityError as err:
         transaction.rollback()
-        detail = "Point of charge (or related entry) is not consistent"
-        if settings.DEBUG:
-            detail = str(err)
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail=detail
+            status_code=status.HTTP_400_BAD_REQUEST, detail=str(err)
         ) from err
     except ObjectDoesNotExist as err:
         transaction.rollback()
