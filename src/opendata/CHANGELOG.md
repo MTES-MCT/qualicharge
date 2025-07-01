@@ -16,6 +16,8 @@ and this project adheres to
 
 ### Changed
 
+- Use the `LatestStatus` cache table to speed up query performance
+
 #### Dependencies
 
 - Upgrade Psycopg to `3.2.9`
