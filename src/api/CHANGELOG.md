@@ -8,13 +8,15 @@ and this project adheres to
 
 ## [Unreleased]
 
-### Changed
-
-- Improve bulk importation error message
+## [0.26.0] - 2025-07-01
 
 ### Added
 
 - Implement latest status cache in the `LatestStatus` table
+
+### Changed
+
+- Improve bulk importation error message
 
 ### Fixed
 
@@ -531,7 +533,8 @@ and this project adheres to
 
 - Implement base FastAPI app
 
-[unreleased]: https://github.com/MTES-MCT/qualicharge/compare/v0.25.0...main
+[unreleased]: https://github.com/MTES-MCT/qualicharge/compare/v0.26.0...main
+[0.26.0]: https://github.com/MTES-MCT/qualicharge/compare/v0.25.0...v0.26.0
 [0.25.0]: https://github.com/MTES-MCT/qualicharge/compare/v0.24.0...v0.25.0
 [0.24.0]: https://github.com/MTES-MCT/qualicharge/compare/v0.23.0...v0.24.0
 [0.23.0]: https://github.com/MTES-MCT/qualicharge/compare/v0.22.1...v0.23.0
