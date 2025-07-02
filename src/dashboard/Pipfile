@@ -17,7 +17,7 @@ psycopg = {extras = ["pool", "binary"], version = "==3.2.9"}
 python-dateutil = "==2.9.0.post0"
 qualicharge-client = "==0.3.0"
 requests = "==2.32.4"
-sentry-sdk = {extras = ["django"], version = "==2.30.0"}
+sentry-sdk = {extras = ["django"], version = "==2.32.0"}
 whitenoise = "==6.9.0"
 
 [dev-packages]
@@ -34,7 +34,7 @@ pytest-cov = "==6.2.1"
 pytest-django = "==4.11.1"
 pytest-httpx = "==0.35.0"
 responses = "==0.25.7"
-ruff = "==0.12.0"
+ruff = "==0.12.1"
 types-mock = "==5.2.0.20250516"
 types-python-dateutil = "==2.9.0.20250516"
 types-requests = "==2.32.4.20250611"

@@ -13,7 +13,7 @@ and this project adheres to
 #### Dependencies
 
 - Upgrade Pydantic to `2.11.7`
-- Upgrade pydantic-settings to `2.10.0`
+- Upgrade pydantic-settings to `2.10.1`
 - Upgrade `typer` to `0.16.0`
 
 ### Fixed

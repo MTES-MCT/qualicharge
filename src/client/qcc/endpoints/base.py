@@ -79,7 +79,7 @@ class BaseCreateEndpoint:
                 n_created += await send_chunk(self.client, chunk)
                 chunk = []
 
-        if len(chunk):
+        if chunk:
             n_created += await send_chunk(self.client, chunk)
         return n_created
 

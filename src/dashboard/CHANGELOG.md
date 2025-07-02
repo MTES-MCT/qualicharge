@@ -8,6 +8,12 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Changed
+
+#### Dependencies
+
+- Upgrade `sentry-sdk` to `2.32.0`
+
 ## [0.2.0] - 2025-06-23
 
 ### Changed
