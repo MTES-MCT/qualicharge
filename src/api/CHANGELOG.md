@@ -8,6 +8,10 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Added
+
+- Implement `PointDeCharge` and `Station` soft-delete [BC]
+
 ### Changed
 
 #### Dependencies

@@ -236,7 +236,9 @@ async def update(
 
     transaction = session.begin_nested()
     try:
-        update = update_statique(session, id_pdc_itinerance, statique, author=user)
+        update = update_statique(
+            session, id_pdc_itinerance, statique, author=user, only_active=True
+        )
     except QCIntegrityError as err:
         transaction.rollback()
         raise HTTPException(
