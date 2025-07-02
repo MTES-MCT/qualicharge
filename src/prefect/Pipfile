@@ -8,7 +8,7 @@ data7 = "==0.11.2"
 geoalchemy2 = {extras = ["shapely"], version = "==0.17.1"}
 geopandas = "==1.1.1"
 great_expectations = {extras = ["postgresql"], version = "==1.5.3"}
-pandas = "==2.3.0"
+pandas = "==2.1.4"
 prefect = "==3.4.7"
 psycopg = {extras = ["pool", "binary"], version = "==3.2.9"}
 pyarrow = "==20.0.0"

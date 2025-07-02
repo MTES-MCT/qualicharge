@@ -8,6 +8,15 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Changed
+
+#### Dependencies
+
+- Upgrade `FastAPI` to `0.115.14`
+- Upgrade `geopandas` to `1.1.1`
+- Upgrade `pydantic-settings` to `2.10.1`
+- Upgrade `sentry-sdk` to `2.32.0`
+
 ## [0.26.0] - 2025-07-01
 
 ### Added
