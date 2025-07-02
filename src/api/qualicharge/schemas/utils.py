@@ -22,6 +22,7 @@ from ..exceptions import (
 from ..models.static import Statique
 from ..schemas.sql import StatiqueImporter
 from .core import (
+    ActivePointsDeChargeView,
     Amenageur,
     Enseigne,
     Localisation,
@@ -37,8 +38,10 @@ DB_TO_STATIC_EXCLUDED_FIELDS = {
     "id",
     "created_at",
     "updated_at",
+    "deleted_at",
     "created_by_id",
     "updated_by_id",
+    "deleted_by_id",
 }
 
 
@@ -226,19 +229,28 @@ def update_statique(
     id_pdc_itinerance: str,
     to_update: Statique,
     author: Optional[User] = None,
+    only_active: bool = False,
 ) -> Statique:
-    """Update given statique from its id_pdc_itinerance."""
+    """Update given statique from its id_pdc_itinerance.
+
+    If `only_active` is True, inactive related entries (station or PDC) will raise an
+    ObjectDoesNotExist exception.
+    """
     # Check that submitted id_pdc_itinerance corresponds to the update
     if id_pdc_itinerance != to_update.id_pdc_itinerance:
         raise IntegrityError(
             "Cannot update statique with a different id_pdc_itinerance"
         )
 
+    schema = PointDeCharge
+    if only_active:
+        schema = ActivePointsDeChargeView  # type: ignore[assignment]
+
     # Check that the statique to update exists
     if (
         session.exec(
-            select(func.count(cast(SAColumn, PointDeCharge.id))).where(
-                PointDeCharge.id_pdc_itinerance == id_pdc_itinerance
+            select(func.count(cast(SAColumn, schema.id))).where(
+                schema.id_pdc_itinerance == id_pdc_itinerance
             )
         ).one()
         != 1

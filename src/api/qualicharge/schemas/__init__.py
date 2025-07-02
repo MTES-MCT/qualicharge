@@ -43,3 +43,14 @@ class BaseAuditableSQLModel(BaseTimestampedSQLModel):
 
     created_by_id: Optional[UUID] = Field(default=None, foreign_key="user.id")
     updated_by_id: Optional[UUID] = Field(default=None, foreign_key="user.id")
+
+
+class SoftDeleteMixin:
+    """A mixin to enable table soft-delete."""
+
+    deleted_at: Optional[PastDatetime] = Field(
+        sa_type=DateTime(timezone=True),
+        default=None,
+        description="The timestamp indicating when the record was soft-deleted.",
+    )  # type: ignore
+    deleted_by_id: Optional[UUID] = Field(default=None, foreign_key="user.id")

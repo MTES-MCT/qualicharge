@@ -1,11 +1,11 @@
 DELETE
-FROM Station
+FROM _Station
 WHERE id IN (
     SELECT
-      Station.id
+      _Station.id
     FROM
-      Station
-      LEFT JOIN PointDeCharge ON station_id = Station.id
+      _Station
+      LEFT JOIN PointDeCharge ON station_id = _Station.id
     WHERE
       PointDeCharge.station_id ISNULL
 );
@@ -17,9 +17,9 @@ WHERE id IN (
       Amenageur.id
     FROM
       Amenageur
-      LEFT JOIN Station ON amenageur_id = Amenageur.id
+      LEFT JOIN _Station ON amenageur_id = Amenageur.id
     WHERE
-      Station.amenageur_id ISNULL
+      _Station.amenageur_id ISNULL
 );
 
 DELETE
@@ -29,9 +29,9 @@ WHERE id IN (
       Operateur.id
     FROM
       Operateur
-      LEFT JOIN Station ON operateur_id = Operateur.id
+      LEFT JOIN _Station ON operateur_id = Operateur.id
     WHERE
-      Station.operateur_id ISNULL
+      _Station.operateur_id ISNULL
 );
 
 DELETE
@@ -41,7 +41,7 @@ WHERE id IN (
       Localisation.id
     FROM
       Localisation
-      LEFT JOIN Station ON localisation_id = Localisation.id
+      LEFT JOIN _Station ON localisation_id = Localisation.id
     WHERE
-      Station.localisation_id ISNULL
+      _Station.localisation_id ISNULL
 );

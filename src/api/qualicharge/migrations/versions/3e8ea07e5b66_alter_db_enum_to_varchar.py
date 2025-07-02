@@ -15,9 +15,6 @@ from alembic import op
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.types import VARCHAR
 from qualicharge.models.dynamic import EtatPDCEnum, EtatPriseEnum, OccupationPDCEnum
-from sqlmodel import SQLModel
-
-from qualicharge.schemas.core import PointDeCharge, Station, Status
 
 # revision identifiers, used by Alembic.
 revision: str = "3e8ea07e5b66"
@@ -68,43 +65,43 @@ FIELDS_PARAMS = [
     {
         "enum_": ImplantationStationEnum,
         "existing_enum_db_name": "implantationstationenum",
-        "schema": Station,
+        "table_name": "station",
         "column_names": ["implantation_station"],
     },
     {
         "enum_": ConditionAccesEnum,
         "existing_enum_db_name": "conditionaccesenum",
-        "schema": Station,
+        "table_name": "station",
         "column_names": ["condition_acces"],
     },
     {
         "enum_": RaccordementEnum,
         "existing_enum_db_name": "raccordementenum",
-        "schema": Station,
+        "table_name": "station",
         "column_names": ["raccordement"],
     },
     {
         "enum_": AccessibilitePMREnum,
         "existing_enum_db_name": "accessibilitepmrenum",
-        "schema": PointDeCharge,
+        "table_name": "pointdecharge",
         "column_names": ["accessibilite_pmr"],
     },
     {
         "enum_": EtatPDCEnum,
         "existing_enum_db_name": "etatpdcenum",
-        "schema": Status,
+        "table_name": "status",
         "column_names": ["etat_pdc"],
     },
     {
         "enum_": OccupationPDCEnum,
         "existing_enum_db_name": "occupationpdcenum",
-        "schema": Status,
+        "table_name": "status",
         "column_names": ["occupation_pdc"],
     },
     {
         "enum_": EtatPriseEnum,
         "existing_enum_db_name": "etatpriseenum",
-        "schema": Status,
+        "table_name": "status",
         "column_names": [
             "etat_prise_type_2",
             "etat_prise_type_combo_ccs",
@@ -119,18 +116,18 @@ def upgrade_db_enum(
     connection: Connection,
     enum_: Type[Enum],
     existing_enum_db_name: str,
-    schema: SQLModel,
+    table_name: str,
     column_names: List[str],
 ):
     """Upgrade database Enums from keys to VARCHAR."""
-    print(f"Will upgrade {enum_.__name__} for table {schema.__tablename__}")
+    print(f"Will upgrade {enum_.__name__} for table {table_name}")
 
     for column_name in column_names:
         print(f"{column_name=}")
 
         # Alter table column to a generic VARCHAR
         op.alter_column(
-            schema.__tablename__,
+            table_name,
             column_name,
             existing_type=postgresql.ENUM(
                 *enum_to_dict(enum_).keys(),
@@ -152,11 +149,11 @@ def downgrade_db_enum(
     connection: Connection,
     enum_: Type[Enum],
     existing_enum_db_name: str,
-    schema: SQLModel,
+    table_name: str,
     column_names: List[str],
 ):
     """Downgrade database Enums from VARCHAR to keys."""
-    print(f"Will downgrade {enum_.__name__} for table {schema.__tablename__}")
+    print(f"Will downgrade {enum_.__name__} for table {table_name}")
 
     # (re)create the old ENUM database type
     postgresql.ENUM(
@@ -169,7 +166,7 @@ def downgrade_db_enum(
 
         # Alter table column to a generic VARCHAR
         op.alter_column(
-            schema.__tablename__,
+            table_name,
             column_name,
             existing_type=VARCHAR,
             type_=postgresql.ENUM(
