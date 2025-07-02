@@ -134,6 +134,7 @@ class Settings(BaseSettings):
     API_GET_USER_CACHE_TTL: int = 1800
     API_GET_USER_CACHE_INFO: bool = False
     API_GET_PDC_ID_CACHE_MAXSIZE: int = 5000
+    API_GET_PDC_ID_CACHE_TTL: int = 24 * 60 * 60
     API_GET_PDC_ID_CACHE_INFO: bool = False
 
     model_config = SettingsConfigDict(

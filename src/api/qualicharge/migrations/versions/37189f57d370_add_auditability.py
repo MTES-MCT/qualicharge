@@ -11,6 +11,7 @@ from typing import Sequence, Union
 from alembic import op
 import sqlalchemy as sa
 from postgresql_audit.base import versioning_manager
+from sqlalchemy import MetaData
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.orm import declarative_base
 from sqlmodel import SQLModel
@@ -23,6 +24,13 @@ revision: str = "37189f57d370"
 down_revision: Union[str, None] = "4b99d15436b0"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
+
+
+def get_tables(connection):
+    """Get SQLAlchemy tables."""
+    metadata = MetaData()
+    metadata.reflect(bind=connection)
+    return metadata.tables
 
 
 def upgrade() -> None:
@@ -169,29 +177,32 @@ def upgrade() -> None:
     versioning_manager.base = declarative_base(metadata=SQLModel.metadata)
 
     # add 'postgresql-audit' functions and operators
+    connection = op.get_bind()
     for table in versioning_manager.table_listeners:
         for _trig, event in versioning_manager.table_listeners[table]:
             if isinstance(event, sa.schema.DDL):
                 op.execute(event)
             else:
-                event("dummy_table_argument", op.get_bind())
+                event("dummy_table_argument", connection)
 
-    versioned_model_classes = [
-        User,
-        Group,
-        core.Amenageur,
-        core.Operateur,
-        core.Enseigne,
-        core.Localisation,
-        core.Station,
-        core.PointDeCharge,
-        core.Session,
+    tables = get_tables(connection)
+    excluded = ["created_at", "updated_at"]
+    versioned_tables = [
+        (tables["user"], excluded + ["password"]),
+        (tables["group"], excluded),
+        (tables["amenageur"], excluded),
+        (tables["operateur"], excluded),
+        (tables["enseigne"], excluded),
+        (tables["localisation"], excluded),
+        (tables["station"], excluded),
+        (tables["pointdecharge"], excluded),
+        (tables["session"], excluded),
     ]
-    for cls in versioned_model_classes:
+    for table, excluded in versioned_tables:
         op.execute(
             versioning_manager.build_audit_table_query(
-                table=cls.__table__,
-                exclude_columns=cls.__versioned__.get("exclude"),
+                table=table,
+                exclude_columns=excluded,
             )
         )
 
@@ -245,24 +256,27 @@ def downgrade() -> None:
 
     # Hack with the versioning manager to delete triggers
     versioning_manager.base = declarative_base(metadata=SQLModel.metadata)
-    versioned_model_classes = [
-        User,
-        Group,
-        core.Amenageur,
-        core.Operateur,
-        core.Enseigne,
-        core.Localisation,
-        core.Station,
-        core.PointDeCharge,
-        core.Session,
+
+    connection = op.get_bind()
+    tables = get_tables(connection)
+    versioned_tables = [
+        tables["user"],
+        tables["group"],
+        tables["amenageur"],
+        tables["operateur"],
+        tables["enseigne"],
+        tables["localisation"],
+        tables["station"],
+        tables["pointdecharge"],
+        tables["session"],
     ]
-    for cls in versioned_model_classes:
+    for table in versioned_tables:
         for trigger in (
             "audit_trigger_insert",
             "audit_trigger_update",
             "audit_trigger_delete",
         ):
-            op.execute(f'DROP TRIGGER "{trigger}" ON "{cls.__tablename__}" CASCADE')
+            op.execute(f'DROP TRIGGER "{trigger}" ON "{table.name}" CASCADE')
     op.drop_index(op.f("ix_activity_native_transaction_id"), table_name="activity")
     op.drop_table("activity")
     op.drop_table("transaction")

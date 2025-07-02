@@ -2,7 +2,7 @@
 
 import gzip
 import json
-from datetime import timezone
+from datetime import datetime, timezone
 from random import sample
 from typing import cast
 from urllib.parse import quote_plus
@@ -157,6 +157,69 @@ def test_list_statuses_for_superuser(db_session, client_auth):
             db_status.etat_prise_type_chademo == response_status.etat_prise_type_chademo
         )
         assert db_status.etat_prise_type_ef == response_status.etat_prise_type_ef
+
+
+@pytest.mark.parametrize(
+    "client_auth",
+    (
+        (
+            True,
+            {
+                "is_superuser": False,
+                "scopes": [ScopesEnum.DYNAMIC_READ, ScopesEnum.STATIC_CREATE],
+            },
+        ),
+    ),
+    indirect=True,
+)
+def test_list_statuses_for_user_with_inactive_pdc(db_session, client_auth):
+    """Test the /status/ get endpoint (with inactive PDC)."""
+    LatestStatusFactory.__session__ = db_session
+    GroupFactory.__session__ = db_session
+
+    # Get user requesting the server
+    user = db_session.exec(select(User).where(User.email == "john@doe.com")).one()
+
+    # No status exists
+    response = client_auth.get("/dynamique/status/")
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json() == []
+
+    # Create points of charge and statuses
+    n_pdc = 2
+    save_statiques(db_session, StatiqueFactory.batch(n_pdc))
+    stations = db_session.exec(select(Station)).all()
+    assert len(stations) == n_pdc
+    pdcs = db_session.exec(select(PointDeCharge)).all()
+    assert len(pdcs) == n_pdc
+
+    # Give user read permission on the stations
+    operational_units = [station.operational_unit for station in stations]
+    GroupFactory.create_sync(operational_units=operational_units, users=[user])
+
+    # Create statuses
+    LatestStatusFactory.create_sync(id_pdc_itinerance=pdcs[0].id_pdc_itinerance)
+    LatestStatusFactory.create_sync(id_pdc_itinerance=pdcs[1].id_pdc_itinerance)
+    assert db_session.exec(
+        select(func.count(LatestStatus.id_pdc_itinerance))
+    ).one() == (n_pdc)
+
+    # List latest statuses by pdc
+    response = client_auth.get("/dynamique/status/")
+    assert response.status_code == status.HTTP_200_OK
+    statuses = [StatusRead(**s) for s in response.json()]
+    assert len(statuses) == n_pdc
+
+    # Inactivate a PDC
+    inactive = pdcs[1]
+    inactive.deleted_at = datetime.now(timezone.utc)
+    db_session.add(inactive)
+
+    # List latest statuses by pdc
+    response = client_auth.get("/dynamique/status/")
+    assert response.status_code == status.HTTP_200_OK
+    statuses = [StatusRead(**s) for s in response.json()]
+    assert len(statuses) == n_pdc - 1
 
 
 @pytest.mark.parametrize(
@@ -468,6 +531,37 @@ def test_read_status_for_superuser(db_session, client_auth):
     assert expected_status.etat_prise_type_ef == response_status.etat_prise_type_ef
 
 
+def test_read_status_for_inactive_pdc(db_session, client_auth):
+    """Test the /status/{id_pdc_itinerance} endpoint (inactive PDC)."""
+    LatestStatusFactory.__session__ = db_session
+
+    # Create the PointDeCharge
+    id_pdc_itinerance = "FR911E1111ER1"
+    save_statique(
+        db_session, StatiqueFactory.build(id_pdc_itinerance=id_pdc_itinerance)
+    )
+
+    # Create latest statuses
+    LatestStatusFactory.create_sync(id_pdc_itinerance=id_pdc_itinerance)
+    assert (
+        db_session.exec(
+            select(func.count(LatestStatus.id_pdc_itinerance)).where(
+                LatestStatus.id_pdc_itinerance == id_pdc_itinerance
+            )
+        ).one()
+        == 1
+    )
+
+    # Inactivate the PDC
+    inactive = db_session.exec(select(PointDeCharge)).one()
+    inactive.deleted_at = datetime.now(timezone.utc)
+    db_session.add(inactive)
+
+    # Get latest status
+    response = client_auth.get(f"/dynamique/status/{id_pdc_itinerance}")
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+
+
 def test_read_status_get_pdc_id_cache(db_session, client_auth):
     """Test the /status/{id_pdc_itinerance} endpoint's get_pdc_id cache usage."""
     LatestStatusFactory.__session__ = db_session
@@ -651,6 +745,40 @@ def test_read_status_history_for_superuser(db_session, client_auth):
             == response_status.etat_prise_type_chademo
         )
         assert expected_status.etat_prise_type_ef == response_status.etat_prise_type_ef
+
+
+def test_read_status_history_for_inactive_pdc(db_session, client_auth):
+    """Test the /status/{id_pdc_itinerance}/history endpoint (superuser case)."""
+    StatusFactory.__session__ = db_session
+
+    # Create the PointDeCharge
+    id_pdc_itinerance = "FR911E1111ER1"
+    save_statique(
+        db_session, StatiqueFactory.build(id_pdc_itinerance=id_pdc_itinerance)
+    )
+    pdc = db_session.exec(
+        select(PointDeCharge).where(
+            PointDeCharge.id_pdc_itinerance == id_pdc_itinerance
+        )
+    ).one()
+
+    # Create 20 attached statuses
+    n_statuses = 20
+    StatusFactory.create_batch_sync(n_statuses, point_de_charge_id=pdc.id)
+    assert (
+        db_session.exec(
+            select(func.count(Status.id)).where(Status.point_de_charge_id == pdc.id)
+        ).one()
+        == n_statuses
+    )
+
+    # Inactivate the PDC
+    pdc.deleted_at = datetime.now(timezone.utc)
+    db_session.add(pdc)
+
+    # Get latest status
+    response = client_auth.get(f"/dynamique/status/{id_pdc_itinerance}/history")
+    assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
 @pytest.mark.parametrize(
@@ -839,6 +967,32 @@ def test_create_status_for_superuser(db_session, client_auth):
     # Check latest status duplicate
     db_latest_status = db_session.exec(select(LatestStatus)).one()
     assert db_latest_status.id_pdc_itinerance == pdc.id_pdc_itinerance
+
+
+def test_create_status_for_inactive_pdc(db_session, client_auth):
+    """Test the /status/ create endpoint (inactive PDC)."""
+    id_pdc_itinerance = "FR911E1111ER1"
+    qc_status = StatusCreateFactory.build(id_pdc_itinerance=id_pdc_itinerance)
+
+    # Create point of charge
+    save_statique(
+        db_session, StatiqueFactory.build(id_pdc_itinerance=id_pdc_itinerance)
+    )
+    pdc = db_session.exec(
+        select(PointDeCharge).where(
+            PointDeCharge.id_pdc_itinerance == id_pdc_itinerance
+        )
+    ).one()
+
+    # Inactivate the PDC
+    pdc.deleted_at = datetime.now(timezone.utc)
+    db_session.add(pdc)
+
+    # Create a new status
+    response = client_auth.post(
+        "/dynamique/status/", json=json.loads(qc_status.model_dump_json())
+    )
+    assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
 def test_create_status_for_superuser_update_latest(db_session, client_auth):
@@ -1136,6 +1290,36 @@ def test_create_status_bulk_for_superuser(db_session, client_auth):
             == qc_status.etat_prise_type_ef
             == db_latest_status.etat_prise_type_ef
         )
+
+
+def test_create_status_bulk_with_inactive_pdc(db_session, client_auth):
+    """Test the /status/bulk create endpoint (inactive PDC)."""
+    qc_statuses = StatusCreateFactory.batch(3)
+
+    # Create points of charge
+    save_statiques(
+        db_session,
+        [
+            StatiqueFactory.build(id_pdc_itinerance=s.id_pdc_itinerance)
+            for s in qc_statuses
+        ],
+    )
+
+    # Inactivate a PDC
+    inactive = db_session.exec(
+        select(PointDeCharge).where(
+            PointDeCharge.id_pdc_itinerance == qc_statuses[1].id_pdc_itinerance
+        )
+    ).one()
+    inactive.deleted_at = datetime.now(timezone.utc)
+    db_session.add(inactive)
+
+    # We expect the same answer as one point of charge does not exist
+    response = client_auth.post(
+        "/dynamique/status/bulk",
+        json=[json.loads(s.model_dump_json()) for s in qc_statuses],
+    )
+    assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
 def test_create_status_bulk_for_superuser_update_latest(db_session, client_auth):
@@ -1482,6 +1666,32 @@ def test_create_session_for_superuser(db_session, client_auth):
     assert response.json() == {"id": str(db_qc_session.id)}
 
 
+def test_create_session_for_inactive_pdc(db_session, client_auth):
+    """Test the /session/ create endpoint (inactive PDC)."""
+    id_pdc_itinerance = "FR911E1111ER1"
+    qc_session = SessionCreateFactory.build(id_pdc_itinerance=id_pdc_itinerance)
+
+    # Create point of charge
+    save_statique(
+        db_session, StatiqueFactory.build(id_pdc_itinerance=id_pdc_itinerance)
+    )
+
+    # Inactivate a PDC
+    inactive = db_session.exec(
+        select(PointDeCharge).where(
+            PointDeCharge.id_pdc_itinerance == id_pdc_itinerance
+        )
+    ).one()
+    inactive.deleted_at = datetime.now(timezone.utc)
+    db_session.add(inactive)
+
+    # Create a new status
+    response = client_auth.post(
+        "/dynamique/session/", json=json.loads(qc_session.model_dump_json())
+    )
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+
+
 def test_create_session_number_of_queries(db_session, client_auth):
     """Test the /session/ create endpoint number of db queries."""
     id_pdc_itinerance = "FR911E1111ER1"
@@ -1672,6 +1882,36 @@ def test_create_session_bulk_for_superuser(db_session, client_auth):
         assert db_qc_session.start == qc_session.start.astimezone()
         assert db_qc_session.end == qc_session.end.astimezone()
         assert db_qc_session.energy == qc_session.energy
+
+
+def test_create_session_bulk_with_inactive_pdc(db_session, client_auth):
+    """Test the /session/bulk create endpoint (inactive PDC)."""
+    qc_sessions = SessionCreateFactory.batch(3)
+
+    # Create points of charge
+    save_statiques(
+        db_session,
+        [
+            StatiqueFactory.build(id_pdc_itinerance=s.id_pdc_itinerance)
+            for s in qc_sessions
+        ],
+    )
+
+    # Inactivate a PDC
+    inactive = db_session.exec(
+        select(PointDeCharge).where(
+            PointDeCharge.id_pdc_itinerance == qc_sessions[1].id_pdc_itinerance
+        )
+    ).one()
+    inactive.deleted_at = datetime.now(timezone.utc)
+    db_session.add(inactive)
+
+    # We expect the same answer as one point of charge does not exist
+    response = client_auth.post(
+        "/dynamique/session/bulk",
+        json=[json.loads(s.model_dump_json()) for s in qc_sessions],
+    )
+    assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
 def test_create_session_bulk_number_of_queries(db_session, client_auth):

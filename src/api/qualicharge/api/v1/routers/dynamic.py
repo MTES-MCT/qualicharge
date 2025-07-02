@@ -6,7 +6,7 @@ from typing import Annotated, List, cast
 from uuid import UUID, uuid4
 
 from annotated_types import Len
-from cachetools import LRUCache, cached
+from cachetools import TTLCache, cached
 from fastapi import (
     APIRouter,
     BackgroundTasks,
@@ -34,7 +34,13 @@ from qualicharge.models.dynamic import (
     StatusCreate,
     StatusRead,
 )
-from qualicharge.schemas.core import LatestStatus, PointDeCharge, Station, Status
+from qualicharge.schemas.core import (
+    ActivePointsDeChargeView,
+    ActiveStationsView,
+    LatestStatus,
+    PointDeCharge,
+    Status,
+)
 from qualicharge.schemas.core import Session as QCSession
 from qualicharge.schemas.utils import are_pdcs_allowed_for_user, is_pdc_allowed_for_user
 
@@ -72,19 +78,19 @@ class DynamiqueItemsCreatedResponse(BaseModel):
 
 
 @cached(
-    LRUCache(
+    TTLCache(
         maxsize=settings.API_GET_PDC_ID_CACHE_MAXSIZE,
+        ttl=settings.API_GET_PDC_ID_CACHE_TTL,
     ),
     lock=Lock(),
     key=lambda id_pdc_itinerance, session: id_pdc_itinerance,
     info=settings.API_GET_PDC_ID_CACHE_INFO,
 )
-def get_pdc_id(id_pdc_itinerance: str, session: Session) -> UUID:
-    """Get PointDeCharge.id from an `id_pdc_itinerance`."""
+def get_pdc_id(id_pdc_itinerance: str, session: Session, active: bool = True) -> UUID:
+    """Get (active) PointDeCharge.id from an `id_pdc_itinerance`."""
+    model = ActivePointsDeChargeView if active else PointDeCharge
     pdc_id = session.exec(
-        select(PointDeCharge.id).where(
-            PointDeCharge.id_pdc_itinerance == id_pdc_itinerance
-        )
+        select(model.id).where(model.id_pdc_itinerance == id_pdc_itinerance)  # type: ignore[union-attr]
     ).one_or_none()
 
     if pdc_id is not None:
@@ -135,16 +141,20 @@ async def list_statuses(
     if station:
         pdc_ids_filter = set(
             session.exec(
-                select(PointDeCharge.id_pdc_itinerance)
+                select(ActivePointsDeChargeView.id_pdc_itinerance)  # type: ignore[attr-defined]
                 .select_from(
                     join(
-                        PointDeCharge,
-                        Station,
-                        cast(SAColumn, PointDeCharge.station_id)
-                        == cast(SAColumn, Station.id),
+                        ActivePointsDeChargeView,
+                        ActiveStationsView,
+                        cast(SAColumn, ActivePointsDeChargeView.station_id)  # type: ignore[attr-defined]
+                        == cast(SAColumn, ActiveStationsView.id),  # type: ignore[attr-defined]
                     )
                 )
-                .filter(cast(SAColumn, Station.id_station_itinerance).in_(station))
+                .filter(
+                    cast(SAColumn, ActiveStationsView.id_station_itinerance).in_(  # type: ignore[attr-defined]
+                        station
+                    )
+                )
             ).all()
         )
 
@@ -167,12 +177,17 @@ async def list_statuses(
         db_statuses_stmt = (
             db_statuses_stmt.join_from(
                 LatestStatus,
-                PointDeCharge,
-                LatestStatus.id_pdc_itinerance == PointDeCharge.id_pdc_itinerance,  # type: ignore[arg-type]
+                ActivePointsDeChargeView,
+                LatestStatus.id_pdc_itinerance
+                == ActivePointsDeChargeView.id_pdc_itinerance,  # type: ignore[attr-defined]
             )
-            .join_from(PointDeCharge, Station, PointDeCharge.station_id == Station.id)  # type: ignore[arg-type]
+            .join_from(
+                ActivePointsDeChargeView,
+                ActiveStationsView,
+                ActivePointsDeChargeView.station_id == ActiveStationsView.id,  # type: ignore[attr-defined]
+            )  # type: ignore[arg-type]
             .filter(
-                cast(SAColumn, Station.operational_unit_id).in_(
+                cast(SAColumn, ActiveStationsView.operational_unit_id).in_(  # type: ignore[attr-defined]
                     ou.id for ou in user.operational_units
                 )
             )
@@ -401,8 +416,13 @@ async def create_status_bulk(
     # for existing PDCs
     db_pdcs = dict(
         session.exec(
-            select(PointDeCharge.id_pdc_itinerance, PointDeCharge.id).filter(
-                cast(SAColumn, PointDeCharge.id_pdc_itinerance).in_(ids_pdc_itinerance)
+            select(
+                ActivePointsDeChargeView.id_pdc_itinerance,  # type: ignore[attr-defined]
+                ActivePointsDeChargeView.id,  # type: ignore[attr-defined]
+            ).filter(
+                cast(SAColumn, ActivePointsDeChargeView.id_pdc_itinerance).in_(  # type: ignore[attr-defined]
+                    ids_pdc_itinerance
+                )
             )
         ).all()
     )
@@ -514,8 +534,13 @@ async def create_session_bulk(
     # for existing PDCs
     db_pdcs = dict(
         db_session.exec(
-            select(PointDeCharge.id_pdc_itinerance, PointDeCharge.id).filter(
-                cast(SAColumn, PointDeCharge.id_pdc_itinerance).in_(ids_pdc_itinerance)
+            select(
+                ActivePointsDeChargeView.id_pdc_itinerance,  # type: ignore[attr-defined]
+                ActivePointsDeChargeView.id,  # type: ignore[attr-defined]
+            ).filter(
+                cast(SAColumn, ActivePointsDeChargeView.id_pdc_itinerance).in_(  # type: ignore[attr-defined]
+                    ids_pdc_itinerance
+                )
             )
         ).all()
     )

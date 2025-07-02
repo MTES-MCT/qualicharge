@@ -76,8 +76,15 @@ class StatiqueImporter:
 
     @staticmethod
     def _schema_fk(schema: type[BaseAuditableSQLModel]) -> str:
-        """Get expected schema foreign key name."""
-        return f"{schema.__table__.name}_id"  # type: ignore[attr-defined]
+        """Get expected schema foreign key name.
+
+        In case of private table names, leading underscores are removed (e.g. `_Station`
+        becomes Station). We renamed `Station` and `PointDeCharge` tables to private
+        ones (e.g. `_Station` and `_PointDeCharge`), and created views with original
+        table names for compatibility purpose, but the original foreign key names
+        remained identical.
+        """
+        return f"{schema.__table__.name.lstrip('_')}_id"  # type: ignore[attr-defined]
 
     @staticmethod
     def _get_schema_fks(schema: type[BaseAuditableSQLModel]) -> list[str]:
@@ -95,7 +102,7 @@ class StatiqueImporter:
             set(Statique.model_fields.keys()) & set(schema.model_fields.keys())
         )
         # Auditable model fks should be ignored
-        ignored_fks = {"created_by_id", "updated_by_id"}
+        ignored_fks = {"created_by_id", "updated_by_id", "deleted_by_id"}
         if with_fk:
             fields += list(set(self._get_schema_fks(schema)) - ignored_fks)
         return fields

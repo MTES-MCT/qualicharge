@@ -26,7 +26,7 @@ from sqlalchemy.orm import registry
 from sqlalchemy.schema import Column as SAColumn
 from sqlalchemy.schema import Index
 from sqlalchemy.types import Date, DateTime, String
-from sqlalchemy_utils import create_materialized_view
+from sqlalchemy_utils import create_materialized_view, create_view
 from sqlmodel import Field, Relationship, SQLModel, UniqueConstraint, select
 from sqlmodel import Session as SMSession
 from sqlmodel.main import SQLModelConfig
@@ -51,7 +51,7 @@ from ..models.static import (
     RaccordementEnum,
     Statique,
 )
-from . import BaseAuditableSQLModel, BaseTimestampedSQLModel
+from . import BaseAuditableSQLModel, BaseTimestampedSQLModel, SoftDeleteMixin
 
 if TYPE_CHECKING:
     from qualicharge.auth.schemas import Group
@@ -288,6 +288,7 @@ class OperationalUnit(BaseTimestampedSQLModel, table=True):
         """Create linked stations foreign keys."""
         stations = session.exec(
             select(Station).where(
+                # FIXME: use SQL 'like' operator
                 cast(SAColumn, Station.id_station_itinerance).regexp_match(
                     f"^{self.code}P.*$"
                 )
@@ -304,8 +305,10 @@ class OperationalUnit(BaseTimestampedSQLModel, table=True):
         session.commit()
 
 
-class Station(BaseAuditableSQLModel, table=True):
-    """Station table."""
+class Station(SoftDeleteMixin, BaseAuditableSQLModel, table=True):
+    """Station model."""
+
+    __tablename__ = "_station"
 
     model_config = SQLModelConfig(validate_assignment=True)
 
@@ -340,34 +343,35 @@ class Station(BaseAuditableSQLModel, table=True):
         ondelete="SET NULL",
         index=True,
     )
-    amenageur: Amenageur = Relationship(back_populates="stations")
 
     operateur_id: Optional[UUID] = Field(
         default=None, foreign_key="operateur.id", ondelete="SET NULL", index=True
     )
-    operateur: Operateur = Relationship(back_populates="stations")
 
     enseigne_id: Optional[UUID] = Field(
         default=None,
         foreign_key="enseigne.id",
         ondelete="SET NULL",
     )
-    enseigne: Enseigne = Relationship(back_populates="stations")
 
     localisation_id: Optional[UUID] = Field(
         default=None,
         foreign_key="localisation.id",
         ondelete="SET NULL",
     )
-    localisation: Localisation = Relationship(back_populates="stations")
 
     operational_unit_id: Optional[UUID] = Field(
         default=None,
         foreign_key="operationalunit.id",
         ondelete="SET NULL",
     )
-    operational_unit: OperationalUnit = Relationship(back_populates="stations")
 
+    # Relationships
+    amenageur: Amenageur = Relationship(back_populates="stations")
+    operateur: Operateur = Relationship(back_populates="stations")
+    enseigne: Enseigne = Relationship(back_populates="stations")
+    localisation: Localisation = Relationship(back_populates="stations")
+    operational_unit: OperationalUnit = Relationship(back_populates="stations")
     points_de_charge: List["PointDeCharge"] = Relationship(back_populates="station")
 
     def __eq__(self, other) -> bool:
@@ -395,8 +399,48 @@ def link_station_to_operational_unit(mapper, connection, target):
     target.operational_unit_id = operational_unit.id
 
 
-class PointDeCharge(BaseAuditableSQLModel, table=True):
-    """PointDeCharge table."""
+class ActiveStationsView(SQLModel, table=True):
+    """Active stations view.
+
+    NOTE: This is an internal model used **ONLY** for creating the view.
+    """
+
+    selectable: ClassVar[Select] = select(  # type: ignore[call-overload, misc]
+        Station.id,
+        Station.id_station_itinerance,
+        Station.id_station_local,
+        Station.nom_station,
+        Station.implantation_station,
+        Station.nbre_pdc,
+        Station.condition_acces,
+        Station.horaires,
+        Station.station_deux_roues,
+        Station.raccordement,
+        Station.num_pdl,
+        Station.date_maj,
+        Station.date_mise_en_service,
+        Station.amenageur_id,
+        Station.operateur_id,
+        Station.enseigne_id,
+        Station.localisation_id,
+        Station.operational_unit_id,
+        Station.created_at,
+        Station.updated_at,
+        Station.created_by_id,
+        Station.updated_by_id,
+    ).where(cast(SAColumn, Station.deleted_at).is_(None))
+
+    __table__ = create_view(
+        name="Station",
+        selectable=selectable,
+        metadata=SQLModel.metadata,
+    )
+
+
+class PointDeCharge(SoftDeleteMixin, BaseAuditableSQLModel, table=True):
+    """Original PointDeCharge table."""
+
+    __tablename__ = "_pointdecharge"
 
     model_config = SQLModelConfig(validate_assignment=True)
 
@@ -437,11 +481,51 @@ class PointDeCharge(BaseAuditableSQLModel, table=True):
 
     # Relationships
     station_id: Optional[UUID] = Field(
-        default=None, foreign_key="station.id", index=True
+        default=None, foreign_key="_station.id", index=True
     )
     station: Station = Relationship(back_populates="points_de_charge")
     sessions: List["Session"] = Relationship(back_populates="point_de_charge")
     statuses: List["Status"] = Relationship(back_populates="point_de_charge")
+
+
+class ActivePointsDeChargeView(SQLModel, table=True):
+    """Active charge points view.
+
+    NOTE: This is an internal model used **ONLY** for creating the view.
+    """
+
+    selectable: ClassVar[Select] = select(  # type: ignore[call-overload, misc]
+        PointDeCharge.id,
+        PointDeCharge.id_pdc_itinerance,
+        PointDeCharge.id_pdc_local,
+        PointDeCharge.puissance_nominale,
+        PointDeCharge.prise_type_ef,
+        PointDeCharge.prise_type_2,
+        PointDeCharge.prise_type_combo_ccs,
+        PointDeCharge.prise_type_chademo,
+        PointDeCharge.prise_type_autre,
+        PointDeCharge.gratuit,
+        PointDeCharge.paiement_acte,
+        PointDeCharge.paiement_cb,
+        PointDeCharge.paiement_autre,
+        PointDeCharge.tarification,
+        PointDeCharge.reservation,
+        PointDeCharge.accessibilite_pmr,
+        PointDeCharge.restriction_gabarit,
+        PointDeCharge.observations,
+        PointDeCharge.cable_t2_attache,
+        PointDeCharge.station_id,
+        PointDeCharge.created_at,
+        PointDeCharge.updated_at,
+        PointDeCharge.created_by_id,
+        PointDeCharge.updated_by_id,
+    ).where(cast(SAColumn, PointDeCharge.deleted_at).is_(None))
+
+    __table__ = create_view(
+        name="PointDeCharge",
+        selectable=selectable,
+        metadata=SQLModel.metadata,
+    )
 
 
 class Session(BaseAuditableSQLModel, SessionBase, table=True):
@@ -465,7 +549,7 @@ class Session(BaseAuditableSQLModel, SessionBase, table=True):
 
     # Relationships
     point_de_charge_id: Optional[UUID] = Field(
-        default=None, foreign_key="pointdecharge.id"
+        default=None, foreign_key="_pointdecharge.id"
     )
     point_de_charge: PointDeCharge = Relationship(back_populates="sessions")
 
@@ -504,7 +588,7 @@ class Status(BaseTimestampedSQLModel, StatusBase, table=True):
 
     # Relationships
     point_de_charge_id: Optional[UUID] = Field(
-        default=None, foreign_key="pointdecharge.id"
+        default=None, foreign_key="_pointdecharge.id"
     )
     point_de_charge: PointDeCharge = Relationship(back_populates="statuses")
 
@@ -628,6 +712,10 @@ class _StatiqueMV(SQLModel):
         .join(Operateur)
         .join(Enseigne)
         .join(Localisation)
+        .where(
+            cast(SAColumn, PointDeCharge.deleted_at).is_(None),
+            cast(SAColumn, Station.deleted_at).is_(None),
+        )
     )
 
     __table__ = create_materialized_view(
