@@ -51,7 +51,7 @@ from ..models.static import (
     RaccordementEnum,
     Statique,
 )
-from . import BaseAuditableSQLModel, BaseTimestampedSQLModel
+from . import BaseAuditableSQLModel, BaseTimestampedSQLModel, SoftDeleteMixin
 
 if TYPE_CHECKING:
     from qualicharge.auth.schemas import Group
@@ -304,7 +304,7 @@ class OperationalUnit(BaseTimestampedSQLModel, table=True):
         session.commit()
 
 
-class Station(BaseAuditableSQLModel, table=True):
+class Station(SoftDeleteMixin, BaseAuditableSQLModel, table=True):
     """Station table."""
 
     model_config = SQLModelConfig(validate_assignment=True)
@@ -395,7 +395,7 @@ def link_station_to_operational_unit(mapper, connection, target):
     target.operational_unit_id = operational_unit.id
 
 
-class PointDeCharge(BaseAuditableSQLModel, table=True):
+class PointDeCharge(SoftDeleteMixin, BaseAuditableSQLModel, table=True):
     """PointDeCharge table."""
 
     model_config = SQLModelConfig(validate_assignment=True)
