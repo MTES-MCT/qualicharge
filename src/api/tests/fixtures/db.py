@@ -52,8 +52,8 @@ def db_engine(versioning_manager):
             core.Operateur,
             core.Enseigne,
             core.Localisation,
-            core.Station,
-            core.PointDeCharge,
+            core._Station,
+            core._PointDeCharge,
             core.Session,
         ]
         for cls in versioned_model_classes:

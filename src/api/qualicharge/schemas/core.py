@@ -26,7 +26,7 @@ from sqlalchemy.orm import registry
 from sqlalchemy.schema import Column as SAColumn
 from sqlalchemy.schema import Index
 from sqlalchemy.types import Date, DateTime, String
-from sqlalchemy_utils import create_materialized_view
+from sqlalchemy_utils import create_materialized_view, create_view
 from sqlmodel import Field, Relationship, SQLModel, UniqueConstraint, select
 from sqlmodel import Session as SMSession
 from sqlmodel.main import SQLModelConfig
@@ -135,7 +135,7 @@ class Amenageur(BaseAuditableSQLModel, table=True):
     contact_amenageur: Optional[EmailStr] = Field(sa_type=String)
 
     # Relationships
-    stations: List["Station"] = Relationship(back_populates="amenageur")
+    stations: List["_Station"] = Relationship(back_populates="amenageur")
 
     def __eq__(self, other) -> bool:
         """Assess instances equality given uniqueness criterions."""
@@ -162,7 +162,7 @@ class Operateur(BaseAuditableSQLModel, table=True):
     telephone_operateur: Optional[FrenchPhoneNumber]
 
     # Relationships
-    stations: List["Station"] = Relationship(back_populates="operateur")
+    stations: List["_Station"] = Relationship(back_populates="operateur")
 
     def __eq__(self, other) -> bool:
         """Assess instances equality given uniqueness criterions."""
@@ -183,7 +183,7 @@ class Enseigne(BaseAuditableSQLModel, table=True):
     nom_enseigne: str = Field(unique=True)
 
     # Relationships
-    stations: List["Station"] = Relationship(back_populates="enseigne")
+    stations: List["_Station"] = Relationship(back_populates="enseigne")
 
     def __eq__(self, other) -> bool:
         """Assess instances equality given uniqueness criterions."""
@@ -216,7 +216,7 @@ class Localisation(BaseAuditableSQLModel, table=True):
     )  # type: ignore
 
     # Relationships
-    stations: List["Station"] = Relationship(back_populates="localisation")
+    stations: List["_Station"] = Relationship(back_populates="localisation")
 
     def __eq__(self, other) -> bool:
         """Assess instances equality given uniqueness criterions."""
@@ -278,7 +278,7 @@ class OperationalUnit(BaseTimestampedSQLModel, table=True):
     type: OperationalUnitTypeEnum
 
     # Relationships
-    stations: List["Station"] = Relationship(back_populates="operational_unit")
+    stations: List["_Station"] = Relationship(back_populates="operational_unit")
     groups: List["Group"] = Relationship(
         back_populates="operational_units",
         sa_relationship_kwargs={"secondary": "groupoperationalunit"},
@@ -287,8 +287,8 @@ class OperationalUnit(BaseTimestampedSQLModel, table=True):
     def create_stations_fk(self, session: SMSession):
         """Create linked stations foreign keys."""
         stations = session.exec(
-            select(Station).where(
-                cast(SAColumn, Station.id_station_itinerance).regexp_match(
+            select(_Station).where(
+                cast(SAColumn, _Station.id_station_itinerance).regexp_match(
                     f"^{self.code}P.*$"
                 )
             )
@@ -304,8 +304,8 @@ class OperationalUnit(BaseTimestampedSQLModel, table=True):
         session.commit()
 
 
-class Station(SoftDeleteMixin, BaseAuditableSQLModel, table=True):
-    """Station table."""
+class BaseStation(SQLModel):
+    """Base Station model."""
 
     model_config = SQLModelConfig(validate_assignment=True)
 
@@ -340,35 +340,28 @@ class Station(SoftDeleteMixin, BaseAuditableSQLModel, table=True):
         ondelete="SET NULL",
         index=True,
     )
-    amenageur: Amenageur = Relationship(back_populates="stations")
 
     operateur_id: Optional[UUID] = Field(
         default=None, foreign_key="operateur.id", ondelete="SET NULL", index=True
     )
-    operateur: Operateur = Relationship(back_populates="stations")
 
     enseigne_id: Optional[UUID] = Field(
         default=None,
         foreign_key="enseigne.id",
         ondelete="SET NULL",
     )
-    enseigne: Enseigne = Relationship(back_populates="stations")
 
     localisation_id: Optional[UUID] = Field(
         default=None,
         foreign_key="localisation.id",
         ondelete="SET NULL",
     )
-    localisation: Localisation = Relationship(back_populates="stations")
 
     operational_unit_id: Optional[UUID] = Field(
         default=None,
         foreign_key="operationalunit.id",
         ondelete="SET NULL",
     )
-    operational_unit: OperationalUnit = Relationship(back_populates="stations")
-
-    points_de_charge: List["PointDeCharge"] = Relationship(back_populates="station")
 
     def __eq__(self, other) -> bool:
         """Assess instances equality given uniqueness criterions."""
@@ -380,8 +373,20 @@ class Station(SoftDeleteMixin, BaseAuditableSQLModel, table=True):
         return hash(self.id)
 
 
-@event.listens_for(Station, "before_insert")
-@event.listens_for(Station, "before_update")
+class _Station(BaseStation, SoftDeleteMixin, BaseAuditableSQLModel, table=True):
+    """Original Station table."""
+
+    # Relationships
+    amenageur: Amenageur = Relationship(back_populates="stations")
+    operateur: Operateur = Relationship(back_populates="stations")
+    enseigne: Enseigne = Relationship(back_populates="stations")
+    localisation: Localisation = Relationship(back_populates="stations")
+    operational_unit: OperationalUnit = Relationship(back_populates="stations")
+    points_de_charge: List["_PointDeCharge"] = Relationship(back_populates="station")
+
+
+@event.listens_for(_Station, "before_insert")
+@event.listens_for(_Station, "before_update")
 def link_station_to_operational_unit(mapper, connection, target):
     """Automatically link station to an operational unit."""
     code = target.id_station_itinerance[:5]
@@ -395,8 +400,52 @@ def link_station_to_operational_unit(mapper, connection, target):
     target.operational_unit_id = operational_unit.id
 
 
-class PointDeCharge(SoftDeleteMixin, BaseAuditableSQLModel, table=True):
-    """PointDeCharge table."""
+class Station(BaseStation):
+    """Station view."""
+
+    __tablename__ = "Station"
+
+
+class _StationView(SQLModel):
+    """Station view.
+
+    NOTE: This is an internal model used **ONLY** for creating the view.
+    """
+
+    selectable: ClassVar[Select] = select(  # type: ignore[call-overload, misc]
+        _Station.id,
+        _Station.id_station_itinerance,
+        _Station.id_station_local,
+        _Station.nom_station,
+        _Station.implantation_station,
+        _Station.nbre_pdc,
+        _Station.condition_acces,
+        _Station.horaires,
+        _Station.station_deux_roues,
+        _Station.raccordement,
+        _Station.num_pdl,
+        _Station.date_maj,
+        _Station.date_mise_en_service,
+        _Station.amenageur_id,
+        _Station.operateur_id,
+        _Station.enseigne_id,
+        _Station.localisation_id,
+        _Station.operational_unit_id,
+        _Station.created_at,
+        _Station.updated_at,
+        _Station.created_by_id,
+        _Station.updated_by_id,
+    ).where(cast(SAColumn, _Station.deleted_at).is_(None))
+
+    __table__ = create_view(
+        name="Station",
+        selectable=selectable,
+        metadata=SQLModel.metadata,
+    )
+
+
+class BasePointDeCharge(SQLModel):
+    """Base PointDeCharge model."""
 
     model_config = SQLModelConfig(validate_assignment=True)
 
@@ -437,11 +486,64 @@ class PointDeCharge(SoftDeleteMixin, BaseAuditableSQLModel, table=True):
 
     # Relationships
     station_id: Optional[UUID] = Field(
-        default=None, foreign_key="station.id", index=True
+        default=None, foreign_key="_station.id", index=True
     )
-    station: Station = Relationship(back_populates="points_de_charge")
+
+
+class _PointDeCharge(
+    BasePointDeCharge, SoftDeleteMixin, BaseAuditableSQLModel, table=True
+):
+    """Original PointDeCharge table."""
+
+    # Relationships
+    station: _Station = Relationship(back_populates="points_de_charge")
     sessions: List["Session"] = Relationship(back_populates="point_de_charge")
     statuses: List["Status"] = Relationship(back_populates="point_de_charge")
+
+
+class PointDeCharge(BasePointDeCharge):
+    """PointDeCharge view."""
+
+    __tablename__ = "PointDeCharge"
+
+
+class _PointDeChargeView(SQLModel):
+    """PointDeCharge view.
+
+    NOTE: This is an internal model used **ONLY** for creating the view.
+    """
+
+    selectable: ClassVar[Select] = select(  # type: ignore[call-overload, misc]
+        _PointDeCharge.id,
+        _PointDeCharge.id_pdc_itinerance,
+        _PointDeCharge.id_pdc_local,
+        _PointDeCharge.puissance_nominale,
+        _PointDeCharge.prise_type_ef,
+        _PointDeCharge.prise_type_2,
+        _PointDeCharge.prise_type_combo_ccs,
+        _PointDeCharge.prise_type_chademo,
+        _PointDeCharge.prise_type_autre,
+        _PointDeCharge.gratuit,
+        _PointDeCharge.paiement_acte,
+        _PointDeCharge.paiement_cb,
+        _PointDeCharge.paiement_autre,
+        _PointDeCharge.tarification,
+        _PointDeCharge.reservation,
+        _PointDeCharge.accessibilite_pmr,
+        _PointDeCharge.restriction_gabarit,
+        _PointDeCharge.observations,
+        _PointDeCharge.cable_t2_attache,
+        _PointDeCharge.created_at,
+        _PointDeCharge.updated_at,
+        _PointDeCharge.created_by_id,
+        _PointDeCharge.updated_by_id,
+    ).where(cast(SAColumn, _PointDeCharge.deleted_at).is_(None))
+
+    __table__ = create_view(
+        name="PointDeCharge",
+        selectable=selectable,
+        metadata=SQLModel.metadata,
+    )
 
 
 class Session(BaseAuditableSQLModel, SessionBase, table=True):
@@ -465,9 +567,9 @@ class Session(BaseAuditableSQLModel, SessionBase, table=True):
 
     # Relationships
     point_de_charge_id: Optional[UUID] = Field(
-        default=None, foreign_key="pointdecharge.id"
+        default=None, foreign_key="_pointdecharge.id"
     )
-    point_de_charge: PointDeCharge = Relationship(back_populates="sessions")
+    point_de_charge: _PointDeCharge = Relationship(back_populates="sessions")
 
 
 class Status(BaseTimestampedSQLModel, StatusBase, table=True):
@@ -504,9 +606,9 @@ class Status(BaseTimestampedSQLModel, StatusBase, table=True):
 
     # Relationships
     point_de_charge_id: Optional[UUID] = Field(
-        default=None, foreign_key="pointdecharge.id"
+        default=None, foreign_key="_pointdecharge.id"
     )
-    point_de_charge: PointDeCharge = Relationship(back_populates="statuses")
+    point_de_charge: _PointDeCharge = Relationship(back_populates="statuses")
 
     @computed_field  # type: ignore[misc]
     @property
@@ -571,8 +673,8 @@ class _StatiqueMV(SQLModel):
 
     selectable: ClassVar[Select] = (
         select(  # type: ignore[call-overload, misc]
-            cast(SAColumn, PointDeCharge.id).label("pdc_id"),
-            cast(SAColumn, PointDeCharge.updated_at).label("pdc_updated_at"),
+            cast(SAColumn, _PointDeCharge.id).label("pdc_id"),
+            cast(SAColumn, _PointDeCharge.updated_at).label("pdc_updated_at"),
             Amenageur.nom_amenageur,
             Amenageur.siren_amenageur,
             Amenageur.contact_amenageur,
@@ -580,10 +682,10 @@ class _StatiqueMV(SQLModel):
             Operateur.contact_operateur,
             Operateur.telephone_operateur,
             Enseigne.nom_enseigne,
-            Station.id_station_itinerance,
-            Station.id_station_local,
-            Station.nom_station,
-            Station.implantation_station,
+            _Station.id_station_itinerance,
+            _Station.id_station_local,
+            _Station.nom_station,
+            _Station.implantation_station,
             Localisation.adresse_station,
             Localisation.code_insee_commune,
             SA_cast(
@@ -595,35 +697,35 @@ class _StatiqueMV(SQLModel):
                     spatial_index=False,
                 ),
             ).label("coordonneesXY"),
-            Station.nbre_pdc,
-            PointDeCharge.id_pdc_itinerance,
-            PointDeCharge.id_pdc_local,
-            PointDeCharge.puissance_nominale,
-            PointDeCharge.prise_type_ef,
-            PointDeCharge.prise_type_2,
-            PointDeCharge.prise_type_combo_ccs,
-            PointDeCharge.prise_type_chademo,
-            PointDeCharge.prise_type_autre,
-            PointDeCharge.gratuit,
-            PointDeCharge.paiement_acte,
-            PointDeCharge.paiement_cb,
-            PointDeCharge.paiement_autre,
-            PointDeCharge.tarification,
-            Station.condition_acces,
-            PointDeCharge.reservation,
-            Station.horaires,
-            PointDeCharge.accessibilite_pmr,
-            PointDeCharge.restriction_gabarit,
-            Station.station_deux_roues,
-            Station.raccordement,
-            Station.num_pdl,
-            Station.date_mise_en_service,
-            PointDeCharge.observations,
-            Station.date_maj,
-            PointDeCharge.cable_t2_attache,
+            _Station.nbre_pdc,
+            _PointDeCharge.id_pdc_itinerance,
+            _PointDeCharge.id_pdc_local,
+            _PointDeCharge.puissance_nominale,
+            _PointDeCharge.prise_type_ef,
+            _PointDeCharge.prise_type_2,
+            _PointDeCharge.prise_type_combo_ccs,
+            _PointDeCharge.prise_type_chademo,
+            _PointDeCharge.prise_type_autre,
+            _PointDeCharge.gratuit,
+            _PointDeCharge.paiement_acte,
+            _PointDeCharge.paiement_cb,
+            _PointDeCharge.paiement_autre,
+            _PointDeCharge.tarification,
+            _Station.condition_acces,
+            _PointDeCharge.reservation,
+            _Station.horaires,
+            _PointDeCharge.accessibilite_pmr,
+            _PointDeCharge.restriction_gabarit,
+            _Station.station_deux_roues,
+            _Station.raccordement,
+            _Station.num_pdl,
+            _Station.date_mise_en_service,
+            _PointDeCharge.observations,
+            _Station.date_maj,
+            _PointDeCharge.cable_t2_attache,
         )
-        .select_from(PointDeCharge)
-        .join(Station)
+        .select_from(_PointDeCharge)
+        .join(_Station)
         .join(Amenageur)
         .join(Operateur)
         .join(Enseigne)
@@ -644,4 +746,6 @@ class _StatiqueMV(SQLModel):
     )
 
 
+mapper_registry.map_imperatively(PointDeCharge, _PointDeChargeView.__table__)
+mapper_registry.map_imperatively(Station, _StationView.__table__)
 mapper_registry.map_imperatively(StatiqueMV, _StatiqueMV.__table__)
