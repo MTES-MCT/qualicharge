@@ -68,31 +68,34 @@ La notion de parc de recharge est utilisée dans Qualicharge pour l'évaluation 
 L'intégration d'une station de recharge dans son environnement est représentée par deux notions complémentaires :
 
 - **localisation** : localisation géographique et administative d'une station
-- **point de livraison** : référence géographique ou se situe le point de connexion (organe de coupure avec les ouvrages électriques du réseau public)
+- **point de raccordement** : référence géographique ou se situe le point de connexion (organe de coupure avec les ouvrages électriques du réseau)
 
 Ces deux notions sont associées à la station :
 
-- une station est associée à une seule localisation physique et à un seul raccordement au réseau électrique public.
+- une station est associée à une seule localisation physique et à un seul raccordement au réseau électrique.
 
 Le modèle associé est le suivant :
 
 ```mermaid
 erDiagram
-    "POINT DE LIVRAISON" ||..|{ "STATION DE RECHARGE" : "raccorde électriquement"
+    "POINT DE RACCORDEMENT" ||..|{ "STATION DE RECHARGE" : "raccorde électriquement"
     LOCALISATION ||--|{ "STATION DE RECHARGE": "localise"
 ```
+
 Ce modèle prend en compte plusieurs configurations possibles :
 
-- plusieurs stations avec un même point de livraison et une même localisation (ex. une station par niveau d'un parking sur plusieurs niveaux),
-- plusieurs stations avec un même point de livraison et des localisations différentes (ex. stations d'un même site),
-- plusieurs stations avec des points de livraison différents et une même localisation (ex. augmentation de capacité par ajout d'une station et d'un point de livraison)
+- plusieurs stations avec un même point de raccordement et une même localisation (ex. une station par niveau d'un parking sur plusieurs niveaux),
+- plusieurs stations avec un même point de raccordement et des localisations différentes (ex. stations d'un même site),
+- plusieurs stations avec des points de raccordement différents et une même localisation (ex. augmentation de capacité par ajout d'une station et d'un point de raccordement)
   
 Il est à noter que ces deux notions sont associées à la station de recharge et non au point de recharge.
-Ceci implique que deux points de recharge d'une même station ne peuvent avoir des localisations différentes ni être raccordés à des points de livraison différents.
+Ceci implique que deux points de recharge d'une même station ne peuvent avoir des localisations différentes ni être raccordés à des points de raccordement différents.
+
+> :bulb: Deux modes de raccordement électrique sont possibles : un raccordement direct à un point de livraison du réseau électrique public ou bien un raccordement indirect dans le cas d'une intégration à un sous-réseau privé.
 
 ### Structure de gestion
 
-La gestion des stations de recharge est effectuée par deux types d'entités :
+La gestion des stations de recharge est effectuée par deux catégories principales d'acteurs :
 
 - **aménageur** : entité publique ou privée propriétaire des infrastructures (définition du schéma de données),
 - **opérateur** : personne qui exploite l'infrastructure de recharge pour le compte d'un aménageur dans le cadre d'un contrat ou pour son propre compte s'il est l'aménageur (définition du schéma de données).
@@ -119,6 +122,7 @@ erDiagram
 Une station de recharge est associée à un seul opérateur (au travers de son unité d'exploitation), un seul aménageur et une seule enseigne. De même, une unité d'exploitation regroupe un ou plusieurs aménageurs. Elle est supervisée par un seul opérateur.
 
 Plusieurs organisations sont possibles :
+
 - l'aménageur est son propre opérateur. Dans ce cas une seule unité d'exploitation lui est rattachée,
 - l'aménageur dispose d'un réseau de station et gère ce réseau au travers d'une unité d'exploitation dédiée,
 - un groupement d'aménageurs gère son réseau de station au travers d'une unité d'exploitation dédiée comprenant les aménageurs de ce groupement
@@ -157,7 +161,7 @@ erDiagram
     ENSEIGNE ||--|{ "STATION DE RECHARGE": "héberge"
     OPERATEUR ||--|{ "UNITE D'EXPLOITATION": "exploite"
     "UNITE D'EXPLOITATION" ||--|{ "STATION DE RECHARGE": "contient"    
-    "POINT DE LIVRAISON" ||--|{ "STATION DE RECHARGE" : "raccorde électriquement"
+    "POINT DE RACCORDEMENT" ||--|{ "STATION DE RECHARGE" : "raccorde électriquement"
     LOCALISATION ||--|{ "STATION DE RECHARGE": "localise"
     "STATION DE RECHARGE" ||--|{ "POINT DE RECHARGE" : regroupe
     "POINT DE RECHARGE" ||--|{ "STATUS" : "est suivi par"
@@ -243,19 +247,19 @@ Ces attributs ne sont pas définis dans le [Schéma de données IRVE](https://sc
 
 > :bulb: Le code de l'`unité d'exploitation` est indiqué explicitement dans les identifiants des `stations de recharge` et des `points de recharge` après les deux premiers caractères "FR" (codification AFIREV).
 
-### Point de livraison
+### Point de raccordement
 
 ```mermaid
 erDiagram
-"POINT DE LIVRAISON" {
-  string num_pdl "I"
-  enum    raccordement
+"POINT DE RACCORDEMENT" {
+  enum    raccordement "M"
+  string num_pdl
   }
 ```
 
-L'entité `point de livraison` est identifié par un code (attribut num_pdl).
+L'entité `point de raccordement` est identifiée par un code unique (attribut `num_pdl`) lorsque l'attribut `raccordement` a la valeur "Direct".
 
-> :bulb: L'attribut `num_pdl` est obligatoire pour Qualicharge contrairement au schéma de données IRVE
+> :bulb: L'attribut `raccordement` est obligatoire pour Qualicharge contrairement au schéma de données IRVE
 
 ### Localisation
 
@@ -293,7 +297,12 @@ erDiagram
 L'identifiant d'une `station de recharge` suit une codification spécifique ([code AFIREV](https://afirev.fr/fr/informations-generales/)).
 
 > :bulb: L'attribut `type_courant` n'est pas présent dans le schéma de données IRVE. Il est calculé à partir du `type_courant` de chaque `point de recharge` (la valeur sera 'DC' si un des `points de charge` est de type 'DC')
->  L'attribut `puissance_maxi` correspond à la puissance maximale qui peut être délivrée à un instant donné (non présent dans le schéma de données IRVE). Il est actuellement calculé à partir de la `puissance_nominale` de chaque `point de charge` (somme). Dans une version ultérieure, il devra être documenté à partir de la capacité installée.
+> L'attribut `puissance_maxi` correspond à la puissance maximale qui peut être délivrée à un instant donné (non présent dans le schéma de données IRVE). Il est actuellement calculé à partir de la `puissance_nominale` de chaque `point de charge` (somme). Dans une version ultérieure, il devra être documenté à partir de la capacité installée.
+> L'attribut `nbre_pdc` représente le nombre de points de recharge de la station. Il ne peut être supérieur :
+>
+>- au nombre d'entités `point de recharge` associées à l'entité `station`,
+>- au nombre maximum de sessions simultanées sur les points de recharge de la station,
+>- au nombre de places physiques de véhicules définies pour la station
 
 ### Point de recharge
 
@@ -390,7 +399,7 @@ erDiagram
   string code "I"
   string name "M"
   }
-  "POINT DE LIVRAISON" {
+  "POINT DE RACCORDEMENT" {
   string num_pdl "I"
   enum    raccordement
   }
@@ -449,7 +458,7 @@ erDiagram
   ENSEIGNE ||--|{ "STATION DE RECHARGE": "héberge"
   OPERATEUR ||--|{ "UNITE D'EXPLOITATION": "exploite"
   "UNITE D'EXPLOITATION" ||--|{ "STATION DE RECHARGE": "contient"    
-  "POINT DE LIVRAISON" ||--|{ "STATION DE RECHARGE" : "raccorde électriquement"
+  "POINT DE RACCORDEMENT" ||--|{ "STATION DE RECHARGE" : "raccorde électriquement"
   LOCALISATION ||--|{ "STATION DE RECHARGE": "localise"
   "STATION DE RECHARGE" ||--|{ "POINT DE RECHARGE" : regroupe
   "POINT DE RECHARGE" ||--|{ "STATUS" : "est suivi par"
