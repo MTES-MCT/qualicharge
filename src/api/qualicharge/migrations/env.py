@@ -23,9 +23,11 @@ from qualicharge.schemas.core import (  # noqa: F401
     Localisation,
     Operateur,
     OperationalUnit,
-    _PointDeCharge,
+    # _PointDeCharge,
+    PointDeCharge,
     Session,
-    _Station,
+    # _Station,
+    Station,
     Status,
 )
 from qualicharge.schemas.geo import Region, Department, EPCI, City  # noqa: F401
