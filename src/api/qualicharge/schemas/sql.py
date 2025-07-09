@@ -28,7 +28,9 @@ from .core import (
     Enseigne,
     Localisation,
     Operateur,
+    # _PointDeCharge,
     PointDeCharge,
+    # _Station,
     Station,
 )
 
@@ -76,8 +78,15 @@ class StatiqueImporter:
 
     @staticmethod
     def _schema_fk(schema: type[BaseAuditableSQLModel]) -> str:
-        """Get expected schema foreign key name."""
-        return f"{schema.__table__.name}_id"  # type: ignore[attr-defined]
+        """Get expected schema foreign key name.
+
+        In case of private table names, leading underscores are removed (e.g. `_Station`
+        becomes Station). We renamed `Station` and `PointDeCharge` tables to private
+        ones (e.g. `_Station` and `_PointDeCharge`), and created views with original
+        table names for compatibility purpose, but the original foreign key names
+        remained identical.
+        """
+        return f"{schema.__table__.name.lstrip('_')}_id"  # type: ignore[attr-defined]
 
     @staticmethod
     def _get_schema_fks(schema: type[BaseAuditableSQLModel]) -> list[str]:
@@ -95,7 +104,7 @@ class StatiqueImporter:
             set(Statique.model_fields.keys()) & set(schema.model_fields.keys())
         )
         # Auditable model fks should be ignored
-        ignored_fks = {"created_by_id", "updated_by_id"}
+        ignored_fks = {"created_by_id", "updated_by_id", "deleted_by_id"}
         if with_fk:
             fields += list(set(self._get_schema_fks(schema)) - ignored_fks)
         return fields
@@ -195,6 +204,7 @@ class StatiqueImporter:
     def pdc(self) -> pd.DataFrame:
         """Get PointDeCharge Dataframe."""
         if self._pdc is None:
+            # self._pdc = self._get_dataframe_for_schema(_PointDeCharge, with_fk=True)
             self._pdc = self._get_dataframe_for_schema(PointDeCharge, with_fk=True)
         return self._pdc
 
@@ -202,6 +212,7 @@ class StatiqueImporter:
     def station(self) -> pd.DataFrame:
         """Get Station Dataframe."""
         if self._station is None:
+            # self._station = self._get_dataframe_for_schema(_Station, with_fk=True)
             self._station = self._get_dataframe_for_schema(Station, with_fk=True)
         return self._station
 
@@ -298,11 +309,13 @@ class StatiqueImporter:
         )
         self._save_schema(
             self.station,
+            # _Station,
             Station,
             index_elements=["id_station_itinerance"],
         )
         self._save_schema(
             self.pdc,
+            # _PointDeCharge,
             PointDeCharge,
             index_elements=["id_pdc_itinerance"],
         )
