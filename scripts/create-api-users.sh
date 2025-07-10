@@ -47,7 +47,7 @@ function create_group() {
   # shellcheck disable=SC2068
   # Scalingo command is eating stdin preventing iteration over a file for
   # example. Fixing this by sending empty stdin.
-  echo "" | qualicharge groups create --force "${group}" --operational-units ${ou[@]}
+  echo "" | qcm groups create --force "${group}" --operational-units ${ou[@]}
 }
 
 # Create API user
@@ -65,7 +65,7 @@ function create_user() {
   # shellcheck disable=SC2068
   # Scalingo command is eating stdin preventing iteration over a file for
   # example. Fixing this by sending empty stdin.
-  echo "" | qualicharge users create --force \
+  echo "" | qcm users create --force \
     --first-name "${firstname}" \
     --last-name "${lastname}" \
     --email "${email}" \
