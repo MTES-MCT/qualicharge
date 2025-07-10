@@ -28,11 +28,21 @@ from .schemas.sql import StatiqueImporter
 logging.basicConfig(
     level=logging.INFO, format="%(message)s", datefmt="[%X]", handlers=[RichHandler()]
 )
+# Main command
 app = typer.Typer(name="qualicharge", no_args_is_help=True)
+
+# Sub-commands
+groups_app = typer.Typer(no_args_is_help=True)
+app.add_typer(groups_app, name="groups", help="Manage QualiCharge groups")
+users_app = typer.Typer(no_args_is_help=True)
+app.add_typer(users_app, name="users", help="Manage QualiCharge users")
+statics_app = typer.Typer(no_args_is_help=True)
+app.add_typer(statics_app, name="statics", help="Manage QualiCharge static data.")
+
 console = Console()
 
 
-@app.command()
+@groups_app.command("list")
 def list_groups(ctx: typer.Context):
     """List API groups."""
     session: SMSession = ctx.obj
@@ -53,7 +63,7 @@ def list_groups(ctx: typer.Context):
     console.print(table)
 
 
-@app.command()
+@groups_app.command("create")
 def create_group(
     ctx: typer.Context,
     name: str,
@@ -94,7 +104,7 @@ def create_group(
     print(f"[bold green]Group {name} created.[/bold green]")
 
 
-@app.command()
+@groups_app.command("update")
 def update_group(
     ctx: typer.Context,
     group_name: str,
@@ -154,7 +164,7 @@ def update_group(
     print(f"[bold green]Group {db_group.name} updated.[/bold green]")
 
 
-@app.command()
+@groups_app.command("delete")
 def delete_group(ctx: typer.Context, name: str, force: bool = False):
     """Delete an API group."""
     session: SMSession = ctx.obj
@@ -179,7 +189,7 @@ def delete_group(ctx: typer.Context, name: str, force: bool = False):
     print(f"[bold yellow]Group {name} deleted.[/bold yellow]")
 
 
-@app.command()
+@users_app.command("list")
 def list_users(ctx: typer.Context):
     """List API users."""
     session: SMSession = ctx.obj
@@ -214,7 +224,7 @@ def list_users(ctx: typer.Context):
     console.print(table)
 
 
-@app.command()
+@users_app.command("read")
 def read_user(ctx: typer.Context, username: str, json: bool = False):
     """Read detailled user informations."""
     session: SMSession = ctx.obj
@@ -231,7 +241,7 @@ def read_user(ctx: typer.Context, username: str, json: bool = False):
     print(out)
 
 
-@app.command()
+@users_app.command("create")
 def create_user(  # noqa: PLR0913
     ctx: typer.Context,
     username: str,
@@ -306,7 +316,7 @@ def create_user(  # noqa: PLR0913
     print(f"[bold green]User {username} created.[/bold green]")
 
 
-@app.command()
+@users_app.command("update")
 def update_user(  # noqa: PLR0912, PLR0913, PLR0915
     ctx: typer.Context,
     user_name: str,
@@ -410,7 +420,7 @@ def update_user(  # noqa: PLR0912, PLR0913, PLR0915
     print(f"[bold green]User {db_user.username} updated.[/bold green]")
 
 
-@app.command()
+@users_app.command("delete")
 def delete_user(ctx: typer.Context, username: str, force: bool = False):
     """Delete an API user."""
     session: SMSession = ctx.obj
@@ -434,7 +444,7 @@ def delete_user(ctx: typer.Context, username: str, force: bool = False):
     print(f"[bold yellow]User {username} deleted.[/bold yellow]")
 
 
-@app.command()
+@statics_app.command("import")
 def import_static(ctx: typer.Context, input_file: Path):
     """Import Statique file (parquet format)."""
     session: SMSession = ctx.obj
@@ -455,7 +465,7 @@ def import_static(ctx: typer.Context, input_file: Path):
     console.log("Saved (or updated) all entries successfully.")
 
 
-@app.command()
+@statics_app.command("refresh")
 def refresh_static(ctx: typer.Context, concurrently: bool = False):
     """Refresh the Statique materialized view."""
     session: SMSession = ctx.obj
@@ -471,7 +481,7 @@ def refresh_static(ctx: typer.Context, concurrently: bool = False):
 
 @app.callback()
 def main(ctx: typer.Context):
-    """Attach database session to the context object."""
+    """QualiCharge management CLI."""
     # Do not attach a new session if it has already been set
     # (e.g. using the CLI test runner)
     if ctx.obj is None:

@@ -64,7 +64,7 @@ function reset_password() {
   # Get user first name and email
   # nota bene: the sed pattern removes ANSI colors from piped stdout (json)
   read -r firstname email <<<$( \
-    qualicharge read-user "${username}" --json | \
+    qualicharge users read "${username}" --json | \
       grep -A 100 "{" | \
       sed -r "s/[[:cntrl:]]\[[0-9]{1,3}m//g" | \
       jq -r ".first_name,.email" | \
@@ -74,7 +74,7 @@ function reset_password() {
   password=$(generate_password)
 
   expect -c "
-  spawn bash -c \"qualicharge update-user ${username} --set-password\"
+  spawn bash -c \"qualicharge users update ${username} --set-password\"
   expect \"*Password*\" {send -- \"${password}\n\"}
   expect \"*Confirm*\" {send -- \"${password}\n\"}
   expect \"*Apply*\" {send -- \"y\n\"}

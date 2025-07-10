@@ -10,6 +10,8 @@ and this project adheres to
 
 ### Changed
 
+- Move CLI commands to grouped sub-commands for `users`, `groups` and `statics`
+
 #### Dependencies
 
 - Upgrade `FastAPI` to `0.115.14`
