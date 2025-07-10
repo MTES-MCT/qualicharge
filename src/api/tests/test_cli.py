@@ -132,6 +132,58 @@ def test_update_group(runner, db_session):
     assert group.name == name
     assert {ou.code for ou in group.operational_units} == {"FR0NX", "FR147"}
 
+    # Test group add
+    result = runner.invoke(
+        app,
+        [
+            "groups",
+            "update",
+            name,
+            "-u",
+            "FRALL",
+            "-u",
+            "FRTSL",
+            "-af",
+        ],
+        obj=db_session,
+    )
+    assert result.exit_code == 0
+
+    # Test changes
+    db_session.refresh(group)
+    assert group.name == name
+    assert {ou.code for ou in group.operational_units} == {
+        "FR0NX",
+        "FR147",
+        "FRALL",
+        "FRTSL",
+    }
+
+    # Test group delete
+    result = runner.invoke(
+        app,
+        [
+            "groups",
+            "update",
+            name,
+            "-u",
+            "FRALL",
+            "-u",
+            "FRTSL",
+            "-rf",
+        ],
+        obj=db_session,
+    )
+    assert result.exit_code == 0
+
+    # Test changes
+    db_session.refresh(group)
+    assert group.name == name
+    assert {ou.code for ou in group.operational_units} == {
+        "FR0NX",
+        "FR147",
+    }
+
 
 def test_delete_group(runner, db_session):
     """Test the `groups delete` command."""
