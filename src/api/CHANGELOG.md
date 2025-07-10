@@ -8,6 +8,11 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Added
+
+- CLI: install a `qcm` script for management commands instead of using a module
+  entrypoint (`python -m qualicharge`)
+
 ### Changed
 
 - Move CLI commands to grouped sub-commands for `users`, `groups` and `statics`

@@ -145,7 +145,7 @@ jobs:
         run: pipenv run alembic -c qualicharge/alembic.ini upgrade head
       - name: Create API superuser
         run: |
-          pipenv run python -m qualicharge users create \
+          pipenv run qcm users create \
             admin \
             --email admin@example.com \
             --password admin \
@@ -161,7 +161,7 @@ jobs:
           zcat ../../data/irve-statique.json.gz | \
             head -n 500 | \
             pipenv run qcc static bulk --chunk-size 100
-          pipenv run python -m qualicharge statics refresh
+          pipenv run qcm statics refresh
         env:
           QCC_API_LOGIN_USERNAME: admin
           QCC_API_LOGIN_PASSWORD: admin

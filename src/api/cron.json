@@ -1,7 +1,7 @@
 {
   "jobs": [
     {
-      "command": "*/10 * * * * python -m qualicharge statics refresh --concurrently"
+      "command": "*/10 * * * * qcm statics refresh --concurrently"
     },
     {
       "command": "19 * * * * dbclient-fetcher psql && psql $SCALINGO_POSTGRESQL_URL -f scripts/clean-orphans.sql"

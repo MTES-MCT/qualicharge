@@ -327,7 +327,7 @@ post-deploy-prefect:  ## run prefect post-deployment script
 
 create-api-superuser: ## create api super user
 	@echo "Creating super user…"
-	@$(COMPOSE_RUN_API_PIPENV) python -m qualicharge users create \
+	@$(COMPOSE_RUN_API_PIPENV) qcm users create \
 		admin \
 		--email admin@example.com \
 		--password admin \
@@ -363,7 +363,7 @@ reset-db: \
 .PHONY: reset-db
 
 refresh-api-static: ## Refresh the API Statique Materialized View
-	$(COMPOSE) exec api pipenv run python -m qualicharge statics refresh
+	$(COMPOSE) exec api pipenv run qcm statics refresh
 .PHONY: refresh-api-static
 
 reset-api-db: ## Reset the PostgreSQL API database
