@@ -1,9 +1,16 @@
 #
 # QualiCharge package
 #
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "qualicharge"
 version = "0.26.0"
+
+[project.scripts]
+qcm = "qualicharge.cli:app"
 
 # Third party packages configuration
 [tool.coverage.run]

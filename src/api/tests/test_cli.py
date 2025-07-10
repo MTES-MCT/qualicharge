@@ -25,7 +25,7 @@ from qualicharge.schemas.utils import save_statiques
 
 
 def test_list_groups(runner, db_session):
-    """Test the `list-groups` command."""
+    """Test the `groups list` command."""
     UserFactory.__session__ = db_session
     GroupFactory.__session__ = db_session
 
@@ -51,7 +51,7 @@ def test_list_groups(runner, db_session):
     )
 
     # Proceed
-    result = runner.invoke(app, ["list-groups"], obj=db_session)
+    result = runner.invoke(app, ["groups", "list"], obj=db_session)
     assert result.exit_code == 0
 
     # Check output
@@ -64,7 +64,7 @@ def test_list_groups(runner, db_session):
 
 
 def test_create_group(runner, db_session):
-    """Test the `create-group` command."""
+    """Test the `groups create` command."""
     GroupFactory.__session__ = db_session
 
     # Check that no group exists
@@ -74,7 +74,8 @@ def test_create_group(runner, db_session):
     result = runner.invoke(
         app,
         [
-            "create-group",
+            "groups",
+            "create",
             "ACME",
             "--operational-units",
             "FRS63",
@@ -93,7 +94,7 @@ def test_create_group(runner, db_session):
 
 
 def test_update_group(runner, db_session):
-    """Test the `update-group` command."""
+    """Test the `groups update` command."""
     GroupFactory.__session__ = db_session
 
     # Create group to update
@@ -111,7 +112,8 @@ def test_update_group(runner, db_session):
     result = runner.invoke(
         app,
         [
-            "update-group",
+            "groups",
+            "update",
             group.name,
             "--name",
             name,
@@ -130,9 +132,61 @@ def test_update_group(runner, db_session):
     assert group.name == name
     assert {ou.code for ou in group.operational_units} == {"FR0NX", "FR147"}
 
+    # Test group add
+    result = runner.invoke(
+        app,
+        [
+            "groups",
+            "update",
+            name,
+            "-u",
+            "FRALL",
+            "-u",
+            "FRTSL",
+            "-af",
+        ],
+        obj=db_session,
+    )
+    assert result.exit_code == 0
+
+    # Test changes
+    db_session.refresh(group)
+    assert group.name == name
+    assert {ou.code for ou in group.operational_units} == {
+        "FR0NX",
+        "FR147",
+        "FRALL",
+        "FRTSL",
+    }
+
+    # Test group delete
+    result = runner.invoke(
+        app,
+        [
+            "groups",
+            "update",
+            name,
+            "-u",
+            "FRALL",
+            "-u",
+            "FRTSL",
+            "-rf",
+        ],
+        obj=db_session,
+    )
+    assert result.exit_code == 0
+
+    # Test changes
+    db_session.refresh(group)
+    assert group.name == name
+    assert {ou.code for ou in group.operational_units} == {
+        "FR0NX",
+        "FR147",
+    }
+
 
 def test_delete_group(runner, db_session):
-    """Test the `delete-group` command."""
+    """Test the `groups delete` command."""
     UserFactory.__session__ = db_session
     GroupFactory.__session__ = db_session
 
@@ -162,7 +216,7 @@ def test_delete_group(runner, db_session):
     assert db_session.exec(select(func.count(GroupOperationalUnit.group_id))).one() == 1
 
     # Proceed
-    result = runner.invoke(app, ["delete-group", name, "--force"], obj=db_session)
+    result = runner.invoke(app, ["groups", "delete", name, "--force"], obj=db_session)
     assert result.exit_code == 0
 
     # Check that group and its relationships have been deleted
@@ -172,7 +226,7 @@ def test_delete_group(runner, db_session):
 
 
 def test_list_users(runner, db_session):
-    """Test the `list-users` command."""
+    """Test the `users list` command."""
     UserFactory.__session__ = db_session
 
     # Check that no user exists
@@ -183,7 +237,7 @@ def test_list_users(runner, db_session):
     UserFactory.create_batch_sync(n_users)
 
     # Proceed
-    result = runner.invoke(app, ["list-users"], obj=db_session)
+    result = runner.invoke(app, ["users", "list"], obj=db_session)
     assert result.exit_code == 0
 
     # Expected number of rows
@@ -191,18 +245,18 @@ def test_list_users(runner, db_session):
 
 
 def test_read_user(runner, db_session):
-    """Test the `read-user` command."""
+    """Test the `users read` command."""
     UserFactory.__session__ = db_session
 
     db_user = UserFactory.create_sync()
 
     # Unknown user
-    result = runner.invoke(app, ["read-user", "foo"], obj=db_session)
+    result = runner.invoke(app, ["users", "read", "foo"], obj=db_session)
     assert result.exit_code == 1
     assert "User foo does not exist!" in result.stdout
 
     # Proceed
-    result = runner.invoke(app, ["read-user", db_user.username], obj=db_session)
+    result = runner.invoke(app, ["users", "read", db_user.username], obj=db_session)
     assert result.exit_code == 0
 
     # Expected data
@@ -214,14 +268,14 @@ def test_read_user(runner, db_session):
 
 
 def test_read_user_json_flag(runner, db_session):
-    """Test the `read-user` command."""
+    """Test the `users read --json` command."""
     UserFactory.__session__ = db_session
 
     db_user = UserFactory.create_sync()
 
     # Proceed
     result = runner.invoke(
-        app, ["read-user", "--json", db_user.username], obj=db_session
+        app, ["users", "read", "--json", db_user.username], obj=db_session
     )
     assert result.exit_code == 0
 
@@ -237,7 +291,7 @@ def test_read_user_json_flag(runner, db_session):
 
 
 def test_create_user_with_no_group(runner, db_session):
-    """Test the `create-user` command when no group exists."""
+    """Test the `users create` command when no group exists."""
     # Check that no user or group exists
     assert db_session.exec(select(func.count(User.id))).one() == 0
     assert db_session.exec(select(func.count(UserGroup.group_id))).one() == 0
@@ -248,7 +302,8 @@ def test_create_user_with_no_group(runner, db_session):
     result = runner.invoke(
         app,
         [
-            "create-user",
+            "users",
+            "create",
             user.username,
             "--email",
             user.email,
@@ -286,7 +341,7 @@ def test_create_user_with_no_group(runner, db_session):
 
 
 def test_create_user(runner, db_session):
-    """Test the `create-user` command."""
+    """Test the `users create` command."""
     GroupFactory.__session__ = db_session
 
     n_groups = 2
@@ -301,7 +356,8 @@ def test_create_user(runner, db_session):
     result = runner.invoke(
         app,
         [
-            "create-user",
+            "users",
+            "create",
             user.username,
             "--email",
             user.email,
@@ -344,7 +400,7 @@ def test_create_user(runner, db_session):
 
 
 def test_update_user(runner, db_session):
-    """Test the `update-user` command."""
+    """Test the `users update` command."""
     GroupFactory.__session__ = db_session
     UserFactory.__session__ = db_session
 
@@ -372,7 +428,8 @@ def test_update_user(runner, db_session):
     result = runner.invoke(
         app,
         [
-            "update-user",
+            "users",
+            "update",
             user.username,
             "--username",
             new_user.username,
@@ -415,7 +472,7 @@ def test_update_user(runner, db_session):
 
 
 def test_delete_user(runner, db_session):
-    """Test the `delete-user` command."""
+    """Test the `users delete` command."""
     GroupFactory.__session__ = db_session
     UserFactory.__session__ = db_session
 
@@ -428,7 +485,7 @@ def test_delete_user(runner, db_session):
 
     # Proceed
     result = runner.invoke(
-        app, ["delete-user", user.username, "--force"], obj=db_session
+        app, ["users", "delete", user.username, "--force"], obj=db_session
     )
     assert result.exit_code == 0
 
@@ -438,7 +495,7 @@ def test_delete_user(runner, db_session):
 
 
 def test_import_static(runner, db_session):
-    """Test the `import-static` command."""
+    """Test the `statics import` command."""
     # Create statique data to import
     size = 5
     statiques = StatiqueFactory.batch(size=size)
@@ -460,7 +517,7 @@ def test_import_static(runner, db_session):
     file_path = "test.parquet"
     with runner.isolated_filesystem():
         df.to_parquet(file_path)
-        result = runner.invoke(app, ["import-static", file_path], obj=db_session)
+        result = runner.invoke(app, ["statics", "import", file_path], obj=db_session)
     assert result.exit_code == 0
 
     # Assert we've created expected records
@@ -473,7 +530,7 @@ def test_import_static(runner, db_session):
 
 
 def test_import_static_with_integrity_exception(runner, db_session):
-    """Test the `import-static` command."""
+    """Test the `statics import` command with integrity exception."""
     # Create statique data to import
     statiques = StatiqueFactory.batch(size=5)
     statiques[1].id_pdc_itinerance = "FRS63E0001"
@@ -496,7 +553,7 @@ def test_import_static_with_integrity_exception(runner, db_session):
     file_path = "test.parquet"
     with runner.isolated_filesystem():
         df.to_parquet(file_path)
-        result = runner.invoke(app, ["import-static", file_path], obj=db_session)
+        result = runner.invoke(app, ["statics", "import", file_path], obj=db_session)
     assert result.exit_code == 1
     assert "Input file importation failed. Rolling back." in str(result.exception)
 
@@ -510,13 +567,15 @@ def test_import_static_with_integrity_exception(runner, db_session):
 
 
 def test_refresh_static(runner, db_session):
-    """Test the `refresh-static` command."""
+    """Test the `statics refresh` command."""
     # Create points of charge
     n_pdc = 4
     save_statiques(db_session, StatiqueFactory.batch(n_pdc))
     assert db_session.exec(select(func.count(StatiqueMV.pdc_id))).one() == 0
 
     # Proceed
-    result = runner.invoke(app, ["refresh-static", "--concurrently"], obj=db_session)
+    result = runner.invoke(
+        app, ["statics", "refresh", "--concurrently"], obj=db_session
+    )
     assert result.exit_code == 0
     assert db_session.exec(select(func.count(StatiqueMV.pdc_id))).one() == n_pdc
