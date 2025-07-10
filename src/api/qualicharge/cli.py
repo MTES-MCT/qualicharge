@@ -2,7 +2,7 @@
 
 import logging
 from pathlib import Path
-from typing import Optional, Sequence, cast
+from typing import Annotated, Optional, Sequence, cast
 
 import pandas as pd
 import questionary
@@ -105,14 +105,32 @@ def create_group(
 
 
 @groups_app.command("update")
-def update_group(
+def update_group(  # noqa: PLR0913
     ctx: typer.Context,
     group_name: str,
-    name: Optional[str] = None,
-    operational_units: Optional[list[str]] = None,
-    force: bool = False,
+    name: Annotated[Optional[str], typer.Option("--name", "-n")] = None,
+    operational_units: Annotated[
+        Optional[list[str]], typer.Option("--operational-units", "-u")
+    ] = None,
+    add: Annotated[
+        bool,
+        typer.Option("--add/--no-add", "-a/-A", help="Add listed operational units."),
+    ] = False,
+    remove: Annotated[
+        bool,
+        typer.Option(
+            "--remove/--no-remove", "-r/-R", help="Remove listed operational units."
+        ),
+    ] = False,
+    force: Annotated[bool, typer.Option("--force/--no-force", "-f/-F")] = False,
 ):
-    """Update an API group."""
+    """Update an API group.
+
+    The `--operational-units` option can be used multiple times. By default, it will
+    replace all defined operational units linked to this group. Using the `--add`
+    (`--remove`) option will add (remove) defined operational units to already linked
+    ones.
+    """
     session: SMSession = ctx.obj
 
     # Check group exists in database
@@ -131,6 +149,14 @@ def update_group(
         db_group.name = name
 
     if operational_units:
+        if add:
+            operational_units = list(
+                set(old_operational_units) | set(operational_units)
+            )
+        if remove:
+            operational_units = list(
+                set(old_operational_units) - set(operational_units)
+            )
         db_group.operational_units = list(
             session.exec(
                 select(OperationalUnit).filter(
