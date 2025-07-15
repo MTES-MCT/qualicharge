@@ -1,9 +1,11 @@
 """Tests for QualiCharge CLI."""
 
 from io import StringIO
+from typing import cast
 
 import pandas as pd
 from pydantic_core import from_json
+from sqlalchemy import Column as SAColumn
 from sqlalchemy import func
 from sqlmodel import select
 
@@ -492,6 +494,93 @@ def test_delete_user(runner, db_session):
     # Check that user no longer exists
     assert db_session.exec(select(func.count(User.id))).one() == 0
     assert db_session.exec(select(func.count(UserGroup.group_id))).one() == 0
+
+
+def test_ou_list(runner, db_session):
+    """Test the `ou list` command."""
+    GroupFactory.__session__ = db_session
+
+    operational_units = db_session.exec(select(OperationalUnit)).all()
+
+    # No filters applied, we display all operational units
+    result = runner.invoke(app, ["ou", "list"], obj=db_session)
+    for ou in operational_units:
+        assert ou.code in result.stdout
+
+    # Apply an operational unit code filter
+    result = runner.invoke(app, ["ou", "list", "-p", "FRTS%"], obj=db_session)
+    rows = 8
+    assert len(result.stdout.split("\n")) == rows
+    for expected in ("FRTSL", "FRTSC"):
+        assert expected in result.stdout
+
+    # Exact match filter
+    result = runner.invoke(app, ["ou", "list", "-p", "FRTSL"], obj=db_session)
+    rows = 7
+    assert len(result.stdout.split("\n")) == rows
+    assert "FRTSL" in result.stdout
+
+    # No match filter
+    result = runner.invoke(app, ["ou", "list", "-p", "FOO"], obj=db_session)
+    rows = 6
+    assert len(result.stdout.split("\n")) == rows
+
+    # Create a group and associate this group with an operational unit
+    ou_one = db_session.exec(
+        select(OperationalUnit).where(
+            cast(SAColumn, OperationalUnit.code).like("FRTSL")
+        )
+    ).all()
+    name_one = "ACME"
+    GroupFactory.create_sync(name=name_one, operational_units=ou_one)
+
+    # Exact match filter (with associated group)
+    result = runner.invoke(app, ["ou", "list", "-p", "FRTSL"], obj=db_session)
+    rows = 7
+    assert len(result.stdout.split("\n")) == rows
+    assert "FRTSL" in result.stdout
+    assert "ACME" in result.stdout
+
+    # Create a second group and associate this group with an operational unit
+    name_two = "Foo"
+    GroupFactory.create_sync(name=name_two, operational_units=ou_one)
+
+    # Exact match filter (with associated groups)
+    result = runner.invoke(app, ["ou", "list", "-p", "FRTSL"], obj=db_session)
+    rows = 7
+    assert len(result.stdout.split("\n")) == rows
+    assert "FRTSL" in result.stdout
+    assert "ACME,Foo" in result.stdout
+
+    # Linked operational units filter
+    result = runner.invoke(app, ["ou", "list", "-l"], obj=db_session)
+    rows = 7
+    assert len(result.stdout.split("\n")) == rows
+    assert "FRTSL" in result.stdout
+    assert "ACME,Foo" in result.stdout
+
+    # No filters applied, we still display all operational units
+    result = runner.invoke(app, ["ou", "list", "-L"], obj=db_session)
+    for ou in operational_units:
+        assert ou.code in result.stdout
+
+    # Create a third group and associate this group with another operational unit
+    ou_two = db_session.exec(
+        select(OperationalUnit).where(
+            cast(SAColumn, OperationalUnit.code).like("FRFAS")
+        )
+    ).all()
+    name_three = "Bar"
+    GroupFactory.create_sync(name=name_three, operational_units=ou_two)
+
+    # Linked operational units filter
+    result = runner.invoke(app, ["ou", "list", "-l"], obj=db_session)
+    rows = 8
+    assert len(result.stdout.split("\n")) == rows
+    assert "FRTSL" in result.stdout
+    assert "ACME,Foo" in result.stdout
+    assert "FRFAS" in result.stdout
+    assert "Bar" in result.stdout
 
 
 def test_import_static(runner, db_session):

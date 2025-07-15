@@ -12,7 +12,10 @@ and this project adheres to
 
 - CLI: install a `qcm` script for management commands instead of using a module
   entrypoint (`python -m qualicharge`)
-- CLI: implement add/remove operational units options to the `qcm groups update` command
+- CLI: implement add/remove operational units options to the `qcm groups
+update` command
+- CLI: add new `qcm ou list` command to explore operational units and related
+  groups
 
 ### Changed
 
