@@ -1,5 +1,6 @@
 """QualiCharge CLI."""
 
+import itertools
 import logging
 from pathlib import Path
 from typing import Annotated, Optional, Sequence, cast
@@ -36,8 +37,12 @@ groups_app = typer.Typer(no_args_is_help=True)
 app.add_typer(groups_app, name="groups", help="Manage QualiCharge groups")
 users_app = typer.Typer(no_args_is_help=True)
 app.add_typer(users_app, name="users", help="Manage QualiCharge users")
+operational_units_app = typer.Typer(no_args_is_help=True)
+app.add_typer(
+    operational_units_app, name="ou", help="Manage QualiCharge operational units"
+)
 statics_app = typer.Typer(no_args_is_help=True)
-app.add_typer(statics_app, name="statics", help="Manage QualiCharge static data.")
+app.add_typer(statics_app, name="statics", help="Manage QualiCharge static data")
 
 console = Console()
 
@@ -468,6 +473,62 @@ def delete_user(ctx: typer.Context, username: str, force: bool = False):
     session.commit()
 
     print(f"[bold yellow]User {username} deleted.[/bold yellow]")
+
+
+@operational_units_app.command("list")
+def list_operational_units(
+    ctx: typer.Context,
+    linked: Annotated[
+        bool,
+        typer.Option(
+            "--linked/--no-linked",
+            "-l/-L",
+            help="Only display operational units linked to a group",
+        ),
+    ] = False,
+    pattern: Annotated[
+        Optional[str],
+        typer.Option(
+            "--pattern",
+            "-p",
+            help=(
+                "Filter operational unit code matching a given pattern "
+                "(uses the SQL 'LIKE' operator)"
+            ),
+        ),
+    ] = None,
+):
+    """List linked operational units."""
+    session: SMSession = ctx.obj
+
+    # Perform left join to ensure we only perform a single databse query
+    stmt = (
+        select(OperationalUnit, Group)
+        .join(OperationalUnit.groups, isouter=True)  # type: ignore[arg-type]
+        .distinct()
+    )
+    if pattern:
+        stmt = stmt.where(cast(SAColumn, OperationalUnit.code).like(pattern))
+    stmt = stmt.order_by(OperationalUnit.code)
+    operational_units = session.exec(stmt).all()
+
+    table = Table(title="QualiCharge Operational Units", min_width=30)
+    table.add_column("Code", style="magenta", no_wrap=True, min_width=5)
+    table.add_column("Name", style="cyan")
+    table.add_column("Groups", style="green", no_wrap=True)
+
+    for _, grouped in itertools.groupby(operational_units, lambda x: x[0].code):
+        ou_groups = list(grouped)
+        ou = ou_groups[0][0]
+        groups = list(filter(lambda x: x is not None, [oug[1] for oug in ou_groups]))
+        if linked and len(groups) == 0:
+            continue
+        table.add_row(
+            ou.code,
+            ou.name,
+            ",".join(sorted(group.name for group in groups)),
+        )
+    console.print(table)
 
 
 @statics_app.command("import")
