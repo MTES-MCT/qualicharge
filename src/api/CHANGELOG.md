@@ -20,6 +20,7 @@ update` command
 ### Changed
 
 - Move CLI commands to grouped sub-commands for `users`, `groups` and `statics`
+- Switched to UV package manager
 
 #### Dependencies
 

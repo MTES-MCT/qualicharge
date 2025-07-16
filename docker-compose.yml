@@ -24,6 +24,22 @@ services:
       args:
         DOCKER_UID: ${DOCKER_UID:-1000}
         DOCKER_GID: ${DOCKER_GID:-1000}
+    develop:
+      # Create a `watch` configuration to update the app
+      #
+      watch:
+        # Sync the working directory with the `/app` directory in the container
+        - action: sync
+          path: ./src/api/
+          target: /app
+          # Exclude the project virtual environment
+          ignore:
+            - ./src/api/.venv/
+        # Rebuild the image on changes to dependencies or build
+        - action: rebuild
+          path: ./src/api/pyproject.toml
+        - action: rebuild
+          path: ./src/api/Dockerfile
     user: ${DOCKER_USER:-1000}
     image: "qualicharge:api"
     ports:
@@ -33,7 +49,7 @@ services:
     healthcheck:
       test:
         - "CMD"
-        - "pipenv"
+        - "uv"
         - "run"
         - "httpx"
         - "http://localhost:8000/api/v1/docs"
@@ -42,7 +58,6 @@ services:
       retries: 5
     restart: always
     volumes:
-      - ./src/api:/app
       - ./data:/data
       - ./src/bench:/mnt/bench
     depends_on:

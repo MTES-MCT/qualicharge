@@ -6,7 +6,7 @@ COMPOSE                    	 = bin/compose
 COMPOSE_UP                 	 = $(COMPOSE) up -d --remove-orphans
 COMPOSE_RUN                	 = $(COMPOSE) run --rm --no-deps
 COMPOSE_RUN_API            	 = $(COMPOSE_RUN) api
-COMPOSE_RUN_API_PIPENV     	 = $(COMPOSE_RUN_API) pipenv run
+COMPOSE_RUN_API_UV     	     = $(COMPOSE_RUN_API) uv run
 COMPOSE_RUN_CLIENT         	 = $(COMPOSE_RUN) client
 COMPOSE_RUN_PREFECT_PIPENV 	 = $(COMPOSE_RUN) prefect pipenv run
 COMPOSE_RUN_DASHBOARD_PIPENV = $(COMPOSE_RUN) dashboard pipenv run
@@ -44,7 +44,7 @@ bench-reset-db: ## Reset API database to run benchmark
 .PHONY: bench-reset-db
 
 bench: ## run API benchmark
-	$(COMPOSE_RUN_API_PIPENV) \
+	$(COMPOSE_RUN_API_UV) \
 		locust \
 		  -f /mnt/bench/locustfile.py \
 			--headless \
@@ -158,7 +158,7 @@ logs-dashboard: ## display dashboard logs (follow mode)
 .PHONY: logs-dashboard
 
 run-api: ## run the api server (and dependencies)
-	$(COMPOSE_UP) --wait api
+	$(COMPOSE) watch api
 .PHONY: run-api
 
 run-all: ## run the whole stack
@@ -327,7 +327,7 @@ post-deploy-prefect:  ## run prefect post-deployment script
 
 create-api-superuser: ## create api super user
 	@echo "Creating super user…"
-	@$(COMPOSE_RUN_API_PIPENV) qcm users create \
+	@$(COMPOSE_RUN_API_UV) qcm users create \
 		admin \
 		--email admin@example.com \
 		--password admin \
@@ -495,42 +495,42 @@ lint-dashboard: \
 
 lint-api-black: ## lint api python sources with black
 	@echo 'lint:black started…'
-	@$(COMPOSE_RUN_API_PIPENV) black qualicharge tests
+	@$(COMPOSE_RUN_API_UV) black qualicharge tests
 .PHONY: lint-api-black
 
 lint-api-ruff: ## lint api python sources with ruff
 	@echo 'lint:ruff started…'
-	@$(COMPOSE_RUN_API_PIPENV) ruff check qualicharge tests
+	@$(COMPOSE_RUN_API_UV) ruff check qualicharge tests
 .PHONY: lint-api-ruff
 
 lint-api-ruff-fix: ## lint and fix api python sources with ruff
 	@echo 'lint:ruff-fix started…'
-	@$(COMPOSE_RUN_API_PIPENV) ruff check --fix qualicharge tests
+	@$(COMPOSE_RUN_API_UV) ruff check --fix qualicharge tests
 .PHONY: lint-api-ruff-fix
 
 lint-api-mypy: ## lint api python sources with mypy
 	@echo 'lint:mypy started…'
-	@$(COMPOSE_RUN_API_PIPENV) mypy qualicharge tests
+	@$(COMPOSE_RUN_API_UV) mypy qualicharge tests
 .PHONY: lint-api-mypy
 
 lint-bench-black: ## lint bench python sources with black
 	@echo 'lint:black started…'
-	@$(COMPOSE_RUN_API_PIPENV) black /mnt/bench
+	@$(COMPOSE_RUN_API_UV) black /mnt/bench
 .PHONY: lint-bench-black
 
 lint-bench-ruff: ## lint bench python sources with ruff
 	@echo 'lint:ruff started…'
-	@$(COMPOSE_RUN_API_PIPENV) ruff check /mnt/bench
+	@$(COMPOSE_RUN_API_UV) ruff check /mnt/bench
 .PHONY: lint-bench-ruff
 
 lint-bench-ruff-fix: ## lint and fix api python sources with ruff
 	@echo 'lint:ruff-fix started…'
-	@$(COMPOSE_RUN_API_PIPENV) ruff check --fix /mnt/bench
+	@$(COMPOSE_RUN_API_UV) ruff check --fix /mnt/bench
 .PHONY: lint-bench-ruff-fix
 
 lint-bench-mypy: ## lint bench python sources with mypy
 	@echo 'lint:mypy started…'
-	@$(COMPOSE_RUN_API_PIPENV) mypy /mnt/bench
+	@$(COMPOSE_RUN_API_UV) mypy /mnt/bench
 .PHONY: lint-bench-mypy
 
 lint-client-black: ## lint api python sources with black
