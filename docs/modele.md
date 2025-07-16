@@ -22,7 +22,16 @@ Ces notions correspondent à celles définies par la réglementation AFIR (Alter
 
   "***station de recharge**: une installation physique en un lieu spécifique, composée d’un ou de plusieurs points de recharge*"
 
-La notion de point de recharge est explicite dans sa formulation. La notion de station de recharge nécessite néanmoins une explication complémentaire :
+La notion de point de recharge est explicite dans sa formulation mais peut être difficle à implémenter lorsque deux connecteurs ne sont ni totalement indépendants, ni totalement dépendants.
+
+> Exemple :
+>
+> Une borne dessert deux places de parking. Elle est équipée de 3 connecteurs.
+>
+> - Si deux de ces connecteurs ne peuvent être utilisés indépendamment l'un de l'autre, on considèrera deux points de recharge (l'un associé aux deux connecteurs dépendants, l'autre associé au troisième connecteur).
+> - Si les trois connecteurs peuvent être utilisés indifféremment sur les deux places de parking (et simultanément), on devra considérer trois points de recharge.
+
+La notion de station de recharge nécessite également une explication complémentaire :
 
 - la station de recharge est définie dans la règlementation AFIR au travers des informations qui lui sont associées. On peut ainsi la définir comme étant un regroupement de points de recharge partageant des informations identiques. Par exemple :
   - une même localisation géographique (coordonnées),
@@ -132,13 +141,25 @@ On notera que le terme réseau utilisé à la fois dans la définition de l'ense
 
 ### Structure dynamique
 
-La structure dynamique représente l'état courant et l'utilisation (recharge) des `points de recharge`. On distingue deux notions :
+Un point de recharge est caractérisé à un instant donné par son état.
+  
+Six états sont définis :
 
-- **statut** : état instantané d'un point de recharge (occupation, fonctionnement)
-- **session** : session de recharge effective d'un véhicule (durée, énergie)
+- occupé: Cet état est exclusivement dédié aux sessions de recharge effective (avec consommation d'énergie)
+- réservé : Cet état indique que le point de recharge est en fonctionnement et disponible uniquement pour la personne ayant effectué une réservation
+- libre: Le point de recharge est en fonctionnement et non occupé et pendant la période d'ouverture
+- hors service: Le point de recharge n'est pas utilisable pour la recharge. Il peut correspondre à une mise à l'arrêt (ex. pour maintenance préventive) ou à un arrêt intempestif
+- transitoire: Etat intermédiaire de courte durée utilisé lorsque le passage d'un état à un autre n'est pas instantané (ex états OCPP 'Preparing', 'Finishing')
+- inconnu: Lorsqu'aucun des autres états ne peut être identifié.
+  
+> Nota :
+> L'état transitoire est optionnel dans Qualicharge. Il est dans ce cas implicitement intégré à l'état qui le précède.
+> Les périodes d'ouverture / fermeture ne sont pas gérés dans les états Qualicharge
+  
+La structure dynamique des `points de recharge` est représentée par deux notions :
 
-Les `statuts` correspondent aux évènements (instantanés) qui affectent l'utilisation des `points de recharge`.
-Les `sessions` correspondent aux périodes temporelles associées aux recharges des véhicules.
+- **statut** : évènement (instantané) qui correspond à un changement d'état d'un `point de recharge`
+- **session** : caractérisation de chaque état occupé (ex. durée, énergie)
 
 Les deux notions ne sont pas indépendantes. Par exemple, le démarrage d'une session se traduit par un `statut` correspondant à un évènement de passage du `point de recharge` dans un état "occupé".
 
@@ -150,6 +171,7 @@ erDiagram
 ```
 
 Les `statuts` sont associés aux `sessions` mais peuvent également signaler d'autres évènements comme par exemple une panne d'un `point de recharge` ou sa remise en service.
+Les `statuts` de passage vers un état transitoire sont optionnels pour Qualicharge.
 
 ### Structure globale
 
@@ -157,10 +179,12 @@ Le modèle ci-dessous regroupe l'ensemble des vues précédentes.
 
 ```mermaid
 erDiagram
-    AMENAGEUR ||..|{ "STATION DE RECHARGE" : "est le propropriétaire"
+    AMENAGEUR ||--|{ "STATION DE RECHARGE" : "offre un service de recharge"
+    AMENAGEUR |{--|| "UNITE D'EXPLOITATION" : "s'intègre dans"
     ENSEIGNE ||--|{ "STATION DE RECHARGE": "héberge"
-    OPERATEUR ||--|{ "UNITE D'EXPLOITATION": "exploite"
-    "UNITE D'EXPLOITATION" ||--|{ "STATION DE RECHARGE": "contient"    
+    OPERATEUR ||--|{ "UNITE D'EXPLOITATION": "supervise"
+    AMENAGEUR |{--|| OPERATEUR: "délègue l'exploitation à"
+    "UNITE D'EXPLOITATION" ||--|{ "STATION DE RECHARGE": "contient"
     "POINT DE RACCORDEMENT" ||--|{ "STATION DE RECHARGE" : "raccorde électriquement"
     LOCALISATION ||--|{ "STATION DE RECHARGE": "localise"
     "STATION DE RECHARGE" ||--|{ "POINT DE RECHARGE" : regroupe
@@ -298,7 +322,7 @@ L'identifiant d'une `station de recharge` suit une codification spécifique ([co
 
 > :bulb: L'attribut `type_courant` n'est pas présent dans le schéma de données IRVE. Il est calculé à partir du `type_courant` de chaque `point de recharge` (la valeur sera 'DC' si un des `points de charge` est de type 'DC')
 > L'attribut `puissance_maxi` correspond à la puissance maximale qui peut être délivrée à un instant donné (non présent dans le schéma de données IRVE). Il est actuellement calculé à partir de la `puissance_nominale` de chaque `point de charge` (somme). Dans une version ultérieure, il devra être documenté à partir de la capacité installée.
-> L'attribut `nbre_pdc` représente le nombre de points de recharge de la station. Il ne peut être supérieur :
+> L'attribut `nbre_pdc` représente le nombre de points de recharge de la station qui peuvent être utilisés de façon simultanée. Il ne peut être supérieur :
 >
 >- au nombre d'entités `point de recharge` associées à l'entité `station`,
 >- au nombre maximum de sessions simultanées sur les points de recharge de la station,
@@ -354,13 +378,33 @@ Un `status` ne dispose pas d'identifiant unique. La contrainte d'unicité est as
 
 - on ne peut avoir deux `status` associés au même `point de recharge` et avec le même `horodatage`.
 
+L'attribut `occupation_pdc` peut prendre quatre valeurs : 'occupe', 'reserve', 'libre', 'inconnu'.
+L'attribut `etat_pdc` peut prendre trois valeurs : 'en_service', 'hors_service', 'inconnu'
+
+Les combinaisons de valeurs correspondent aux évènements de passage dans les états suivants :
+
+| etat_pdc     | occupation_pdc | passage vers      |
+| ------------ | -------------- | ----------------- |
+| en_service   | occupe         | état occupé       |
+| en_service   | reserve        | état réservé      |
+| en_service   | libre          | état libre        |
+| en_service   | inconnu        | état transitoire  |
+| hors_service | inconnu        | état hors service |
+| hors_service | reserve        | état hors service |
+| hors_service | libre          | état hors service |
+| inconnu      | inconnu        | état inconnu      |
+| inconnu      | reserve        | état inconnu      |
+| inconnu      | libre          | état inconnu      |
+
+En particulier, les combinaisons 'hors_service' et 'occupe' ainsi que 'inconnu' et 'occupe' sont interdites.
+
 ### Session
 
 Les `sessions`ne sont pas définies dans le schéma de données dynamique.
 Les attributs associés sont les suivants :
 
 - **start** : Indique la date et l'heure du début de la session, formaté selon la norme ISO 8601
-- **end** : Indique la date et l'heure d ela fin de la session, formaté selon la norme ISO 8601
+- **end** : Indique la date et l'heure de la fin de la session, formaté selon la norme ISO 8601
 - **energy** : Energie totale en kWh recue par le véhicule pendant la session de recharge
 
 ```mermaid
@@ -400,8 +444,8 @@ erDiagram
   string name "M"
   }
   "POINT DE RACCORDEMENT" {
-  string num_pdl "I"
-  enum    raccordement
+  enum    raccordement "M"
+  string num_pdl
   }
   LOCALISATION {
   array   coordonneesXY "I"
@@ -454,10 +498,12 @@ erDiagram
     enum     etat_prise_type_chademo
     enum     etat_prise_type_ef
   }
-  AMENAGEUR ||..|{ "STATION DE RECHARGE" : "est le propropriétaire"
+  AMENAGEUR ||--|{ "STATION DE RECHARGE" : "offre un service de recharge"
+  AMENAGEUR |{--|| "UNITE D'EXPLOITATION" : "s'intègre dans"
   ENSEIGNE ||--|{ "STATION DE RECHARGE": "héberge"
-  OPERATEUR ||--|{ "UNITE D'EXPLOITATION": "exploite"
-  "UNITE D'EXPLOITATION" ||--|{ "STATION DE RECHARGE": "contient"    
+  OPERATEUR ||--|{ "UNITE D'EXPLOITATION": "supervise"
+  AMENAGEUR |{--|| OPERATEUR: "délègue l'exploitation à"
+  "UNITE D'EXPLOITATION" ||--|{ "STATION DE RECHARGE": "contient"
   "POINT DE RACCORDEMENT" ||--|{ "STATION DE RECHARGE" : "raccorde électriquement"
   LOCALISATION ||--|{ "STATION DE RECHARGE": "localise"
   "STATION DE RECHARGE" ||--|{ "POINT DE RECHARGE" : regroupe
