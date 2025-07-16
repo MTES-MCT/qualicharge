@@ -25,7 +25,7 @@ function qcm() {
     --app "${SCALINGO_APP}" \
     --region osc-fr1 \
     run --silent \
-    qcm "$@"
+    python -m qualicharge "$@"
 }
 
 # Create a Vaultwarden send with the user password
