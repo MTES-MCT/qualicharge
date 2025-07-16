@@ -13,7 +13,7 @@ DOCKER_USER="${DOCKER_UID}:${DOCKER_GID}"
 if [ "${service}" == "client" ]; then
   cmd="pytest";
 else
-  cmd="pipenv run pytest";
+  cmd="uv run pytest";
 fi
 
 DOCKER_USER=${DOCKER_USER} \

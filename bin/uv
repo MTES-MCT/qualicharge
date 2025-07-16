@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+set -eo pipefail
+
+declare service="${SERVICE:-api}"
+
+docker compose run --rm --no-deps \
+  -u "uv:uv" \
+  -v "./src/api:/app" \
+  "${service}" \
+    uv "$@"

@@ -13,4 +13,4 @@ DOCKER_USER=${DOCKER_USER} \
   docker compose exec \
     -e QUALICHARGE_DEBUG=0 \
     api \
-    pipenv run qcm "$@"
+    uv run qcm "$@"

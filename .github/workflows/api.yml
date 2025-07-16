@@ -17,20 +17,22 @@ permissions:
 jobs:
   build-api:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./src/api
     steps:
       - uses: actions/checkout@v4
-      - name: Install Pipenv
-        run: pipx install pipenv
-      - name: Set up Python 3.12
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.7.21"
+          enable-cache: true
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
-          cache: "pipenv"
-          cache-dependency-path: "src/api/Pipfile.lock"
-      - name: Install dependencies
-        run: |
-          cd src/api
-          pipenv install -d
+          python-version-file: "./src/api/.python-version"
+      - name: Install the project
+        run: uv sync --locked --all-extras --dev
 
   lint-api:
     needs: build-api
@@ -40,20 +42,21 @@ jobs:
         working-directory: ./src/api
     steps:
       - uses: actions/checkout@v4
-      - name: Install pipenv
-        run: pipx install pipenv
-      - name: Set up Python 3.12
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.7.21"
+          enable-cache: true
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
-          cache: "pipenv"
-          cache-dependency-path: "src/api/Pipfile.lock"
+          python-version-file: "./src/api/.python-version"
       - name: Lint with Black
-        run: pipenv run black --check qualicharge tests
+        run: uv run black --check qualicharge tests
       - name: Lint with Ruff
-        run: pipenv run ruff check qualicharge tests
+        run: uv run ruff check qualicharge tests
       - name: Lint with MyPy
-        run: pipenv run mypy qualicharge tests
+        run: uv run mypy qualicharge tests
 
   lint-bench:
     needs: build-api
@@ -63,20 +66,21 @@ jobs:
         working-directory: ./src/api
     steps:
       - uses: actions/checkout@v4
-      - name: Install pipenv
-        run: pipx install pipenv
-      - name: Set up Python 3.12
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.7.21"
+          enable-cache: true
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
-          cache: "pipenv"
-          cache-dependency-path: "src/api/Pipfile.lock"
+          python-version-file: "./src/api/.python-version"
       - name: Lint with Black
-        run: pipenv run black --check ../bench
+        run: uv run black --check ../bench
       - name: Lint with Ruff
-        run: pipenv run ruff check ../bench
+        run: uv run ruff check ../bench
       - name: Lint with MyPy
-        run: pipenv run mypy ../bench
+        run: uv run mypy ../bench
 
   bench-api:
     needs: build-api
@@ -133,19 +137,20 @@ jobs:
         run: psql "postgresql://qualicharge:pass@localhost:5432/qualicharge-api" -c "create extension postgis;"
       - name: Create btree_gist extension
         run: psql "postgresql://qualicharge:pass@localhost:5432/qualicharge-api" -c "create extension btree_gist;"
-      - name: Install pipenv
-        run: pipx install pipenv
-      - name: Set up Python 3.12
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.7.21"
+          enable-cache: true
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
-          cache: "pipenv"
-          cache-dependency-path: "src/api/Pipfile.lock"
+          python-version-file: "./src/api/.python-version"
       - name: Run database migrations
-        run: pipenv run alembic -c qualicharge/alembic.ini upgrade head
+        run: uv run alembic -c qualicharge/alembic.ini upgrade head
       - name: Create API superuser
         run: |
-          pipenv run qcm users create \
+          uv run qcm users create \
             admin \
             --email admin@example.com \
             --password admin \
@@ -155,13 +160,13 @@ jobs:
             --force
       - name: Seed API database
         run: |
-          pipenv install -d --skip-lock qualicharge-client
-          pipenv run honcho start -f Procfile.dev &
+          uv pip install qualicharge-client
+          uv run honcho start -f Procfile.dev &
           sleep 10
           zcat ../../data/irve-statique.json.gz | \
             head -n 500 | \
-            pipenv run qcc static bulk --chunk-size 100
-          pipenv run qcm statics refresh
+            uv run qcc static bulk --chunk-size 100
+          uv run qcm statics refresh
         env:
           QCC_API_LOGIN_USERNAME: admin
           QCC_API_LOGIN_PASSWORD: admin
@@ -169,7 +174,7 @@ jobs:
       # API server is still running here
       - name: Run locust
         run: |
-          pipenv run locust \
+          uv run locust \
             -f ../bench/locustfile.py \
             --headless \
             -u 30 \
@@ -181,7 +186,7 @@ jobs:
             APIAdminUser
       - name: Add bench file metadata
         run: |
-          pipenv run \
+          uv run \
             python ../bench/cli.py \
               stamp bench_admin_stats.csv $(git rev-parse --short "${GITHUB_SHA}") \
                 > bench_admin_stats_stamped.csv
@@ -194,17 +199,17 @@ jobs:
         # Only when in PR, not when merged to main
         if: ${{ github.event_name == 'pull_request' }}
         run: |
-          pipenv run csvlook -I ../../data/bench.csv
+          uv run csvlook -I ../../data/bench.csv
           echo "===="
-          pipenv run csvlook -I bench_admin_stats_stamped.csv
+          uv run csvlook -I bench_admin_stats_stamped.csv
           echo "===="
           echo -e "### Current benchmark\n\n" >> bench_admin_stats.md && \
-          pipenv run csvlook -I bench_admin_stats_stamped.csv >> bench_admin_stats.md && \
+          uv run csvlook -I bench_admin_stats_stamped.csv >> bench_admin_stats.md && \
           echo -e "\n### Comparison with the latest previous benchmark\n\n" >> bench_admin_stats.md && \
           echo -e "> A lower (negative) value means the current version performs better than the previous one.\n\n" >> bench_admin_stats.md && \
-          pipenv run \
+          uv run \
             python ../bench/cli.py diff ../../data/bench.csv bench_admin_stats_stamped.csv | \
-            pipenv run \
+            uv run \
               csvlook -I >> bench_admin_stats.md
           cat bench_admin_stats.md
       - uses: actions/github-script@v7
@@ -323,16 +328,17 @@ jobs:
         run: psql "postgresql://qualicharge:pass@localhost:5432/test-qualicharge-api" -c "create extension postgis;"
       - name: Create btree_gist extension
         run: psql "postgresql://qualicharge:pass@localhost:5432/test-qualicharge-api" -c "create extension btree_gist;"
-      - name: Install pipenv
-        run: pipx install pipenv
-      - name: Set up Python 3.12
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.7.21"
+          enable-cache: true
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
-          cache: "pipenv"
-          cache-dependency-path: "src/api/Pipfile.lock"
+          python-version-file: "./src/api/.python-version"
       - name: Run migrations
-        run: pipenv run alembic -c qualicharge/alembic.ini upgrade head
+        run: uv run alembic -c qualicharge/alembic.ini upgrade head
         env:
           QUALICHARGE_ALLOWED_HOSTS: '["http://localhost:8000"]'
           QUALICHARGE_DB_ENGINE: postgresql+psycopg
@@ -373,16 +379,17 @@ jobs:
         run: psql "postgresql://qualicharge:pass@localhost:5432/test-qualicharge-api" -c "create extension postgis;"
       - name: Create btree_gist extension
         run: psql "postgresql://qualicharge:pass@localhost:5432/test-qualicharge-api" -c "create extension btree_gist;"
-      - name: Install pipenv
-        run: pipx install pipenv
-      - name: Set up Python 3.12
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.7.21"
+          enable-cache: true
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
-          cache: "pipenv"
-          cache-dependency-path: "src/api/Pipfile.lock"
+          python-version-file: "./src/api/.python-version"
       - name: Test with pytest
-        run: pipenv run pytest
+        run: uv run pytest
         env:
           QUALICHARGE_ALLOWED_HOSTS: '["http://localhost:8000"]'
           QUALICHARGE_DB_ENGINE: postgresql+psycopg
