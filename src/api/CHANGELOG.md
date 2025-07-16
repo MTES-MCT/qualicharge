@@ -8,6 +8,8 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.27.0] - 2025-07-16
+
 ### Added
 
 - CLI: install a `qcm` script for management commands instead of using a module
@@ -554,7 +556,8 @@ update` command
 
 - Implement base FastAPI app
 
-[unreleased]: https://github.com/MTES-MCT/qualicharge/compare/v0.26.0...main
+[unreleased]: https://github.com/MTES-MCT/qualicharge/compare/v0.27.0...main
+[0.27.0]: https://github.com/MTES-MCT/qualicharge/compare/v0.26.0...v0.27.0
 [0.26.0]: https://github.com/MTES-MCT/qualicharge/compare/v0.25.0...v0.26.0
 [0.25.0]: https://github.com/MTES-MCT/qualicharge/compare/v0.24.0...v0.25.0
 [0.24.0]: https://github.com/MTES-MCT/qualicharge/compare/v0.23.0...v0.24.0
