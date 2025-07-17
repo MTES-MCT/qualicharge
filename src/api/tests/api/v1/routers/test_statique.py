@@ -940,7 +940,7 @@ def test_bulk_with_inconsistent_station_data(client_auth, db_session, monkeypatc
     json_response = response.json()
     assert (
         json_response["detail"]
-        == "An error occured while trying to create or update the 'station' table"
+        == "An error occured while trying to create or update the '_station' table"
     )
 
     # Check created statiques (if any)
@@ -1172,7 +1172,7 @@ def test_update_audits(client_auth, db_session, versioning_manager):
     latest_activities = db_session.exec(
         select(Activity)
         .where(
-            Activity.table_name == "station",
+            Activity.table_name == "_station",
             Activity.data["id"].astext.cast(UUID) == station.id,
         )
         .order_by(Activity.issued_at)
@@ -1216,7 +1216,7 @@ def test_update_audits(client_auth, db_session, versioning_manager):
     latest_activities = db_session.exec(
         select(Activity)
         .where(
-            Activity.table_name == "station",
+            Activity.table_name == "_station",
             Activity.data["id"].astext.cast(UUID) == station.id,
         )
         .order_by(Activity.issued_at)
@@ -1256,7 +1256,7 @@ def test_bulk_update_audits(client_auth, db_session, versioning_manager):
     latest_activity = db_session.exec(
         select(Activity)
         .where(
-            Activity.table_name == "pointdecharge",
+            Activity.table_name == "_pointdecharge",
             Activity.data["id"].astext.cast(UUID) == points_of_charge[0].id,
         )
         .order_by(Activity.issued_at.desc())
@@ -1281,7 +1281,7 @@ def test_bulk_update_audits(client_auth, db_session, versioning_manager):
     latest_activity = db_session.exec(
         select(Activity)
         .where(
-            Activity.table_name == "pointdecharge",
+            Activity.table_name == "_pointdecharge",
             Activity.data["id"].astext.cast(UUID) == points_of_charge[0].id,
         )
         .order_by(Activity.issued_at.desc())
