@@ -22,5 +22,6 @@ DOCKER_USER=${DOCKER_USER} \
   docker compose run --rm \
     -e QUALICHARGE_OIDC_IS_ENABLED=True \
     -e TEST="${TEST}" \
+    -v "./src/${service}:/app" \
     "${service}" \
     ${cmd} "$@"
