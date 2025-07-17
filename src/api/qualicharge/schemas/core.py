@@ -135,7 +135,6 @@ class Amenageur(BaseAuditableSQLModel, table=True):
     contact_amenageur: Optional[EmailStr] = Field(sa_type=String)
 
     # Relationships
-    # stations: List["_Station"] = Relationship(back_populates="amenageur")
     stations: List["Station"] = Relationship(back_populates="amenageur")
 
     def __eq__(self, other) -> bool:
@@ -163,7 +162,6 @@ class Operateur(BaseAuditableSQLModel, table=True):
     telephone_operateur: Optional[FrenchPhoneNumber]
 
     # Relationships
-    # stations: List["_Station"] = Relationship(back_populates="operateur")
     stations: List["Station"] = Relationship(back_populates="operateur")
 
     def __eq__(self, other) -> bool:
@@ -185,7 +183,6 @@ class Enseigne(BaseAuditableSQLModel, table=True):
     nom_enseigne: str = Field(unique=True)
 
     # Relationships
-    # stations: List["_Station"] = Relationship(back_populates="enseigne")
     stations: List["Station"] = Relationship(back_populates="enseigne")
 
     def __eq__(self, other) -> bool:
@@ -219,7 +216,6 @@ class Localisation(BaseAuditableSQLModel, table=True):
     )  # type: ignore
 
     # Relationships
-    # stations: List["_Station"] = Relationship(back_populates="localisation")
     stations: List["Station"] = Relationship(back_populates="localisation")
 
     def __eq__(self, other) -> bool:
@@ -282,7 +278,6 @@ class OperationalUnit(BaseTimestampedSQLModel, table=True):
     type: OperationalUnitTypeEnum
 
     # Relationships
-    # stations: List["_Station"] = Relationship(back_populates="operational_unit")
     stations: List["Station"] = Relationship(back_populates="operational_unit")
     groups: List["Group"] = Relationship(
         back_populates="operational_units",
@@ -292,11 +287,6 @@ class OperationalUnit(BaseTimestampedSQLModel, table=True):
     def create_stations_fk(self, session: SMSession):
         """Create linked stations foreign keys."""
         stations = session.exec(
-            # select(_Station).where(
-            #     cast(SAColumn, _Station.id_station_itinerance).regexp_match(
-            #         f"^{self.code}P.*$"
-            #     )
-            # )
             select(Station).where(
                 # FIXME: use SQL 'like' operator
                 cast(SAColumn, Station.id_station_itinerance).regexp_match(
@@ -382,7 +372,6 @@ class Station(SoftDeleteMixin, BaseAuditableSQLModel, table=True):
     enseigne: Enseigne = Relationship(back_populates="stations")
     localisation: Localisation = Relationship(back_populates="stations")
     operational_unit: OperationalUnit = Relationship(back_populates="stations")
-    # points_de_charge: List["_PointDeCharge"] = Relationship(back_populates="station")
     points_de_charge: List["PointDeCharge"] = Relationship(back_populates="station")
 
     def __eq__(self, other) -> bool:
@@ -395,8 +384,6 @@ class Station(SoftDeleteMixin, BaseAuditableSQLModel, table=True):
         return hash(self.id)
 
 
-# @event.listens_for(_Station, "before_insert")
-# @event.listens_for(_Station, "before_update")
 @event.listens_for(Station, "before_insert")
 @event.listens_for(Station, "before_update")
 def link_station_to_operational_unit(mapper, connection, target):
@@ -412,14 +399,6 @@ def link_station_to_operational_unit(mapper, connection, target):
     target.operational_unit_id = operational_unit.id
 
 
-# class Station(BaseStation, table=True):
-#     """Station view."""
-#
-#     __tablename__ = "Station"
-#     operational_unit: OperationalUnit = Relationship()
-# __sqlmodel_relationships__ = {"operational_unit": OperationalUnit}
-
-
 class ActiveStationsView(SQLModel):
     """Active stations view.
 
@@ -427,29 +406,6 @@ class ActiveStationsView(SQLModel):
     """
 
     selectable: ClassVar[Select] = select(  # type: ignore[call-overload, misc]
-        #     _Station.id,
-        #     _Station.id_station_itinerance,
-        #     _Station.id_station_local,
-        #     _Station.nom_station,
-        #     _Station.implantation_station,
-        #     _Station.nbre_pdc,
-        #     _Station.condition_acces,
-        #     _Station.horaires,
-        #     _Station.station_deux_roues,
-        #     _Station.raccordement,
-        #     _Station.num_pdl,
-        #     _Station.date_maj,
-        #     _Station.date_mise_en_service,
-        #     _Station.amenageur_id,
-        #     _Station.operateur_id,
-        #     _Station.enseigne_id,
-        #     _Station.localisation_id,
-        #     _Station.operational_unit_id,
-        #     _Station.created_at,
-        #     _Station.updated_at,
-        #     _Station.created_by_id,
-        #     _Station.updated_by_id,
-        # ).where(cast(SAColumn, _Station.deleted_at).is_(None))
         Station.id,
         Station.id_station_itinerance,
         Station.id_station_local,
@@ -527,7 +483,6 @@ class PointDeCharge(SoftDeleteMixin, BaseAuditableSQLModel, table=True):
     station_id: Optional[UUID] = Field(
         default=None, foreign_key="_station.id", index=True
     )
-    # station: _Station = Relationship(back_populates="points_de_charge")
     station: Station = Relationship(back_populates="points_de_charge")
     sessions: List["Session"] = Relationship(back_populates="point_de_charge")
     statuses: List["Status"] = Relationship(back_populates="point_de_charge")
@@ -539,32 +494,6 @@ class ActivePointDeChargeView(SQLModel):
     NOTE: This is an internal model used **ONLY** for creating the view.
     """
 
-    # selectable: ClassVar[Select] = select(  # type: ignore[call-overload, misc]
-    #     _PointDeCharge.id,
-    #     _PointDeCharge.id_pdc_itinerance,
-    #     _PointDeCharge.id_pdc_local,
-    #     _PointDeCharge.puissance_nominale,
-    #     _PointDeCharge.prise_type_ef,
-    #     _PointDeCharge.prise_type_2,
-    #     _PointDeCharge.prise_type_combo_ccs,
-    #     _PointDeCharge.prise_type_chademo,
-    #     _PointDeCharge.prise_type_autre,
-    #     _PointDeCharge.gratuit,
-    #     _PointDeCharge.paiement_acte,
-    #     _PointDeCharge.paiement_cb,
-    #     _PointDeCharge.paiement_autre,
-    #     _PointDeCharge.tarification,
-    #     _PointDeCharge.reservation,
-    #     _PointDeCharge.accessibilite_pmr,
-    #     _PointDeCharge.restriction_gabarit,
-    #     _PointDeCharge.observations,
-    #     _PointDeCharge.cable_t2_attache,
-    #     _PointDeCharge.station_id,
-    #     _PointDeCharge.created_at,
-    #     _PointDeCharge.updated_at,
-    #     _PointDeCharge.created_by_id,
-    #     _PointDeCharge.updated_by_id,
-    # ).where(cast(SAColumn, _PointDeCharge.deleted_at).is_(None))
     selectable: ClassVar[Select] = select(  # type: ignore[call-overload, misc]
         PointDeCharge.id,
         PointDeCharge.id_pdc_itinerance,
@@ -622,7 +551,6 @@ class Session(BaseAuditableSQLModel, SessionBase, table=True):
     point_de_charge_id: Optional[UUID] = Field(
         default=None, foreign_key="_pointdecharge.id"
     )
-    # point_de_charge: _PointDeCharge = Relationship(back_populates="sessions")
     point_de_charge: PointDeCharge = Relationship(back_populates="sessions")
 
 
@@ -662,7 +590,6 @@ class Status(BaseTimestampedSQLModel, StatusBase, table=True):
     point_de_charge_id: Optional[UUID] = Field(
         default=None, foreign_key="_pointdecharge.id"
     )
-    # point_de_charge: _PointDeCharge = Relationship(back_populates="statuses")
     point_de_charge: PointDeCharge = Relationship(back_populates="statuses")
 
     @computed_field  # type: ignore[misc]
@@ -728,8 +655,6 @@ class _StatiqueMV(SQLModel):
 
     selectable: ClassVar[Select] = (
         select(  # type: ignore[call-overload, misc]
-            # cast(SAColumn, _PointDeCharge.id).label("pdc_id"),
-            # cast(SAColumn, _PointDeCharge.updated_at).label("pdc_updated_at"),
             cast(SAColumn, PointDeCharge.id).label("pdc_id"),
             cast(SAColumn, PointDeCharge.updated_at).label("pdc_updated_at"),
             Amenageur.nom_amenageur,
@@ -739,10 +664,6 @@ class _StatiqueMV(SQLModel):
             Operateur.contact_operateur,
             Operateur.telephone_operateur,
             Enseigne.nom_enseigne,
-            # _Station.id_station_itinerance,
-            # _Station.id_station_local,
-            # _Station.nom_station,
-            # _Station.implantation_station,
             Station.id_station_itinerance,
             Station.id_station_local,
             Station.nom_station,
@@ -758,21 +679,7 @@ class _StatiqueMV(SQLModel):
                     spatial_index=False,
                 ),
             ).label("coordonneesXY"),
-            # _Station.nbre_pdc,
             Station.nbre_pdc,
-            # _PointDeCharge.id_pdc_itinerance,
-            # _PointDeCharge.id_pdc_local,
-            # _PointDeCharge.puissance_nominale,
-            # _PointDeCharge.prise_type_ef,
-            # _PointDeCharge.prise_type_2,
-            # _PointDeCharge.prise_type_combo_ccs,
-            # _PointDeCharge.prise_type_chademo,
-            # _PointDeCharge.prise_type_autre,
-            # _PointDeCharge.gratuit,
-            # _PointDeCharge.paiement_acte,
-            # _PointDeCharge.paiement_cb,
-            # _PointDeCharge.paiement_autre,
-            # _PointDeCharge.tarification,
             PointDeCharge.id_pdc_itinerance,
             PointDeCharge.id_pdc_local,
             PointDeCharge.puissance_nominale,
@@ -786,34 +693,20 @@ class _StatiqueMV(SQLModel):
             PointDeCharge.paiement_cb,
             PointDeCharge.paiement_autre,
             PointDeCharge.tarification,
-            # _Station.condition_acces,
             Station.condition_acces,
-            # _PointDeCharge.reservation,
             PointDeCharge.reservation,
-            # _Station.horaires,
             Station.horaires,
-            # _PointDeCharge.accessibilite_pmr,
-            # _PointDeCharge.restriction_gabarit,
             PointDeCharge.accessibilite_pmr,
             PointDeCharge.restriction_gabarit,
-            # _Station.station_deux_roues,
-            # _Station.raccordement,
-            # _Station.num_pdl,
-            # _Station.date_mise_en_service,
             Station.station_deux_roues,
             Station.raccordement,
             Station.num_pdl,
             Station.date_mise_en_service,
-            # _PointDeCharge.observations,
             PointDeCharge.observations,
-            # _Station.date_maj,
             Station.date_maj,
-            # _PointDeCharge.cable_t2_attache,
             PointDeCharge.cable_t2_attache,
         )
-        # .select_from(_PointDeCharge)
         .select_from(PointDeCharge)
-        # .join(_Station)
         .join(Station)
         .join(Amenageur)
         .join(Operateur)
@@ -835,6 +728,4 @@ class _StatiqueMV(SQLModel):
     )
 
 
-# mapper_registry.map_imperatively(PointDeCharge, _PointDeChargeView.__table__)
-# mapper_registry.map_imperatively(Station, _StationView.__table__)
 mapper_registry.map_imperatively(StatiqueMV, _StatiqueMV.__table__)

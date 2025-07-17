@@ -23,10 +23,8 @@ from qualicharge.schemas.core import (  # noqa: F401
     Localisation,
     Operateur,
     OperationalUnit,
-    # _PointDeCharge,
     PointDeCharge,
     Session,
-    # _Station,
     Station,
     Status,
 )

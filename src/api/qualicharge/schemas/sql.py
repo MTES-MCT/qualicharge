@@ -28,9 +28,7 @@ from .core import (
     Enseigne,
     Localisation,
     Operateur,
-    # _PointDeCharge,
     PointDeCharge,
-    # _Station,
     Station,
 )
 
@@ -204,7 +202,6 @@ class StatiqueImporter:
     def pdc(self) -> pd.DataFrame:
         """Get PointDeCharge Dataframe."""
         if self._pdc is None:
-            # self._pdc = self._get_dataframe_for_schema(_PointDeCharge, with_fk=True)
             self._pdc = self._get_dataframe_for_schema(PointDeCharge, with_fk=True)
         return self._pdc
 
@@ -212,7 +209,6 @@ class StatiqueImporter:
     def station(self) -> pd.DataFrame:
         """Get Station Dataframe."""
         if self._station is None:
-            # self._station = self._get_dataframe_for_schema(_Station, with_fk=True)
             self._station = self._get_dataframe_for_schema(Station, with_fk=True)
         return self._station
 
@@ -309,13 +305,11 @@ class StatiqueImporter:
         )
         self._save_schema(
             self.station,
-            # _Station,
             Station,
             index_elements=["id_station_itinerance"],
         )
         self._save_schema(
             self.pdc,
-            # _PointDeCharge,
             PointDeCharge,
             index_elements=["id_pdc_itinerance"],
         )
