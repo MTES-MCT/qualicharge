@@ -1,5 +1,5 @@
 # The builder image, used to build the virtual environment
-FROM python:3.12-slim
+FROM python:3.13-slim
 
 ARG DOCKER_UID 1000
 ARG DOCKER_GID 1000
