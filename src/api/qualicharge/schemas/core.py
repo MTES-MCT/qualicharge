@@ -23,7 +23,6 @@ from sqlalchemy import PrimaryKeyConstraint, Select, event
 from sqlalchemy import cast as SA_cast
 from sqlalchemy.dialects.postgresql import ENUM as PgEnum
 from sqlalchemy.orm import registry
-from sqlalchemy.orm import relationship as SARelationship
 from sqlalchemy.schema import Column as SAColumn
 from sqlalchemy.schema import Index
 from sqlalchemy.types import Date, DateTime, String
@@ -299,6 +298,7 @@ class OperationalUnit(BaseTimestampedSQLModel, table=True):
             #     )
             # )
             select(Station).where(
+                # FIXME: use SQL 'like' operator
                 cast(SAColumn, Station.id_station_itinerance).regexp_match(
                     f"^{self.code}P.*$"
                 )
@@ -315,8 +315,10 @@ class OperationalUnit(BaseTimestampedSQLModel, table=True):
         session.commit()
 
 
-class BaseStation(SQLModel):
-    """Base Station model."""
+class Station(SoftDeleteMixin, BaseAuditableSQLModel, table=True):
+    """Station model."""
+
+    __tablename__ = "_station"
 
     model_config = SQLModelConfig(validate_assignment=True)
 
@@ -374,22 +376,6 @@ class BaseStation(SQLModel):
         ondelete="SET NULL",
     )
 
-    def __eq__(self, other) -> bool:
-        """Assess instances equality given uniqueness criterions."""
-        fields = ("id_station_itinerance",)
-        return all(getattr(self, field) == getattr(other, field) for field in fields)
-
-    def __hash__(self) -> int:
-        """Make model hashable."""
-        return hash(self.id)
-
-
-# class _Station(BaseStation, SoftDeleteMixin, BaseAuditableSQLModel, table=True):
-class Station(BaseStation, SoftDeleteMixin, BaseAuditableSQLModel, table=True):
-    """Original Station table."""
-
-    __tablename__ = "_station"
-
     # Relationships
     amenageur: Amenageur = Relationship(back_populates="stations")
     operateur: Operateur = Relationship(back_populates="stations")
@@ -398,6 +384,15 @@ class Station(BaseStation, SoftDeleteMixin, BaseAuditableSQLModel, table=True):
     operational_unit: OperationalUnit = Relationship(back_populates="stations")
     # points_de_charge: List["_PointDeCharge"] = Relationship(back_populates="station")
     points_de_charge: List["PointDeCharge"] = Relationship(back_populates="station")
+
+    def __eq__(self, other) -> bool:
+        """Assess instances equality given uniqueness criterions."""
+        fields = ("id_station_itinerance",)
+        return all(getattr(self, field) == getattr(other, field) for field in fields)
+
+    def __hash__(self) -> int:
+        """Make model hashable."""
+        return hash(self.id)
 
 
 # @event.listens_for(_Station, "before_insert")
@@ -486,8 +481,10 @@ class ActiveStationsView(SQLModel):
     )
 
 
-class BasePointDeCharge(SQLModel):
-    """Base PointDeCharge model."""
+class PointDeCharge(SoftDeleteMixin, BaseAuditableSQLModel, table=True):
+    """Original PointDeCharge table."""
+
+    __tablename__ = "_pointdecharge"
 
     model_config = SQLModelConfig(validate_assignment=True)
 
@@ -530,26 +527,10 @@ class BasePointDeCharge(SQLModel):
     station_id: Optional[UUID] = Field(
         default=None, foreign_key="_station.id", index=True
     )
-
-
-class PointDeCharge(
-    BasePointDeCharge, SoftDeleteMixin, BaseAuditableSQLModel, table=True
-):
-    """Original PointDeCharge table."""
-
-    __tablename__ = "_pointdecharge"
-
-    # Relationships
     # station: _Station = Relationship(back_populates="points_de_charge")
     station: Station = Relationship(back_populates="points_de_charge")
     sessions: List["Session"] = Relationship(back_populates="point_de_charge")
     statuses: List["Status"] = Relationship(back_populates="point_de_charge")
-
-
-# class PointDeCharge(BasePointDeCharge):
-#     """PointDeCharge view."""
-#
-#     __tablename__ = "PointDeCharge"
 
 
 class ActivePointDeChargeView(SQLModel):

@@ -23,6 +23,7 @@ from ..schemas.core import (
 from . import (
     AuditableSQLModelFactory,
     FrenchDataclassFactory,
+    SoftDeleteFactoryMixin,
     TimestampedSQLModelFactory,
 )
 
@@ -68,8 +69,8 @@ class StatiqueFactory(ModelFactory[Statique]):
     )
     coordonneesXY = Use(
         lambda: (
-            f"[{round(DataclassFactory.__random__.uniform(-180,180), 6)}, "  # longitude
-            f"{round(DataclassFactory.__random__.uniform(-90,90), 6)}]"  # latitude
+            f"[{round(DataclassFactory.__random__.uniform(-180, 180), 6)}, "  # longitude
+            f"{round(DataclassFactory.__random__.uniform(-90, 90), 6)}]"  # latitude
         )
     )
 
@@ -136,7 +137,9 @@ class OperateurFactory(AuditableSQLModelFactory[Operateur]):
     )
 
 
-class PointDeChargeFactory(AuditableSQLModelFactory[PointDeCharge]):
+class PointDeChargeFactory(
+    SoftDeleteFactoryMixin, AuditableSQLModelFactory[PointDeCharge]
+):
     """PointDeCharge schema factory."""
 
     id_pdc_itinerance = Use(
@@ -158,7 +161,7 @@ class OperationalUnitFactory(TimestampedSQLModelFactory[OperationalUnit]):
     name = Use(FrenchDataclassFactory.__faker__.company)
 
 
-class StationFactory(AuditableSQLModelFactory[Station]):
+class StationFactory(SoftDeleteFactoryMixin, AuditableSQLModelFactory[Station]):
     """Station schema factory."""
 
     id_station_itinerance = Use(

@@ -55,3 +55,18 @@ class AuditableSQLModelFactory(Generic[T], SQLAlchemyFactory[T]):
     updated_at = Use(datetime.now, timezone.utc)
     created_by_id = None
     updated_by_id = None
+
+
+class SoftDeleteFactoryMixin:
+    """A base factory for Auditable SQLModel.
+
+    We expect SQLModel to define the following fields:
+
+    - id: UUID
+    - created_at: datetime
+    - updated_at: datetime
+    - created_by_id: UUID
+    - updated_by_id: UUID
+    """
+
+    deleted_by_id = None
