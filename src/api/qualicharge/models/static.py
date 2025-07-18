@@ -121,42 +121,28 @@ def not_future(value: date):
 # A date not in the future (today or in the past)
 NotFutureDate = Annotated[date, AfterValidator(not_future)]
 
-# Default values (if not provided)
-DEFAULT_CHAR_VALUE: str = "NA"
-DEFAULT_EMAIL_ADDRESS: str = "na@example.org"
-DEFAULT_PHONE_NUMBER: FrenchPhoneNumber = FrenchPhoneNumber("+33.123456789")
-DEFAULT_SIREN_NUMBER: str = "123456789"
-
 
 class Statique(ModelSchemaMixin, BaseModel):
     """IRVE static model."""
 
-    nom_amenageur: Optional[
-        Annotated[str, StringConstraints(strip_whitespace=True)]
-    ] = DEFAULT_CHAR_VALUE
-    siren_amenageur: Optional[
-        Annotated[
-            str,
-            StringConstraints(
-                pattern=r"^\d{9}$",
-            ),
-            Field(
-                examples=[
-                    "853300010",
-                ]
-            ),
-        ]
-    ] = DEFAULT_SIREN_NUMBER
-    contact_amenageur: Optional[
-        Annotated[EmailStr, StringConstraints(strip_whitespace=True)]
-    ] = DEFAULT_EMAIL_ADDRESS
-    nom_operateur: Optional[
-        Annotated[str, StringConstraints(strip_whitespace=True)]
-    ] = DEFAULT_CHAR_VALUE
+    nom_amenageur: Annotated[str, StringConstraints(strip_whitespace=True)]
+    siren_amenageur: Annotated[
+        str,
+        StringConstraints(
+            pattern=r"^\d{9}$",
+        ),
+        Field(
+            examples=[
+                "853300010",
+            ]
+        ),
+    ]
+    contact_amenageur: Annotated[EmailStr, StringConstraints(strip_whitespace=True)]
+    nom_operateur: Annotated[str, StringConstraints(strip_whitespace=True)]
     contact_operateur: Annotated[EmailStr, StringConstraints(strip_whitespace=True)]
-    telephone_operateur: Optional[
-        Annotated[FrenchPhoneNumber, StringConstraints(strip_whitespace=True)]
-    ] = DEFAULT_PHONE_NUMBER
+    telephone_operateur: Annotated[
+        FrenchPhoneNumber, StringConstraints(strip_whitespace=True)
+    ]
     nom_enseigne: Annotated[str, StringConstraints(strip_whitespace=True)]
     id_station_itinerance: Annotated[
         str,

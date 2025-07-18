@@ -10,6 +10,13 @@ and this project adheres to
 
 ### Changed
 
+- mark the following static fields as required:
+  - `nom_amenageur`
+  - `siren_amenageur`
+  - `contact_amenageur`
+  - `nom_operateur`
+  - `telephone_operateur`
+
 #### Dependencies
 
 - Upgrade `FastAPI` to `0.116.1`
