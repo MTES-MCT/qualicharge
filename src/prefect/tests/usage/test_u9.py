@@ -18,8 +18,8 @@ from tests.parameters import (
 )
 
 # expected result for level [city, epci, dpt, reg]
-N_LEVEL = [1150, 10235, 5489, 34639]
-N_LEVEL_NATIONAL = 88135
+N_LEVEL = [289, 6634, 12505, 36838]
+N_LEVEL_NATIONAL = 83363
 
 TIMESPAN = IndicatorTimeSpan(start=datetime(2024, 12, 24), period=IndicatorPeriod.DAY)
 PARAMETERS_FLOW = [prm + (lvl,) for prm, lvl in zip(PARAM_FLOW, N_LEVEL, strict=True)]

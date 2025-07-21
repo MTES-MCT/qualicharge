@@ -18,13 +18,13 @@ from indicators.types import Environment
 )
 def test_extract_old_statuses_flow(clean_s3fs):
     """Test the `extract_old_statuses` flow."""
-    with freeze_time("2025-05-15"):
+    with freeze_time("2025-07-01"):
         result = extract_old_statuses(
             from_now={"years": 1},
             environment=Environment.TEST,
             if_exists=IfExistStrategy.IGNORE,
         )
-    expected_path = "qualicharge-statuses/2024/5/6/test.parquet"
+    expected_path = "qualicharge-statuses/2024/6/6/test.parquet"
 
     # We expect a single status older than a year
     assert len(result) == 1
@@ -44,8 +44,9 @@ def test_extract_old_statuses_flow(clean_s3fs):
         },
     )
     # Check parquet file content
-    assert len(df) == 1
-    assert df["id_pdc_itinerance"][0] == "FRS63E63192AB1GT2"
+    n_statuses = 2
+    assert len(df) == n_statuses
+    assert df["id_pdc_itinerance"][0] == "FRSE1ESE62MBBACP1"
 
 
 @pytest.mark.parametrize(
@@ -60,13 +61,13 @@ def test_extract_old_statuses_flow_check_fails(clean_s3fs, monkeypatch):
 
     monkeypatch.setattr(cooling, "_check_archive", fake_check)
 
-    with freeze_time("2025-05-15"):
+    with freeze_time("2025-07-01"):
         result = extract_old_statuses(
             from_now={"years": 1},
             environment=Environment.TEST,
             if_exists=IfExistStrategy.IGNORE,
         )
-    expected_path = "qualicharge-statuses/2024/5/6/test.parquet"
+    expected_path = "qualicharge-statuses/2024/6/6/test.parquet"
 
     assert len(result) == 1
     assert result[0].type == StateType.FAILED
@@ -81,13 +82,13 @@ def test_extract_old_statuses_flow_check_fails(clean_s3fs, monkeypatch):
 )
 def test_extract_old_statuses_flow_archive_exists(clean_s3fs):
     """Test the `extract_old_statuses` flow when target archive exists."""
-    with freeze_time("2025-05-15"):
+    with freeze_time("2025-07-01"):
         result = extract_old_statuses(
             from_now={"years": 1},
             environment=Environment.TEST,
             if_exists=IfExistStrategy.IGNORE,
         )
-    expected_path = "qualicharge-statuses/2024/5/6/test.parquet"
+    expected_path = "qualicharge-statuses/2024/6/6/test.parquet"
 
     # We expect a single status older than a year
     assert len(result) == 1
@@ -97,7 +98,7 @@ def test_extract_old_statuses_flow_archive_exists(clean_s3fs):
     )
 
     # Test ignore strategy
-    with freeze_time("2025-05-15"):
+    with freeze_time("2025-07-01"):
         result = extract_old_statuses(
             from_now={"years": 1},
             environment=Environment.TEST,
@@ -111,7 +112,7 @@ def test_extract_old_statuses_flow_archive_exists(clean_s3fs):
     )
 
     # Test fail strategy
-    with freeze_time("2025-05-15"):
+    with freeze_time("2025-07-01"):
         result = extract_old_statuses(
             from_now={"years": 1},
             environment=Environment.TEST,
@@ -124,7 +125,7 @@ def test_extract_old_statuses_flow_archive_exists(clean_s3fs):
     )
 
     # Test overwrite strategy
-    with freeze_time("2025-05-15"):
+    with freeze_time("2025-07-01"):
         result = extract_old_statuses(
             from_now={"years": 1},
             environment=Environment.TEST,
@@ -137,7 +138,7 @@ def test_extract_old_statuses_flow_archive_exists(clean_s3fs):
     )
 
     # Test append strategy
-    with freeze_time("2025-05-15"):
+    with freeze_time("2025-07-01"):
         result = extract_old_statuses(
             from_now={"years": 1},
             environment=Environment.TEST,
@@ -156,13 +157,13 @@ def test_extract_old_statuses_flow_archive_exists(clean_s3fs):
 )
 def test_extract_old_statuses_flow_archive_exists_check(clean_s3fs, monkeypatch):
     """Test the `extract_old_statuses` flow when target archive exists."""
-    with freeze_time("2025-05-15"):
+    with freeze_time("2025-07-01"):
         result = extract_old_statuses(
             from_now={"years": 1},
             environment=Environment.TEST,
             if_exists=IfExistStrategy.IGNORE,
         )
-    expected_path = "qualicharge-statuses/2024/5/6/test.parquet"
+    expected_path = "qualicharge-statuses/2024/6/6/test.parquet"
 
     # We expect a single status older than a year
     assert len(result) == 1
@@ -171,7 +172,7 @@ def test_extract_old_statuses_flow_archive_exists_check(clean_s3fs, monkeypatch)
         result[0].message == f"qualicharge-statuses archive '{expected_path}' created"
     )
 
-    with freeze_time("2025-05-15"):
+    with freeze_time("2025-07-01"):
         result = extract_old_statuses(
             from_now={"years": 1},
             environment=Environment.TEST,
@@ -181,7 +182,7 @@ def test_extract_old_statuses_flow_archive_exists_check(clean_s3fs, monkeypatch)
     assert result[0].type == StateType.COMPLETED
     assert result[0].message == (
         f"qualicharge-statuses archive '{expected_path}' already exists "
-        "and has been checked. It contains 1 rows."
+        "and has been checked. It contains 2 rows."
     )
 
     # What happens when check fails?
@@ -190,7 +191,7 @@ def test_extract_old_statuses_flow_archive_exists_check(clean_s3fs, monkeypatch)
 
     monkeypatch.setattr(cooling, "_check_archive", fake_check)
 
-    with freeze_time("2025-05-15"):
+    with freeze_time("2025-07-01"):
         result = extract_old_statuses(
             from_now={"years": 1},
             environment=Environment.TEST,
@@ -209,18 +210,18 @@ def test_extract_old_statuses_flow_archive_exists_check(clean_s3fs, monkeypatch)
 )
 def test_extract_old_statuses_flow_multiple_archives(clean_s3fs):
     """Test the `extract_old_statuses` flow when multiple archives are created."""
-    with freeze_time("2024-07-15"):
+    with freeze_time("2024-07-16"):
         result = extract_old_statuses(
             from_now={"days": 1},
             environment=Environment.TEST,
             if_exists=IfExistStrategy.IGNORE,
         )
     expected_paths = [
-        "qualicharge-statuses/2024/5/6/test.parquet",
-        "qualicharge-statuses/2024/7/9/test.parquet",
+        "qualicharge-statuses/2024/6/6/test.parquet",
         "qualicharge-statuses/2024/7/13/test.parquet",
+        "qualicharge-statuses/2024/7/14/test.parquet",
     ]
-    expected_statuses = [1, 1, 2]
+    expected_statuses = [2, 3, 1]
 
     # We expect 3 archives
     assert len(result) == len(expected_paths)

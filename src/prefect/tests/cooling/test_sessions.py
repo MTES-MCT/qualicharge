@@ -1,4 +1,4 @@
-"""QualiCharge prefect cooling tests: statuses."""
+"""QualiCharge prefect cooling tests: sessions."""
 
 import os
 
@@ -18,15 +18,15 @@ from indicators.types import Environment
 )
 def test_extract_old_sessions_flow(clean_s3fs):
     """Test the `extract_old_sessions` flow."""
-    with freeze_time("2025-05-15"):
+    with freeze_time("2025-06-01"):
         result = extract_old_sessions(
-            from_now={"years": 1},
+            from_now={"months": 6},
             environment=Environment.TEST,
             if_exists=IfExistStrategy.IGNORE,
         )
-    expected_path = "qualicharge-sessions/2022/10/24/test.parquet"
+    expected_path = "qualicharge-sessions/2024/11/30/test.parquet"
 
-    # We expect a single status older than a year
+    # We expect a single session older than 6 months
     assert len(result) == 1
     assert result[0].type == StateType.COMPLETED
     assert (
@@ -44,8 +44,9 @@ def test_extract_old_sessions_flow(clean_s3fs):
         },
     )
     # Check parquet file content
-    assert len(df) == 1
-    assert df["id_pdc_itinerance"][0] == "FRS50E506600012"
+    n_sessions = 19
+    assert len(df) == n_sessions
+    assert df["id_pdc_itinerance"][0] == "FRIOYE409603"
 
 
 @pytest.mark.parametrize(
@@ -60,13 +61,13 @@ def test_extract_old_sessions_flow_check_fails(clean_s3fs, monkeypatch):
 
     monkeypatch.setattr(cooling, "_check_archive", fake_check)
 
-    with freeze_time("2025-05-15"):
+    with freeze_time("2025-06-01"):
         result = extract_old_sessions(
-            from_now={"years": 1},
+            from_now={"months": 6},
             environment=Environment.TEST,
             if_exists=IfExistStrategy.IGNORE,
         )
-    expected_path = "qualicharge-sessions/2022/10/24/test.parquet"
+    expected_path = "qualicharge-sessions/2024/11/30/test.parquet"
 
     assert len(result) == 1
     assert result[0].type == StateType.FAILED
@@ -81,15 +82,15 @@ def test_extract_old_sessions_flow_check_fails(clean_s3fs, monkeypatch):
 )
 def test_extract_old_sessions_flow_archive_exists(clean_s3fs):
     """Test the `extract_old_sessions` flow when target archive exists."""
-    with freeze_time("2025-05-15"):
+    with freeze_time("2025-06-01"):
         result = extract_old_sessions(
-            from_now={"years": 1},
+            from_now={"months": 6},
             environment=Environment.TEST,
             if_exists=IfExistStrategy.IGNORE,
         )
-    expected_path = "qualicharge-sessions/2022/10/24/test.parquet"
+    expected_path = "qualicharge-sessions/2024/11/30/test.parquet"
 
-    # We expect a single status older than a year
+    # We expect a single session older than 6 months
     assert len(result) == 1
     assert result[0].type == StateType.COMPLETED
     assert (
@@ -97,9 +98,9 @@ def test_extract_old_sessions_flow_archive_exists(clean_s3fs):
     )
 
     # Test ignore strategy
-    with freeze_time("2025-05-15"):
+    with freeze_time("2025-06-01"):
         result = extract_old_sessions(
-            from_now={"years": 1},
+            from_now={"months": 6},
             environment=Environment.TEST,
             if_exists=IfExistStrategy.IGNORE,
         )
@@ -111,9 +112,9 @@ def test_extract_old_sessions_flow_archive_exists(clean_s3fs):
     )
 
     # Test fail strategy
-    with freeze_time("2025-05-15"):
+    with freeze_time("2025-06-01"):
         result = extract_old_sessions(
-            from_now={"years": 1},
+            from_now={"months": 6},
             environment=Environment.TEST,
             if_exists=IfExistStrategy.FAIL,
         )
@@ -124,9 +125,9 @@ def test_extract_old_sessions_flow_archive_exists(clean_s3fs):
     )
 
     # Test overwrite strategy
-    with freeze_time("2025-05-15"):
+    with freeze_time("2025-06-01"):
         result = extract_old_sessions(
-            from_now={"years": 1},
+            from_now={"months": 6},
             environment=Environment.TEST,
             if_exists=IfExistStrategy.OVERWRITE,
         )
@@ -137,9 +138,9 @@ def test_extract_old_sessions_flow_archive_exists(clean_s3fs):
     )
 
     # Test append strategy
-    with freeze_time("2025-05-15"):
+    with freeze_time("2025-06-01"):
         result = extract_old_sessions(
-            from_now={"years": 1},
+            from_now={"months": 6},
             environment=Environment.TEST,
             if_exists=IfExistStrategy.APPEND,
         )
@@ -159,15 +160,15 @@ def test_extract_old_sessions_flow_archive_exists_check(clean_s3fs, monkeypatch)
 
     Test the IfExistStrategy.CHECK scenario.
     """
-    with freeze_time("2025-05-15"):
+    with freeze_time("2025-06-01"):
         result = extract_old_sessions(
-            from_now={"years": 1},
+            from_now={"months": 6},
             environment=Environment.TEST,
             if_exists=IfExistStrategy.IGNORE,
         )
-    expected_path = "qualicharge-sessions/2022/10/24/test.parquet"
+    expected_path = "qualicharge-sessions/2024/11/30/test.parquet"
 
-    # We expect a single status older than a year
+    # We expect a single session older than 6 months
     assert len(result) == 1
     assert result[0].type == StateType.COMPLETED
     assert (
@@ -175,9 +176,9 @@ def test_extract_old_sessions_flow_archive_exists_check(clean_s3fs, monkeypatch)
     )
 
     # Test the CHECK strategy
-    with freeze_time("2025-05-15"):
+    with freeze_time("2025-06-01"):
         result = extract_old_sessions(
-            from_now={"years": 1},
+            from_now={"months": 6},
             environment=Environment.TEST,
             if_exists=IfExistStrategy.CHECK,
         )
@@ -185,7 +186,7 @@ def test_extract_old_sessions_flow_archive_exists_check(clean_s3fs, monkeypatch)
     assert result[0].type == StateType.COMPLETED
     assert result[0].message == (
         f"qualicharge-sessions archive '{expected_path}' already exists "
-        "and has been checked. It contains 1 rows."
+        "and has been checked. It contains 19 rows."
     )
 
     # What happens when check fails?
@@ -194,9 +195,9 @@ def test_extract_old_sessions_flow_archive_exists_check(clean_s3fs, monkeypatch)
 
     monkeypatch.setattr(cooling, "_check_archive", fake_check)
 
-    with freeze_time("2025-05-15"):
+    with freeze_time("2025-06-01"):
         result = extract_old_sessions(
-            from_now={"years": 1},
+            from_now={"months": 6},
             environment=Environment.TEST,
             if_exists=IfExistStrategy.CHECK,
         )
@@ -213,18 +214,18 @@ def test_extract_old_sessions_flow_archive_exists_check(clean_s3fs, monkeypatch)
 )
 def test_extract_old_sessions_flow_multiple_archives(clean_s3fs):
     """Test the `extract_old_sessions` flow when multiple archives are created."""
-    with freeze_time("2024-12-03"):
+    with freeze_time("2024-12-04"):
         result = extract_old_sessions(
             from_now={"days": 1},
             environment=Environment.TEST,
             if_exists=IfExistStrategy.IGNORE,
         )
     expected_paths = [
-        "qualicharge-sessions/2022/10/24/test.parquet",
         "qualicharge-sessions/2024/11/30/test.parquet",
         "qualicharge-sessions/2024/12/1/test.parquet",
+        "qualicharge-sessions/2024/12/2/test.parquet",
     ]
-    expected_statuses = [1, 10, 1716]
+    expected_sessions = [19, 1777, 1321]
 
     # We expect 3 archives
     assert len(result) == len(expected_paths)
@@ -236,7 +237,7 @@ def test_extract_old_sessions_flow_multiple_archives(clean_s3fs):
 
     # Assert parquet files exist and can be opened
     s3_endpoint_url = os.environ.get("S3_ENDPOINT_URL", None)
-    for expected_path, n in zip(expected_paths, expected_statuses, strict=True):
+    for expected_path, n in zip(expected_paths, expected_sessions, strict=True):
         df = pd.read_parquet(
             f"s3://{expected_path}",
             engine="pyarrow",

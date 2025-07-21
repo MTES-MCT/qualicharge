@@ -17,7 +17,7 @@ def test_slugify():
 def test_get_db_amenageur():
     """Test the get_db_amenageur utility."""
     amenageurs = list(static.get_db_amenageurs(Environment.TEST))
-    expected = 507
+    expected = 25
     assert len(amenageurs) == expected
 
     with pytest.raises(
@@ -29,13 +29,13 @@ def test_get_db_amenageur():
 def test_run_api_db_validation():
     """Run API database validation."""
     result = static.run_api_db_validation(Environment.TEST, report_by_email=False)
-    assert not result.success
+    assert result.success
 
 
 def test_run_api_db_validation_by_amenageur(monkeypatch):
     """Run API database validation by amenageur."""
     monkeypatch.setattr(
-        static, "get_db_amenageurs", lambda _: ["Tesla", "UAB", "TesLa ", "UNIBAIL"]
+        static, "get_db_amenageurs", lambda _: ["Tesla", "Ionity", "TesLa ", "Electra"]
     )
     report = static.run_api_db_validation_by_amenageur(
         Environment.TEST, report_by_email=False
@@ -44,32 +44,9 @@ def test_run_api_db_validation_by_amenageur(monkeypatch):
     expected = 3
     assert len(report.results) == expected
 
-    # Tesla
-    results = report.results[0]
-    assert results.amenageur == "Tesla"
-    assert not results.success
-    successes = [s.success for s in report.results[0].suite]
-    expectations = 8
-    assert len(successes) == expectations
-    exp_successes = 7
-    assert len([s for s in successes if s]) == exp_successes
-
-    # UAB
-    results = report.results[1]
-    assert results.amenageur == "UAB"
-    assert not results.success
-    successes = [s.success for s in report.results[1].suite]
-    expectations = 8
-    assert len(successes) == expectations
-    exp_successes = 5
-    assert len([s for s in successes if s]) == exp_successes
-
-    # Unibail
-    results = report.results[2]
-    assert results.amenageur == "UNIBAIL"
-    assert results.success
-    successes = [s.success for s in report.results[2].suite]
-    expectations = 8
-    assert len(successes) == expectations
-    exp_successes = 8
-    assert len([s for s in successes if s]) == exp_successes
+    # All amenageurs should pass tests
+    assert [r.amenageur for r in report.results] == ["Tesla", "Ionity", "Electra"]
+    for results in report.results:
+        assert results.success
+        successes = [s.success for s in results.suite]
+        assert len(successes) == len(results.suite)

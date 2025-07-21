@@ -5,16 +5,25 @@ set -eo pipefail
 declare TEST=true
 declare service=${SERVICE:-api}
 declare cmd
+declare volume="./src/${service}:/app"
 declare DOCKER_USER
 DOCKER_UID="$(id -u)"
 DOCKER_GID="$(id -g)"
 DOCKER_USER="${DOCKER_UID}:${DOCKER_GID}"
 
-if [ "${service}" == "client" ]; then
-  cmd="pytest";
-else
-  cmd="uv run pytest";
+case "${service}" in
+  client)
+    cmd="pytest";;
+  api)
+    cmd="uv run pytest";;
+  *)
+    cmd="pipenv run pytest";;
+esac
+
+if [ "${service}" == "prefect-test" ]; then 
+  volume="./src/prefect:/app";
 fi
+
 
 DOCKER_USER=${DOCKER_USER} \
   DOCKER_UID=${DOCKER_UID} \
@@ -22,6 +31,6 @@ DOCKER_USER=${DOCKER_USER} \
   docker compose run --rm \
     -e QUALICHARGE_OIDC_IS_ENABLED=True \
     -e TEST="${TEST}" \
-    -v "./src/${service}:/app" \
+    -v "${volume}" \
     "${service}" \
     ${cmd} "$@"

@@ -20,7 +20,7 @@ from ..parameters import (
 )
 
 # expected result for level [city, epci, dpt, reg]
-N_LEVEL = [212, 2250, 1489, 8724]
+N_LEVEL = [56, 2484, 4242, 12147]
 N_DPTS = 109
 N_NAT_REG_DPT_EPCI_CITY = 36465
 

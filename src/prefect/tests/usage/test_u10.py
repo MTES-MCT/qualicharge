@@ -18,8 +18,8 @@ from tests.parameters import (
 )
 
 # expected result for level [city, epci, dpt, reg]
-N_LEVEL = [32, 307, 172, 1055]
-N_LEVEL_NATIONAL = 2718
+N_LEVEL = [8, 209, 388, 1105]
+N_LEVEL_NATIONAL = 2553
 N_DPTS = 109
 
 TIMESPAN = IndicatorTimeSpan(start=datetime(2024, 12, 24), period=IndicatorPeriod.DAY)
