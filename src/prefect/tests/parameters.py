@@ -14,7 +14,7 @@ PARAM_FLOW = [
     (
         Level.CITY,
         "SELECT COUNT(*) FROM City",
-        ["75056", "13055", "69123"],
+        ["59350", "13055", "69123"],
     ),
     (
         Level.EPCI,
@@ -36,7 +36,7 @@ PARAM_FLOW = [
 PARAM_VALUE = [
     (
         Level.CITY,
-        "SELECT id FROM City WHERE name IN ('Paris', 'Marseille', 'Lyon')",
+        "SELECT id FROM City WHERE name IN ('Lille', 'Marseille', 'Lyon')",
     ),
     (
         Level.EPCI,

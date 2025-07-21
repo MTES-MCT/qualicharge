@@ -18,12 +18,12 @@ from tests.parameters import (
 )
 
 # expected result
-N_LEVEL = [51, 520, 372, 1963]
-N_LEVEL_NATIONAL = 5278
+N_LEVEL = [9, 452, 797, 2417]
+N_LEVEL_NATIONAL = 5782
 N_DPTS = 109
 N_NAT_REG_DPT_EPCI_CITY = 36465
 
-TIMESPAN = IndicatorTimeSpan(start=datetime(2024, 12, 24), period=IndicatorPeriod.DAY)
+TIMESPAN = IndicatorTimeSpan(start=datetime(2024, 12, 28), period=IndicatorPeriod.DAY)
 TIMESPAN_QUERY = IndicatorTimeSpan(
     start=TIMESPAN.start - PeriodDuration.MONTH.value,
     period=IndicatorPeriod.MONTH,
@@ -41,7 +41,6 @@ def test_task_get_values_for_target(db_connection, level, query, expected):
         level, TIMESPAN, indexes, Environment.TEST
     )
     assert len(set(poc_extract["level_id"])) == len(indexes)
-    # assert poc_extract["value"].sum() == expected
 
 
 def test_task_get_values_for_target_unexpected_level():

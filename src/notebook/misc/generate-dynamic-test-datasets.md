@@ -5,7 +5,7 @@ jupyter:
     text_representation:
       extension: .md
       format_name: markdown
-      format_version: '1.3'
+      format_version: "1.3"
       jupytext_version: 1.16.2
   kernelspec:
     display_name: Python 3 (ipykernel)
@@ -14,6 +14,7 @@ jupyter:
 ---
 
 <!-- #region -->
+
 # Generate dynamic test datasets
 
 The aim of this notebook is to create a realistic test dataset for dynamic data (sessions + statuses).
@@ -37,9 +38,11 @@ cat data/dump.pgsql | \
   bin/compose exec -T postgresql pg_restore -t status -a -f - \
   > data/dump-statuses.sql
 ```
+
 <!-- #endregion -->
 
 <!-- #region -->
+
 ## Step 2 - Convert SQL data to TSV
 
 Convert to tsv the original SQL dump for sessions:
@@ -63,6 +66,7 @@ sed -n -e '/COPY/,$p' data/dump-statuses.sql | \
   head -n -7 \
   > data/dump-statuses.tsv
 ```
+
 <!-- #endregion -->
 
 ## Step 3 - Sample data
@@ -151,7 +155,7 @@ for enm in (EtatPDCEnum, OccupationPDCEnum, EtatPriseEnum):
     for k in enm:
         enum_to_replace.append(str(k.name))
         enum_value.append(k.value)
-        
+
 statuses = statuses.replace(to_replace=enum_to_replace, value=enum_value)
 statuses
 ```
@@ -172,7 +176,7 @@ The next step will assign statuses and sessions for the static dataset.
 
 ```python
 static = pd.read_json(
-    "../../../data/irve-statique.json.gz", 
+    "../../../data/irve-statique.json.gz",
     lines=True,
     orient="records",
     engine="pyarrow",
