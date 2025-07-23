@@ -8,6 +8,16 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Changed
+
+#### Dependencies
+
+- Upgrade `FastAPI` to `0.116.1`
+- Upgrade `geoalchemy2` to `0.18.0`
+- Upgrade `pandas` to `2.3.1`
+- Upgrade `pyarrow` to `21.0.0`
+- Upgrade `sentry-sdk` to `2.33.2`
+
 ## [0.27.0] - 2025-07-16
 
 ### Added

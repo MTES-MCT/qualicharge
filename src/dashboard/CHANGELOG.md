@@ -12,7 +12,10 @@ and this project adheres to
 
 #### Dependencies
 
-- Upgrade `sentry-sdk` to `2.32.0`
+- Upgrade `Django` to `5.2.4`
+- Upgrade `django-dsfr` to `3.0.0`
+- Upgrade `jsonschema` to `4.25.0`
+- Upgrade `sentry-sdk` to `2.33.2`
 
 ## [0.2.0] - 2025-06-23
 
