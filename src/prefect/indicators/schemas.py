@@ -21,13 +21,13 @@ class BaseIndicator(DeclarativeBase):
         UUID(as_uuid=True), primary_key=True, default=uuid4
     )
     category: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
-    code: Mapped[str] = mapped_column(String(5))
-    level: Mapped[int] = mapped_column(SmallInteger)
+    code: Mapped[str] = mapped_column(String(5), index=True)
+    level: Mapped[int] = mapped_column(SmallInteger, index=True)
     target: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
-    period: Mapped[str] = mapped_column(String(1))
+    period: Mapped[str] = mapped_column(String(1), index=True)
     value: Mapped[float] = mapped_column(Float)
     extras: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
-    timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
 
     def __repr__(self) -> str:
         """Indicator representation."""
