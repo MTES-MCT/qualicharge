@@ -49,7 +49,7 @@ scripts/activate.sh
 scripts/*.csv
 
 # -- Tools
-.coverage
+.coverage*
 src/api/bench_*.csv
 
 # Prefect
