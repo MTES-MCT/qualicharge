@@ -364,7 +364,7 @@ reset-db: \
 .PHONY: reset-db
 
 refresh-api-static: ## Refresh the API Statique Materialized View
-	$(COMPOSE) exec api pipenv run qcm statics refresh
+	$(COMPOSE) exec api uv run qcm statics refresh
 .PHONY: refresh-api-static
 
 reset-api-db: ## Reset the PostgreSQL API database
