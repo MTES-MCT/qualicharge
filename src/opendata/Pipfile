@@ -4,7 +4,7 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-data7 = "==0.12.0"
+data7 = "==0.12.1"
 psycopg = {extras = ["binary", "pool"], version = "==3.2.9"}
 
 [dev-packages]
