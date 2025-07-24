@@ -4,7 +4,7 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-data7 = "==0.11.2"
+data7 = "==0.12.1"
 geoalchemy2 = {extras = ["shapely"], version = "==0.18.0"}
 geopandas = "==1.1.1"
 great_expectations = {extras = ["postgresql"], version = "==1.5.5"}
