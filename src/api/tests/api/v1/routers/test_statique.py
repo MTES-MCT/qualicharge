@@ -45,6 +45,24 @@ def test_list_with_missing_scopes(client_auth):
     assert response.status_code == status.HTTP_403_FORBIDDEN
 
 
+def test_list_invalid_statique_data(client_auth, db_session):
+    """Test the /statique/ list endpoint (when db rows are invalid)."""
+    # Create invalid statique entries
+    n_statiques = 3
+    statiques = StatiqueFactory.batch(n_statiques)
+    for statique in statiques:
+        statique.telephone_operateur = None
+    save_statiques(db_session, statiques)
+    refresh_materialized_view(db_session, STATIQUE_MV_TABLE_NAME)
+
+    response = client_auth.get("/statique/")
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    json_response = response.json()
+    assert json_response == {
+        "detail": "Statique data is no longer valid, please update those first"
+    }
+
+
 def test_list_for_superuser(client_auth, db_session):
     """Test the /statique/ list endpoint (superuser case)."""
     # Empty response (no statiques exist)
@@ -285,6 +303,23 @@ def test_read_with_missing_scopes(client_auth):
     id_pdc_itinerance = "FR911E1111ER1"
     response = client_auth.get(f"/statique/{id_pdc_itinerance}")
     assert response.status_code == status.HTTP_403_FORBIDDEN
+
+
+def test_read_invalid_statique_data(client_auth, db_session):
+    """Test the /statique/{id_pdc_itinerance} endpoint (when db rows are invalid)."""
+    # Create invalid statique entry
+    id_pdc_itinerance = "FR911E1111ER1"
+    statique = StatiqueFactory.build(id_pdc_itinerance=id_pdc_itinerance)
+    statique.telephone_operateur = None
+    save_statiques(db_session, [statique])
+    refresh_materialized_view(db_session, STATIQUE_MV_TABLE_NAME)
+
+    response = client_auth.get(f"/statique/{id_pdc_itinerance}")
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    json_response = response.json()
+    assert json_response == {
+        "detail": "Statique data is no longer valid, please update it first"
+    }
 
 
 def test_read_for_superuser(client_auth, db_session):
