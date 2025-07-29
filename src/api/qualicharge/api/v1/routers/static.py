@@ -16,7 +16,7 @@ from fastapi import (
     Security,
     status,
 )
-from pydantic import AnyHttpUrl, BaseModel, computed_field
+from pydantic import AnyHttpUrl, BaseModel, ValidationError, computed_field
 from sqlalchemy import any_, func
 from sqlalchemy.dialects.postgresql import array
 from sqlalchemy.exc import (
@@ -144,10 +144,16 @@ async def list(
     statement = (
         statement.order_by(StatiqueMV.id_pdc_itinerance).offset(offset).limit(limit)
     )
-    statiques = [
-        Statique(**s.model_dump(exclude={"pdc_id", "pdc_updated_at"}))
-        for s in session.exec(statement).all()
-    ]
+    try:
+        statiques = [
+            Statique(**s.model_dump(exclude={"pdc_id", "pdc_updated_at"}))
+            for s in session.exec(statement).all()
+        ]
+    except ValidationError as err:
+        raise HTTPException(
+            status_code=422,
+            detail="Statique data is no longer valid, please update those first",
+        ) from err
 
     previous_offset = offset - limit if offset > limit else 0
     if offset:
@@ -200,7 +206,13 @@ async def read(
                 "10 minutes for a newly created entry."
             ),
         ) from err
-    return Statique(**statique_mv.model_dump(exclude={"pdc_id", "pdc_updated_at"}))
+    try:
+        return Statique(**statique_mv.model_dump(exclude={"pdc_id", "pdc_updated_at"}))
+    except ValidationError as err:
+        raise HTTPException(
+            status_code=422,
+            detail="Statique data is no longer valid, please update it first",
+        ) from err
 
 
 @router.put("/{id_pdc_itinerance}", status_code=status.HTTP_200_OK)
