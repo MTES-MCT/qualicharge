@@ -15,4 +15,5 @@ RUN mamba install --yes \
       pandas \
       psycopg[binary,pool] \
       pyarrow \
+      s3fs \
       seaborn
