@@ -1,14 +1,14 @@
 [project]
 name = "qualicharge"
 version = "0.28.0"
-requires-python = "~=3.12.11"
+requires-python = "~=3.13.5"
 dependencies = [
     "alembic==1.16.4",
     "annotated-types==0.7.0",
     "cachetools==6.1.0",
     "email-validator==2.2.0",
     "fastapi==0.116.1",
-    "geoalchemy2[shapely]==0.17.1",
+    "geoalchemy2[shapely]==0.18.0",
     "geopandas==1.1.1",
     "httpx[cli]==0.28.1",
     "pandas==2.3.1",
@@ -23,7 +23,7 @@ dependencies = [
     "pyjwt==2.10.1",
     "python-multipart==0.0.20",
     "questionary==2.1.0",
-    "sentry-sdk[fastapi]==2.33.2",
+    "sentry-sdk[fastapi]==2.34.1",
     "sqlalchemy-timescaledb==0.4.1",
     "sqlalchemy-utils==0.41.2",
     "sqlmodel==0.0.24",
@@ -44,13 +44,13 @@ dev = [
     "csvkit==2.1.0",
     "honcho==2.0.0",
     "locust==2.37.14",
-    "mypy==1.17.0",
+    "mypy==1.17.1",
     "pandas-stubs==2.3.0.250703",
     "polyfactory==2.22.1",
     "pytest==8.4.1",
     "pytest-cov==6.2.1",
     "pytest-httpx==0.35.0",
-    "ruff==0.12.4",
+    "ruff==0.12.7",
     "types-cachetools==6.1.0.20250717",
     "types-passlib==1.7.7.20250602",
     "types-python-jose==3.5.0.20250531",
