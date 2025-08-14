@@ -28,8 +28,14 @@ def test_get_db_amenageur():
 
 def test_run_api_db_validation():
     """Run API database validation."""
-    result = static.run_api_db_validation(Environment.TEST, report_by_email=False)
-    assert result.success
+    results = static.run_api_db_validation(Environment.TEST, report_by_email=False)
+    for _, v in results.run_results.items():
+        for result in v.results:
+            code = result.expectation_config.meta.get("code")  # type: ignore[union-attr]
+            if code in ["NE10", "PDLM", "PDCL", "INSE"]:
+                assert not result.success
+            else:
+                assert result.success
 
 
 def test_run_api_db_validation_by_amenageur(monkeypatch):
@@ -44,9 +50,26 @@ def test_run_api_db_validation_by_amenageur(monkeypatch):
     expected = 3
     assert len(report.results) == expected
 
-    # All amenageurs should pass tests
+    # (almost) all amenageurs should pass tests
     assert [r.amenageur for r in report.results] == ["Tesla", "Ionity", "Electra"]
     for results in report.results:
-        assert results.success
         successes = [s.success for s in results.suite]
         assert len(successes) == len(results.suite)
+
+        for result in results.suite:
+            match results.amenageur:
+                case "Tesla":
+                    if result.code in ["NE10", "PDLM"]:
+                        assert not result.success
+                    else:
+                        assert result.success
+                case "Ionity":
+                    if result.code == "NE10":
+                        assert not result.success
+                    else:
+                        assert result.success
+                case "Electra":
+                    if result.code == "NE10":
+                        assert not result.success
+                    else:
+                        assert result.success

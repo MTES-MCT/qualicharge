@@ -132,9 +132,7 @@ def run_api_db_validation(environment, report_by_email: bool = False):
 
     checkpoint = gx.Checkpoint(
         name=f"statique-{environment}",
-        validation_definitions=[
-            validation,
-        ],
+        validation_definitions=[validation],
         actions=action_list,  # type: ignore[arg-type]
         result_format={"result_format": "COMPLETE"},
     )
