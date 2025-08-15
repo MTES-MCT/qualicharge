@@ -28,7 +28,8 @@ and this project adheres to
 
 #### Quality
 
-- Integrate Great-Expectations
+- Integrate Great-Expectations (POWU, POWL, CRDS, OPEM, AMEM)
+- Add expectations (AFIE, AFIP, P50E, PDCL, INSE, ADDR, LOCP, PDLM, NE10)
 
 #### Cooling
 
