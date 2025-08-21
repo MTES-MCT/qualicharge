@@ -55,6 +55,7 @@ erDiagram
 
 > *Chaque entité est représentée par un nom et modélisé par une "boîte".*
 > *L'association entre deux entités est représentée par une ligne dont les extrémités expriment la "cardinalité" :*
+>
 > | *représentation* | *signification*   |
 > | ---------------- | ----------------- |
 > | \|\|             | *Un seul*         |
@@ -121,20 +122,21 @@ Le modèle ci-dessous représente la gestion des stations.
 ```mermaid
 erDiagram
     AMENAGEUR ||--|{ "STATION DE RECHARGE" : "offre un service de recharge"
-    AMENAGEUR |{--|| "UNITE D'EXPLOITATION" : "s'intègre dans"
+    AMENAGEUR |{--|{ "UNITE D'EXPLOITATION" : "gère"
     ENSEIGNE ||--|{ "STATION DE RECHARGE": "héberge"
     OPERATEUR ||--|{ "UNITE D'EXPLOITATION": "supervise"
-    AMENAGEUR |{--|| OPERATEUR: "délègue l'exploitation à"
+    AMENAGEUR |{--|{ OPERATEUR: "délègue l'exploitation à"
     "UNITE D'EXPLOITATION" ||--|{ "STATION DE RECHARGE": "contient"
 ```
 
-Une station de recharge est associée à un seul opérateur (au travers de son unité d'exploitation), un seul aménageur et une seule enseigne. De même, une unité d'exploitation regroupe un ou plusieurs aménageurs. Elle est supervisée par un seul opérateur.
+Une station de recharge est associée à un seul opérateur (au travers de son unité d'exploitation), un seul aménageur et une seule enseigne. De même, une unité d'exploitation regroupe un ou plusieurs aménageurs. Elle est supervisée par un seul opérateur, un aménageur ne peut donc confier l'exploitation d'un réseau de stations d'une même unité d'exploitation à plusieurs opérateurs.
 
 Plusieurs organisations sont possibles :
 
 - l'aménageur est son propre opérateur. Dans ce cas une seule unité d'exploitation lui est rattachée,
-- l'aménageur dispose d'un réseau de station et gère ce réseau au travers d'une unité d'exploitation dédiée,
-- un groupement d'aménageurs gère son réseau de station au travers d'une unité d'exploitation dédiée comprenant les aménageurs de ce groupement
+- l'aménageur dispose d'un réseau de stations et gère ce réseau au travers d'une unité d'exploitation dédiée,
+- l'aménageur dispose d'un réseau de stations et gère ce réseau au travers de plusieurs unités d'exploitation dédiées,
+- un groupement d'aménageurs gère son réseau de stations au travers d'une unité d'exploitation dédiée comprenant les aménageurs de ce groupement
 - un aménageur disposant d'un parc réduit s'intègre dans une unité d'exploitation déjà existante (gérée par exemple par un opérateur)
 
 On notera que le terme réseau utilisé à la fois dans la définition de l'enseigne et dans celle de l'unité d'exploitation ne fait pas référence aux mêmes réseaux. Par exemple, une enseige pourra faire référence à une chaîne d'entités commerciales répartie géographiquement alors qu'une unité d'exploitation pourra faire référence à l'ensemble du périmètre géré par un opérateur.
