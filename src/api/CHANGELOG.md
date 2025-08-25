@@ -8,6 +8,15 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Changed
+
+#### Dependencies
+
+- Upgrade `pandas` to `2.3.2`
+- Upgrade `pyinstrument` to `5.1.1`
+- Upgrade `sentry-sdk` to `2.35.0`
+- Upgrade `typer` to `0.16.1`
+
 ## [0.28.0] - 2025-07-29
 
 ### Changed
