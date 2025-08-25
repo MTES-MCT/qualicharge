@@ -1,5 +1,5 @@
 DELETE
-FROM Station
+FROM _Station
 WHERE id IN (
     SELECT
       Station.id
