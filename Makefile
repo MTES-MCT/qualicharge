@@ -27,6 +27,9 @@ default: help
 data:
 	mkdir -p data
 
+data/archives: data
+	mkdir data/archives
+
 data/afirev-charging.csv: data
 	@echo "You should download CSV file from $(AFIREV_CHARGING_DATASET_URL)"
 
@@ -60,6 +63,7 @@ bench: ## run API benchmark
 bootstrap: ## bootstrap the project for development
 bootstrap: \
   env.d/notebook-extras \
+  data/archives \
   build \
   migrate-api \
   create-api-test-db \
@@ -425,6 +429,7 @@ seed-metabase: ## seed the Metabase server
 .PHONY: seed-metabase
 
 seed-minio: ## seed the Minio server
+seed-minio: data/archives
 	@echo "Running minio service …"
 	@$(COMPOSE_UP) --wait minio
 	@echo "Create Minio user and buckets…"
