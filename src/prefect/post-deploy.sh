@@ -11,5 +11,5 @@ echo "🗃️ Will run database migrations…"
 prefect server database upgrade -y
 
 # Create worker pool
-echo "👷 Will create 'indicators' worker pool…"
-prefect work-pool create --type process --overwrite indicators
+# echo "👷 Will create 'indicators' worker pool…"
+# prefect work-pool create --type process --overwrite indicators
