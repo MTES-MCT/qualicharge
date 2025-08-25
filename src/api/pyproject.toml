@@ -1,7 +1,7 @@
 [project]
 name = "qualicharge"
 version = "0.28.0"
-requires-python = "~=3.13.7"
+requires-python = "~=3.12.11"
 dependencies = [
     "alembic==1.16.4",
     "annotated-types==0.7.0",
