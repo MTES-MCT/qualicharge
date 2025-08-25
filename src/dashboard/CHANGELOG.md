@@ -12,10 +12,12 @@ and this project adheres to
 
 #### Dependencies
 
-- Upgrade `Django` to `5.2.4`
+- Upgrade `Django` to `5.2.5`
+- Upgrade `django-anymail` to `13.0.1`
 - Upgrade `django-dsfr` to `3.0.0`
-- Upgrade `jsonschema` to `4.25.0`
-- Upgrade `sentry-sdk` to `2.33.2`
+- Upgrade `jsonschema` to `4.25.1`
+- Upgrade `requests` to `2.32.5`
+- Upgrade `sentry-sdk` to `2.35.0`
 
 ## [0.2.0] - 2025-06-23
 

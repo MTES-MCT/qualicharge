@@ -12,9 +12,10 @@ and this project adheres to
 
 #### Dependencies
 
-- Upgrade Pydantic to `2.11.7`
-- Upgrade pydantic-settings to `2.10.1`
-- Upgrade `typer` to `0.16.0`
+- Upgrade `anyio` to `4.10.0`
+- Upgrade `Pydantic` to `2.11.7`
+- Upgrade `pydantic-settings` to `2.10.1`
+- Upgrade `typer` to `0.16.1`
 
 ### Fixed
 
@@ -30,11 +31,11 @@ and this project adheres to
 
 #### Dependencies
 
-- Upgrade anyio to `4.6.1`
-- Upgrade httpx to `0.28.0`
-- Upgrade Pydantic to `2.9.1`
-- Upgrade pydantic-settings to `2.8.1`
-- Upgrade typer to `0.15.2`
+- Upgrade `anyio` to `4.6.1`
+- Upgrade `httpx` to `0.28.0`
+- Upgrade `Pydantic` to `2.9.1`
+- Upgrade `pydantic-settings` to `2.8.1`
+- Upgrade `typer` to `0.15.2`
 
 ## [0.2.0] - 2024-09-05
 
@@ -44,10 +45,10 @@ and this project adheres to
 
 #### Dependencies
 
-- Upgrade Pydantic to `2.7.4`
-- Upgrade pydantic-settings to `2.8.0`
-- Upgrade typer to `0.12.5`
-- Upgrade httpx to `0.27.2`
+- Upgrade `Pydantic` to `2.7.4`
+- Upgrade `pydantic-settings` to `2.8.0`
+- Upgrade `typer` to `0.12.5`
+- Upgrade `httpx` to `0.27.2`
 
 ## [0.1.0] - 2024-06-14
 
