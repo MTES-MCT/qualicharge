@@ -10,4 +10,6 @@ DOCKER_USER="${DOCKER_UID}:${DOCKER_GID}"
 DOCKER_USER=${DOCKER_USER} \
   DOCKER_UID=${DOCKER_UID} \
   DOCKER_GID=${DOCKER_GID} \
-  docker compose run --rm api uv run alembic -c qualicharge/alembic.ini "$@"
+  docker compose run --rm -v "./src/api:/app" api \
+    uv run \
+    alembic -c qualicharge/alembic.ini "$@"

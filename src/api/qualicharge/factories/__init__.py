@@ -55,3 +55,10 @@ class AuditableSQLModelFactory(Generic[T], SQLAlchemyFactory[T]):
     updated_at = Use(datetime.now, timezone.utc)
     created_by_id = None
     updated_by_id = None
+
+
+class SoftDeleteFactoryMixin:
+    """A mixin for SoftDelete models."""
+
+    deleted_by_id = None
+    deleted_at = None

@@ -26,6 +26,8 @@ from qualicharge.factories.static import (
 )
 from qualicharge.schemas.core import (
     STATIQUE_MV_TABLE_NAME,
+    ActivePointsDeChargeView,
+    ActiveStationsView,
     Amenageur,
     Localisation,
     OperationalUnit,
@@ -373,6 +375,34 @@ def test_station_date_mise_en_service(db_session):
     tomorrow = today + timedelta(days=1)
     with pytest.raises(ValueError, match=f"{tomorrow} is in the future"):
         StationFactory.create_sync(date_mise_en_service=tomorrow)
+
+
+@pytest.mark.parametrize(
+    "factory,view",
+    [
+        [StationFactory, ActiveStationsView],
+        [PointDeChargeFactory, ActivePointsDeChargeView],
+    ],
+)
+def test_active_model_view(db_session, factory, view):
+    """Test the active model view."""
+    factory.__session__ = db_session
+
+    n_models = 3
+    models = factory.create_batch_sync(n_models)
+
+    # All models should be active by default
+    active_models = db_session.exec(select(view)).all()
+    assert len(active_models) == n_models
+
+    # Inativate a single model
+    inactive_model = models[1]
+    inactive_model.deleted_at = datetime.now(timezone.utc)
+    db_session.add(inactive_model)
+
+    active_models = db_session.exec(select(view)).all()
+    expected = n_models - 1
+    assert len(active_models) == expected
 
 
 def test_operational_unit_create_stations_fk_no_station(db_session):

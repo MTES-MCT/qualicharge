@@ -2,6 +2,7 @@
 
 import gzip
 import json
+from datetime import datetime, timezone
 from random import choice, sample
 from typing import cast
 
@@ -100,6 +101,50 @@ def test_list_for_superuser(client_auth, db_session):
         "size": 3,
         "total": 3,
     }
+
+
+@pytest.mark.parametrize(
+    "model",
+    [Station, PointDeCharge],
+)
+def test_list_for_inactive_model(client_auth, db_session, model):
+    """Test the /statique/ list endpoint (with inactive pdc/station)."""
+    # Empty response (no statiques exist)
+    response = client_auth.get("/statique/")
+    assert response.status_code == status.HTTP_200_OK
+    json_response = response.json()
+    assert json_response == {
+        "limit": 10,
+        "offset": 0,
+        "previous": None,
+        "next": None,
+        "items": [],
+        "size": 0,
+        "total": 0,
+    }
+
+    # Create statiques
+    n_statiques = 3
+    statiques = StatiqueFactory.batch(n_statiques)
+    save_statiques(db_session, statiques)
+    refresh_materialized_view(db_session, STATIQUE_MV_TABLE_NAME)
+    response = client_auth.get("/statique/")
+    assert response.status_code == status.HTTP_200_OK
+    json_response = response.json()
+    assert json_response["total"] == n_statiques
+
+    # Inactivate a PDC/station
+    models = db_session.exec(select(model)).all()
+    inactive = models[1]
+    inactive.deleted_at = datetime.now(timezone.utc)
+    db_session.add(inactive)
+
+    # List statiques
+    refresh_materialized_view(db_session, STATIQUE_MV_TABLE_NAME)
+    response = client_auth.get("/statique/")
+    assert response.status_code == status.HTTP_200_OK
+    json_response = response.json()
+    assert json_response["total"] == n_statiques - 1
 
 
 @pytest.mark.parametrize(
@@ -334,6 +379,31 @@ def test_read_for_superuser(client_auth, db_session):
     assert response.status_code == status.HTTP_200_OK
     json_response = response.json()
     assert json_response == json.loads(db_statique.model_dump_json())
+
+
+@pytest.mark.parametrize(
+    "model",
+    [Station, PointDeCharge],
+)
+def test_read_for_inactive_model(client_auth, db_session, model):
+    """Test the /statique/{id_pdc_itinerance} endpoint (for inactive station/PDC)."""
+    id_pdc_itinerance = "FR911E1111ER1"
+    save_statique(
+        db_session, StatiqueFactory.build(id_pdc_itinerance=id_pdc_itinerance)
+    )
+    refresh_materialized_view(db_session, STATIQUE_MV_TABLE_NAME)
+
+    response = client_auth.get(f"/statique/{id_pdc_itinerance}")
+    assert response.status_code == status.HTTP_200_OK
+
+    # Inactivate a PDC/station
+    inactive = db_session.exec(select(model)).one_or_none()
+    inactive.deleted_at = datetime.now(timezone.utc)
+    db_session.add(inactive)
+    refresh_materialized_view(db_session, STATIQUE_MV_TABLE_NAME)
+
+    response = client_auth.get(f"/statique/{id_pdc_itinerance}")
+    assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
 @pytest.mark.parametrize(
@@ -638,6 +708,52 @@ def test_update_for_superuser(client_auth, db_session):
     assert json_response == json.loads(new_statique.model_dump_json())
 
 
+def test_update_for_inactive_pdc(client_auth, db_session):
+    """Test the /statique/{id_pdc_itinerance} update (for inactive pdc)."""
+    id_pdc_itinerance = "FR911E1111ER1"
+    db_statique = save_statique(
+        db_session,
+        StatiqueFactory.build(
+            id_pdc_itinerance=id_pdc_itinerance,
+            nom_amenageur="ACME Inc.",
+            nom_operateur="ACME Inc.",
+            nom_enseigne="ACME Inc.",
+            coordonneesXY=Coordinate(-1.0, 1.0),
+            station_deux_roues=False,
+            cable_t2_attache=False,
+        ),
+    )
+    new_statique = db_statique.model_copy(
+        update={
+            "contact_operateur": "john@doe.com",
+            "nom_amenageur": "Magma Corp.",
+            "nom_operateur": "Magma Corp.",
+            "nom_enseigne": "Magma Corp.",
+            "coordonneesXY": Coordinate(1.0, 2.0),
+            "station_deux_roues": True,
+            "cable_t2_attache": True,
+        },
+        deep=True,
+    )
+
+    response = client_auth.put(
+        f"/statique/{id_pdc_itinerance}",
+        json=json.loads(new_statique.model_dump_json()),
+    )
+    assert response.status_code == status.HTTP_200_OK
+
+    # Inactivate a PDC/station
+    inactive = db_session.exec(select(PointDeCharge)).one_or_none()
+    inactive.deleted_at = datetime.now(timezone.utc)
+    db_session.add(inactive)
+
+    response = client_auth.put(
+        f"/statique/{id_pdc_itinerance}",
+        json=json.loads(new_statique.model_dump_json()),
+    )
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+
+
 def test_update_changes_updated_at(client_auth, db_session):
     """Test if the statique update endpoint changes the updated_at database field."""
     id_pdc_itinerance = "FR911E1111ER1"
@@ -937,7 +1053,7 @@ def test_bulk_with_inconsistent_station_data(client_auth, db_session, monkeypatc
     json_response = response.json()
     assert (
         json_response["detail"]
-        == "An error occured while trying to create or update the 'station' table"
+        == "An error occured while trying to create or update the '_station' table"
     )
 
     # Check created statiques (if any)
@@ -1169,7 +1285,7 @@ def test_update_audits(client_auth, db_session, versioning_manager):
     latest_activities = db_session.exec(
         select(Activity)
         .where(
-            Activity.table_name == "station",
+            Activity.table_name == "_station",
             Activity.data["id"].astext.cast(UUID) == station.id,
         )
         .order_by(Activity.issued_at)
@@ -1213,7 +1329,7 @@ def test_update_audits(client_auth, db_session, versioning_manager):
     latest_activities = db_session.exec(
         select(Activity)
         .where(
-            Activity.table_name == "station",
+            Activity.table_name == "_station",
             Activity.data["id"].astext.cast(UUID) == station.id,
         )
         .order_by(Activity.issued_at)
@@ -1253,7 +1369,7 @@ def test_bulk_update_audits(client_auth, db_session, versioning_manager):
     latest_activity = db_session.exec(
         select(Activity)
         .where(
-            Activity.table_name == "pointdecharge",
+            Activity.table_name == "_pointdecharge",
             Activity.data["id"].astext.cast(UUID) == points_of_charge[0].id,
         )
         .order_by(Activity.issued_at.desc())
@@ -1278,7 +1394,7 @@ def test_bulk_update_audits(client_auth, db_session, versioning_manager):
     latest_activity = db_session.exec(
         select(Activity)
         .where(
-            Activity.table_name == "pointdecharge",
+            Activity.table_name == "_pointdecharge",
             Activity.data["id"].astext.cast(UUID) == points_of_charge[0].id,
         )
         .order_by(Activity.issued_at.desc())
