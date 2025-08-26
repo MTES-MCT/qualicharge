@@ -28,13 +28,6 @@ services:
       # Create a `watch` configuration to update the app
       #
       watch:
-        # Sync the working directory with the `/app` directory in the container
-        - action: sync
-          path: ./src/api/
-          target: /app
-          # Exclude the project virtual environment
-          ignore:
-            - ./src/api/.venv/
         # Rebuild the image on changes to dependencies or build
         - action: rebuild
           path: ./src/api/pyproject.toml
@@ -58,6 +51,7 @@ services:
       retries: 5
     restart: always
     volumes:
+      - ./src/api:/app
       - ./data:/data
       - ./src/bench:/mnt/bench
     depends_on:
