@@ -28,7 +28,7 @@ data:
 	mkdir -p data
 
 data/archives: data
-	mkdir data/archives
+	mkdir -p data/archives
 
 data/afirev-charging.csv: data
 	@echo "You should download CSV file from $(AFIREV_CHARGING_DATASET_URL)"
@@ -163,8 +163,12 @@ logs-dashboard: ## display dashboard logs (follow mode)
 .PHONY: logs-dashboard
 
 run-api: ## run the api server (and dependencies)
-	$(COMPOSE) watch api
+	$(COMPOSE_UP) api
 .PHONY: run-api
+
+watch-api: ## watch api server changes (for development)
+	$(COMPOSE) watch api
+.PHONY: watch-api
 
 run-all: ## run the whole stack
 	$(COMPOSE_UP) api keycloak metabase notebook opendata dashboard
@@ -331,6 +335,7 @@ post-deploy-prefect:  ## run prefect post-deployment script
 .PHONY: post-deploy-prefect
 
 create-api-superuser: ## create api super user
+create-api-superuser: run-api
 	@echo "Creating super user…"
 	@$(COMPOSE_EXEC_API_UV) qcm users create \
 		admin \
