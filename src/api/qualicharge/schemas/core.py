@@ -431,7 +431,7 @@ class ActiveStationsView(SQLModel, table=True):
     ).where(cast(SAColumn, Station.deleted_at).is_(None))
 
     __table__ = create_view(
-        name="Station",
+        name="station",
         selectable=selectable,
         metadata=SQLModel.metadata,
     )
@@ -522,7 +522,7 @@ class ActivePointsDeChargeView(SQLModel, table=True):
     ).where(cast(SAColumn, PointDeCharge.deleted_at).is_(None))
 
     __table__ = create_view(
-        name="PointDeCharge",
+        name="pointdecharge",
         selectable=selectable,
         metadata=SQLModel.metadata,
     )
