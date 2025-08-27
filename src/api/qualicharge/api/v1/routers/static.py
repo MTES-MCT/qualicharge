@@ -1,5 +1,6 @@
 """QualiCharge API v1 statique router."""
 
+import datetime
 import logging
 from io import BytesIO
 from typing import Annotated, List, Optional, cast
@@ -38,7 +39,7 @@ from qualicharge.exceptions import (
     PermissionDenied,
 )
 from qualicharge.models.static import Statique
-from qualicharge.schemas.core import PointDeCharge, StatiqueMV
+from qualicharge.schemas.core import LatestStatus, PointDeCharge, StatiqueMV
 from qualicharge.schemas.sql import StatiqueImporter
 from qualicharge.schemas.utils import (
     are_pdcs_allowed_for_user,
@@ -192,7 +193,7 @@ async def read(
     this endpoint response.
     """
     if not is_pdc_allowed_for_user(id_pdc_itinerance, user):
-        raise PermissionDenied("You don't manage this point of charge")
+        raise PermissionDenied("You don't manage this charge point")
 
     try:
         statique_mv = session.exec(
@@ -232,7 +233,7 @@ async def update(
 ) -> Statique:
     """Update statique item (point de charge)."""
     if not is_pdc_allowed_for_user(id_pdc_itinerance, user):
-        raise PermissionDenied("You don't manage this point of charge")
+        raise PermissionDenied("You don't manage this charge point")
 
     transaction = session.begin_nested()
     try:
@@ -257,6 +258,128 @@ async def update(
     return update
 
 
+@router.delete("/{id_pdc_itinerance}", status_code=status.HTTP_204_NO_CONTENT)
+async def decommission(
+    user: Annotated[User, Security(get_user, scopes=[ScopesEnum.STATIC_DELETE.value])],
+    id_pdc_itinerance: Annotated[
+        str,
+        Path(
+            description=(
+                "L'identifiant du point de recharge délivré selon les modalités "
+                "définies à l'article 10 du décret n° 2017-26 du 12 janvier 2017."
+            ),
+        ),
+    ],
+    session: Session = Depends(get_session),
+) -> None:
+    """Decommission a charge point (point de charge).
+
+    To decommission a charge point, your account should include the `static:delete`
+    scope. If not, we invite you to contact an administrator to extend your permissions.
+
+    If all charge points of a station have been decommissioned, the station will also be
+    decommissioned.
+
+    Note that decommissioning a charge point (or a station) does not delete concerned
+    charge point (or station) nor related object in database, it is soft-deleted
+    instead. You can recommission a charge point (and related station) using the
+    dedicated API endpoint.
+
+    Decommissioning an already decommissioned charge point has no effect.
+    """
+    if not is_pdc_allowed_for_user(id_pdc_itinerance, user):
+        raise PermissionDenied("You don't manage this charge point")
+
+    # Get charge point
+    poc = session.exec(
+        select(PointDeCharge).where(
+            PointDeCharge.id_pdc_itinerance == id_pdc_itinerance
+        )
+    ).one_or_none()
+    if poc is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Target charge point does not exist",
+        )
+
+    # If the charge point has already been decommissioned, it should have no effect
+    if poc.deleted_at is not None:
+        return
+
+    # Soft-delete the charge point
+    now = datetime.datetime.now(datetime.timezone.utc)
+    poc.deleted_at = now
+    session.add(poc)
+
+    # Should we also decommission the station?
+    station = poc.station
+    if all(p.deleted_at is not None for p in station.points_de_charge):
+        station.deleted_at = now
+        session.add(station)
+
+    # Delete the latest status entry
+    latest_status = session.exec(
+        select(LatestStatus).where(LatestStatus.id_pdc_itinerance == id_pdc_itinerance)
+    ).one_or_none()
+    if latest_status:
+        session.delete(latest_status)
+
+    # Commit changes
+    session.commit()
+
+
+@router.post("/{id_pdc_itinerance}/up", status_code=status.HTTP_204_NO_CONTENT)
+async def recommission(
+    user: Annotated[User, Security(get_user, scopes=[ScopesEnum.STATIC_DELETE.value])],
+    id_pdc_itinerance: Annotated[
+        str,
+        Path(
+            description=(
+                "L'identifiant du point de recharge délivré selon les modalités "
+                "définies à l'article 10 du décret n° 2017-26 du 12 janvier 2017."
+            ),
+        ),
+    ],
+    session: Session = Depends(get_session),
+) -> None:
+    """Recommission a charge point (point de charge).
+
+    If all charge points of a station are decommissioned and you recommission one of its
+    charge points, the station will also be recommissioned.
+    """
+    if not is_pdc_allowed_for_user(id_pdc_itinerance, user):
+        raise PermissionDenied("You don't manage this charge point")
+
+    # Get charge point
+    poc = session.exec(
+        select(PointDeCharge).where(
+            PointDeCharge.id_pdc_itinerance == id_pdc_itinerance
+        )
+    ).one_or_none()
+    if poc is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Target charge point does not exist",
+        )
+
+    # The charge point is already active, ignore this request
+    if poc.deleted_at is None:
+        return
+
+    # Reactivate the charge point
+    poc.deleted_at = None
+    session.add(poc)
+
+    # Should we also recommission the station?
+    station = poc.station
+    if all(p.deleted_at is None for p in station.points_de_charge):
+        station.deleted_at = None
+        session.add(station)
+
+    # Commit changes
+    session.commit()
+
+
 @router.post("/", status_code=status.HTTP_201_CREATED)
 async def create(
     user: Annotated[User, Security(get_user, scopes=[ScopesEnum.STATIC_CREATE.value])],
@@ -269,7 +392,7 @@ async def create(
             "You cannot submit data for an organization you are not assigned to"
         )
 
-    # Check if the Point Of Charge does not already exist
+    # Check if the charge point does not already exist
     if (
         session.exec(
             select(func.count(cast(SAColumn, PointDeCharge.id))).where(
@@ -280,7 +403,7 @@ async def create(
     ):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail=f"Point of charge {statique.id_pdc_itinerance} already exists",
+            detail=f"Charge point {statique.id_pdc_itinerance} already exists",
         )
 
     transaction = session.begin_nested()

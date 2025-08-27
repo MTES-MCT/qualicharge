@@ -18,9 +18,11 @@ from sqlmodel import select
 from qualicharge.auth.factories import GroupFactory
 from qualicharge.auth.schemas import GroupOperationalUnit, ScopesEnum, User, UserGroup
 from qualicharge.conf import settings
+from qualicharge.factories.dynamic import LatestStatusFactory
 from qualicharge.factories.static import StatiqueFactory
 from qualicharge.schemas.core import (
     STATIQUE_MV_TABLE_NAME,
+    LatestStatus,
     OperationalUnit,
     PointDeCharge,
     Station,
@@ -470,6 +472,292 @@ def test_read_when_statique_does_not_exist(client_auth):
         *[
             (True, {"is_superuser": False, "scopes": [scope]})
             for scope in ScopesEnum
+            if scope != ScopesEnum.STATIC_DELETE
+        ],
+    ),
+    indirect=True,
+)
+def test_decommission_with_missing_scope(client_auth):
+    """Test the /statique/{id_pdc_itinerance} DELETE endpoint scopes."""
+    id_pdc_itinerance = "FR911E1111ER1"
+    response = client_auth.delete(f"/statique/{id_pdc_itinerance}")
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+
+
+def test_decommission_when_poc_does_not_exist(client_auth):
+    """Test the /statique/{id_pdc_itinerance} DELETE endpoint (404 case)."""
+    id_pdc_itinerance = "FR911E1111ER1"
+    response = client_auth.delete(f"/statique/{id_pdc_itinerance}")
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+
+
+def test_decommission_for_superuser(client_auth, db_session):
+    """Test the /statique/{id_pdc_itinerance} DELETE endpoint (superuser case)."""
+    LatestStatusFactory.__session__ = db_session
+
+    # Create charge points related to the same Station
+    template = StatiqueFactory.build(
+        id_station_itinerance="FR911P1111", id_pdc_itinerance="FR911ECHANGEME"
+    )
+    n_statiques = 3
+    statiques = []
+    for i in range(n_statiques):
+        template.id_pdc_itinerance = f"FR911E1111ER{i}"
+        statiques.append(template.copy())
+        LatestStatusFactory.create_sync(id_pdc_itinerance=template.id_pdc_itinerance)
+    save_statiques(db_session, statiques)
+
+    # Check that the target charge point is active
+    id_pdc_itinerance = "FR911E1111ER0"
+    poc = db_session.exec(
+        select(PointDeCharge).where(
+            PointDeCharge.id_pdc_itinerance == id_pdc_itinerance
+        )
+    ).one()
+    station = poc.station
+    assert poc.deleted_at is None
+    assert station.deleted_at is None
+
+    # A latest status entry should exist
+    latest_status = db_session.exec(
+        select(LatestStatus).where(LatestStatus.id_pdc_itinerance == id_pdc_itinerance)
+    ).one_or_none()
+    assert latest_status is not None
+
+    # Decommission the charge point
+    response = client_auth.delete(f"/statique/{id_pdc_itinerance}")
+    assert response.status_code == status.HTTP_204_NO_CONTENT
+    assert poc.deleted_at is not None
+    assert station.deleted_at is None
+
+    # The latest status entry should have been deleted
+    latest_status = db_session.exec(
+        select(LatestStatus).where(LatestStatus.id_pdc_itinerance == id_pdc_itinerance)
+    ).one_or_none()
+    assert latest_status is None
+
+    # Decommissioning twice shouldn't have an effect
+    deleted_at = poc.deleted_at
+    response = client_auth.delete(f"/statique/{id_pdc_itinerance}")
+    assert response.status_code == status.HTTP_204_NO_CONTENT
+    assert poc.deleted_at == deleted_at
+
+    # Decommission all other station charge points
+    response = client_auth.delete("/statique/FR911E1111ER1")
+    assert response.status_code == status.HTTP_204_NO_CONTENT
+    assert station.deleted_at is None
+    response = client_auth.delete("/statique/FR911E1111ER2")
+    assert response.status_code == status.HTTP_204_NO_CONTENT
+    # Station should be decommissioned now
+    assert station.deleted_at is not None
+
+    # All latest status entries should have been deleted
+    latest_statuses = db_session.exec(select(LatestStatus)).all()
+    assert len(latest_statuses) == 0
+
+
+@pytest.mark.parametrize(
+    "client_auth",
+    (
+        (True, {"is_superuser": False, "scopes": [ScopesEnum.STATIC_DELETE]}),
+        (
+            True,
+            {
+                "is_superuser": False,
+                "scopes": [ScopesEnum.STATIC_DELETE, ScopesEnum.STATIC_CREATE],
+            },
+        ),
+    ),
+    indirect=True,
+)
+def test_decommission_for_user(client_auth, db_session):
+    """Test the /statique/{id_pdc_itinerance} DELETE endpoint."""
+    GroupFactory.__session__ = db_session
+
+    # Create statique
+    id_pdc_itinerance = "FR911E1111ER1"
+    statique = StatiqueFactory.build(
+        id_pdc_itinerance=id_pdc_itinerance,
+    )
+    save_statique(db_session, statique)
+
+    # User has no assigned operational units
+    response = client_auth.delete(f"/statique/{id_pdc_itinerance}")
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+
+    # Link user to an operational unit
+    user = db_session.exec(select(User).where(User.email == "john@doe.com")).one()
+    operational_unit = db_session.exec(
+        select(OperationalUnit).where(OperationalUnit.code == "FR911")
+    ).one()
+    GroupFactory.create_sync(users=[user], operational_units=[operational_unit])
+
+    # Check that the target charge point is active
+    poc = db_session.exec(
+        select(PointDeCharge).where(
+            PointDeCharge.id_pdc_itinerance == id_pdc_itinerance
+        )
+    ).one()
+    station = poc.station
+    assert poc.deleted_at is None
+    assert station.deleted_at is None
+
+    # Decommission the charge point
+    response = client_auth.delete(f"/statique/{id_pdc_itinerance}")
+    assert response.status_code == status.HTTP_204_NO_CONTENT
+    assert poc.deleted_at is not None
+    assert station.deleted_at is not None
+
+
+@pytest.mark.parametrize(
+    "client_auth",
+    (
+        (True, {"is_superuser": False, "scopes": []}),
+        *[
+            (True, {"is_superuser": False, "scopes": [scope]})
+            for scope in ScopesEnum
+            if scope != ScopesEnum.STATIC_DELETE
+        ],
+    ),
+    indirect=True,
+)
+def test_recommission_with_missing_scope(client_auth):
+    """Test the /statique/{id_pdc_itinerance}/up POST endpoint scopes."""
+    id_pdc_itinerance = "FR911E1111ER1"
+    response = client_auth.post(f"/statique/{id_pdc_itinerance}/up")
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+
+
+def test_recommission_when_poc_does_not_exist(client_auth):
+    """Test the /statique/{id_pdc_itinerance}/up POST endpoint (404 case)."""
+    id_pdc_itinerance = "FR911E1111ER1"
+    response = client_auth.post(f"/statique/{id_pdc_itinerance}/up")
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+
+
+def test_recommission_for_superuser(client_auth, db_session):
+    """Test the /statique/{id_pdc_itinerance}/up POST endpoint (superuser case)."""
+    now = datetime.now(timezone.utc)
+    # Create charge points related to the same Station
+    template = StatiqueFactory.build(
+        id_station_itinerance="FR911P1111",
+        id_pdc_itinerance="FR911ECHANGEME",
+    )
+    n_statiques = 3
+    statiques = []
+    for i in range(n_statiques):
+        template.id_pdc_itinerance = f"FR911E1111ER{i}"
+        statiques.append(template.copy())
+    save_statiques(db_session, statiques)
+
+    # Decommission all chrge points (and the station)
+    id_pdc_itinerance = "FR911E1111ER0"
+    poc = db_session.exec(
+        select(PointDeCharge).where(
+            PointDeCharge.id_pdc_itinerance == id_pdc_itinerance
+        )
+    ).one()
+    station = poc.station
+    assert poc.deleted_at is None
+    assert station.deleted_at is None
+    for p in station.points_de_charge:
+        p.deleted_at = now
+        db_session.add(p)
+    station.deleted_at = now
+    db_session.add(station)
+
+    # Recommission the charge point (and related station)
+    assert poc.deleted_at is not None
+    response = client_auth.post(f"/statique/{poc.id_pdc_itinerance}/up")
+    assert response.status_code == status.HTTP_204_NO_CONTENT
+    assert poc.deleted_at is None
+
+    # Recommissioning twice shouldn't be an issue
+    response = client_auth.post(f"/statique/{poc.id_pdc_itinerance}/up")
+    assert response.status_code == status.HTTP_204_NO_CONTENT
+    assert poc.deleted_at is None
+
+    # Decommission the first charge point
+    poc.deleted_at = now
+    db_session.add(poc)
+
+    # Recommission all station charge points
+    assert station.deleted_at is not None
+    for poc in station.points_de_charge:
+        assert poc.deleted_at is not None
+        response = client_auth.post(f"/statique/{poc.id_pdc_itinerance}/up")
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+        assert poc.deleted_at is None
+    assert station.deleted_at is None
+
+
+@pytest.mark.parametrize(
+    "client_auth",
+    (
+        (True, {"is_superuser": False, "scopes": [ScopesEnum.STATIC_DELETE]}),
+        (
+            True,
+            {
+                "is_superuser": False,
+                "scopes": [ScopesEnum.STATIC_DELETE, ScopesEnum.STATIC_CREATE],
+            },
+        ),
+    ),
+    indirect=True,
+)
+def test_recommission_for_user(client_auth, db_session):
+    """Test the /statique/{id_pdc_itinerance}/up POST endpoint."""
+    GroupFactory.__session__ = db_session
+
+    # Create statique
+    id_pdc_itinerance = "FR911E1111ER1"
+    statique = StatiqueFactory.build(
+        id_pdc_itinerance=id_pdc_itinerance,
+    )
+    save_statique(db_session, statique)
+
+    # User has no assigned operational units
+    response = client_auth.post(f"/statique/{id_pdc_itinerance}/up")
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+
+    # Link user to an operational unit
+    user = db_session.exec(select(User).where(User.email == "john@doe.com")).one()
+    operational_unit = db_session.exec(
+        select(OperationalUnit).where(OperationalUnit.code == "FR911")
+    ).one()
+    GroupFactory.create_sync(users=[user], operational_units=[operational_unit])
+
+    # The charge point
+    poc = db_session.exec(
+        select(PointDeCharge).where(
+            PointDeCharge.id_pdc_itinerance == id_pdc_itinerance
+        )
+    ).one()
+    station = poc.station
+
+    # Decommission the charge point
+    now = datetime.now(timezone.utc)
+    poc.deleted_at = now
+    station.deleted_at = now
+    db_session.add(poc)
+    db_session.add(station)
+
+    # Recommission the charge point
+    assert poc.deleted_at is not None
+    assert station.deleted_at is not None
+    response = client_auth.post(f"/statique/{id_pdc_itinerance}/up")
+    assert response.status_code == status.HTTP_204_NO_CONTENT
+    assert poc.deleted_at is None
+    assert station.deleted_at is None
+
+
+@pytest.mark.parametrize(
+    "client_auth",
+    (
+        (True, {"is_superuser": False, "scopes": []}),
+        *[
+            (True, {"is_superuser": False, "scopes": [scope]})
+            for scope in ScopesEnum
             if scope != ScopesEnum.STATIC_CREATE
         ],
     ),
@@ -539,7 +827,7 @@ def test_create_twice(client_auth):
     response = client_auth.post("/statique/", json=json.loads(data.model_dump_json()))
     assert response.status_code == status.HTTP_409_CONFLICT
     assert response.json() == {
-        "detail": f"Point of charge {id_pdc_itinerance} already exists"
+        "detail": f"Charge point {id_pdc_itinerance} already exists"
     }
 
 
