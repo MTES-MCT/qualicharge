@@ -14,6 +14,8 @@ and this project adheres to
 
 ### Changed
 
+- Update the list of active operational units
+
 #### Dependencies
 
 - Upgrade `pandas` to `2.3.2`
