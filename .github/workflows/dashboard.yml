@@ -18,7 +18,7 @@ jobs:
   build-dashboard:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Install Pipenv
         run: pipx install pipenv
       - name: Set up Python 3.12
@@ -75,7 +75,7 @@ jobs:
       DASHBOARD_QCC_API_ROOT_URL: http://api:8000/api/v1
       DASHBOARD_RENEWABLE_MIN_DAYS_FOR_METER_READING: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Install pipenv
         run: pipx install pipenv
       - name: Set up Python 3.12
@@ -115,7 +115,7 @@ jobs:
       run:
         working-directory: ./src/dashboard
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Install pipenv
         run: pipx install pipenv
       - name: Set up Python 3.12

@@ -21,7 +21,7 @@ jobs:
       run:
         working-directory: ./src/api
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Install uv
         uses: astral-sh/setup-uv@v6
         with:
@@ -41,7 +41,7 @@ jobs:
       run:
         working-directory: ./src/api
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Install uv
         uses: astral-sh/setup-uv@v6
         with:
@@ -65,7 +65,7 @@ jobs:
       run:
         working-directory: ./src/api
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Install uv
         uses: astral-sh/setup-uv@v6
         with:
@@ -130,7 +130,7 @@ jobs:
       QUALICHARGE_OAUTH2_TOKEN_ISSUER: http://test:8000
       QUALICHARGE_EXECUTION_ENVIRONMENT: ci
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           ref: ${{ github.head_ref }}
       - name: Create postgis extension
@@ -323,7 +323,7 @@ jobs:
       run:
         working-directory: ./src/api
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Create postgis extension
         run: psql "postgresql://qualicharge:pass@localhost:5432/test-qualicharge-api" -c "create extension postgis;"
       - name: Create btree_gist extension
@@ -374,7 +374,7 @@ jobs:
       run:
         working-directory: ./src/api
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Create postgis extension
         run: psql "postgresql://qualicharge:pass@localhost:5432/test-qualicharge-api" -c "create extension postgis;"
       - name: Create btree_gist extension
