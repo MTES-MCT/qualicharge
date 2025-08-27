@@ -11,6 +11,7 @@ and this project adheres to
 ### Added
 
 - Implement `PointDeCharge` and `Station` soft-delete [BC]
+- Add new API endpoints for charge point (and station) decommissioning
 
 ### Changed
 
