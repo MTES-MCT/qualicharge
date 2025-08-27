@@ -963,10 +963,6 @@ data: List[Item] = [
         "QoWatt",
     ),
     Item(
-        "FRRBO",
-        "Robert Bosch, Division Connected Mobility Solutions",
-    ),
-    Item(
         "FRREB",
         "REBORNE",
     ),
@@ -1748,10 +1744,6 @@ data: List[Item] = [
         "ALDI SARL",
     ),
     Item(
-        "FRBCF",
-        "BE CHARGE",
-    ),
-    Item(
         "FRBEZ",
         "Ville de Béziers",
     ),
@@ -2003,6 +1995,36 @@ data: List[Item] = [
     Item(
         "FRWEW",
         "Wewise",
+    ),
+    # Update: 2025/08/27
+    # FRBCF and FRRBO have been removed
+    Item(
+        "FRAU1",
+        "AUTORECHARGE",
+    ),
+    Item(
+        "FRLEA",
+        "LEASYBORNE",
+    ),
+    Item(
+        "FRMB1",
+        "Mobilize Power Solutions",
+    ),
+    Item(
+        "FRMNA",
+        "Mona Energy",
+    ),
+    Item(
+        "FRMOT",
+        "Monta ApS",
+    ),
+    Item(
+        "FRPLN",
+        "PLENITUDE",
+    ),
+    Item(
+        "FRRE1",
+        "REBORNE FLOTTE ENTREPRISES",
     ),
 ]
 
