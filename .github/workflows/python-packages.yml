@@ -15,7 +15,7 @@ jobs:
       run:
         working-directory: ./src/client
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Install poetry
         run: pipx install poetry
       - uses: actions/setup-python@v5

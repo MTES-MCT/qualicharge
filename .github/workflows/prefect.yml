@@ -18,7 +18,7 @@ jobs:
   build-prefect:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Install Pipenv
         run: pipx install pipenv
       - name: Set up Python 3.12
@@ -39,7 +39,7 @@ jobs:
       run:
         working-directory: ./src/prefect
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Install pipenv
         run: pipx install pipenv
       - name: Set up Python 3.12
@@ -93,7 +93,7 @@ jobs:
       AWS_ACCESS_KEY_ID: qualicharge
       AWS_SECRET_ACCESS_KEY: password
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Create Indicators database
         run: |
           psql "postgresql://qualicharge:pass@localhost:5432/postgres" -c 'create database "qualicharge-indicators"'
