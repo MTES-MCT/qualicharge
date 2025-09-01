@@ -311,7 +311,7 @@ WITH
         WHERE
           raccordement <> 'Indirect'
           AND $IS_DC
-          AND num_pdl NOT SIMILAR TO '[0-9]{14}'
+          AND num_pdl NOT SIMILAR TO '[0-9]{{14}}'
       ) AS numpdl_dc
   )
 SELECT
