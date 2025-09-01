@@ -24,7 +24,7 @@ function qcm() {
   scalingo \
     --app "${SCALINGO_APP}" \
     --region osc-fr1 \
-    run --silent \
+    run --silent -- \
     qcm "$@"
 }
 
