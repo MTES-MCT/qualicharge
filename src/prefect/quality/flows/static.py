@@ -216,7 +216,7 @@ def run_api_db_validation_by_amenageur(
                     smtp_port="${GX_BREVO_SMTP_PORT}",
                     sender_login="${GX_BREVO_SENDER_LOGIN}",
                     sender_alias="QualiCharge Bot <contact@qualicharge.beta.gouv.fr>",
-                    sender_password="${GX_BREVO_PASSWORD}",
+                    sender_password="${GX_BREVO_PASSWORD}",  # noqa: S106
                     use_tls=True,
                 )
             )
