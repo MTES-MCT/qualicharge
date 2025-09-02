@@ -11,6 +11,7 @@ from prefect import flow
 from prefect.artifacts import create_markdown_artifact
 from pydantic import BaseModel
 from sqlalchemy import create_engine, text
+from sqlalchemy.dialects import postgresql
 from sqlalchemy.orm import Session
 
 from quality.expectations.static import get_suite as get_static_expectation_suite
@@ -186,7 +187,14 @@ def run_api_db_validation_by_amenageur(
             pass
 
         # Data asset
-        query = f"SELECT * FROM STATIQUE where nom_amenageur = '{amenageur}'"
+        query = str(
+            text(r"SELECT * FROM STATIQUE where nom_amenageur = :amenageur")
+            .bindparams(amenageur=amenageur)
+            .compile(
+                dialect=postgresql.dialect(), compile_kwargs={"literal_binds": True}
+            )
+        )
+
         data_asset = data_source.add_query_asset(name=name, query=query)
 
         # Batch
