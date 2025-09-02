@@ -38,6 +38,24 @@ def test_run_api_db_validation():
                 assert result.success
 
 
+def test_run_api_db_validation_by_amenageur_with_unsafe_name(monkeypatch):
+    """Run API database validation by amenageur with an unsafe name."""
+    monkeypatch.setattr(
+        static,
+        "get_db_amenageurs",
+        lambda _: ["TERRITOIRE D'ENERGIE DU PUY-DE-DOME (TE 63)"],
+    )
+    report = static.run_api_db_validation_by_amenageur(
+        Environment.TEST, report_by_email=False
+    )
+    for results in report.results:
+        for result in results.suite:
+            if result.code == "NE10":
+                assert not result.success
+                continue
+            assert result.success
+
+
 def test_run_api_db_validation_by_amenageur(monkeypatch):
     """Run API database validation by amenageur."""
     monkeypatch.setattr(
