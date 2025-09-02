@@ -66,7 +66,7 @@ class UserRead(BaseUser):
 
 
 class UserCreate(BaseUser):
-    """QualiCharge user read model."""
+    """QualiCharge user create model."""
 
     password: str
 
