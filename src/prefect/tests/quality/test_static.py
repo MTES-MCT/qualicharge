@@ -3,27 +3,27 @@
 import pytest
 
 from indicators.types import Environment
-from quality.flows import static
+from quality.flows import quality_run, static
 
 
 def test_slugify():
     """Test the slugify utility from Django."""
     assert (
-        static.slugify("Comité interprofessionnel des vins de provence")
+        quality_run.slugify("Comité interprofessionnel des vins de provence")
         == "comite-interprofessionnel-des-vins-de-provence"
     )
 
 
 def test_get_db_amenageur():
     """Test the get_db_amenageur utility."""
-    amenageurs = list(static.get_db_amenageurs(Environment.TEST))
+    amenageurs = list(quality_run.get_db_amenageurs(Environment.TEST))
     expected = 25
     assert len(amenageurs) == expected
 
     with pytest.raises(
         LookupError, match="Undefined API database environment variable"
     ):
-        next(static.get_db_amenageurs(Environment.PRODUCTION))
+        next(quality_run.get_db_amenageurs(Environment.PRODUCTION))
 
 
 def test_run_api_db_validation():
@@ -41,7 +41,7 @@ def test_run_api_db_validation():
 def test_run_api_db_validation_by_amenageur_with_unsafe_name(monkeypatch):
     """Run API database validation by amenageur with an unsafe name."""
     monkeypatch.setattr(
-        static,
+        quality_run,
         "get_db_amenageurs",
         lambda _: ["TERRITOIRE D'ENERGIE DU PUY-DE-DOME (TE 63)"],
     )
@@ -56,7 +56,9 @@ def test_run_api_db_validation_by_amenageur_with_unsafe_name(monkeypatch):
 def test_run_api_db_validation_by_amenageur(monkeypatch):
     """Run API database validation by amenageur."""
     monkeypatch.setattr(
-        static, "get_db_amenageurs", lambda _: ["Tesla", "Ionity", "TesLa ", "Electra"]
+        quality_run,
+        "get_db_amenageurs",
+        lambda _: ["Tesla", "Ionity", "TesLa ", "Electra"],
     )
     report = static.run_api_db_validation_by_amenageur(
         Environment.TEST, report_by_email=False
