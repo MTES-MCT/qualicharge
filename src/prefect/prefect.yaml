@@ -309,7 +309,7 @@ deployments:
 
   # -- Quality deployments --
 
-  - name: quality-staging
+  - name: quality-static-staging
     entrypoint: quality/flows/static.py:run_api_db_validation
     schedules:
       - cron: "2 2 * * *"
@@ -321,7 +321,8 @@ deployments:
     work_pool:
       name: indicators
       work_queue_name: default
-  - name: quality-staging-by-amenageur
+
+  - name: quality-static-staging-by-amenageur
     entrypoint: quality/flows/static.py:run_api_db_validation_by_amenageur
     schedules:
       - cron: "12 2 * * *"
@@ -333,7 +334,8 @@ deployments:
     work_pool:
       name: indicators
       work_queue_name: default
-  - name: quality-production
+
+  - name: quality-static-production
     entrypoint: quality/flows/static.py:run_api_db_validation
     schedules:
       - cron: "22 2 * * *"
@@ -345,7 +347,8 @@ deployments:
     work_pool:
       name: indicators
       work_queue_name: default
-  - name: quality-production-by-amenageur
+
+  - name: quality-static-production-by-amenageur
     entrypoint: quality/flows/static.py:run_api_db_validation_by_amenageur
     schedules:
       - cron: "32 2 * * *"
@@ -353,6 +356,36 @@ deployments:
         active: true
     parameters:
       environment: production
+      report_by_email: true
+    work_pool:
+      name: indicators
+      work_queue_name: default
+
+  - name: quality-dynamic-staging
+    entrypoint: quality/flows/dynamic.py:run_api_db_validation
+    schedules:
+      - cron: "42 2 * * *"
+        timezone: "Europe/Paris"
+        active: true
+    parameters:
+      environment: staging
+      from_now: 
+        days: 14
+      report_by_email: true
+    work_pool:
+      name: indicators
+      work_queue_name: default
+
+  - name: quality-dynamic-staging-by-amenageur
+    entrypoint: quality/flows/dynamic.py:run_api_db_validation_by_amenageur
+    schedules:
+      - cron: "52 2 * * *"
+        timezone: "Europe/Paris"
+        active: true
+    parameters:
+      environment: staging
+      from_now: 
+        days: 14
       report_by_email: true
     work_pool:
       name: indicators

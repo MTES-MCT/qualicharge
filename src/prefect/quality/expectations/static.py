@@ -6,22 +6,9 @@ from string import Template
 import great_expectations as gx
 import great_expectations.expectations as gxe
 
+from .parameters import CRDS, LOCP, NE10, PDCM, POWL, POWU
+
 NAME: str = "static"
-
-POWU_PARAMETER: float = 4000  # max power kw
-POWL_PARAMETER: float = 1.3  # min power kw
-CRDS_PARAMETER: dict[str, float] = {
-    "CRDS_LON_MAX": 10,
-    "CRDS_LON_MIN": -5,
-    "CRDS_LAT_MAX": 52,
-    "CRDS_LAT_MIN": 41,
-}
-
-PDCM_PARAMETER: float = 50  # max number of pdc per station
-
-PDCM_THRESHOLD: float = 0.01  # percentage 1 %
-LOCP_THRESHOLD: float = 1.5  # ratio
-NE10_THRESHOLD: float = 0.1  # percentage 10 %
 
 IS_DC: str = """(
 puissance_nominale >= 50
@@ -36,14 +23,14 @@ pdc_expectations = [
     # Power less than POWL_PARAMETER (rule 39)
     gxe.ExpectColumnMinToBeBetween(
         column="puissance_nominale",
-        min_value=POWL_PARAMETER,
-        meta={"code": "POWL"},
+        min_value=POWL.params["min_power_kw"],
+        meta={"code": POWL.code},
     ),
     # Power greater than POWU_PARAMETER (rule 1)
     gxe.ExpectColumnMaxToBeBetween(
         column="puissance_nominale",
-        max_value=POWU_PARAMETER,
-        meta={"code": "POWU"},
+        max_value=POWU.params["max_power_kw"],
+        meta={"code": POWU.code},
     ),
 ]
 amenageur_expectations = [
@@ -87,13 +74,13 @@ SELECT
 FROM
   {batch}
 WHERE
-  ST_X ("coordonneesXY"::geometry) > $CRDS_LON_MAX
-  OR ST_X ("coordonneesXY"::geometry) < $CRDS_LON_MIN
-  OR ST_Y ("coordonneesXY"::geometry) > $CRDS_LAT_MAX
-  OR ST_Y ("coordonneesXY"::geometry) < $CRDS_LAT_MIN
+  ST_X ("coordonneesXY"::geometry) > $lon_max
+  OR ST_X ("coordonneesXY"::geometry) < $lon_min
+  OR ST_Y ("coordonneesXY"::geometry) > $lat_max
+  OR ST_Y ("coordonneesXY"::geometry) < $lat_min
         """
-        ).substitute(CRDS_PARAMETER),
-        meta={"code": "CRDS"},
+        ).substitute(CRDS.params),
+        meta={"code": CRDS.code},
     )
 ]
 AFIREV_expectations = [
@@ -142,7 +129,7 @@ WITH
           id_station_itinerance
       ) AS stat_nb_pdc
     WHERE
-      nb_pdc > $PDCM_PARAMETER
+      nb_pdc > $max_number_of_pdc_per_station
   ),
   nb_stations AS (
     SELECT
@@ -156,12 +143,10 @@ FROM
   nb_stations_max,
   nb_stations
 WHERE
-  nbre_stat_max::float > $PDCM_THRESHOLD * nbre_stat
+  nbre_stat_max::float > $threshold_percent * nbre_stat
         """
-        ).substitute(
-            {"PDCM_PARAMETER": PDCM_PARAMETER, "PDCM_THRESHOLD": PDCM_THRESHOLD}
-        ),
-        meta={"code": "PDCM"},
+        ).substitute(PDCM.params),
+        meta={"code": PDCM.code},
     ),
     # number of pdc per station lower than nbre_pdc field (rule 47)
     gxe.UnexpectedRowsExpectation(
@@ -254,10 +239,10 @@ FROM
   nb_localisation,
   nb_stations
 WHERE
-  nbre_stat::float > $LOCP_THRESHOLD * nbre_loc
+  nbre_stat::float > $ratio_stations_per_location * nbre_loc
         """
-        ).substitute({"LOCP_THRESHOLD": LOCP_THRESHOLD}),
-        meta={"code": "LOCP"},
+        ).substitute(LOCP.params),
+        meta={"code": LOCP.code},
     ),
 ]
 num_PDL_expectations = [
@@ -320,17 +305,19 @@ FROM
   nb_station_dc,
   nb_numpdl_not14
 WHERE
-  nbre_numpdl_not14::float > $NE10_THRESHOLD * nbre_stat_dc
+  nbre_numpdl_not14::float > $threshold_percent * nbre_stat_dc
         """
-        ).substitute({"IS_DC": IS_DC, "NE10_THRESHOLD": NE10_THRESHOLD}),
-        meta={"code": "NE10"},
+        ).substitute(
+            {"IS_DC": IS_DC} | NE10.params  # type: ignore
+        ),
+        meta={"code": NE10.code},
     ),
 ]
 
 
 def get_suite():
     """Get static expectation suite."""
-    suite = gx.ExpectationSuite(name="static")
+    suite = gx.ExpectationSuite(name=NAME)
     expectations = (
         pdc_expectations
         + amenageur_expectations

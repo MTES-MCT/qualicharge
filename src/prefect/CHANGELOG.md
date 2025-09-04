@@ -12,24 +12,16 @@ and this project adheres to
 
 #### Indicators
 
-- Implement t1 workflow
-- Implement i1 workflow
-- Implement i4 workflow
-- Implement i7 workflow
-- Implement e4 workflow
-- Implement up workflow
-- Implement u5 workflow
-- Implement u6 workflow
-- Implement u9 workflow
-- Implement u10 workflow
-- Implement u11 workflow
-- Implement u12 workflow
-- Implement u13 workflow
+- Implement infrastructure indicators (t1, i1, i4, i7)
+- Implement extract indicators (e4)
+- Implement historicization (up)
+- Implement usage indicators (u5, u6, u9, u10, u11, u12, u13)
 
 #### Quality
 
 - Integrate Great-Expectations (POWU, POWL, CRDS, OPEM, AMEM)
-- Add expectations (AFIE, AFIP, P50E, PDCL, INSE, ADDR, LOCP, PDLM, NE10)
+- Add static expectations (AFIE, AFIP, P50E, PDCL, INSE, ADDR, LOCP, PDLM, NE10)
+- Add dynamic expectations (ENEU)
 
 #### Cooling
 
