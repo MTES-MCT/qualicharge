@@ -6,311 +6,12 @@ deployments:
 
   # -- Indicators deployments --
 
-  # null start value -> datetime.now()
-  - name: i1-daily
-    entrypoint: indicators/run.py:i1_calculate
-    concurrency_limit: 10
-    schedules:
-      - cron: "0 14 * * *"
-        timezone: "Europe/Paris"
-        active: true
-    parameters:
-      environment: production
-      levels: [0, 1, 2, 3]
-      period: d
-      create_artifact: true
-      persist: true
-    work_pool:
-      name: indicators
-      work_queue_name: default
 
-  - name: i4-daily
-    entrypoint: indicators/run.py:i4_calculate
-    concurrency_limit: 10
-    schedules:
-      - cron: "2 14 * * *"
-        timezone: "Europe/Paris"
-        active: true
-    parameters:
-      environment: production
-      levels: [0, 1, 2, 3]
-      period: d
-      create_artifact: true
-      persist: true
-    work_pool:
-      name: indicators
-      work_queue_name: default
-
-  - name: i7-daily
-    entrypoint: indicators/run.py:i7_calculate
-    concurrency_limit: 10
-    schedules:
-      - cron: "4 14 * * *"
-        timezone: "Europe/Paris"
-        active: true
-    parameters:
-      environment: production
-      levels: [0, 1, 2, 3]
-      period: d
-      create_artifact: true
-      persist: true
-    work_pool:
-      name: indicators
-      work_queue_name: default
-
-  - name: t1-daily
-    entrypoint: indicators/run.py:t1_calculate
-    concurrency_limit: 10
-    schedules:
-      - cron: "10 14 * * *"
-        timezone: "Europe/Paris"
-        active: true
-    parameters:
-      environment: production
-      levels: [0, 1, 2, 3]
-      period: d
-      create_artifact: true
-      persist: true
-    work_pool:
-      name: indicators
-      work_queue_name: default
-
-  - name: e4-daily
-    entrypoint: indicators/run.py:e4_calculate
-    concurrency_limit: 10
-    schedules:
-      - cron: "20 14 * * *"
-        timezone: "Europe/Paris"
-        active: true
-    parameters:
-      environment: production
-      levels: [0, 1]
-      period: d
-      create_artifact: false
-      persist: true
-    work_pool:
-      name: indicators
-      work_queue_name: default
-
-  - name: u5-daily
-    entrypoint: indicators/run.py:u5_calculate
-    concurrency_limit: 10
-    schedules:
-      - cron: "4 15 * * *"
-        timezone: "Europe/Paris"
-        active: true
-    parameters:
-      environment: production
-      levels: [0, 1]
-      period: d
-      create_artifact: true
-      persist: true
-    work_pool:
-      name: indicators
-      work_queue_name: default
-
-  - name: u6-daily
-    entrypoint: indicators/run.py:u6_calculate
-    concurrency_limit: 10
-    schedules:
-      - cron: "6 15 * * *"
-        timezone: "Europe/Paris"
-        active: true
-    parameters:
-      environment: production
-      levels: [0, 1]
-      period: d
-      create_artifact: true
-      persist: true
-    work_pool:
-      name: indicators
-      work_queue_name: default
-
-  - name: u9-daily
-    entrypoint: indicators/run.py:u9_calculate
-    concurrency_limit: 10
-    schedules:
-      - cron: "8 15 * * *"
-        timezone: "Europe/Paris"
-        active: true
-    parameters:
-      environment: production
-      levels: [0, 1]
-      period: d
-      create_artifact: true
-      persist: true
-    work_pool:
-      name: indicators
-      work_queue_name: default
-
-  - name: u10-daily
-    entrypoint: indicators/run.py:u10_calculate
-    concurrency_limit: 10
-    schedules:
-      - cron: "10 15 * * *"
-        timezone: "Europe/Paris"
-        active: true
-    parameters:
-      environment: production
-      levels: [0, 1]
-      period: d
-      create_artifact: true
-      persist: true
-    work_pool:
-      name: indicators
-      work_queue_name: default
-
-  - name: u11-daily
-    entrypoint: indicators/run.py:u11_calculate
-    concurrency_limit: 10
-    schedules:
-      - cron: "12 15 * * *"
-        timezone: "Europe/Paris"
-        active: true
-    parameters:
-      environment: production
-      levels: [0, 1]
-      period: d
-      create_artifact: true
-      persist: true
-    work_pool:
-      name: indicators
-      work_queue_name: default
-
-  - name: u12-daily
-    entrypoint: indicators/run.py:u12_calculate
-    concurrency_limit: 10
-    schedules:
-      - cron: "12 15 * * *"
-        timezone: "Europe/Paris"
-        active: true
-    parameters:
-      environment: production
-      levels: [0, 1]
-      period: d
-      create_artifact: true
-      persist: true
-    work_pool:
-      name: indicators
-      work_queue_name: default
-
-  - name: u13-daily
-    entrypoint: indicators/run.py:u13_calculate
-    concurrency_limit: 10
-    schedules:
-      - cron: "16 15 * * *"
-        timezone: "Europe/Paris"
-        active: true
-    parameters:
-      environment: production
-      levels: [0, 1]
-      period: d
-      create_artifact: true
-      persist: true
-    work_pool:
-      name: indicators
-      work_queue_name: default
-
-  # offset (default -1): 0 -> init period = start value 
-  - name: up-monthly
-    entrypoint: indicators/run.py:up_calculate
-    concurrency_limit: 10
-    schedules:
-      - cron: "22 14 10 * *"
-        timezone: "Europe/Paris"
-        active: true
-    parameters:
-      environment: production
-      to_period: m
-      period: d
-      create_artifact: false
-      persist: true
-    work_pool:
-      name: indicators
-      work_queue_name: default
-
-  - name: up-weekly
-    entrypoint: indicators/run.py:up_calculate
-    concurrency_limit: 10
-    schedules:
-      - cron: "02 15 * * 1"
-        timezone: "Europe/Paris"
-        active: true
-    parameters:
-      environment: production
-      to_period: w
-      period: d
-      create_artifact: false
-      persist: true
-    work_pool:
-      name: indicators
-      work_queue_name: default
-
-  # -- Data cooling deployments --
-  - name: status-cooling-staging
-    entrypoint: cooling/statuses.py:extract_old_statuses
-    schedules:
-      - cron: "2 4 * * *"
-        timezone: "Europe/Paris"
-        active: true
-    parameters:
-      from_now: 
-        days: 15
-      environment: staging 
-      if_exists: ignore 
-    work_pool:
-      name: indicators
-      work_queue_name: default
-
-  - name: status-cooling-production
-    entrypoint: cooling/statuses.py:extract_old_statuses
-    schedules:
-      - cron: "18 4 * * *"
-        timezone: "Europe/Paris"
-        active: true
-    parameters:
-      from_now: 
-        days: 15
-      environment: production
-      if_exists: ignore 
-    work_pool:
-      name: indicators
-      work_queue_name: default
-
-  - name: sessions-cooling-staging
-    entrypoint: cooling/sessions.py:extract_old_sessions
-    schedules:
-      - cron: "34 4 * * *"
-        timezone: "Europe/Paris"
-        active: true
-    parameters:
-      from_now: 
-        days: 15
-      environment: staging 
-      if_exists: ignore 
-    work_pool:
-      name: indicators
-      work_queue_name: default
-
-  - name: sessions-cooling-production
-    entrypoint: cooling/sessions.py:extract_old_sessions
-    schedules:
-      - cron: "43 4 * * *"
-        timezone: "Europe/Paris"
-        active: true
-    parameters:
-      from_now: 
-        days: 15
-      environment: production
-      if_exists: ignore 
-    work_pool:
-      name: indicators
-      work_queue_name: default
 
   # -- Quality deployments --
 
-  - name: quality-staging
-    entrypoint: quality/flows/static.py:run_api_db_validation
+  - name: quality-static-staging
+    entrypoint: quality/flows/quality_run.py:run_api_db_validation
     schedules:
       - cron: "2 2 * * *"
         timezone: "Europe/Paris"
@@ -321,8 +22,8 @@ deployments:
     work_pool:
       name: indicators
       work_queue_name: default
-  - name: quality-staging-by-amenageur
-    entrypoint: quality/flows/static.py:run_api_db_validation_by_amenageur
+  - name: quality-static-staging-by-amenageur
+    entrypoint: quality/flows/quality_run.py:run_api_db_validation_by_amenageur
     schedules:
       - cron: "12 2 * * *"
         timezone: "Europe/Paris"
@@ -333,8 +34,8 @@ deployments:
     work_pool:
       name: indicators
       work_queue_name: default
-  - name: quality-production
-    entrypoint: quality/flows/static.py:run_api_db_validation
+  - name: quality-static-production
+    entrypoint: quality/flows/quality_run.py:run_api_db_validation
     schedules:
       - cron: "22 2 * * *"
         timezone: "Europe/Paris"
@@ -345,8 +46,8 @@ deployments:
     work_pool:
       name: indicators
       work_queue_name: default
-  - name: quality-production-by-amenageur
-    entrypoint: quality/flows/static.py:run_api_db_validation_by_amenageur
+  - name: quality-static-production-by-amenageur
+    entrypoint: quality/flows/quality_run.py:run_api_db_validation_by_amenageur
     schedules:
       - cron: "32 2 * * *"
         timezone: "Europe/Paris"
@@ -354,6 +55,32 @@ deployments:
     parameters:
       environment: production
       report_by_email: true
+    work_pool:
+      name: indicators
+      work_queue_name: default
+  - name: quality-dynamic-staging
+    entrypoint: quality/flows/quality_run.py:run_api_db_validation
+    schedules:
+      - cron: "42 2 * * *"
+        timezone: "Europe/Paris"
+        active: true
+    parameters:
+      environment: staging
+      report_by_email: true
+      quality_type: "dynamic"
+    work_pool:
+      name: indicators
+      work_queue_name: default
+  - name: quality-dynamic-staging-by-amenageur
+    entrypoint: quality/flows/quality_run.py:run_api_db_validation_by_amenageur
+    schedules:
+      - cron: "52 2 * * *"
+        timezone: "Europe/Paris"
+        active: true
+    parameters:
+      environment: staging
+      report_by_email: true
+      quality_type: "dynamic"
     work_pool:
       name: indicators
       work_queue_name: default

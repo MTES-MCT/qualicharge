@@ -1,4 +1,4 @@
-"""Prefect flows: static."""
+"""Prefect flows: quality static and dynamic."""
 
 import os
 import re
@@ -14,7 +14,9 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.orm import Session
 
-from quality.expectations.static import get_suite as get_static_expectation_suite
+# from quality.expectations.static import get_suite as get_static_expectation_suite
+# from quality.expectations.dynamic import get_suite as get_dynamic_expectation_suite
+from quality.expectations import dynamic, static
 
 API_DATA_SOURCE_NAME: str = "api-{environment}"
 
@@ -85,7 +87,9 @@ def get_db_amenageurs(environment: str) -> Generator[str, None, None]:
 
 
 @flow(log_prints=True)
-def run_api_db_validation(environment, report_by_email: bool = False):
+def run_api_db_validation(
+    environment, report_by_email: bool = False, quality_type: str = "static"
+):
     """Run API DB checkpoint."""
     # Context
     context = gx.get_context(mode="ephemeral")
@@ -97,7 +101,7 @@ def run_api_db_validation(environment, report_by_email: bool = False):
     )
 
     # Expectation suite
-    suite = get_static_expectation_suite()
+    suite = static.get_suite() if quality_type == "static" else dynamic.get_suite()
     context.suites.add(suite)
 
     # Data asset
@@ -148,14 +152,14 @@ def run_api_db_validation(environment, report_by_email: bool = False):
             )
         ),
         description=f"GX validation for API DB instance: {environment}",
-        key=f"api-db-static-{environment}",
+        key=f"api-db-{quality_type}-{environment}",
     )
     return result
 
 
 @flow(log_prints=True)
 def run_api_db_validation_by_amenageur(
-    environment: str, report_by_email: bool = False
+    environment: str, report_by_email: bool = False, quality_type: str = "static"
 ) -> QCReport:
     """Run API DB checkpoint by amenageur."""
     # Context
@@ -168,11 +172,11 @@ def run_api_db_validation_by_amenageur(
     )
 
     # Expectation suite
-    suite = get_static_expectation_suite()
+    suite = static.get_suite() if quality_type == "static" else dynamic.get_suite()
     context.suites.add(suite)
 
     # QualiCharge markdown report
-    report = QCReport(name=f"static-{environment}")
+    report = QCReport(name=f"{quality_type}-{environment}")
 
     # Run checkpoint for every amenageur
     for amenageur in get_db_amenageurs(environment):
@@ -210,7 +214,7 @@ def run_api_db_validation_by_amenageur(
             action_list.append(
                 gx.checkpoint.EmailAction(
                     notify_on="all",
-                    name="Static expectations report",
+                    name=f"{quality_type} expectations report",
                     receiver_emails="${GX_RECEIVER_EMAILS}",
                     smtp_address="${GX_BREVO_SMTP_ADDRESS}",
                     smtp_port="${GX_BREVO_SMTP_PORT}",
@@ -250,12 +254,12 @@ def run_api_db_validation_by_amenageur(
     jinja_env = Environment(
         loader=FileSystemLoader("quality/templates"), autoescape=select_autoescape()
     )
-    template = jinja_env.get_template("static-by-amenageur.md.j2")
+    template = jinja_env.get_template("quality-by-amenageur.md.j2")
     create_markdown_artifact(
         template.render(report=report),
         description=(
             f"# GX validation by `Amenageur` for API DB instance: {environment}"
         ),
-        key=f"api-db-static-amenageurs-{environment}",
+        key=f"api-db-{quality_type}-amenageurs-{environment}",
     )
     return report

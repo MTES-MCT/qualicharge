@@ -330,7 +330,7 @@ WHERE
 
 def get_suite():
     """Get static expectation suite."""
-    suite = gx.ExpectationSuite(name="static")
+    suite = gx.ExpectationSuite(name=NAME)
     expectations = (
         pdc_expectations
         + amenageur_expectations
