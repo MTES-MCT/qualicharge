@@ -6,6 +6,7 @@ from string import Template
 import great_expectations as gx
 import great_expectations.expectations as gxe
 
+
 NAME: str = "static"
 
 POWU_PARAMETER: float = 4000  # max power kw

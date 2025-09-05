@@ -87,8 +87,33 @@ def get_db_amenageurs(environment: str) -> Generator[str, None, None]:
 
 
 @flow(log_prints=True)
+def run_static_api_db_validation(environment, report_by_email: bool = False):
+    """Run API DB checkpoint for static expectations."""
+    return run_api_db_validation(
+        environment, {}, report_by_email=report_by_email, quality_type="static"
+    )
+
+
+@flow(log_prints=True)
+def run_dynamic_api_db_validation(
+    environment: str,
+    from_now: dict,
+    report_by_email: bool = False,
+):
+    """Run API DB checkpoint for dynamic expectations."""
+    return run_api_db_validation(
+        environment,
+        from_now,
+        report_by_email=report_by_email,
+        quality_type="dynamic",
+    )
+
+
 def run_api_db_validation(
-    environment, report_by_email: bool = False, quality_type: str = "static"
+    environment: str,
+    from_now: dict,
+    report_by_email: bool,
+    quality_type: str = "static",
 ):
     """Run API DB checkpoint."""
     # Context
@@ -101,7 +126,9 @@ def run_api_db_validation(
     )
 
     # Expectation suite
-    suite = static.get_suite() if quality_type == "static" else dynamic.get_suite()
+    suite = (
+        static.get_suite() if quality_type == "static" else dynamic.get_suite(from_now)
+    )
     context.suites.add(suite)
 
     # Data asset
@@ -124,7 +151,7 @@ def run_api_db_validation(
         action_list.append(
             gx.checkpoint.EmailAction(
                 notify_on="all",
-                name="Static expectations report",
+                name=f"{quality_type} expectations report",
                 receiver_emails="${GX_RECEIVER_EMAILS}",
                 smtp_address="${GX_BREVO_SMTP_ADDRESS}",
                 smtp_port="${GX_BREVO_SMTP_PORT}",
@@ -158,8 +185,34 @@ def run_api_db_validation(
 
 
 @flow(log_prints=True)
+def run_static_api_db_validation_by_amenageur(
+    environment, report_by_email: bool = False
+) -> QCReport:
+    """Run API DB checkpoint by amenageur for static expectations."""
+    from_now = {}
+    return run_api_db_validation_by_amenageur(
+        environment, from_now, report_by_email, quality_type="static"
+    )
+
+
+@flow(log_prints=True)
+def run_dynamic_api_db_validation_by_amenageur(
+    environment: str, from_now: dict, report_by_email: bool = False
+) -> QCReport:
+    """Run API DB checkpoint by amenageur for static expectations."""
+    return run_api_db_validation_by_amenageur(
+        environment,
+        from_now,
+        report_by_email,
+        quality_type="dynamic",
+    )
+
+
 def run_api_db_validation_by_amenageur(
-    environment: str, report_by_email: bool = False, quality_type: str = "static"
+    environment: str,
+    from_now: dict,
+    report_by_email: bool,
+    quality_type: str = "static",
 ) -> QCReport:
     """Run API DB checkpoint by amenageur."""
     # Context
@@ -172,7 +225,9 @@ def run_api_db_validation_by_amenageur(
     )
 
     # Expectation suite
-    suite = static.get_suite() if quality_type == "static" else dynamic.get_suite()
+    suite = (
+        static.get_suite() if quality_type == "static" else dynamic.get_suite(from_now)
+    )
     context.suites.add(suite)
 
     # QualiCharge markdown report

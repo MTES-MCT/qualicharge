@@ -11,7 +11,7 @@ deployments:
   # -- Quality deployments --
 
   - name: quality-static-staging
-    entrypoint: quality/flows/quality_run.py:run_api_db_validation
+    entrypoint: quality/flows/quality_run.py:run_static_api_db_validation
     schedules:
       - cron: "2 2 * * *"
         timezone: "Europe/Paris"
@@ -23,7 +23,7 @@ deployments:
       name: indicators
       work_queue_name: default
   - name: quality-static-staging-by-amenageur
-    entrypoint: quality/flows/quality_run.py:run_api_db_validation_by_amenageur
+    entrypoint: quality/flows/quality_run.py:run_static_api_db_validation_by_amenageur
     schedules:
       - cron: "12 2 * * *"
         timezone: "Europe/Paris"
@@ -35,7 +35,7 @@ deployments:
       name: indicators
       work_queue_name: default
   - name: quality-static-production
-    entrypoint: quality/flows/quality_run.py:run_api_db_validation
+    entrypoint: quality/flows/quality_run.py:run_static_api_db_validation
     schedules:
       - cron: "22 2 * * *"
         timezone: "Europe/Paris"
@@ -47,7 +47,7 @@ deployments:
       name: indicators
       work_queue_name: default
   - name: quality-static-production-by-amenageur
-    entrypoint: quality/flows/quality_run.py:run_api_db_validation_by_amenageur
+    entrypoint: quality/flows/quality_run.py:run_static_api_db_validation_by_amenageur
     schedules:
       - cron: "32 2 * * *"
         timezone: "Europe/Paris"
@@ -59,28 +59,30 @@ deployments:
       name: indicators
       work_queue_name: default
   - name: quality-dynamic-staging
-    entrypoint: quality/flows/quality_run.py:run_api_db_validation
+    entrypoint: quality/flows/quality_run.py:run_dynamic_api_db_validation
     schedules:
       - cron: "42 2 * * *"
         timezone: "Europe/Paris"
         active: true
     parameters:
       environment: staging
+      from_now: 
+        days: 14
       report_by_email: true
-      quality_type: "dynamic"
     work_pool:
       name: indicators
       work_queue_name: default
   - name: quality-dynamic-staging-by-amenageur
-    entrypoint: quality/flows/quality_run.py:run_api_db_validation_by_amenageur
+    entrypoint: quality/flows/quality_run.py:run_dynamic_api_db_validation_by_amenageur
     schedules:
       - cron: "52 2 * * *"
         timezone: "Europe/Paris"
         active: true
     parameters:
       environment: staging
+      from_now: 
+        days: 14
       report_by_email: true
-      quality_type: "dynamic"
     work_pool:
       name: indicators
       work_queue_name: default
