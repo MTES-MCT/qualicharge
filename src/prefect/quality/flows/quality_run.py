@@ -3,6 +3,7 @@
 import os
 import re
 import unicodedata
+from datetime import date
 from typing import Generator, List
 
 import great_expectations as gx
@@ -197,13 +198,14 @@ def run_static_api_db_validation_by_amenageur(
 
 @flow(log_prints=True)
 def run_dynamic_api_db_validation_by_amenageur(
-    environment: str, from_now: dict, report_by_email: bool = False
+    environment: str, from_now: dict, report_by_email: bool = False, now: date | None = None
 ) -> QCReport:
     """Run API DB checkpoint by amenageur for static expectations."""
     return run_api_db_validation_by_amenageur(
         environment,
         from_now,
         report_by_email,
+        now=now
         quality_type="dynamic",
     )
 
@@ -212,6 +214,7 @@ def run_api_db_validation_by_amenageur(
     environment: str,
     from_now: dict,
     report_by_email: bool,
+    now: date | None = None,
     quality_type: str = "static",
 ) -> QCReport:
     """Run API DB checkpoint by amenageur."""
@@ -226,7 +229,7 @@ def run_api_db_validation_by_amenageur(
 
     # Expectation suite
     suite = (
-        static.get_suite() if quality_type == "static" else dynamic.get_suite(from_now)
+        static.get_suite() if quality_type == "static" else dynamic.get_suite(from_now, now)
     )
     context.suites.add(suite)
 

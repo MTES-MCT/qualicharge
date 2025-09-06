@@ -9,8 +9,8 @@ import great_expectations.expectations as gxe
 
 NAME: str = "dynamic"
 
-# ENEU : Energy greater than 1000 kWh (rule 11)
-ENEU_PARAMETER: dict = {"eneu_param": 1000}  # max energy (kWh) per session
+# ENEU : Energy greater than max_energy (rule 11)
+ENEU_PARAMETER: dict = {"max_energy": 1000}  # max energy (kWh) per session
 ENEU_TEMPLATE: str = """
 WITH
   session_f AS (
@@ -19,9 +19,9 @@ WITH
     FROM
       SESSION
     WHERE
-      energy > $eneu_param
-      AND START >= $start_min
-      AND START < $start_max
+      energy > $max_energy
+      AND START >= $start
+      AND START < $end
   )
 SELECT
   energy,
@@ -33,18 +33,18 @@ SELECT
   id_station_itinerance
 FROM
   SESSION_f
-  INNER JOIN {batch} ON point_de_charge_id = pdc_id
+  INNER JOIN ({batch}) AS statique_amenageur ON point_de_charge_id = pdc_id
 """
 
 
-def get_suite(from_now: dict):
+def get_suite(from_now: dict, now: date | None):
     """Get dynamic expectation suite."""
-    date_end = date.today()
+    date_end = date.today() if not now else now
     date_start = date_end - timedelta(**from_now)
 
     date_params = {
-        "start_min": f"'{date_start.isoformat()}'",
-        "start_max": f"'{date_end.isoformat()}'",
+        "start": f"'{date_start.isoformat()}'",
+        "end": f"'{date_end.isoformat()}'",
     }
     expectations = []
 
