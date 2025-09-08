@@ -1,11 +1,23 @@
 """QualiCharge dynamic odels."""
 
+from datetime import datetime, timedelta, timezone
 from enum import StrEnum
-from typing import Optional
+from typing import Annotated, Optional
 
-from pydantic import PositiveFloat
+from pydantic import AfterValidator, PositiveFloat, model_validator
 from pydantic.types import PastDatetime
 from sqlmodel import Field, SQLModel
+from typing_extensions import Self
+
+from ..conf import settings
+
+
+def not_older_than(value: datetime, max_age: timedelta):
+    """Validator function to ensure a datetime is not older than a now - max_age."""
+    now = datetime.now(tz=timezone.utc)
+    if value < now - max_age:
+        raise ValueError(f"{value} is older than {max_age}")
+    return value
 
 
 class EtatPDCEnum(StrEnum):
@@ -34,7 +46,7 @@ class EtatPriseEnum(StrEnum):
 
 
 class StatusBase(SQLModel):
-    """Base point of charge status."""
+    """Base charge point status."""
 
     etat_pdc: EtatPDCEnum
     occupation_pdc: OccupationPDCEnum
@@ -45,8 +57,8 @@ class StatusBase(SQLModel):
     etat_prise_type_ef: Optional[EtatPriseEnum] = None
 
 
-class StatusCreate(StatusBase):
-    """Point of charge status create."""
+class StatusAPIBase(StatusBase):
+    """Base charge point status for the API."""
 
     id_pdc_itinerance: str = Field(
         regex="(?:(?:^|,)(^[A-Z]{2}[A-Z0-9]{4,33}$|Non concerné))+$",
@@ -56,7 +68,18 @@ class StatusCreate(StatusBase):
     )
 
 
-class StatusRead(StatusCreate):
+class StatusCreate(StatusAPIBase):
+    """Point of charge status create."""
+
+    horodatage: Annotated[
+        PastDatetime,
+        AfterValidator(
+            lambda v: not_older_than(v, timedelta(seconds=settings.API_MAX_STATUS_AGE))
+        ),
+    ]
+
+
+class StatusRead(StatusAPIBase):
     """Point of charge status read."""
 
 
@@ -66,6 +89,13 @@ class SessionBase(SQLModel):
     start: PastDatetime
     end: PastDatetime
     energy: PositiveFloat
+
+    @model_validator(mode="after")
+    def check_session_dates(self) -> Self:
+        """Check start/end dates consistency."""
+        if self.start > self.end:
+            raise ValueError("A session cannot start after it has ended.")
+        return self
 
 
 class SessionCreate(SessionBase):
@@ -77,3 +107,9 @@ class SessionCreate(SessionBase):
             "examples": ["FR0NXEVSEXB9YG", "FRFASE3300405", "FR073012308585"]
         },
     )
+    start: Annotated[
+        PastDatetime,
+        AfterValidator(
+            lambda v: not_older_than(v, timedelta(seconds=settings.API_MAX_SESSION_AGE))
+        ),
+    ]
