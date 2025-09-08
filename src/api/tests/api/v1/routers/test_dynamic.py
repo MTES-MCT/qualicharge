@@ -2,7 +2,7 @@
 
 import gzip
 import json
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from random import sample
 from typing import cast
 from urllib.parse import quote_plus
@@ -1065,6 +1065,7 @@ def test_create_status_number_of_queries(db_session, client_auth):
 def test_create_status_with_required_fields_only(db_session, client_auth):
     """Test the /status/ create endpoint with only required fields."""
     id_pdc_itinerance = "FR911E1111ER1"
+    now = datetime.now(tz=timezone.utc)
 
     # Create point of charge
     save_statique(
@@ -1074,12 +1075,35 @@ def test_create_status_with_required_fields_only(db_session, client_auth):
         "id_pdc_itinerance": id_pdc_itinerance,
         "etat_pdc": "en_service",
         "occupation_pdc": "occupe",
-        "horodatage": "2024-10-05T14:48:00.000Z",
+        "horodatage": (now - timedelta(seconds=5)).isoformat(),
     }
 
     # Create a new status
     response = client_auth.post("/dynamique/status/", json=payload)
     assert response.status_code == status.HTTP_201_CREATED
+
+
+def test_create_status_too_old(db_session, client_auth):
+    """Test the /status/ create endpoint with a status older than allowed."""
+    id_pdc_itinerance = "FR911E1111ER1"
+    now = datetime.now(tz=timezone.utc)
+
+    # Create point of charge
+    save_statique(
+        db_session, StatiqueFactory.build(id_pdc_itinerance=id_pdc_itinerance)
+    )
+    payload = {
+        "id_pdc_itinerance": id_pdc_itinerance,
+        "etat_pdc": "en_service",
+        "occupation_pdc": "occupe",
+        "horodatage": (
+            now - timedelta(seconds=settings.API_MAX_STATUS_AGE + 3600)
+        ).isoformat(),
+    }
+
+    # Create a new status
+    response = client_auth.post("/dynamique/status/", json=payload)
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
 
 @pytest.mark.parametrize(
@@ -1426,6 +1450,32 @@ def test_create_status_bulk_number_of_queries(db_session, client_auth):
     assert counter.count == expected
 
 
+def test_create_status_bulk_too_old(db_session, client_auth):
+    """Test the /status/bulk create endpoint with a status older than allowed."""
+    now = datetime.now(tz=timezone.utc)
+    qc_statuses = StatusCreateFactory.batch(3)
+    qc_statuses[2].horodatage = now - timedelta(
+        seconds=settings.API_MAX_STATUS_AGE + 3600
+    )
+
+    # Create points of charge
+    save_statiques(
+        db_session,
+        [
+            StatiqueFactory.build(id_pdc_itinerance=s.id_pdc_itinerance)
+            for s in qc_statuses
+        ],
+    )
+
+    # We expect the same answer as one point of charge does not exist
+    response = client_auth.post(
+        "/dynamique/status/bulk",
+        json=[json.loads(s.model_dump_json()) for s in qc_statuses],
+    )
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert "older than 1 day" in response.json()["detail"][0]["msg"]
+
+
 @pytest.mark.parametrize(
     "client_auth",
     (
@@ -1648,13 +1698,13 @@ def test_create_session_for_superuser(db_session, client_auth):
         db_session, StatiqueFactory.build(id_pdc_itinerance=id_pdc_itinerance)
     )
 
-    # Create a new status
+    # Create a new session
     response = client_auth.post(
         "/dynamique/session/", json=json.loads(qc_session.model_dump_json())
     )
     assert response.status_code == status.HTTP_201_CREATED
 
-    # Query database to check created status and relations
+    # Query database to check created session and relations
     pdc = db_session.exec(
         select(PointDeCharge).where(
             PointDeCharge.id_pdc_itinerance == qc_session.id_pdc_itinerance
@@ -1664,6 +1714,27 @@ def test_create_session_for_superuser(db_session, client_auth):
     assert db_qc_session.point_de_charge_id == pdc.id
     assert db_qc_session in pdc.sessions
     assert response.json() == {"id": str(db_qc_session.id)}
+
+
+def test_create_session_too_old(db_session, client_auth):
+    """Test the /session/ create endpoint (for a session older than allowed)."""
+    id_pdc_itinerance = "FR911E1111ER1"
+    now = datetime.now(tz=timezone.utc)
+    qc_session = SessionCreateFactory.build(id_pdc_itinerance=id_pdc_itinerance)
+    qc_session.start = now - timedelta(seconds=settings.API_MAX_SESSION_AGE + 3600)
+    qc_session.end = now - timedelta(seconds=settings.API_MAX_SESSION_AGE - 3600)
+
+    # Create point of charge
+    save_statique(
+        db_session, StatiqueFactory.build(id_pdc_itinerance=id_pdc_itinerance)
+    )
+
+    # Create a new session
+    response = client_auth.post(
+        "/dynamique/session/", json=json.loads(qc_session.model_dump_json())
+    )
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert "is older than 365 days" in response.json()["detail"][0]["msg"]
 
 
 def test_create_session_for_inactive_pdc(db_session, client_auth):
@@ -1685,7 +1756,7 @@ def test_create_session_for_inactive_pdc(db_session, client_auth):
     inactive.deleted_at = datetime.now(timezone.utc)
     db_session.add(inactive)
 
-    # Create a new status
+    # Create a new session
     response = client_auth.post(
         "/dynamique/session/", json=json.loads(qc_session.model_dump_json())
     )
@@ -1702,7 +1773,7 @@ def test_create_session_number_of_queries(db_session, client_auth):
         db_session, StatiqueFactory.build(id_pdc_itinerance=id_pdc_itinerance)
     )
 
-    # Create a new status
+    # Create a new session
     with SAQueryCounter(db_session.connection()) as counter:
         response = client_auth.post(
             "/dynamique/session/", json=json.loads(qc_session.model_dump_json())
@@ -1760,13 +1831,13 @@ def test_create_session_for_user(db_session, client_auth):
     ).one()
     GroupFactory.create_sync(users=[user], operational_units=[operational_unit])
 
-    # Create a new status
+    # Create a new session
     response = client_auth.post(
         "/dynamique/session/", json=json.loads(qc_session.model_dump_json())
     )
     assert response.status_code == status.HTTP_201_CREATED
 
-    # Query database to check created status and relations
+    # Query database to check created session and relations
     pdc = db_session.exec(
         select(PointDeCharge).where(
             PointDeCharge.id_pdc_itinerance == qc_session.id_pdc_itinerance
@@ -1882,6 +1953,31 @@ def test_create_session_bulk_for_superuser(db_session, client_auth):
         assert db_qc_session.start == qc_session.start.astimezone()
         assert db_qc_session.end == qc_session.end.astimezone()
         assert db_qc_session.energy == qc_session.energy
+
+
+def test_create_session_bulk_too_old(db_session, client_auth):
+    """Test the /session/bulk create endpoint with a session older than allowed."""
+    qc_sessions = SessionCreateFactory.batch(3)
+    now = datetime.now(tz=timezone.utc)
+    qc_sessions[2].start = now - timedelta(seconds=settings.API_MAX_SESSION_AGE + 3600)
+    qc_sessions[2].end = now - timedelta(seconds=settings.API_MAX_SESSION_AGE - 3600)
+
+    # Create points of charge
+    save_statiques(
+        db_session,
+        [
+            StatiqueFactory.build(id_pdc_itinerance=s.id_pdc_itinerance)
+            for s in qc_sessions
+        ],
+    )
+
+    # We expect the same answer as one point of charge does not exist
+    response = client_auth.post(
+        "/dynamique/session/bulk",
+        json=[json.loads(s.model_dump_json()) for s in qc_sessions],
+    )
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert "is older than 365 days" in response.json()["detail"][0]["msg"]
 
 
 def test_create_session_bulk_with_inactive_pdc(db_session, client_auth):

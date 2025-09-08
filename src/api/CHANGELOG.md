@@ -10,6 +10,10 @@ and this project adheres to
 
 ### Changed
 
+- Forbid session older than `API_MAX_SESSION_AGE` submission
+  (defaults to 15 days)
+- Forbid status older than `API_MAX_STATUS_AGE` submission
+  (defaults to 1 day)
 - Update the list of active operational units
 
 #### Dependencies

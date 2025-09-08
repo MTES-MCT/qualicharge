@@ -136,6 +136,9 @@ class Settings(BaseSettings):
     API_GET_PDC_ID_CACHE_MAXSIZE: int = 5000
     API_GET_PDC_ID_CACHE_TTL: int = 24 * 60 * 60
     API_GET_PDC_ID_CACHE_INFO: bool = False
+    # Dynamic data maximal age in seconds
+    API_MAX_SESSION_AGE: int = 365 * 24 * 60 * 60  # 1 year
+    API_MAX_STATUS_AGE: int = 24 * 60 * 60  # 1 day
 
     model_config = SettingsConfigDict(
         case_sensitive=True, env_nested_delimiter="__", env_prefix="QUALICHARGE_"
