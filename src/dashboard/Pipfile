@@ -4,7 +4,7 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-Django = "==5.2.5"
+Django = "==5.2.6"
 django-anymail = "==13.0.1"
 django-dsfr = "==3.0.0"
 django-environ = "==0.12.0"

@@ -12,7 +12,7 @@ and this project adheres to
 
 #### Dependencies
 
-- Upgrade `Django` to `5.2.5`
+- Upgrade `Django` to `5.2.6`
 - Upgrade `django-anymail` to `13.0.1`
 - Upgrade `django-dsfr` to `3.0.0`
 - Upgrade `jsonschema` to `4.25.1`
