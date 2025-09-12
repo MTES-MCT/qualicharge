@@ -65,7 +65,8 @@ bootstrap: \
   env.d/notebook-extras \
   data/archives \
   build \
-  migrate-api \
+  run-api \
+  restore-api-db \
   create-api-test-db \
   create-metabase-db \
   create-prefect-db \
@@ -75,12 +76,9 @@ bootstrap: \
   seed-metabase \
   seed-minio \
   seed-oidc \
-  create-api-superuser \
   create-dashboard-superuser \
   seed-dashboard \
   jupytext--to-ipynb \
-  run-api \
-  seed-api \
   post-deploy-prefect
 .PHONY: bootstrap
 
@@ -88,11 +86,9 @@ bootstrap-api: ## bootstrap the api service
 bootstrap-api: \
   build-api \
   build-client \
-  migrate-api \
-  create-api-test-db \
-  create-api-superuser \
   run-api \
-  seed-api \
+  restore-api-db \
+  create-api-test-db \
   refresh-api-static
 .PHONY: bootstrap-api
 
@@ -380,9 +376,7 @@ reset-api-db: ## Reset the PostgreSQL API database
 	$(COMPOSE) stop
 	$(COMPOSE) down postgresql
 	$(COMPOSE_UP) --wait --force-recreate -d postgresql
-	$(MAKE) migrate-api
-	$(COMPOSE_UP) --wait --force-recreate -d api
-	$(MAKE) create-api-superuser
+	$(MAKE) restore-api-db
 	$(MAKE) create-api-test-db
 .PHONY: reset-api-db
 
