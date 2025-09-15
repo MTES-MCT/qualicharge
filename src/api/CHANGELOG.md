@@ -8,6 +8,13 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Changed
+
+- Forbid session older than `API_MAX_SESSION_AGE` submission
+  (defaults to 15 days)
+- Forbid status older than `API_MAX_STATUS_AGE` submission
+  (defaults to 1 day)
+
 ## [0.29.0] - 2025-09-01
 
 ### Added
