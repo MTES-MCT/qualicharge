@@ -19,9 +19,16 @@ and this project adheres to
 
 #### Quality
 
-- Integrate Great-Expectations (POWU, POWL, CRDS, OPEM, AMEM)
-- Add static expectations (AFIE, AFIP, P50E, PDCL, INSE, ADDR, LOCP, PDLM, NE10)
-- Add dynamic expectations (ENEU)
+- Integrate Great-Expectations
+- Add static expectations
+  - Stations (AFIE, AFIP, P50E, PDCL, POWU, POWL, CRDF)
+  - Locations (INSE, ADDR, LOCP)
+  - Power supply (PDLM, NE10)
+  - Operator and owner (OPEM, AMEM)
+- Add dynamic expectations
+  - Sesssions (DUPS, OVRS, LONS, NEGS, FRES)
+  - Energy (ENEU, ENEA, ENEX, ODUR)
+- Update PDLM query
 
 #### Cooling
 
