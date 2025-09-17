@@ -6,7 +6,7 @@ from string import Template
 import great_expectations as gx
 import great_expectations.expectations as gxe
 
-from .parameters import CRDS, LOCP, NE10, PDCM, POWL, POWU
+from .parameters import CRDF, LOCP, NE10, PDCM, POWL, POWU
 
 NAME: str = "static"
 
@@ -20,13 +20,13 @@ FAKE_PDL: str = """(
 """
 
 pdc_expectations = [
-    # Power less than POWL_PARAMETER (rule 39)
+    # POWL : Power less than POWL_PARAMETER (rule 39)
     gxe.ExpectColumnMinToBeBetween(
         column="puissance_nominale",
         min_value=POWL.params["min_power_kw"],
         meta={"code": POWL.code},
     ),
-    # Power greater than POWU_PARAMETER (rule 1)
+    # POWU : Power greater than POWU_PARAMETER (rule 1)
     gxe.ExpectColumnMaxToBeBetween(
         column="puissance_nominale",
         max_value=POWU.params["max_power_kw"],
@@ -34,36 +34,36 @@ pdc_expectations = [
     ),
 ]
 amenageur_expectations = [
-    # 'aménageur'(owner) fields not documented (rule 7)
+    # AMEM1 : 'aménageur'(owner) fields not documented (rule 7)
     gxe.ExpectColumnValuesToNotBeNull(
         column="nom_amenageur",
         meta={"code": "AMEM1"},
     ),
-    # 'aménageur'(owner) fields not documented (rule 7)
+    # AMEM2 : 'aménageur'(owner) fields not documented (rule 7)
     gxe.ExpectColumnValuesToNotBeNull(
         column="siren_amenageur",
         meta={"code": "AMEM2"},
     ),
-    # 'aménageur'(owner) fields not documented (rule 7)
+    # AMEM3 : 'aménageur'(owner) fields not documented (rule 7)
     gxe.ExpectColumnValuesToNotBeNull(
         column="contact_amenageur",
         meta={"code": "AMEM3"},
     ),
 ]
 operateur_expectations = [
-    # 'operateur' fields not documented (rule 6)
+    # OPEM1 : 'operateur' fields not documented (rule 6)
     gxe.ExpectColumnValuesToNotBeNull(
         column="nom_operateur",
         meta={"code": "OPEM1"},
     ),
-    # 'operateur' fields not documented (rule 6)
+    # OPEM2 : 'operateur' fields not documented (rule 6)
     gxe.ExpectColumnValuesToNotBeNull(
         column="telephone_operateur",
         meta={"code": "OPEM2"},
     ),
 ]
 localisation_expectations = [
-    # Geographic coordinates outside France (rule 3)
+    # CRDF : Geographic coordinates outside France (rule 3)
     gxe.UnexpectedRowsExpectation(
         unexpected_rows_query=Template(
             """
@@ -74,17 +74,17 @@ SELECT
 FROM
   {batch}
 WHERE
-  ST_X ("coordonneesXY"::geometry) > $lon_max
-  OR ST_X ("coordonneesXY"::geometry) < $lon_min
-  OR ST_Y ("coordonneesXY"::geometry) > $lat_max
-  OR ST_Y ("coordonneesXY"::geometry) < $lat_min
+  ST_X ("coordonneesXY"::geometry) > $max_lon
+  OR ST_X ("coordonneesXY"::geometry) < $min_lon
+  OR ST_Y ("coordonneesXY"::geometry) > $max_lat
+  OR ST_Y ("coordonneesXY"::geometry) < $min_lat
         """
-        ).substitute(CRDS.params),
-        meta={"code": CRDS.code},
+        ).substitute(CRDF.params),
+        meta={"code": CRDF.code},
     )
 ]
 AFIREV_expectations = [
-    # AFIREV format of stations not respected (rule 23)
+    # AFIP : AFIREV format of stations not respected (rule 23)
     gxe.UnexpectedRowsExpectation(
         unexpected_rows_query="""
 SELECT
@@ -96,7 +96,7 @@ WHERE
         """,
         meta={"code": "AFIP"},
     ),
-    # AFIREV format of charging points not respected (rule 24)
+    # AFIE : AFIREV format of charging points not respected (rule 24)
     gxe.UnexpectedRowsExpectation(
         unexpected_rows_query="""
 SELECT
@@ -110,7 +110,7 @@ WHERE
     ),
 ]
 stations_pdc_expectations = [
-    # Stations with more than PDCM_PARAMETER charging points > PDCM_THRESHOLD (rule 30)  # noqa: E501
+    # PDCM : Stations with more than PDCM_PARAMETER charging points > PDCM_THRESHOLD (rule 30)  # noqa: E501
     gxe.UnexpectedRowsExpectation(
         unexpected_rows_query=Template(
             """
@@ -129,7 +129,7 @@ WITH
           id_station_itinerance
       ) AS stat_nb_pdc
     WHERE
-      nb_pdc > $max_number_of_pdc_per_station
+      nb_pdc > $max_pdc_per_station
   ),
   nb_stations AS (
     SELECT
@@ -148,7 +148,7 @@ WHERE
         ).substitute(PDCM.params),
         meta={"code": PDCM.code},
     ),
-    # number of pdc per station lower than nbre_pdc field (rule 47)
+    # PDCL : number of pdc per station lower than nbre_pdc field (rule 47)
     gxe.UnexpectedRowsExpectation(
         unexpected_rows_query="""
 WITH
@@ -175,7 +175,7 @@ WHERE
     ),
 ]
 insee_code_expectations = [
-    # INSEE municipality code not recognized (rule 2)
+    # INSE : INSEE municipality code not recognized (rule 2)
     gxe.UnexpectedRowsExpectation(
         unexpected_rows_query="""
 SELECT DISTINCT ON (code_insee_commune)
@@ -190,7 +190,7 @@ WHERE
     )
 ]
 multiples_adresses_expectations = [
-    # Addresses with identical geographic coordinates (rule 29)
+    # ADDR : Addresses with identical geographic coordinates (rule 29)
     gxe.UnexpectedRowsExpectation(
         unexpected_rows_query="""
 WITH
@@ -216,7 +216,7 @@ WHERE
     )
 ]
 stations_per_location_expectations = [
-    # Number of stations per location > LOCP_THRESHOLD (rule 46)
+    # LOCP : Number of stations per location > LOCP_THRESHOLD (rule 46)
     gxe.UnexpectedRowsExpectation(
         unexpected_rows_query=Template(
             """
@@ -246,7 +246,7 @@ WHERE
     ),
 ]
 num_PDL_expectations = [
-    # PDL identifier not documented (rule 20)
+    # PDLM : PDL identifier not documented (rule 20)
     gxe.UnexpectedRowsExpectation(
         unexpected_rows_query=Template(
             """
@@ -255,17 +255,19 @@ SELECT
 FROM
   {batch}
 WHERE
-  raccordement <> 'Indirect'
+  (raccordement IS NULL OR raccordement = 'Direct')
   AND $IS_DC
   AND (
     num_pdl IS NULL
+    OR num_pdl LIKE '% %'
+    OR num_pdl LIKE '%NA%'
     OR num_pdl IN $FAKE_PDL
   )
         """
         ).substitute({"IS_DC": IS_DC, "FAKE_PDL": FAKE_PDL}),
         meta={"code": "PDLM"},
     ),
-    # ENEDIS format not respected (14 digits) > NE10_THRESHOLD (rule 34)
+    # NE10 : ENEDIS format not respected (14 digits) > NE10_THRESHOLD (rule 34)
     gxe.UnexpectedRowsExpectation(
         unexpected_rows_query=Template(
             """
@@ -280,7 +282,7 @@ WITH
         FROM
           {batch}
         WHERE
-          raccordement <> 'Indirect'
+          (raccordement IS NULL OR raccordement = 'Direct')
           AND $IS_DC
       ) AS stat_dc
   ),
@@ -294,7 +296,7 @@ WITH
         FROM
           {batch}
         WHERE
-          raccordement <> 'Indirect'
+          (raccordement IS NULL OR raccordement = 'Direct')
           AND $IS_DC
           AND num_pdl NOT SIMILAR TO '[0-9]{{14}}'
       ) AS numpdl_dc

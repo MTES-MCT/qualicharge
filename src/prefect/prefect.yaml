@@ -390,3 +390,33 @@ deployments:
     work_pool:
       name: indicators
       work_queue_name: default
+
+  - name: quality-dynamic-production
+    entrypoint: quality/flows/dynamic.py:run_api_db_validation
+    schedules:
+      - cron: "7 3 * * *"
+        timezone: "Europe/Paris"
+        active: true
+    parameters:
+      environment: production
+      from_now: 
+        days: 14
+      report_by_email: true
+    work_pool:
+      name: indicators
+      work_queue_name: default
+
+  - name: quality-dynamic-production-by-amenageur
+    entrypoint: quality/flows/dynamic.py:run_api_db_validation_by_amenageur
+    schedules:
+      - cron: "17 3 * * *"
+        timezone: "Europe/Paris"
+        active: true
+    parameters:
+      environment: production
+      from_now: 
+        days: 14
+      report_by_email: true
+    work_pool:
+      name: indicators
+      work_queue_name: default

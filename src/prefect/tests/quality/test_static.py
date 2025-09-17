@@ -81,6 +81,12 @@ def test_run_api_db_validation_by_amenageur(monkeypatch):
                     else:
                         assert result.success
                 case "Ionity":
-                    assert result.success
+                    if result.code == "PDLM":
+                        assert not result.success
+                    else:
+                        assert result.success
                 case "Electra":
-                    assert result.success
+                    if result.code == "PDLM":
+                        assert not result.success
+                    else:
+                        assert result.success
