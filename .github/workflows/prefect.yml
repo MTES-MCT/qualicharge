@@ -73,7 +73,7 @@ jobs:
         ports:
           - 5432:5432
       minio:
-        image: "bitnami/minio:2025.4.22"
+        image: "bitnamilegacy/minio:2025.4.22"
         env:
           MINIO_ROOT_USER: qualicharge
           MINIO_ROOT_PASSWORD: password
