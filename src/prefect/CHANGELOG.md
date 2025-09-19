@@ -21,7 +21,8 @@ and this project adheres to
 
 - Integrate Great-Expectations (POWU, POWL, CRDS, OPEM, AMEM)
 - Add static expectations (AFIE, AFIP, P50E, PDCL, INSE, ADDR, LOCP, PDLM, NE10)
-- Add dynamic expectations (ENEU)
+- Add dynamic expectations (ENEU, DUPS, OVRS, LONS, NEGS, FRES)
+- Update PDLM query
 
 #### Cooling
 
