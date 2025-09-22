@@ -13,11 +13,13 @@ and this project adheres to
 #### Dependencies
 
 - Upgrade `Django` to `5.2.6`
-- Upgrade `django-anymail` to `13.0.1`
-- Upgrade `django-dsfr` to `3.0.0`
+- Upgrade `django-anymail` to `13.1`
+- Upgrade `django-dsfr` to `3.1.0`
 - Upgrade `jsonschema` to `4.25.1`
+- Upgrade `psycopg` to `3.2.10`
 - Upgrade `requests` to `2.32.5`
-- Upgrade `sentry-sdk` to `2.35.0`
+- Upgrade `sentry-sdk` to `2.38.0`
+- Upgrade `whitenoise` to `6.11.0`
 
 ## [0.2.0] - 2025-06-23
 

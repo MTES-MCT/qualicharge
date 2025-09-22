@@ -15,7 +15,7 @@ and this project adheres to
 - Upgrade `anyio` to `4.10.0`
 - Upgrade `Pydantic` to `2.11.7`
 - Upgrade `pydantic-settings` to `2.10.1`
-- Upgrade `typer` to `0.16.1`
+- Upgrade `typer` to `0.19.0`
 
 ### Fixed
 
