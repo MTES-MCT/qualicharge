@@ -8,6 +8,22 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Changed
+
+#### Dependencies
+
+- Upgrade `alembic` to `1.16.5`
+- Upgrade `cachetools` to `6.2.0`
+- Upgrade `email-validator` to `2.3.0`
+- Upgrade `fastapi` to `0.117.1`
+- Upgrade `psycopg` to `3.2.10`
+- Upgrade `pydantic` to `2.11.9`
+- Upgrade `questionary` to `2.1.1`
+- Upgrade `sentry-sdk` to `2.38.0`
+- Upgrade `sqlalchemy-utils` to `0.42.0`
+- Upgrade `sqlmodel` to `0.0.25`
+- Upgrade `typer` to `0.19.1`
+
 ## [0.29.0] - 2025-09-01
 
 ### Added
