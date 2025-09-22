@@ -190,6 +190,174 @@ response = requests.get(check_certificates_url, headers=headers)
 response.json()
 ```
 
+## Session cleaning
+
+```python
+import os
+from datetime import date
+from string import Template
+
+import pandas as pd
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session
+
+# Connecteur à la base Qualicharge
+engine = create_engine(os.getenv("DATABASE_URL"))
+```
+
+```python
+OPERATIONAL_UNIT_SESSIONS_FOR_A_DAY_TEMPLATE = Template(
+    """
+    WITH
+      pdcs AS (
+        SELECT
+          Statique.nom_amenageur AS entity,
+          Statique.siren_amenageur AS siren,
+          OperationalUnit.code AS code,
+          Statique.id_station_itinerance AS id_station_itinerance,
+          Statique.id_pdc_itinerance AS id_pdc_itinerance,
+          Statique.puissance_nominale AS max_power,
+          Statique.pdc_id
+        FROM
+          Statique
+          JOIN OperationalUnit ON Statique.id_pdc_itinerance LIKE OperationalUnit.code || '%%'
+        WHERE
+          OperationalUnit.code = '$operational_unit_code'
+      ),
+      sessions AS (
+        SELECT
+          SESSION.id AS session_id,
+          SESSION.start AS "from",
+          SESSION.end AS TO,
+          SESSION.energy AS energy,
+          SESSION.point_de_charge_id
+        FROM
+          SESSION
+        WHERE
+          SESSION.start >= '$from_date'
+          AND SESSION.start < '$to_date'
+      )
+    SELECT
+      entity,
+      siren,
+      code,
+      id_station_itinerance,
+      id_pdc_itinerance,
+      max_power,
+      session_id,
+      "from",
+      "to",
+      energy
+    FROM
+      pdcs
+      JOIN sessions ON pdcs.pdc_id = sessions.point_de_charge_id
+    ORDER BY
+      pdcs.id_pdc_itinerance,
+      sessions."from"
+    """
+)
+params = {"from_date": date(2024, 12, 27), "to_date": date(2024, 12, 28), "operational_unit_code": "FRALL"}
+query = OPERATIONAL_UNIT_SESSIONS_FOR_A_DAY_TEMPLATE.substitute(params)
+print(query)
+```
+
+```python
+with Session(engine) as session:
+    qc_sessions = pd.read_sql_query(query, con=session.connection())
+qc_sessions
+```
+
+### Detect abnormal sessions (NEGS, ENEU, ENEA, ODUS, ENEX)
+
+```python
+def negs(row):
+    return (row["to"] - row["from"]).seconds < 0
+
+def eneu(row):
+    return row["energy"] > 1000.
+
+def enea_max(row):
+    return ((row["to"] - row["from"]).seconds / 3600) * row["max_power"]
+
+def enea(row):
+    return row["energy"] > enea_max(row) * 1.1
+
+def odus(row):
+    return negs(row) and row["energy"] > 1
+
+def enex(row):
+    return row["energy"] > 50. and row["energy"] > enea_max(row) * 2.0
+    
+qc_sessions["enea_max"] = qc_sessions.apply(enea_max, axis=1)
+qc_sessions["negs"] = qc_sessions.apply(negs, axis=1)
+qc_sessions["eneu"] = qc_sessions.apply(eneu, axis=1)
+qc_sessions["enea"] = qc_sessions.apply(enea, axis=1)
+qc_sessions["odus"] = qc_sessions.apply(odus, axis=1)
+qc_sessions["enex"] = qc_sessions.apply(enex, axis=1)
+
+abnormal_sessions = qc_sessions[ qc_sessions.negs | qc_sessions.eneu | qc_sessions.enea | qc_sessions.odus | qc_sessions.enex ]
+abnormal_sessions
+```
+
+```python
+qc_sessions.iloc[qc_sessions.index.difference(abnormal_sessions.index)]
+```
+
+### Detect duplicates
+
+```python
+# Non optimized version
+qc_sessions["dups"] = False
+
+for index, current in qc_sessions.iterrows():
+    if index < 1:
+        continue
+    
+    previous = qc_sessions.iloc[index -1]
+    
+    # Should compare the same charge point
+    if current["id_pdc_itinerance"] != previous["id_pdc_itinerance"]:
+        continue
+        
+    # Is there an overlap?
+    if current["from"] < previous["to"]:
+        current["dups"] = previous["dups"] = True
+
+qc_sessions[qc_sessions["dups"]]
+```
+
+```python
+# Ease comparison with previous row (and avoid iterating over dataframe rows)
+qc_sessions["p_id_pdc_itinerance"] = pd.concat([pd.Series([None]), qc_sessions["id_pdc_itinerance"][:-1]]).reset_index(drop=True)
+qc_sessions["p_from"] = pd.concat([pd.Series([None]), qc_sessions["from"][:-1]]).reset_index(drop=True)
+qc_sessions["p_to"] = pd.concat([pd.Series([None]), qc_sessions["to"][:-1]]).reset_index(drop=True)
+
+qc_sessions
+```
+
+```python
+# Real duplicates
+qc_sessions["duplicate"] = (
+    (qc_sessions["from"] == qc_sessions["p_from"]) & 
+    (qc_sessions["to"] == qc_sessions["p_to"]) & 
+    (qc_sessions["id_pdc_itinerance"] == qc_sessions["p_id_pdc_itinerance"])
+)
+qc_sessions[qc_sessions["duplicate"]]
+```
+
+```python
+# Overlaps
+qc_sessions["overlap"] = (
+    (qc_sessions["from"] < qc_sessions["p_to"]) & 
+    (qc_sessions["id_pdc_itinerance"] == qc_sessions["p_id_pdc_itinerance"])
+)
+qc_sessions[qc_sessions["overlap"]]
+```
+
+```python
+qc_sessions
+```
+
 ```python
 
 ```

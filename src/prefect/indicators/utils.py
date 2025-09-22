@@ -62,8 +62,8 @@ def get_period_start_from_pit(  # noqa: PLR0911
 def get_timespan_filter_query_params(timespan: IndicatorTimeSpan, session: bool = True):
     """Get timespan query parameters."""
     date_end = timespan.start + PeriodDuration[timespan.period.name].value
-    sql_start = f"'{timespan.start.isoformat(sep=" ")}'"
-    sql_end = f"'{date_end.isoformat(sep=" ")}'"
+    sql_start = f"'{timespan.start.isoformat(sep=' ')}'"
+    sql_end = f"'{date_end.isoformat(sep=' ')}'"
     interval_session = "start >= timestamp $start AND start < timestamp $end"
     interval_status = "horodatage >= timestamp $start AND horodatage < timestamp $end"
     interval = interval_session if session else interval_status
