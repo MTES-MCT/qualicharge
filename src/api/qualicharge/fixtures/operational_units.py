@@ -1987,15 +1987,6 @@ data: List[Item] = [
         "FRSEA",
         "SIEA",
     ),
-    # -- Manually added
-    Item(
-        "FRIDX",
-        "IDEX SOLAR CHARGING STATIONS",
-    ),
-    Item(
-        "FRWEW",
-        "Wewise",
-    ),
     # Update: 2025/08/27
     # FRBCF and FRRBO have been removed
     Item(
@@ -2025,6 +2016,51 @@ data: List[Item] = [
     Item(
         "FRRE1",
         "REBORNE FLOTTE ENTREPRISES",
+    ),
+    # Update: 2025/09/19
+    Item(
+        "FRA79",
+        "SEOLIS",
+    ),
+    Item(
+        "FRAIG",
+        "Aigues-Mortes",
+    ),
+    Item(
+        "FRATN",
+        "Alterna énergie",
+    ),
+    Item(
+        "FRAVI",
+        "AVIA",
+    ),
+    Item(
+        "FREMS",
+        "ELECTRO MOBILITY SOLUTIONS",
+    ),
+    Item(
+        "FRNGE",
+        "NGE",
+    ),
+    Item(
+        "FRNOV",
+        "novoeco",
+    ),
+    Item(
+        "FROSC",
+        "Oscéa 64",
+    ),
+    Item(
+        "FRSRG",
+        "SOREGIES MOBILITE",
+    ),
+    Item(
+        "FRSUP",
+        "SUPERCHARGE",
+    ),
+    Item(
+        "FRZEE",
+        "ZEENCO e-mobility",
     ),
 ]
 
