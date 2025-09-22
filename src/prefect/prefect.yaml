@@ -246,6 +246,19 @@ deployments:
       name: indicators
       work_queue_name: default
 
+  # -- Tiruert --
+  - name: tiruert-development-period
+    entrypoint: tiruert/run.py:tiruert_for_period
+    work_pool:
+      name: indicators
+      work_queue_name: default
+
+  - name: tiruert-development-period-ou
+    entrypoint: tiruert/run.py:tiruert_for_period_and_operational_unit
+    work_pool:
+      name: indicators
+      work_queue_name: default
+
   # -- Data cooling deployments --
   - name: status-cooling-staging
     entrypoint: cooling/statuses.py:extract_old_statuses
