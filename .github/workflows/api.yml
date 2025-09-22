@@ -28,7 +28,7 @@ jobs:
           version: "0.8.19"
           enable-cache: true
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version-file: "./src/api/.python-version"
       - name: Install the project
@@ -48,7 +48,7 @@ jobs:
           version: "0.8.19"
           enable-cache: true
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version-file: "./src/api/.python-version"
       - name: Lint with Black
@@ -72,7 +72,7 @@ jobs:
           version: "0.8.19"
           enable-cache: true
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version-file: "./src/api/.python-version"
       - name: Lint with Black
@@ -143,7 +143,7 @@ jobs:
           version: "0.8.19"
           enable-cache: true
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version-file: "./src/api/.python-version"
       - name: Run database migrations
@@ -334,7 +334,7 @@ jobs:
           version: "0.8.19"
           enable-cache: true
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version-file: "./src/api/.python-version"
       - name: Run migrations
@@ -385,7 +385,7 @@ jobs:
           version: "0.8.19"
           enable-cache: true
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version-file: "./src/api/.python-version"
       - name: Test with pytest
