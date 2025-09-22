@@ -5,7 +5,7 @@ name = "pypi"
 
 [packages]
 data7 = "==0.12.1"
-psycopg = {extras = ["binary", "pool"], version = "==3.2.9"}
+psycopg = {extras = ["binary", "pool"], version = "==3.2.10"}
 
 [dev-packages]
 honcho = "==2.0.0"
