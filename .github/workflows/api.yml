@@ -212,7 +212,7 @@ jobs:
             uv run \
               csvlook -I >> bench_admin_stats.md
           cat bench_admin_stats.md
-      - uses: actions/github-script@v7
+      - uses: actions/github-script@v8
         # Only when in PR, not when merged to main
         if: ${{ github.event_name == 'pull_request' }}
         with:
