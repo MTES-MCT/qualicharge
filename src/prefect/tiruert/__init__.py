@@ -1,1 +1,1 @@
-"""Tiruert flows."""
+"""Tiruert module."""
