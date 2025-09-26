@@ -116,6 +116,7 @@ def filter_sessions(sessions: pd.DataFrame) -> pd.DataFrame:
     - Remove aberrant sessions
     """
     # TODO
+    print(sessions)
     return sessions
 
 
