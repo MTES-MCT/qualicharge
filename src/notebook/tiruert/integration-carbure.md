@@ -190,6 +190,148 @@ response = requests.get(check_certificates_url, headers=headers)
 response.json()
 ```
 
+## Session cleaning
+
+```python
+import os
+from datetime import date
+from string import Template
+
+import pandas as pd
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session
+
+# Connecteur à la base Qualicharge
+engine = create_engine(os.getenv("DATABASE_URL"))
+```
+
+```python
+OPERATIONAL_UNIT_SESSIONS_FOR_A_DAY_TEMPLATE = Template(
+    """
+    SELECT
+      Amenageur.nom_amenageur as entity,
+      Amenageur.siren_amenageur as siren,
+      OperationalUnit.code as code,
+      Station.id_station_itinerance as id_station_itinerance,
+      PointDeCharge.id_pdc_itinerance as id_pdc_itinerance,
+      PointDeCharge.puissance_nominale as max_power,
+      Session.id as session_id,
+      Session.start as "from",
+      Session.end as to,
+      Session.energy as energy
+    FROM
+      Session
+      JOIN PointDeCharge ON PointDeCharge.id = Session.point_de_charge_id
+      JOIN Station ON Station.id = PointDeCharge.station_id
+      JOIN OperationalUnit ON OperationalUnit.id = Station.operational_unit_id
+      JOIN Amenageur ON Amenageur.id = Station.amenageur_id
+    WHERE
+      OperationalUnit.code = '$operational_unit_code'
+      AND Session.start >= '$from_date'
+      AND Session.start < '$to_date'
+    ORDER BY
+      PointDeCharge.id_pdc_itinerance,
+      Session.start
+    """
+)
+params = {"operational_unit_code": "FRTSL", "from_date": date(2024, 12, 27), "to_date": date(2024, 12, 28)}
+query = OPERATIONAL_UNIT_SESSIONS_FOR_A_DAY_TEMPLATE.substitute(params)
+print(query)
+```
+
+```python
+OPERATIONAL_UNIT_SESSIONS_FOR_A_DAY_TEMPLATE = Template(
+    """
+    SELECT
+      Amenageur.nom_amenageur as entity,
+      Amenageur.siren_amenageur as siren,
+      OperationalUnit.code as code,
+      Station.id_station_itinerance as id_station_itinerance,
+      PointDeCharge.id_pdc_itinerance as id_pdc_itinerance,
+      PointDeCharge.puissance_nominale as max_power,
+      Session.id as session_id,
+      Session.start as "from",
+      Session.end as to,
+      Session.energy as energy
+    FROM
+      Session
+      JOIN PointDeCharge ON PointDeCharge.id = Session.point_de_charge_id
+      JOIN Station ON Station.id = PointDeCharge.station_id
+      JOIN OperationalUnit ON OperationalUnit.id = Station.operational_unit_id
+      JOIN Amenageur ON Amenageur.id = Station.amenageur_id
+    WHERE
+      Session.start >= '$from_date'
+      AND Session.start < '$to_date'
+    ORDER BY
+      PointDeCharge.id_pdc_itinerance,
+      Session.start
+    """
+)
+params = {"from_date": date(2024, 12, 27), "to_date": date(2024, 12, 28)}
+query = OPERATIONAL_UNIT_SESSIONS_FOR_A_DAY_TEMPLATE.substitute(params)
+print(query)
+```
+
+```python
+with Session(engine) as session:
+    qc_sessions = pd.read_sql_query(query, con=session.connection())
+qc_sessions
+```
+
+### Detect abnormal sessions (NEGS, ENEU, ENEA, ODUS, ENEX)
+
+```python
+def negs(row):
+    return (row["to"] - row["from"]).seconds < 0
+
+def eneu(row):
+    return row["energy"] > 1000.
+
+def enea_max(row):
+    return ((row["to"] - row["from"]).seconds / 3600) * row["max_power"]
+
+def enea(row):
+    return row["energy"] > enea_max(row) * 1.1
+
+def odus(row):
+    return negs(row) and eneu(row)
+
+def enex(row):
+    return row["energy"] > 50. and row["energy"] > enea_max(row) * 2.0
+    
+qc_sessions["enea_max"] = qc_sessions.apply(enea_max, axis=1)
+qc_sessions["negs"] = qc_sessions.apply(negs, axis=1)
+qc_sessions["eneu"] = qc_sessions.apply(eneu, axis=1)
+qc_sessions["enea"] = qc_sessions.apply(enea, axis=1)
+qc_sessions["odus"] = qc_sessions.apply(odus, axis=1)
+qc_sessions["enex"] = qc_sessions.apply(enex, axis=1)
+
+abnormal_sessions = qc_sessions[ qc_sessions.negs | qc_sessions.eneu | qc_sessions.enea | qc_sessions.odus | qc_sessions.enex ]
+abnormal_sessions
+```
+
+### Detect duplicates
+
+```python
+qc_sessions["dups"] = False
+
+for index, current in qc_sessions.iterrows():
+    if index < 1:
+        continue
+    
+    previous = qc_sessions.iloc[index -1]
+    
+    # Should compare the same charge point
+    if current["id_pdc_itinerance"] != previous["id_pdc_itinerance"]:
+        continue
+        
+    # Is there an overlap?
+    if current["from"] < previous["to"]:
+        current["dups"] = previous["dups"] = True
+
+qc_sessions[qc_sessions["dups"]]
+```
+
 ```python
 
 ```
