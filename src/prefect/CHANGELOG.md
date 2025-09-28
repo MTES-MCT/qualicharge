@@ -28,7 +28,7 @@ and this project adheres to
 - Add dynamic expectations
   - Sesssions (DUPS, OVRS, LONS, NEGS, FRES)
   - Energy (ENEU, ENEA, ENEX, ODUR)
-- Update PDLM query
+  - statuses (ERRT, FTRT, DUPT, FRET)
 
 #### Cooling
 

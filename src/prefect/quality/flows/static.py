@@ -13,7 +13,9 @@ from quality.flows.quality_run import (
 
 
 @flow(log_prints=True)
-def run_api_db_validation(environment, report_by_email: bool = False):
+def run_api_db_validation(
+    environment: str, report_by_email: bool = False
+) -> gx.checkpoint.CheckpointResult:
     """Run API DB checkpoint."""
     # Context
     context = gx.get_context(mode="ephemeral")
@@ -36,7 +38,7 @@ def run_api_db_validation(environment, report_by_email: bool = False):
 
 @flow(log_prints=True)
 def run_api_db_validation_by_amenageur(
-    environment, report_by_email: bool = False
+    environment: str, report_by_email: bool = False
 ) -> QCReport:
     """Run API DB checkpoint by amenageur."""
     # Context
