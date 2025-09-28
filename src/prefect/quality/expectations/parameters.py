@@ -1,4 +1,4 @@
-"""Statid and dynamic rule parameters for Expectations."""
+"""Static and dynamic rule parameters for Expectations."""
 
 from pydantic import BaseModel
 
@@ -41,3 +41,7 @@ ENERGY = {"highest_energy_kwh": 1000, "lowest_energy_kwh": 1}
 ENEX = QARule(code="ENEX", params={"excess_coef": 2, "excess_threshold_kWh": 50})
 ENEA = QARule(code="ENEA", params={"abnormal_coef": 1.1, "threshold_percent": 0.1})
 ODUR = QARule(code="ODUR", params={"threshold_percent": 0.001})
+
+# statuses parameters
+DUPT = QARule(code="DUPT", params={"threshold_percent": 0.01})
+FRET = QARule(code="FRET", params={"mean_duration_second": 300})

@@ -20,7 +20,7 @@ def run_api_db_validation(
     from_now: dict,
     report_by_email: bool = False,
     new_now: date | None = None,
-):
+) -> gx.checkpoint.CheckpointResult:
     """Run API DB checkpoint."""
     date_end = date.today() if not new_now else new_now
     date_start = date_end - timedelta(**from_now)
