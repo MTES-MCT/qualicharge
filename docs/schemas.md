@@ -126,7 +126,7 @@ French 🇫🇷) at:
 
 > :bulb: This standard may also evolve in a near future. Stay tuned!
 
-### Extra quality controls
+#### Extra quality controls
 
 | name         | API type       | Rule N° |                                                                         Rule |
 | ------------ | -------------- | :-----: | ---------------------------------------------------------------------------: |
@@ -168,11 +168,11 @@ An exemple JSON-formatted charging session may be serialized as follow:
 }
 ```
 
-### Extra quality controls
+#### Extra quality controls
 
 | name     | API type       | Rule N° |                                                                       Rule |
 | -------- | -------------- | :-----: | -------------------------------------------------------------------------: |
-| `energy` | Positive float |   11    |                                                 Must be lower than 500 kWh |
+| `energy` | Positive float |   11    |                                                Must be lower than 1000 kWh |
 | `start`  | Past date-time |   42    | Freshness should be lower than _15 days_ (compared to the submission date) |
 
 Specific rules applies for submitted datasets consistency:
@@ -185,8 +185,7 @@ Specific rules applies for submitted datasets consistency:
 | 15      | A session should last more than **3 days**                                                                                                  |
 | 17      | Sessions cannot be duplicated (identical start/end dates and energy for a target charging point)                                            |
 | 22      | A session should start when a status with `occupation_pdc="occupe"` is issued and end when a status with `occupation_pdc="libre"` is issued |
-| 38      | The energy of a session should not exceed the charging point's nominal power multiplied by the session duration                             |
+| 38      | The energy of a session should not exceed the charging point's nominal power multiplied by the session duration by more than 10 %           |
 | 40      | A session of zero duration cannot have an energy greater than **1 kWh**                                                                     |
-| 41      | The energy cannot exceed twice the charging point's nominal power multiplied by the session duration and cannot be greated than **50 kWh**  |
 
 > The rule number corresponds to our data-quality control referencial.
