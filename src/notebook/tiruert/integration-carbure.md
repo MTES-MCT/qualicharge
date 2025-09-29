@@ -208,66 +208,55 @@ engine = create_engine(os.getenv("DATABASE_URL"))
 ```python
 OPERATIONAL_UNIT_SESSIONS_FOR_A_DAY_TEMPLATE = Template(
     """
+    WITH
+      pdcs AS (
+        SELECT
+          Statique.nom_amenageur AS entity,
+          Statique.siren_amenageur AS siren,
+          OperationalUnit.code AS code,
+          Statique.id_station_itinerance AS id_station_itinerance,
+          Statique.id_pdc_itinerance AS id_pdc_itinerance,
+          Statique.puissance_nominale AS max_power,
+          Statique.pdc_id
+        FROM
+          Statique
+          JOIN OperationalUnit ON Statique.id_pdc_itinerance LIKE OperationalUnit.code || '%%'
+        WHERE
+          OperationalUnit.code = '$operational_unit_code'
+      ),
+      sessions AS (
+        SELECT
+          SESSION.id AS session_id,
+          SESSION.start AS "from",
+          SESSION.end AS TO,
+          SESSION.energy AS energy,
+          SESSION.point_de_charge_id
+        FROM
+          SESSION
+        WHERE
+          SESSION.start >= '$from_date'
+          AND SESSION.start < '$to_date'
+      )
     SELECT
-      Amenageur.nom_amenageur as entity,
-      Amenageur.siren_amenageur as siren,
-      OperationalUnit.code as code,
-      Station.id_station_itinerance as id_station_itinerance,
-      PointDeCharge.id_pdc_itinerance as id_pdc_itinerance,
-      PointDeCharge.puissance_nominale as max_power,
-      Session.id as session_id,
-      Session.start as "from",
-      Session.end as to,
-      Session.energy as energy
+      entity,
+      siren,
+      code,
+      id_station_itinerance,
+      id_pdc_itinerance,
+      max_power,
+      session_id,
+      "from",
+      "to",
+      energy
     FROM
-      Session
-      JOIN PointDeCharge ON PointDeCharge.id = Session.point_de_charge_id
-      JOIN Station ON Station.id = PointDeCharge.station_id
-      JOIN OperationalUnit ON OperationalUnit.id = Station.operational_unit_id
-      JOIN Amenageur ON Amenageur.id = Station.amenageur_id
-    WHERE
-      OperationalUnit.code = '$operational_unit_code'
-      AND Session.start >= '$from_date'
-      AND Session.start < '$to_date'
+      pdcs
+      JOIN sessions ON pdcs.pdc_id = sessions.point_de_charge_id
     ORDER BY
-      PointDeCharge.id_pdc_itinerance,
-      Session.start
+      pdcs.id_pdc_itinerance,
+      sessions."from"
     """
 )
-params = {"operational_unit_code": "FRTSL", "from_date": date(2024, 12, 27), "to_date": date(2024, 12, 28)}
-query = OPERATIONAL_UNIT_SESSIONS_FOR_A_DAY_TEMPLATE.substitute(params)
-print(query)
-```
-
-```python
-OPERATIONAL_UNIT_SESSIONS_FOR_A_DAY_TEMPLATE = Template(
-    """
-    SELECT
-      Amenageur.nom_amenageur as entity,
-      Amenageur.siren_amenageur as siren,
-      OperationalUnit.code as code,
-      Station.id_station_itinerance as id_station_itinerance,
-      PointDeCharge.id_pdc_itinerance as id_pdc_itinerance,
-      PointDeCharge.puissance_nominale as max_power,
-      Session.id as session_id,
-      Session.start as "from",
-      Session.end as to,
-      Session.energy as energy
-    FROM
-      Session
-      JOIN PointDeCharge ON PointDeCharge.id = Session.point_de_charge_id
-      JOIN Station ON Station.id = PointDeCharge.station_id
-      JOIN OperationalUnit ON OperationalUnit.id = Station.operational_unit_id
-      JOIN Amenageur ON Amenageur.id = Station.amenageur_id
-    WHERE
-      Session.start >= '$from_date'
-      AND Session.start < '$to_date'
-    ORDER BY
-      PointDeCharge.id_pdc_itinerance,
-      Session.start
-    """
-)
-params = {"from_date": date(2024, 12, 27), "to_date": date(2024, 12, 28)}
+params = {"from_date": date(2024, 12, 27), "to_date": date(2024, 12, 28), "operational_unit_code": "FRALL"}
 query = OPERATIONAL_UNIT_SESSIONS_FOR_A_DAY_TEMPLATE.substitute(params)
 print(query)
 ```
@@ -294,7 +283,7 @@ def enea(row):
     return row["energy"] > enea_max(row) * 1.1
 
 def odus(row):
-    return negs(row) and eneu(row)
+    return negs(row) and row["energy"] > 1
 
 def enex(row):
     return row["energy"] > 50. and row["energy"] > enea_max(row) * 2.0
@@ -310,9 +299,14 @@ abnormal_sessions = qc_sessions[ qc_sessions.negs | qc_sessions.eneu | qc_sessio
 abnormal_sessions
 ```
 
+```python
+qc_sessions.iloc[qc_sessions.index.difference(abnormal_sessions.index)]
+```
+
 ### Detect duplicates
 
 ```python
+# Non optimized version
 qc_sessions["dups"] = False
 
 for index, current in qc_sessions.iterrows():
@@ -330,6 +324,38 @@ for index, current in qc_sessions.iterrows():
         current["dups"] = previous["dups"] = True
 
 qc_sessions[qc_sessions["dups"]]
+```
+
+```python
+# Ease comparison with previous row (and avoid iterating over dataframe rows)
+qc_sessions["p_id_pdc_itinerance"] = pd.concat([pd.Series([None]), qc_sessions["id_pdc_itinerance"][:-1]]).reset_index(drop=True)
+qc_sessions["p_from"] = pd.concat([pd.Series([None]), qc_sessions["from"][:-1]]).reset_index(drop=True)
+qc_sessions["p_to"] = pd.concat([pd.Series([None]), qc_sessions["to"][:-1]]).reset_index(drop=True)
+
+qc_sessions
+```
+
+```python
+# Real duplicates
+qc_sessions["duplicate"] = (
+    (qc_sessions["from"] == qc_sessions["p_from"]) & 
+    (qc_sessions["to"] == qc_sessions["p_to"]) & 
+    (qc_sessions["id_pdc_itinerance"] == qc_sessions["p_id_pdc_itinerance"])
+)
+qc_sessions[qc_sessions["duplicate"]]
+```
+
+```python
+# Overlaps
+qc_sessions["overlap"] = (
+    (qc_sessions["from"] < qc_sessions["p_to"]) & 
+    (qc_sessions["id_pdc_itinerance"] == qc_sessions["p_id_pdc_itinerance"])
+)
+qc_sessions[qc_sessions["overlap"]]
+```
+
+```python
+qc_sessions
 ```
 
 ```python
