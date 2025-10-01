@@ -11,7 +11,7 @@ deployments:
     entrypoint: indicators/run.py:i1_calculate
     concurrency_limit: 10
     schedules:
-      - cron: "0 14 * * *"
+      - cron: "0 5 * * *"
         timezone: "Europe/Paris"
         active: true
     parameters:
@@ -28,7 +28,7 @@ deployments:
     entrypoint: indicators/run.py:i4_calculate
     concurrency_limit: 10
     schedules:
-      - cron: "2 14 * * *"
+      - cron: "2 5 * * *"
         timezone: "Europe/Paris"
         active: true
     parameters:
@@ -45,7 +45,7 @@ deployments:
     entrypoint: indicators/run.py:i7_calculate
     concurrency_limit: 10
     schedules:
-      - cron: "4 14 * * *"
+      - cron: "4 5 * * *"
         timezone: "Europe/Paris"
         active: true
     parameters:
@@ -62,7 +62,7 @@ deployments:
     entrypoint: indicators/run.py:t1_calculate
     concurrency_limit: 10
     schedules:
-      - cron: "10 14 * * *"
+      - cron: "10 5 * * *"
         timezone: "Europe/Paris"
         active: true
     parameters:
@@ -79,7 +79,7 @@ deployments:
     entrypoint: indicators/run.py:e4_calculate
     concurrency_limit: 10
     schedules:
-      - cron: "20 14 * * *"
+      - cron: "20 5 * * *"
         timezone: "Europe/Paris"
         active: true
     parameters:
@@ -96,7 +96,7 @@ deployments:
     entrypoint: indicators/run.py:u5_calculate
     concurrency_limit: 10
     schedules:
-      - cron: "4 15 * * *"
+      - cron: "4 6 * * *"
         timezone: "Europe/Paris"
         active: true
     parameters:
@@ -113,7 +113,7 @@ deployments:
     entrypoint: indicators/run.py:u6_calculate
     concurrency_limit: 10
     schedules:
-      - cron: "6 15 * * *"
+      - cron: "6 6 * * *"
         timezone: "Europe/Paris"
         active: true
     parameters:
@@ -130,7 +130,7 @@ deployments:
     entrypoint: indicators/run.py:u9_calculate
     concurrency_limit: 10
     schedules:
-      - cron: "8 15 * * *"
+      - cron: "8 6 * * *"
         timezone: "Europe/Paris"
         active: true
     parameters:
@@ -147,7 +147,7 @@ deployments:
     entrypoint: indicators/run.py:u10_calculate
     concurrency_limit: 10
     schedules:
-      - cron: "10 15 * * *"
+      - cron: "10 6 * * *"
         timezone: "Europe/Paris"
         active: true
     parameters:
@@ -164,7 +164,7 @@ deployments:
     entrypoint: indicators/run.py:u11_calculate
     concurrency_limit: 10
     schedules:
-      - cron: "12 15 * * *"
+      - cron: "12 6 * * *"
         timezone: "Europe/Paris"
         active: true
     parameters:
@@ -181,7 +181,7 @@ deployments:
     entrypoint: indicators/run.py:u12_calculate
     concurrency_limit: 10
     schedules:
-      - cron: "12 15 * * *"
+      - cron: "14 6 * * *"
         timezone: "Europe/Paris"
         active: true
     parameters:
@@ -198,7 +198,7 @@ deployments:
     entrypoint: indicators/run.py:u13_calculate
     concurrency_limit: 10
     schedules:
-      - cron: "16 15 * * *"
+      - cron: "16 6 * * *"
         timezone: "Europe/Paris"
         active: true
     parameters:
@@ -216,7 +216,7 @@ deployments:
     entrypoint: indicators/run.py:up_calculate
     concurrency_limit: 10
     schedules:
-      - cron: "22 14 10 * *"
+      - cron: "22 1 10 * *"
         timezone: "Europe/Paris"
         active: true
     parameters:
@@ -233,7 +233,7 @@ deployments:
     entrypoint: indicators/run.py:up_calculate
     concurrency_limit: 10
     schedules:
-      - cron: "02 15 * * 1"
+      - cron: "02 1 * * 1"
         timezone: "Europe/Paris"
         active: true
     parameters:

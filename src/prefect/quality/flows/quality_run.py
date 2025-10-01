@@ -94,7 +94,7 @@ def run_api_db_checkpoint(  # noqa: PLR0913
     """Run API DB checkpoint."""
     # Data asset
     data_asset = data_source.add_table_asset(
-        name=f"statique-{environment}", table_name="statique"
+        name=f"{quality_type}-{environment}", table_name="statique"
     )
 
     # Batch
@@ -102,7 +102,7 @@ def run_api_db_checkpoint(  # noqa: PLR0913
 
     # Validation
     validation = gx.ValidationDefinition(
-        data=batch, suite=suite, name=f"statique-{environment}"
+        data=batch, suite=suite, name=f"{quality_type}-{environment}"
     )
     validation = context.validation_definitions.add(validation)
 
@@ -124,7 +124,7 @@ def run_api_db_checkpoint(  # noqa: PLR0913
         )
 
     checkpoint = gx.Checkpoint(
-        name=f"statique-{environment}",
+        name=f"{quality_type}-{environment}",
         validation_definitions=[validation],
         actions=action_list,  # type: ignore[arg-type]
         result_format={"result_format": "COMPLETE"},
@@ -160,7 +160,7 @@ def run_api_db_checkpoint_by_amenageur(  # noqa: PLR0913
     # Run checkpoint for every amenageur
     for amenageur in get_db_amenageurs(environment):
         slug = slugify(amenageur)
-        name = f"statique-{environment}-{slug}"
+        name = f"{quality_type}-{environment}-{slug}"
 
         try:
             data_source.get_asset(name)
