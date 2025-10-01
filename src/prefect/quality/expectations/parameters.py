@@ -45,3 +45,11 @@ ODUR = QARule(code="ODUR", params={"threshold_percent": 0.001})
 # statuses parameters
 DUPT = QARule(code="DUPT", params={"threshold_percent": 0.01})
 FRET = QARule(code="FRET", params={"mean_duration_second": 300})
+
+# statuses-sessions consistency parameters
+RATS = QARule(
+    code="RATS",
+    params={"ratio_statuses_per_session_min": 1, "ratio_statuses_per_session_max": 30},
+)
+OCCT = QARule(code="OCCT", params={"threshold_percent": 0.2})
+SEST = QARule(code="SEST", params={"threshold_percent": 0.01})
