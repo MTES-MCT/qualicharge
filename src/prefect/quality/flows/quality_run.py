@@ -90,6 +90,7 @@ def run_api_db_checkpoint(  # noqa: PLR0913
     environment: str,
     report_by_email: bool,
     quality_type: str,
+    comment: str = "",
 ) -> gx.checkpoint.CheckpointResult:
     """Run API DB checkpoint."""
     # Data asset
@@ -139,7 +140,7 @@ def run_api_db_checkpoint(  # noqa: PLR0913
                 "```",
             )
         ),
-        description=f"GX validation for API DB instance: {environment}",
+        description=f"GX validation for API DB instance: {environment}. {comment}",
         key=f"api-db-{quality_type}-{environment}",
     )
     return result
@@ -152,6 +153,7 @@ def run_api_db_checkpoint_by_amenageur(  # noqa: PLR0913
     environment: str,
     report_by_email: bool,
     quality_type: str,
+    comment: str = "",
 ) -> QCReport:
     """Run API DB checkpoint."""
     # QualiCharge markdown report
@@ -235,7 +237,7 @@ def run_api_db_checkpoint_by_amenageur(  # noqa: PLR0913
     create_markdown_artifact(
         template.render(report=report),
         description=(
-            f"# GX validation by `Amenageur` for API DB instance: {environment}"
+            f"# GX validation by `Amenageur` for API DB instance: {environment}. {comment}"  # noqa: E501
         ),
         key=f"api-db-{quality_type}-amenageurs-{environment}",
     )

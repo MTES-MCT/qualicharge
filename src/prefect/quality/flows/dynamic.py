@@ -17,13 +17,18 @@ from quality.flows.quality_run import (
 @flow(log_prints=True)
 def run_api_db_validation(
     environment: str,
-    from_now: dict,
+    duration: dict,
+    from_now: dict | None = None,
     report_by_email: bool = False,
     new_now: date | None = None,
 ) -> gx.checkpoint.CheckpointResult:
     """Run API DB checkpoint."""
-    date_end = date.today() if not new_now else new_now
-    date_start = date_end - timedelta(**from_now)
+    delta_from_now = timedelta() if not from_now else timedelta(**from_now)
+    date_now = date.today() if not new_now else new_now
+
+    date_end = date_now - delta_from_now
+    date_start = date_end - timedelta(**duration)
+    interval = f"Interval: {date_start} to {date_end}"
 
     # Context
     context = gx.get_context(mode="ephemeral")
@@ -39,7 +44,7 @@ def run_api_db_validation(
 
     # Checkpoints
     result = run_api_db_checkpoint(
-        context, data_source, suite, environment, report_by_email, "dynamic"
+        context, data_source, suite, environment, report_by_email, "dynamic", interval
     )
     return result
 
@@ -47,13 +52,18 @@ def run_api_db_validation(
 @flow(log_prints=True)
 def run_api_db_validation_by_amenageur(
     environment: str,
-    from_now: dict,
+    duration: dict,
+    from_now: dict | None = None,
     report_by_email: bool = False,
     new_now: date | None = None,
 ) -> QCReport:
     """Run API DB checkpoint by amenageur."""
-    date_end = date.today() if not new_now else new_now
-    date_start = date_end - timedelta(**from_now)
+    delta_from_now = timedelta() if not from_now else timedelta(**from_now)
+    date_now = date.today() if not new_now else new_now
+
+    date_end = date_now - delta_from_now
+    date_start = date_end - timedelta(**duration)
+    interval = f"Interval: {date_start} to {date_end}"
 
     # Context
     context = gx.get_context(mode="ephemeral")
@@ -70,6 +80,6 @@ def run_api_db_validation_by_amenageur(
 
     # Checkpoints
     report = run_api_db_checkpoint_by_amenageur(
-        context, data_source, suite, environment, report_by_email, "dynamic"
+        context, data_source, suite, environment, report_by_email, "dynamic", interval
     )
     return report

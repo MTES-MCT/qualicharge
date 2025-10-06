@@ -10,67 +10,6 @@ import great_expectations.expectations as gxe
 from .parameters import DUPS, DUPT, ENEA, ENERGY, ENEX, FRES, FRET, LONS, ODUR, OVRS
 
 NAME: str = "dynamic"
-INTERVAL_STATUS_TEMPLATE = """
-   f_status AS (
-    SELECT
-      id,
-      point_de_charge_id,
-      etat_pdc,
-      occupation_pdc,
-      updated_at,
-      horodatage
-    FROM
-      status
-    WHERE
-      horodatage >= $start
-      AND horodatage < $end
-  )
-"""
-INTERVAL_SESSION_TEMPLATE = """
-  f_session AS (
-    SELECT
-      id,
-      point_de_charge_id,
-      energy,
-      updated_at,
-      start AS start_session,
-      session.end AS end_session
-    FROM
-      session
-    WHERE
-      start >= $start
-      AND start < $end
-  )
-"""
-INTERVAL_ENERGY_SESSION_TEMPLATE = """
-  f_session AS (
-    SELECT
-      id,
-      point_de_charge_id,
-      energy,
-      start AS start_session,
-      session.end AS end_session
-    FROM
-      session
-    WHERE
-      energy > $lowest_energy_kwh
-      AND energy < $highest_energy_kwh
-      AND start >= $start
-      AND start < $end
-  )
-"""
-FILTERED_STATIQUE = """
-  f_statique AS (
-    SELECT
-      id_pdc_itinerance,
-      nom_operateur,
-      nom_amenageur,
-      puissance_nominale,
-      pdc_id
-    FROM
-      {batch} AS statique
-  )
-"""
 
 
 def get_suite(date_start: date, date_end: date):
@@ -79,39 +18,29 @@ def get_suite(date_start: date, date_end: date):
         "start": f"'{date_start.isoformat()}'",
         "end": f"'{date_end.isoformat()}'",
     }
-    f_status = {"f_status": Template(INTERVAL_STATUS_TEMPLATE).substitute(date_params)}
-    f_session = {
-        "f_session": Template(INTERVAL_SESSION_TEMPLATE).substitute(date_params)
-    }
-    f_energy_session = {
-        "f_energy_session": Template(INTERVAL_ENERGY_SESSION_TEMPLATE).substitute(
-            date_params | ENERGY  # type: ignore
-        )
-    }
-    f_statique = {"f_statique": FILTERED_STATIQUE}
-
     energy_expectations = [
         # ENEU : Energy greater than highest_energy_kwh (rule 11)
         gxe.UnexpectedRowsExpectation(
             unexpected_rows_query=Template(
                 """
 WITH
-  $f_statique,
-  $f_session
+  f_statique AS {batch}
 SELECT
   energy,
   nom_amenageur,
-  start_session,
-  end_session,
+  start,
+  session.end,
   id_pdc_itinerance
 FROM
-  f_session
+  session
   INNER JOIN f_statique ON point_de_charge_id = f_statique.pdc_id
 WHERE
   energy > $highest_energy_kwh
+  AND start >= $start
+  AND start < $end
                 """
             ).substitute(
-                f_statique | f_session | ENERGY  # type: ignore
+                date_params | ENERGY  # type: ignore
             ),
             meta={"code": "ENEU"},
         ),
@@ -120,23 +49,31 @@ WHERE
             unexpected_rows_query=Template(
                 """
 WITH
-  $f_statique,
-  $f_energy_session,
+  f_statique AS {batch},
   sessions_instant AS (
     SELECT
       count(*) AS n_inst_ses
     FROM
-      f_session
+      session
       INNER JOIN f_statique ON point_de_charge_id = f_statique.pdc_id
     WHERE
-      end_session = start_session
+      session.end = start
+      AND energy > $lowest_energy_kwh
+      AND energy <= $highest_energy_kwh
+      AND start >= $start
+      AND start < $end
   ),
   nb_sessions AS (
     SELECT
-      count(f_SESSION.id) AS n_ses
+      count(session.id) AS n_ses
     FROM
-      f_session
+      session
       INNER JOIN f_statique ON point_de_charge_id = f_statique.pdc_id
+    WHERE
+      energy > $lowest_energy_kwh
+      AND energy <= $highest_energy_kwh
+      AND start >= $start
+      AND start < $end
   )
 SELECT
   *
@@ -146,7 +83,7 @@ FROM
 WHERE
   n_inst_ses::float > $threshold_percent * n_ses::float
                 """
-            ).substitute(f_statique | f_energy_session | ODUR.params),
+            ).substitute(date_params | ODUR.params | ENERGY),
             meta={"code": ODUR.code},
         ),
         # ENEA : Session with abnormal energy (rule 38)
@@ -154,32 +91,41 @@ WHERE
             unexpected_rows_query=Template(
                 """
 WITH
-  $f_statique,
-  $f_energy_session,
+  f_statique AS {batch},
   sessions_max AS (
     SELECT
       count(*) AS n_max_ses
     FROM
-      f_session
+      session
       INNER JOIN f_statique ON point_de_charge_id = f_statique.pdc_id
     WHERE
-      end_session = start_session
+      session.end != session.start
+      AND energy > $lowest_energy_kwh
+      AND energy <= $highest_energy_kwh
+      AND start >= $start
+      AND start < $end
       AND energy > extract(
-        'epoch' FROM (end_session - start_session)
+        'epoch' FROM (session.end - start)
       ) / 3600.0 * puissance_nominale * $abnormal_coef
       AND (
         energy < extract(
-          'epoch' FROM (end_session - start_session)
+          'epoch' FROM (session.end - start)
         ) / 3600.0 * puissance_nominale * $excess_coef
         OR energy <= $excess_threshold_kWh
       )
   ),
   nb_sessions AS (
     SELECT
-      count(f_SESSION.id) AS n_ses
+      count(session.id) AS n_ses
     FROM
-      f_session
+      session
       INNER JOIN f_statique ON point_de_charge_id = f_statique.pdc_id
+    WHERE
+      session.end != session.start
+      AND energy > $lowest_energy_kwh
+      AND energy <= $highest_energy_kwh
+      AND start >= $start
+      AND start < $end
   )
 SELECT
   *
@@ -189,7 +135,7 @@ FROM
 WHERE
   n_max_ses::float > $threshold_percent * n_ses::float
                 """
-            ).substitute(f_statique | f_energy_session | ENEA.params | ENEX.params),
+            ).substitute(date_params | ENEA.params | ENEX.params | ENERGY),
             meta={"code": ENEA.code},
         ),
         # ENEX : Session with excessive energy (rule 41)
@@ -197,30 +143,24 @@ WHERE
             unexpected_rows_query=Template(
                 """
 WITH
-  $f_statique,
-  $f_energy_session
+  f_statique AS {batch}
 SELECT
-  start_session,
-  end_session,
-  energy,
+  session.*,
   id_pdc_itinerance,
   puissance_nominale,
   nom_operateur,
-  nom_amenageur,
-  energy / extract(
-    'epoch' FROM (end_session - start_session)
-  ) * 3600.0 / puissance_nominale AS ratio_max_energy
+  nom_amenageur
 FROM
-  f_session
+  session
   INNER JOIN f_statique ON point_de_charge_id = f_statique.pdc_id
 WHERE
-  end_session <> start_session
-  AND energy > $excess_threshold_kWh 
+  session.end != start
+  AND energy > $excess_threshold_kWh
   AND energy > extract(
-    'epoch' FROM (end_session - start_session)
+    'epoch' FROM (session.end - start)
   ) / 3600.0 * puissance_nominale * $excess_coef
                 """
-            ).substitute(f_statique | f_energy_session | ENEX.params),
+            ).substitute(date_params | ENEX.params),
             meta={"code": ENEX.code},
         ),
     ]
@@ -231,53 +171,47 @@ WHERE
             unexpected_rows_query=Template(
                 """
 WITH
-  $f_statique,
-  $f_session,
+  f_statique AS {batch},
   nb_session AS (
     SELECT
       count(*) as nbre_session
     FROM
-      f_session
+      session
       INNER JOIN f_statique ON point_de_charge_id = f_statique.pdc_id
+    WHERE
+      START >= $start
+      AND START < $end
   ),
-  nb_session_duplicate AS (
+  nb_session_unique AS (
     SELECT
-      count(*) as nbre_duplicate
+      count(*) AS nbre_unique
     FROM
       (
         SELECT
-          nb_id,
-          start_session,
-          end_session,
-          id_pdc_itinerance
+          START,
+          SESSION.end,
+          point_de_charge_id
         FROM
-          (
-            SELECT
-              count(id) AS nb_id,
-              start_session,
-              end_session,
-              point_de_charge_id
-            FROM
-              f_session
-            GROUP BY
-              start_session,
-              end_session,
-              point_de_charge_id
-          ) AS list_session
+          SESSION
           INNER JOIN f_statique ON point_de_charge_id = f_statique.pdc_id
         WHERE
-          nb_id > 1
-      ) AS duplicates
+          START >= $start
+          AND START < $end
+        GROUP BY
+          START,
+          SESSION.end,
+          point_de_charge_id
+      ) AS session_unique
   )
 SELECT
   *
 FROM
-  nb_session_duplicate,
+  nb_session_unique,
   nb_session
 WHERE
-  nbre_duplicate::float > $threshold_percent * nbre_session::float
+  (nbre_session - nbre_unique)::float > $threshold_percent * nbre_session::float
                 """
-            ).substitute(f_statique | f_session | DUPS.params),
+            ).substitute(date_params | DUPS.params),
             meta={"code": DUPS.code},
         ),
         # OVRS : Number of days-poc with more than max_sessions_per_day (rule 13)
@@ -285,11 +219,10 @@ WHERE
             unexpected_rows_query=Template(
                 """
 WITH
-  $f_statique,
-  $f_session
+  f_statique AS {batch}
 SELECT
   nb_id,
-  start_session,
+  start,
   id_pdc_itinerance,
   nom_amenageur,
   nom_operateur
@@ -297,18 +230,21 @@ FROM
   (
     SELECT
       count(id) AS nb_id,
-      start_session::date,
+      start::date,
       point_de_charge_id
     FROM
-      f_session
+      session
+    WHERE
+      START >= $start
+      AND START < $end
     GROUP BY
-      start_session::date, point_de_charge_id
+      start::date, point_de_charge_id
   ) AS list_sessions
   INNER JOIN f_statique ON point_de_charge_id = f_statique.pdc_id
 WHERE
   nb_id > $max_sessions_per_day
                 """
-            ).substitute(f_statique | f_session | OVRS.params),
+            ).substitute(date_params | OVRS.params),
             meta={"code": OVRS.code},
         ),
         # LONS : Sessions of more than max_days_per_session (rule 15)
@@ -316,23 +252,27 @@ WHERE
             unexpected_rows_query=Template(
                 """
 WITH
-  $f_statique,
-  $f_session,
+  f_statique AS {batch},
   long_sessions AS (
     SELECT
       count(*) AS n_long_ses
     FROM
-      f_session
+      session
       INNER JOIN f_statique ON point_de_charge_id = f_statique.pdc_id
     WHERE
-      end_session > start_session + interval '$max_days_per_session'
+      start >= $start
+      AND start < $end
+      AND session.end > start + interval '$max_days_per_session'
   ),
   nb_sessions AS (
     SELECT
-      count(f_session.id) AS n_ses
+      count(session.id) AS n_ses
     FROM
-      f_session
+      session
       INNER JOIN f_statique ON point_de_charge_id = f_statique.pdc_id
+    WHERE
+      start >= $start
+      AND start < $end
   )
 SELECT
   *
@@ -342,7 +282,7 @@ FROM
 WHERE
   n_long_ses::float > $threshold_percent * n_ses::float
             """
-            ).substitute(f_statique | f_session | LONS.params),
+            ).substitute(date_params | LONS.params),
             meta={"code": LONS.code},
         ),
         # NEGS : Sessions with negative duration (rule 14)
@@ -350,22 +290,23 @@ WHERE
             unexpected_rows_query=Template(
                 """
 WITH
-  $f_statique,
-  $f_session
+  f_statique AS {batch}
 SELECT
-  start_session,
-  end_session,
+  start,
+  session.end,
   id_pdc_itinerance,
   energy,
   nom_amenageur,
   nom_operateur
 FROM
-  f_session
+  session
   INNER JOIN f_statique ON point_de_charge_id = f_statique.pdc_id
 WHERE
-  start_session > end_session
+  start >= $start
+  AND start < $end
+  AND start > session.end
                 """
-            ).substitute(f_statique | f_session),
+            ).substitute(date_params),
             meta={"code": "NEGS"},
         ),
         # FRES : freshness of sessions greater than max_duration days (rule 42)
@@ -373,23 +314,26 @@ WHERE
             unexpected_rows_query=Template(
                 """
 WITH
-  $f_statique,
-  $f_session,
+  f_statique AS {batch},
   session_delay AS (
     SELECT
-      max(EXTRACT(EPOCH FROM (updated_at - end_session))) / 3600 / 24 AS max_delay
+      updated_at,
+      session.end as session_end
     FROM
-      f_session
+      session
       INNER JOIN f_statique ON point_de_charge_id = f_statique.pdc_id
+    WHERE
+      START >= $start
+      AND START < $end
   )
 SELECT
-  *
+  max(EXTRACT(EPOCH FROM (updated_at - session_end))) / 3600 / 24
 FROM
   session_delay
-WHERE
-  max_delay > $max_duration_day
+HAVING
+  max(EXTRACT(EPOCH FROM (updated_at - session_end))) / 3600 / 24 > $max_duration_day
                 """
-            ).substitute(f_statique | f_session | FRES.params),
+            ).substitute(date_params | FRES.params),
             meta={"code": FRES.code},
         ),
     ]
@@ -399,20 +343,21 @@ WHERE
             unexpected_rows_query=Template(
                 """
 WITH
-  $f_statique,
-  $f_status
+  f_statique AS {batch}
 SELECT
-  f_status.id,
+  status.id,
   occupation_pdc,
   etat_pdc
 FROM
-  f_status
+  status
   INNER JOIN f_statique ON point_de_charge_id = f_statique.pdc_id
 WHERE
-  etat_pdc = 'hors_service'
+  horodatage >= $start
+  AND horodatage < $end
+  AND etat_pdc = 'hors_service'
   AND occupation_pdc = 'occupe'
                 """
-            ).substitute(f_statique | f_status),
+            ).substitute(date_params),
             meta={"code": "ERRT"},
         ),
         # FTRT : Timestamp in the future (rule 36)
@@ -420,29 +365,19 @@ WHERE
             unexpected_rows_query=Template(
                 """
 WITH
-  $f_statique,
-  f_status AS (
-    SELECT
-      id,
-      point_de_charge_id,
-      etat_pdc,
-      occupation_pdc,
-      horodatage
-    FROM
-      status
-    WHERE
-      horodatage < timestamp '01-01-2024'
-      OR horodatage > CURRENT_TIMESTAMP
-      OR horodatage IS NULL
-  )
+  f_statique AS {batch}
 SELECT
   horodatage,
   id_pdc_itinerance
 FROM
-  f_status
+  status
   INNER JOIN f_statique ON point_de_charge_id = f_statique.pdc_id
+WHERE
+  horodatage < timestamp '01-01-2024'
+  OR horodatage > CURRENT_TIMESTAMP
+  OR horodatage IS NULL
                 """
-            ).substitute(f_statique | f_status),
+            ).substitute(date_params),
             meta={"code": "FTRT"},
         ),
         # DUPT : Duplicate statuses (rule 44)
@@ -450,14 +385,16 @@ FROM
             unexpected_rows_query=Template(
                 """
 WITH
-  $f_statique,
-  $f_status,
+  f_statique AS {batch},
   nb_status AS (
     SELECT
       count(*) AS nbre_status
     FROM
-      f_status
+      status
       INNER JOIN f_statique ON point_de_charge_id = f_statique.pdc_id
+    WHERE
+      horodatage >= $start
+      AND horodatage < $end
   ),
   nb_status_unique AS (
     SELECT
@@ -468,8 +405,11 @@ WITH
           horodatage,
           point_de_charge_id
         FROM
-          f_status
+          status
           INNER JOIN f_statique ON point_de_charge_id = f_statique.pdc_id
+        WHERE
+          horodatage >= $start
+          AND horodatage < $end
         GROUP BY
           horodatage,
           point_de_charge_id
@@ -483,7 +423,7 @@ FROM
 WHERE
   (nbre_status - nbre_unique)::float > $threshold_percent * nbre_status::float
                 """
-            ).substitute(f_statique | f_status | DUPT.params),
+            ).substitute(date_params | DUPT.params),
             meta={"code": "DUPT"},
         ),
         # FRET : Freshness of statuses greater than max_duration seconds (rule 43)
@@ -491,33 +431,28 @@ WHERE
             unexpected_rows_query=Template(
                 """
 WITH
-  $f_statique,
-  $f_status,
+  f_statique AS {batch},
   status_delay AS (
     SELECT
       horodatage,
-      extract(
-        SECOND
-        FROM
-          f_status.updated_at - horodatage
-      ) + extract(
-        MINUTE
-        FROM
-          f_status.updated_at - horodatage
-      ) * 60 AS delay,
-      horodatage::date AS date_s
+      updated_at
     FROM
-      f_status
+      status
       INNER JOIN f_statique ON point_de_charge_id = f_statique.pdc_id
+    WHERE
+      horodatage >= $start
+      AND horodatage < $end
   )
 SELECT
-  avg(delay)
+  avg(extract(SECOND FROM updated_at - horodatage) +
+      extract(MINUTE FROM updated_at - horodatage) * 60)
 FROM
   status_delay
 HAVING
-  avg(delay) > $mean_duration_second
+  avg(extract(SECOND FROM updated_at - horodatage) +
+      extract(MINUTE FROM updated_at - horodatage) * 60) > $mean_duration_second
                 """
-            ).substitute(f_statique | f_status | FRET.params),
+            ).substitute(date_params | FRET.params),
             meta={"code": "FRET"},
         ),
     ]

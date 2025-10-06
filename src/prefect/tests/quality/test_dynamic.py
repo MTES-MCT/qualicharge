@@ -6,18 +6,23 @@ from indicators.types import Environment
 from quality.flows import dynamic, quality_run
 
 NEW_NOW = date(year=2025, month=1, day=1)
-FROM_NOW = {"days": 14}
+FROM_NOW = {"days": 15}
+DURATION = {"days": 7}
 
 
 def test_run_api_db_validation():
     """Run API database validation."""
     results = dynamic.run_api_db_validation(
-        Environment.TEST, FROM_NOW, report_by_email=False, new_now=NEW_NOW
+        Environment.TEST,
+        DURATION,
+        from_now=FROM_NOW,
+        report_by_email=False,
+        new_now=NEW_NOW,
     )
     for _, v in results.run_results.items():
         for result in v.results:
             code = result.expectation_config.meta.get("code")  # type: ignore[union-attr]
-            if code in ["FRES", "FRET", "ENEX"]:
+            if code in ["FRES", "FRET", "ENEX", "ENEA"]:
                 assert not result.success
             else:
                 assert result.success
@@ -31,7 +36,11 @@ def test_run_api_db_validation_by_amenageur(monkeypatch):
         lambda _: ["Tesla", "Ionity", "TesLa ", "Electra"],
     )
     report = dynamic.run_api_db_validation_by_amenageur(
-        Environment.TEST, FROM_NOW, report_by_email=False, new_now=NEW_NOW
+        Environment.TEST,
+        DURATION,
+        from_now=FROM_NOW,
+        report_by_email=False,
+        new_now=NEW_NOW,
     )
     assert report.name == "dynamic-test"
     expected = 3
@@ -51,12 +60,12 @@ def test_run_api_db_validation_by_amenageur(monkeypatch):
                     else:
                         assert result.success
                 case "Ionity":
-                    if result.code in ["FRES", "FRET", "ENEX"]:
+                    if result.code in ["FRES", "FRET", "ENEX", "ENEA"]:
                         assert not result.success
                     else:
                         assert result.success
                 case "Electra":
-                    if result.code in ["FRES", "FRET", "ENEX"]:
+                    if result.code in ["FRES", "FRET", "ENEX", "ENEA"]:
                         assert not result.success
                     else:
                         assert result.success
