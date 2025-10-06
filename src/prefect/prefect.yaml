@@ -382,8 +382,10 @@ deployments:
         active: true
     parameters:
       environment: staging
+      duration:
+        days: 7
       from_now: 
-        days: 14
+        days: 15
       report_by_email: true
     work_pool:
       name: indicators
@@ -397,8 +399,10 @@ deployments:
         active: true
     parameters:
       environment: staging
+      duration:
+        days: 7
       from_now: 
-        days: 14
+        days: 15
       report_by_email: true
     work_pool:
       name: indicators
@@ -407,13 +411,15 @@ deployments:
   - name: quality-dynamic-production
     entrypoint: quality/flows/dynamic.py:run_api_db_validation
     schedules:
-      - cron: "7 3 * * *"
+      - cron: "47 3 * * *"
         timezone: "Europe/Paris"
         active: true
     parameters:
       environment: production
+      duration:
+        days: 7
       from_now: 
-        days: 14
+        days: 15
       report_by_email: true
     work_pool:
       name: indicators
@@ -422,13 +428,15 @@ deployments:
   - name: quality-dynamic-production-by-amenageur
     entrypoint: quality/flows/dynamic.py:run_api_db_validation_by_amenageur
     schedules:
-      - cron: "17 3 * * *"
+      - cron: "30 1 * * *"
         timezone: "Europe/Paris"
         active: true
     parameters:
       environment: production
+      duration:
+        days: 7
       from_now: 
-        days: 14
+        days: 15
       report_by_email: true
     work_pool:
       name: indicators

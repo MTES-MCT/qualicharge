@@ -39,5 +39,7 @@ and this project adheres to
 - Upgrade API database to PG 15 / TimescaleDB 2.19
 - Adjust level of historicization
 - Update indicators table indexes
+- Optimize queries for indexes added on session and status tables
+- Add delay parameter for dynamic Expectations
 
 [unreleased]: https://github.com/MTES-MCT/qualicharge/
