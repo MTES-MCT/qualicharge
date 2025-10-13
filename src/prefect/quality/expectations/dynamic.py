@@ -156,11 +156,14 @@ FROM
 WHERE
   session.end != start
   AND energy > $excess_threshold_kWh
+  AND energy <= $highest_energy_kwh
+  AND start >= $start
+  AND start < $end
   AND energy > extract(
     'epoch' FROM (session.end - start)
   ) / 3600.0 * puissance_nominale * $excess_coef
                 """
-            ).substitute(date_params | ENEX.params),
+            ).substitute(date_params | ENEX.params | ENERGY),
             meta={"code": ENEX.code},
         ),
     ]
