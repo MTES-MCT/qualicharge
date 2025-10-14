@@ -42,7 +42,7 @@ For control-purpose, some optional fields of the official schema are
 | `contact_amenageur`   | Email string                                                    |    7    |                                                Should not be empty |
 | `nom_amenageur`       | String                                                          |    7    |                                                Should not be empty |
 | `siren_amenageur`     | 9-integers string                                               |    7    |                                                Should not be empty |
-| `num_pdl`             | Max 64-characters string                                        |   20    |                                                Should not be empty |
+| `num_pdl`             | Max 64-characters string                                        |   20    |                  Should not be empty and should not contain spaces |
 |                       |                                                                 |   34    | Should match energy supplier pattern (_e.g._ 14 digits for ENEDIS) |
 
 > The rule number corresponds to our data-quality control referencial.
@@ -61,12 +61,12 @@ Rules for statique data fields:
 
 Specific rules applies for submitted datasets consistency:
 
-| Rule N° | Rule                                                                                                                                  |
-| :------ | :------------------------------------------------------------------------------------------------------------------------------------ |
-| 30      | A station should associated with less than **50** charging points                                                                     |
-| 46      | The number of stations per location should be less than **1.5**                                                                       |
-| 47      | The difference between the number of charging points per station and the `nbre_pdc` value should be less than **20%**                 |
-| 48      | Two stations with identical first 5 characters of the `id_station_itinerance` should not be associated with two different operators   |
+| Rule N° | Rule                                                                                                                                |
+| :------ | :---------------------------------------------------------------------------------------------------------------------------------- |
+| 30      | A station should associated with less than **50** charge points                                                                     |
+| 46      | The number of stations per location should be less than **1.5**                                                                     |
+| 47      | The number of charge points per station should be equal to (or greater than) the value `nbre_pdc`                                   |
+| 48      | Two stations with identical first 5 characters of the `id_station_itinerance` should not be associated with two different operators |
 
 > The rule number corresponds to our data-quality control referencial.
 
@@ -138,7 +138,7 @@ Specific rules applies for submitted datasets consistency:
 | :------ | :------------------------------------------------------------------------------------------------------------------------------ |
 | 21      | A status with `occupation_pdc="occupe"` should be associated with a session                                                     |
 | 37      | A status with `etat_pdc="hors_service"` cannot define `occupation_pdc="occupe"` (the later is reserved for charging activities) |
-| 44      | Statuses cannot be duplicated (identical `horodatage` values for a target charging point)                                       |
+| 44      | Statuses cannot be duplicated (identical `horodatage` values for a target charge point)                                         |
 
 > The rule number corresponds to our data-quality control referencial.
 
@@ -180,12 +180,13 @@ Specific rules applies for submitted datasets consistency:
 | Rule N° | Rule                                                                                                                                        |
 | :------ | :------------------------------------------------------------------------------------------------------------------------------------------ |
 | 10      | Sessions cannot overlap                                                                                                                     |
-| 13      | The number of sessions at a charging point should be lower than **50 per day**                                                              |
+| 13      | The number of sessions at a charge point should be lower than **60 per day**                                                                |
 | 14      | A session cannot end before it starts                                                                                                       |
 | 15      | A session should last more than **3 days**                                                                                                  |
-| 17      | Sessions cannot be duplicated (identical start/end dates and energy for a target charging point)                                            |
+| 17      | Sessions cannot be duplicated (identical start/end dates and energy for a target charge point)                                              |
 | 22      | A session should start when a status with `occupation_pdc="occupe"` is issued and end when a status with `occupation_pdc="libre"` is issued |
-| 38      | The energy of a session should not exceed the charging point's nominal power multiplied by the session duration by more than 10 %           |
+| 38      | The energy of a session should not exceed the charge point's nominal power multiplied by the session duration by more than 10 %             |
 | 40      | A session of zero duration cannot have an energy greater than **1 kWh**                                                                     |
+| 49      | The ratio of the number of statuses to the number of sessions must be between **1 and 30**                                                  |
 
 > The rule number corresponds to our data-quality control referencial.
