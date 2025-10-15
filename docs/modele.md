@@ -73,6 +73,24 @@ Le parc de recharge ne fait référence à aucune activité de gestion mais est 
 
 La notion de parc de recharge est utilisée dans Qualicharge pour l'évaluation des exigences AFIR. Elle n'est pas abordée dans cette présentation.
 
+### Interface véhicule
+
+Le point de recharge est associé à deux entités associées au véhicule à recharger :
+
+- "***connecteur** : interface physique entre le point de recharge et le véhicule qui permet l’échange de l’énergie électrique*"
+- "***place de recharge** : Emplacement de stationnement d'un véhicule dédié à la recharge*"
+
+Le modèle ci-dessous représente l'interface d'un point de recharge avec le véhicule :
+
+```mermaid
+erDiagram
+    "POINT DE RECHARGE" ||--|{ "CONNECTEUR": "est équipé de"
+    "POINT DE RECHARGE" ||..|{ "PLACE DE RECHARGE" : "dessert"
+```
+
+Un point de recharge est équipé de un ou plusieurs connecteurs et dessert une ou plusieurs places de recharge.
+Le nombre de places de recharge est consolidé au niveau de la station de recharge (attribut `nbre_pdc`).
+
 ### Structure physique
 
 L'intégration d'une station de recharge dans son environnement est représentée par deux notions complémentaires :
