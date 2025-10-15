@@ -63,7 +63,7 @@ erDiagram
 
 Ce modèle exprime qu'une station de recharge regroupe un ou plusieurs points de recharge et qu'un point de recharge n'appartient qu'à une seule station de recharge.
 
-***Nota :***
+***Nota 1:***
 
 La règlementation AFIR définit la notion complémentaire de parc de recharge:
 
@@ -72,6 +72,14 @@ La règlementation AFIR définit la notion complémentaire de parc de recharge:
 Le parc de recharge ne fait référence à aucune activité de gestion mais est associé exclusivement aux exigences règlementaires portant sur un lieu. Ainsi un parc regroupe par exemple toutes les stations d'une aire de service autoroutière ou bien d'une gare ou d'un aéroport. Il reflète en ce sens le besoin usager de recharge en un lieu donné.
 
 La notion de parc de recharge est utilisée dans Qualicharge pour l'évaluation des exigences AFIR. Elle n'est pas abordée dans cette présentation.
+
+***Nota 2:***
+
+Les protocoles OCPP et OCPI utilisent également une terminologie similaire mais qui peut recouvrir des notions différentes :
+
+- EVSE (Electric Vehicle Supply Equipment): Ce terme correspond à la notion de point de recharge et est utilisé à la fois par les protocoles OCPI et OCPP.
+- Charging Station : Ce terme est utilisé par OCPP pour désigner l'équipement physique qui intègre plusieurs EVSE. Cette notion n'est pas utilisée dans OCPI ni dans Qualicharge.
+- Location : La notion de Location est définie dans OCPI et correspond à un ensemble d'EVSE situés en un même lieu. Cette notion n'existe pas directement dans OCPP mais y apparaît néanmoins sous le terme de Charging Location au niveau du CSMS (Charging Station Management Software) associé pour gérer un ensemble d'EVSE. Cette notion est équivalente à la notion de Station dans Qualicharge.
 
 ### Interface véhicule
 
