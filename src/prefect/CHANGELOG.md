@@ -29,6 +29,7 @@ and this project adheres to
   - Sesssions (DUPS, OVRS, LONS, NEGS, FRES)
   - Energy (ENEU, ENEA, ENEX, ODUR)
   - statuses (ERRT, FTRT, DUPT, FRET)
+  - consistency (RATS, OCCT, SEST)
 
 #### Cooling
 
