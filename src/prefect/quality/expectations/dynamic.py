@@ -7,7 +7,21 @@ from string import Template
 import great_expectations as gx
 import great_expectations.expectations as gxe
 
-from .parameters import DUPS, DUPT, ENEA, ENERGY, ENEX, FRES, FRET, LONS, ODUR, OVRS
+from .parameters import (
+    DUPS,
+    DUPT,
+    ENEA,
+    ENERGY,
+    ENEX,
+    FRES,
+    FRET,
+    LONS,
+    OCCT,
+    ODUR,
+    OVRS,
+    RATS,
+    SEST,
+)
 
 NAME: str = "dynamic"
 
@@ -459,8 +473,206 @@ HAVING
             meta={"code": "FRET"},
         ),
     ]
+    statuses_sessions_expectations = [
+        # RATS : Ratio number of statuses / number of sessions (rule 49)
+        gxe.UnexpectedRowsExpectation(
+            unexpected_rows_query=Template(
+                """
+WITH
+  f_statique AS {batch},
+  n_session AS (
+    SELECT
+      COUNT(*) AS nb_session
+    FROM
+      session
+      INNER JOIN f_statique ON point_de_charge_id = f_statique.pdc_id
+	WHERE
+      START >= $start
+      AND START < $end
+  ),
+  n_status AS (
+    SELECT
+      COUNT(*) AS nb_status
+    FROM
+      status
+      INNER JOIN f_statique ON point_de_charge_id = f_statique.pdc_id
+	WHERE
+      horodatage >= $start
+      AND horodatage < $end
+  )
+SELECT
+  nb_status,
+  nb_session
+FROM
+  n_session,
+  n_status
+WHERE
+  nb_status::float / nb_session::float > $ratio_statuses_per_session_max
+  OR nb_status::float / nb_session::float < $ratio_statuses_per_session_min
+                """
+            ).substitute(date_params | RATS.params),
+            meta={"code": RATS.code},
+        ),
+        # OCCT : Number of days-poc with status 'occupe' and without session (rule 21)
+        gxe.UnexpectedRowsExpectation(
+            unexpected_rows_query=Template(
+                """
+WITH
+  f_statique AS {batch},
+  nombre_status AS (
+    SELECT
+      count(status.id) AS nb_status,
+      status.point_de_charge_id AS status_pdc_id,
+      status.horodatage::date AS date_status
+    FROM
+      status
+      INNER JOIN f_statique on status.point_de_charge_id = f_statique.pdc_id
+    WHERE
+      status.occupation_pdc = 'occupe'
+      AND horodatage >= $start
+      AND horodatage < $end
+    GROUP BY
+      status_pdc_id,
+      date_status
+  ),
+  nombre_sessions AS (
+    SELECT
+      count(SESSION.id) AS nb_sessions,
+      SESSION.point_de_charge_id AS session_pdc_id,
+      SESSION.start::date AS date_session
+    FROM
+      SESSION
+      INNER JOIN f_statique on session.point_de_charge_id = f_statique.pdc_id
+	WHERE
+      SESSION.start >= $start
+      AND SESSION.start < $end
+    GROUP BY
+      session_pdc_id,
+      date_session
+  ),
+  nombre_status_session AS (
+    SELECT
+      nb_status
+    FROM
+      nombre_status
+      LEFT JOIN nombre_sessions ON (
+        nombre_sessions.session_pdc_id = nombre_status.status_pdc_id
+        AND date_status = date_session
+      )
+    WHERE
+      nb_sessions IS NULL
+  )
+SELECT
+  n_stat_ses,
+  n_stat
+FROM
+  (
+    SELECT
+      count(*) AS n_stat_ses
+    FROM
+      nombre_status_session
+    WHERE
+      nb_status > 1
+  ) AS nb_stat_ses,
+  (
+    SELECT
+      count(*) AS n_stat
+    FROM
+      nombre_status
+    WHERE
+      nb_status > 1
+  ) AS nb_stat
+WHERE
+  n_stat_ses::float / n_stat::float > $threshold_percent
+                """
+            ).substitute(date_params | OCCT.params),
+            meta={"code": OCCT.code},
+        ),
+        # SEST : Number of days-poc with session and without status 'occupe' (rule 22)
+        gxe.UnexpectedRowsExpectation(
+            unexpected_rows_query=Template(
+                """
+WITH
+  f_statique AS {batch},
+  nombre_status AS (
+    SELECT
+      horodatage::date AS date_status,
+      count(status.id) AS nb_status,
+      point_de_charge_id AS status_pdc_id,
+      id_pdc_itinerance
+    FROM
+      f_statique
+      INNER JOIN status on point_de_charge_id = f_statique.pdc_id
+    WHERE
+      occupation_pdc = 'occupe'
+      AND horodatage >= $start
+      AND horodatage < $end
+    GROUP BY
+      id_pdc_itinerance,
+      status_pdc_id,
+      date_status
+  ),
+  nombre_sessions AS (
+    SELECT
+      count(session.id) AS nb_sessions,
+      id_pdc_itinerance,
+      point_de_charge_id AS session_pdc_id,
+      session.start::date AS date_session
+    FROM
+      session
+      inner JOIN f_statique on point_de_charge_id = f_statique.pdc_id
+    WHERE
+      session.start >= $start
+      AND session.start < $end
+	GROUP BY
+      id_pdc_itinerance,
+      session_pdc_id,
+      date_session
+  ),
+  nombre_status_session AS (
+    SELECT
+      nb_sessions,
+      nombre_sessions.id_pdc_itinerance,
+      date_session
+    FROM
+      nombre_sessions
+      LEFT JOIN nombre_status ON (
+        nombre_status.id_pdc_itinerance = nombre_sessions.id_pdc_itinerance
+        AND date_status = date_session
+      )
+    WHERE
+      nb_status IS NULL
+  )
+SELECT
+  n_stat_ses,
+  n_ses
+FROM
+  (
+    SELECT
+      count(*) AS n_stat_ses
+    FROM
+      nombre_status_session
+  ) AS nb_stat_ses,
+  (
+    SELECT
+      count(*) AS n_ses
+    FROM
+      nombre_sessions
+  ) AS nb_ses
+WHERE
+  n_stat_ses::float / n_ses::float > $threshold_percent
+                """
+            ).substitute(date_params | SEST.params),
+            meta={"code": SEST.code},
+        ),
+    ]
     suite = gx.ExpectationSuite(name=NAME)
-    expectations = energy_expectations + sessions_expectations + statuses_expectations
+    expectations = (
+        energy_expectations
+        + sessions_expectations
+        + statuses_expectations
+        + statuses_sessions_expectations
+    )
     for expectation in expectations:
         # Make sure expectation is not already assigned to a suite…
         exp = copy(expectation)
