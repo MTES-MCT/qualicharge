@@ -256,7 +256,7 @@ OPERATIONAL_UNIT_SESSIONS_FOR_A_DAY_TEMPLATE = Template(
       sessions."from"
     """
 )
-params = {"from_date": date(2024, 12, 27), "to_date": date(2024, 12, 28), "operational_unit_code": "FRALL"}
+params = {"from_date": date(2024, 12, 27), "to_date": date(2024, 12, 28), "operational_unit_code": "FRPD1"}
 query = OPERATIONAL_UNIT_SESSIONS_FOR_A_DAY_TEMPLATE.substitute(params)
 print(query)
 ```
@@ -300,7 +300,8 @@ abnormal_sessions
 ```
 
 ```python
-qc_sessions.iloc[qc_sessions.index.difference(abnormal_sessions.index)]
+filtered = qc_sessions.iloc[qc_sessions.index.difference(abnormal_sessions.index)]
+filtered
 ```
 
 ### Detect duplicates
@@ -356,6 +357,61 @@ qc_sessions[qc_sessions["overlap"]]
 
 ```python
 qc_sessions
+```
+
+```python
+i = filtered.groupby(['entity', 'siren', 'code', 'id_station_itinerance'])['energy'].sum()
+i
+```
+
+```python
+n = i.reset_index()
+n
+```
+
+```python
+n["energy"].sum()
+```
+
+```python
+indicator = pd.DataFrame({"A": 1, "extras": [n.to_dict(orient="records")]})
+
+with pd.option_context("display.max_colwidth", None):
+    display(indicator)
+```
+
+```python
+from sqlalchemy import text 
+
+OPERATIONAL_UNIT_WITH_SESSIONS_TEMPLATE = Template(
+    """
+    SELECT
+      SUBSTRING(_pointdecharge.id_pdc_itinerance for 5) AS code,
+      Count(Session.id) AS COUNT
+    FROM
+      Session
+      JOIN _pointdecharge ON _pointdecharge.id = Session.point_de_charge_id
+    WHERE
+      Session.start >= '$from_date'
+      AND Session.start < '$to_date'
+    GROUP BY
+      code
+    ORDER BY
+      code
+    """
+)
+from_date = date(2024, 12, 27)
+to_date = date(2024, 12, 28)
+
+with Session(engine) as session:
+    result = session.execute(
+        text(
+            OPERATIONAL_UNIT_WITH_SESSIONS_TEMPLATE.substitute(
+                {"from_date": from_date, "to_date": to_date}
+            )
+        )
+    )
+result.all()
 ```
 
 ```python
