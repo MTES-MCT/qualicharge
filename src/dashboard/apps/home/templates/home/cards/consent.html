@@ -1,7 +1,7 @@
 {% load i18n dsfr_tags static %}
 
 {% url 'consent:index' as consent_index_url %}
-{% static "/dashboard/img/agreement.svg" as agreement_img %}
+{% static "dashboard/img/agreement.svg" as agreement_img %}
 
 {% with consent_card_title="Gestion du consentement" consent_card_description="Autoriser la DGEC à interroger le gestionnaire du réseau de distribution concernant la consommation de vos stations de recharge afin de percevoir vos certificats TIRUERT." %}
 {% with extra_class="fr-card--horizontal" %}
