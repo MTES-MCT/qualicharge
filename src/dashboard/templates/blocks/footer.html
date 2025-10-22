@@ -1,0 +1,17 @@
+{% extends "dsfr/footer.html" %}
+{% load i18n %}
+
+{% block footer_links %}
+  <li class="fr-footer__bottom-item">
+    <a class="fr-footer__bottom-link" href="#">
+      {% with accessibility_status=SITE_CONFIG.get_accessibility_status_display|default:"non" %}
+        {% blocktranslate %}Accessibility: {{ accessibility_status }} compliant{% endblocktranslate %}
+      {% endwith %}
+    </a>
+  </li>
+  <li class="fr-footer__bottom-item">
+    <a class="fr-footer__bottom-link" href="https://www.qualicharge.beta.gouv.fr/mentions-legales/" target="_blank">
+      {% translate "Legal notice" %}
+    </a>
+  </li>
+{% endblock footer_links %}

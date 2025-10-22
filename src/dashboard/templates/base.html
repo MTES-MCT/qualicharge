@@ -21,6 +21,10 @@
   {% endblock dashboard_content %}
 {% endblock content %}
 
+{% block footer %}
+  {% include "blocks/footer.html" %}
+{% endblock footer %}
+
 {% block extra_js %}
   <script src="{% static 'dashboard/js/common.js' %}">
   </script>
