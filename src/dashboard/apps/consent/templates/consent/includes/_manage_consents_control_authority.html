@@ -32,6 +32,9 @@
             <tbody>
               {% with row_number=0 %}
                 {% include "consent/includes/_table_row.html" with label="Dénomination sociale" value=control_authority.name row_number=row_number|add:"1" %}
+                {% include "consent/includes/_table_row.html" with label="Forme juridique" value=control_authority.legal_form row_number=row_number|add:"1" %}
+                {% include "consent/includes/_table_row.html" with label="N° d'identification SIRET" value=control_authority.siret row_number=row_number|add:"1" %}
+                {% include "consent/includes/_table_row.html" with label="Activité NAF" value=control_authority.naf row_number=row_number|add:"1" %}
                 {% with control_authority.address_1|add:"<br />"|add:control_authority.address_2|add:"<br />"|add:control_authority.zip_code|add:" "|add:control_authority.city as control_authority_address %}
                   {% include "consent/includes/_table_row.html" with label="Adresse" value=control_authority_address|safe row_number=row_number|add:"1" %}
                 {% endwith %}

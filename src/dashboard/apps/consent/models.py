@@ -73,6 +73,17 @@ CONTROL_AUTHORITY_SCHEMA = {
     "type": "object",
     "properties": {
         "name": {"type": ["string", "null"], "maxLength": 255},
+        "legal_form": {"type": ["string", "null"], "maxLength": 50},
+        "siret": {
+            "type": ["string", "null"],
+            "maxLength": 14,
+            "pattern": r"^\d{14}$",
+        },
+        "naf": {
+            "type": ["string", "null"],
+            "maxLength": 5,
+            "pattern": r"^\d{4}[A-Z]$",
+        },
         "represented_by": {"type": ["string", "null"], "maxLength": 255},
         "email": {"type": ["string", "null"], "format": "email"},
         "address_1": {"type": ["string", "null"], "maxLength": 255},
@@ -84,7 +95,17 @@ CONTROL_AUTHORITY_SCHEMA = {
         },
         "city": {"type": ["string", "null"], "maxLength": 255},
     },
-    "required": ["name", "represented_by", "email", "address_1", "zip_code", "city"],
+    "required": [
+        "name",
+        "legal_form",
+        "siret",
+        "naf",
+        "represented_by",
+        "email",
+        "address_1",
+        "zip_code",
+        "city",
+    ],
     "additionalProperties": False,
 }
 

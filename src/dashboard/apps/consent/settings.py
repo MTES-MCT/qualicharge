@@ -24,6 +24,9 @@ CONSENT_CONTROL_AUTHORITY = getattr(
     "CONSENT_CONTROL_AUTHORITY",
     {
         "name": "<administration name>",
+        "legal_form": "<legal form>",
+        "siret": "12345678901234",
+        "naf": "8412Z",
         "address_1": "<Adresse 1>",
         "address_2": "<Adresse complement>",
         "zip_code": "92000",
