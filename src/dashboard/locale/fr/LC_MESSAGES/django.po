@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-10-22 15:21+0200\n"
-"PO-Revision-Date: 2025-10-22 15:23+0200\n"
+"POT-Creation-Date: 2025-10-24 11:39+0200\n"
+"PO-Revision-Date: 2025-10-24 13:42+0200\n"
 "Last-Translator: ssorin <ssorin@dwdlc.com>\n"
 "Language-Team: \n"
 "Language: fr\n"
@@ -164,97 +164,97 @@ msgid ""
 "au traitement de mes données Enedis par la DGEC"
 msgstr ""
 
-#: apps/consent/models.py:125 apps/core/models.py:275
+#: apps/consent/models.py:146 apps/core/models.py:275
 msgid "provider assigned id"
 msgstr "identifiant attribué au fournisseur"
 
-#: apps/consent/models.py:134 apps/renewable/models.py:26
+#: apps/consent/models.py:155 apps/renewable/models.py:26
 msgid "created by"
 msgstr "créé par"
 
-#: apps/consent/models.py:137
+#: apps/consent/models.py:158
 msgid "status"
 msgstr "statut"
 
-#: apps/consent/models.py:141
+#: apps/consent/models.py:162
 msgid "start date"
 msgstr "date de début"
 
-#: apps/consent/models.py:142
+#: apps/consent/models.py:163
 msgid "end date"
 msgstr "date de fin"
 
-#: apps/consent/models.py:143
+#: apps/consent/models.py:164
 msgid "revoked at"
 msgstr "révoqué le"
 
-#: apps/consent/models.py:147
+#: apps/consent/models.py:168
 msgid "company informations"
 msgstr "informations sur l'entreprise"
 
-#: apps/consent/models.py:156
+#: apps/consent/models.py:177
 msgid "company representative informations"
 msgstr "informations sur le représentant de l'entreprise"
 
-#: apps/consent/models.py:165
+#: apps/consent/models.py:186
 msgid "control authority informations"
 msgstr "informations sur l'autorité de contrôle"
 
-#: apps/consent/models.py:175
+#: apps/consent/models.py:196
 msgid "contract holder informations"
 msgstr "informations sur le titulaire du contrat"
 
-#: apps/consent/models.py:184
+#: apps/consent/models.py:205
 msgid "the signatory has the authority to sign this consent"
 msgstr "le signataire a le pouvoir de signer ce consentement"
 
-#: apps/consent/models.py:187
+#: apps/consent/models.py:208
 msgid "allows historical measurements in kWh"
 msgstr "permet l'historique des mesures, en kWh"
 
-#: apps/consent/models.py:190
+#: apps/consent/models.py:211
 msgid "allow history of daily index readings in kWh"
 msgstr "permet l'historique des relevés d'index quotidiens, en kWh"
 
-#: apps/consent/models.py:193
+#: apps/consent/models.py:214
 msgid "allows historical maximum daily power in kVa or kWh "
 msgstr ""
 "permet l'historique de la puissance maximale quotidienne, en kVA ou kWh "
 
-#: apps/consent/models.py:196
+#: apps/consent/models.py:217
 msgid "allows history of load curve, at steps returned by Enedis"
 msgstr "permet l'historique de courbe de charge, aux pas restitués par Enedis"
 
-#: apps/consent/models.py:199
+#: apps/consent/models.py:220
 msgid "allows the technical and contractual data available"
 msgstr ""
 "permet de disposer des données techniques et contractuelles disponibles"
 
-#: apps/consent/models.py:202 apps/renewable/models.py:30
+#: apps/consent/models.py:223 apps/renewable/models.py:30
 msgid "signature date"
 msgstr "date de signature"
 
-#: apps/consent/models.py:204 apps/renewable/models.py:31
+#: apps/consent/models.py:225 apps/renewable/models.py:31
 msgid "signature location"
 msgstr "lieu de signature"
 
-#: apps/consent/models.py:290
+#: apps/consent/models.py:311
 msgid "Revoked consent cannot be modified."
 msgstr "Le consentement révoqué ne peut pas être modifié."
 
-#: apps/consent/models.py:295
+#: apps/consent/models.py:316
 msgid "Validated consent can only be changed to the status \"revoked\"."
 msgstr "Un consentement validé ne peut être modifié qu'en statut « révoqué »."
 
-#: apps/consent/models.py:309
+#: apps/consent/models.py:330
 msgid "Only the authorized fields "
 msgstr "Uniquement les champs autorisés "
 
-#: apps/consent/models.py:322
+#: apps/consent/models.py:343
 msgid "Validated consent cannot be deleted."
 msgstr "Un consentement validé ne peut pas être supprimé."
 
-#: apps/consent/models.py:325
+#: apps/consent/models.py:346
 msgid "Revoked consent cannot be deleted."
 msgstr "Un consentement révoqué ne peut pas être supprimé."
 
@@ -521,8 +521,9 @@ msgid "has confirmed information accuracy"
 msgstr "a confirmé l'exactitude des informations"
 
 #: apps/renewable/templates/renewable/manage_delivery_points.html:36
+#: apps/renewable/templates/renewable/manage_delivery_points.html:38
 msgid "Back"
-msgstr "REtour"
+msgstr "Retour"
 
 #: apps/renewable/templates/renewable/restricted_period.html:5
 #: apps/renewable/templates/renewable/restricted_period.html:14
@@ -678,6 +679,15 @@ msgstr ""
 msgid "Try refreshing the page or try again later."
 msgstr "Essayez de rafraichir la page ou bien revenez plus tard."
 
+#: templates/blocks/footer.html:8
+#, python-format
+msgid "Accessibility: %(accessibility_status)s compliant"
+msgstr "Accessibilité : %(accessibility_status)s conforme"
+
+#: templates/blocks/footer.html:14
+msgid "Legal notice"
+msgstr "Mentions légales"
+
 #: templates/blocks/header.html:31
 msgid "Display settings"
 msgstr "Paramètres d'affichage"
@@ -733,6 +743,3 @@ msgstr "Qu'est-ce que ProConnect ? - nouvelle fenêtre"
 #: templates/registration/login.html:34
 msgid "What is ProConnect?"
 msgstr "Qu’est-ce que ProConnect ?"
-
-#~ msgid "back"
-#~ msgstr "retour"
