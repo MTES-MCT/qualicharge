@@ -8,7 +8,16 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Added
+
+- Add `legal_form`, `siret`, and `naf` fields to `control authority` schema
+- Add `legal_form` `siret` and `naf` fields to the `consent` form management interface
+- Add `footer` block with legal and accessibility links in base template
+
 ### Changed
+
+- Update French translations for improved readability and consistency
+- Update content wording in html templates
 
 #### Dependencies
 
@@ -20,6 +29,10 @@ and this project adheres to
 - Upgrade `requests` to `2.32.5`
 - Upgrade `sentry-sdk` to `2.38.0`
 - Upgrade `whitenoise` to `6.11.0`
+
+## Fixed
+
+- Fix static file path formatting (remove leading "/" in template paths)
 
 ## [0.2.0] - 2025-06-23
 
