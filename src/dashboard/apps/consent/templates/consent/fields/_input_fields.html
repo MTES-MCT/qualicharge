@@ -1,5 +1,5 @@
 <div class="fr-input-group{% if field.errors %} fr-input-group--error{% endif %}" id="input-group-{{ field.id_for_label }}">
-  <label class="fr-label" for="{{ field.id_for_label }}"> {{ field.label }} </label>
+  <label class="fr-label" for="{{ field.id_for_label }}"> {{ field.label|capfirst }} </label>
   {{ field }}
   <div class="fr-messages-group" id="{{ field.id_for_label }}--input-messages" aria-live="polite">
     {% if field.errors %}

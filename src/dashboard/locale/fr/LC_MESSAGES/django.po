@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-05-20 15:30+0200\n"
-"PO-Revision-Date: 2025-05-20 15:31+0200\n"
+"POT-Creation-Date: 2025-10-22 15:21+0200\n"
+"PO-Revision-Date: 2025-10-22 15:23+0200\n"
 "Last-Translator: ssorin <ssorin@dwdlc.com>\n"
 "Language-Team: \n"
 "Language: fr\n"
@@ -17,7 +17,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
-"X-Generator: Poedit 3.6\n"
+"X-Generator: Poedit 3.8\n"
 
 #: apps/auth/admin.py:17
 msgid "Personal info"
@@ -164,7 +164,7 @@ msgid ""
 "au traitement de mes données Enedis par la DGEC"
 msgstr ""
 
-#: apps/consent/models.py:125 apps/core/models.py:256
+#: apps/consent/models.py:125 apps/core/models.py:275
 msgid "provider assigned id"
 msgstr "identifiant attribué au fournisseur"
 
@@ -276,8 +276,8 @@ msgstr "Le formulaire contient des erreurs"
 #: apps/renewable/templates/renewable/manage.html:40
 #: apps/renewable/templates/renewable/manage_delivery_points.html:31
 #: apps/renewable/templates/renewable/manage_delivery_points.html:32
-msgid "submit"
-msgstr "soumettre"
+msgid "Submit"
+msgstr "Soumettre"
 
 #: apps/consent/templates/consent/manage.html:60
 msgid "No consents to validate"
@@ -391,39 +391,39 @@ msgstr "La dernière synchronisation avec l'API a eu lieu à"
 msgid "can bypass renewable period"
 msgstr "peut contourner la période de saisie des relevés"
 
-#: apps/core/models.py:262
+#: apps/core/models.py:281
 msgid "entity"
 msgstr "entité"
 
-#: apps/core/models.py:264
+#: apps/core/models.py:283
 msgid "is active"
 msgstr "est actif"
 
-#: apps/core/models.py:265
+#: apps/core/models.py:284
 msgid "has renewable"
 msgstr "a des énergies renouvelables"
 
-#: apps/core/models.py:272 apps/core/models.py:308
+#: apps/core/models.py:291 apps/core/models.py:327
 msgid "delivery point"
 msgstr "point de livraison"
 
-#: apps/core/models.py:273
+#: apps/core/models.py:292
 msgid "delivery points"
 msgstr "points de livraison"
 
-#: apps/core/models.py:301
+#: apps/core/models.py:320
 msgid "id station itinerance"
 msgstr "id station itinérance"
 
-#: apps/core/models.py:303
+#: apps/core/models.py:322
 msgid "station name"
 msgstr "nom de la station"
 
-#: apps/core/models.py:312
+#: apps/core/models.py:331
 msgid "station"
 msgstr "station"
 
-#: apps/core/models.py:313
+#: apps/core/models.py:332
 msgid "stations"
 msgstr "stations"
 
@@ -485,7 +485,7 @@ msgstr ""
 "La date ne peut pas être dans le futur. <br />La date collectée doit être "
 "comprise entre %(min_date)s et %(end_date)s."
 
-#: apps/renewable/forms.py:117
+#: apps/renewable/forms.py:120
 #, python-format
 msgid ""
 "The date cannot be earlier than %(min_date)s.<br />Collected date should be "
@@ -494,13 +494,13 @@ msgstr ""
 "La date ne peut pas être antérieure à %(min_date)s.<br />La date collectée "
 "doit être comprise entre %(min_date_range)s et %(end_date)s."
 
-#: apps/renewable/forms.py:176
+#: apps/renewable/forms.py:179
 msgid ""
 "je certifie production à l’aval du PDL et compteur homologué dédié, "
 "possibilité de contrôle sur site"
 msgstr ""
 
-#: apps/renewable/forms.py:218
+#: apps/renewable/forms.py:221
 msgid "You must confirm the accuracy of the information"
 msgstr "Vous devez confirmer l'exactitude des informations"
 
@@ -521,8 +521,8 @@ msgid "has confirmed information accuracy"
 msgstr "a confirmé l'exactitude des informations"
 
 #: apps/renewable/templates/renewable/manage_delivery_points.html:36
-msgid "back"
-msgstr "retour"
+msgid "Back"
+msgstr "REtour"
 
 #: apps/renewable/templates/renewable/restricted_period.html:5
 #: apps/renewable/templates/renewable/restricted_period.html:14
@@ -530,11 +530,9 @@ msgid "Restricted period"
 msgstr "Période restreinte"
 
 #: apps/renewable/templates/renewable/restricted_period.html:17
-msgid ""
-"We are sorry, but your energy statement reporting is closed for this quarter."
+msgid "Your energy statement reporting is closed for this quarter."
 msgstr ""
-"Nous sommes désolés, mais votre déclaration de relevé énergétique est "
-"clôturée pour ce trimestre."
+"Votre déclaration de relevé énergétique est clôturée pour ce trimestre."
 
 #: apps/renewable/templates/renewable/restricted_period.html:20
 #, python-format
@@ -558,16 +556,16 @@ msgstr ""
 msgid "Q%(quarter)s %(year)s"
 msgstr "T%(quarter)s %(year)s"
 
-#: apps/renewable/templatetags/renewable_tags.py:33
+#: apps/renewable/templatetags/renewable_tags.py:34
 #, python-format
 msgid "%(start_date)s to %(end_date)s"
 msgstr "du %(start_date)s au %(end_date)s"
 
-#: apps/renewable/views.py:32
-msgid "Renewable meter"
-msgstr "Relevé d'énergies renouvelables"
+#: apps/renewable/views.py:33
+msgid "Renewable meters"
+msgstr "Relevés d'énergies renouvelables"
 
-#: apps/renewable/views.py:90
+#: apps/renewable/views.py:94
 #, python-format
 msgid ""
 "The quarterly submission period for renewable energy readings (<em>from "
@@ -576,26 +574,26 @@ msgstr ""
 "La période de soumission trimestrielle des relevés d'énergie renouvelable "
 "(<em>de %(start_period)s à %(end_period)s</em>) est terminée."
 
-#: apps/renewable/views.py:105 apps/renewable/views.py:330
+#: apps/renewable/views.py:108 apps/renewable/views.py:333
 msgid "Manage renewable meter reading"
 msgstr "Gérer les relevés de compteurs d'énergies renouvelables"
 
-#: apps/renewable/views.py:211
+#: apps/renewable/views.py:214
 #, python-format
 msgid "%(count)d renewable meter reading updated."
 msgid_plural "%(count)d renewable meter readings updated."
 msgstr[0] "%(count)d relevé de compteur renouvelable mis à jour."
 msgstr[1] "%(count)d relevés de compteur renouvelable mis à jour."
 
-#: apps/renewable/views.py:223
+#: apps/renewable/views.py:226
 msgid "The form contains errors."
 msgstr "Le formulaire contient des erreurs."
 
-#: apps/renewable/views.py:277
+#: apps/renewable/views.py:280
 msgid "Submitted renewable meter reading"
 msgstr "Relevés de compteur renouvelable soumis"
 
-#: apps/renewable/views.py:388
+#: apps/renewable/views.py:391
 msgid "Delivery points have been successfully updated."
 msgstr "Les points de livraison ont été mis à jour avec succès."
 
@@ -735,3 +733,6 @@ msgstr "Qu'est-ce que ProConnect ? - nouvelle fenêtre"
 #: templates/registration/login.html:34
 msgid "What is ProConnect?"
 msgstr "Qu’est-ce que ProConnect ?"
+
+#~ msgid "back"
+#~ msgstr "retour"
