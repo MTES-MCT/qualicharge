@@ -33,6 +33,9 @@ VALID_REPRESENTATIVE_DATA = {
 
 VALID_CONTROL_AUTHORITY_DATA = {
     "name": "QualiCharge",
+    "legal_form": "SARL",
+    "siret": "12345678901234",
+    "naf": "1234A",
     "represented_by": "John Doe",
     "email": "mail@test.com",
     "address_1": "1 Rue Exemple",
@@ -113,7 +116,7 @@ def test_validate_compnay_naf_code_invalid(value):
 
 @pytest.mark.parametrize("value", ["12345", "98765", "00000", "978", None])
 def test_validate_zip_code_valid(value):
-    """Tests validation of valid zip codes  does not raise an exception."""
+    """Tests validation of valid zip codes does not raise an exception."""
     valid_company_data = VALID_COMPANY_DATA
     valid_company_data["zip_code"] = value
     assert validate_company_schema(valid_company_data) is None
@@ -218,6 +221,9 @@ def test_validate_control_authority_schema_valid():
 
     validate_control_authority_data = {
         "name": None,
+        "legal_form": None,
+        "siret": None,
+        "naf": None,
         "represented_by": None,
         "email": None,
         "address_1": None,
@@ -252,6 +258,9 @@ def test_validate_configured_control_authority_is_valid(settings):
     # Change temporally settings.CONSENT_CONTROL_AUTHORITY.
     settings.CONSENT_CONTROL_AUTHORITY = {
         "name": "Control Authority Name",
+        "legal_form": "Service central d'un ministère",
+        "siret": "01234567891234",
+        "naf": "1234A",
         "represented_by": "John Doe",
         "email": "test@example.com",
         "address_1": "123 Street Name",
@@ -264,7 +273,7 @@ def test_validate_configured_control_authority_is_valid(settings):
     try:
         validate_configured_control_authority()
     except ImproperlyConfigured as e:
-        pytest.fail(f"settings.CONSENT_CONTROL_AUTHORITY validation error: {e.message}")
+        pytest.fail(f"settings.CONSENT_CONTROL_AUTHORITY validation error: {e}")
 
 
 def test_validate_configured_control_authority_raise_error(settings):

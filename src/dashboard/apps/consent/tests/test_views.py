@@ -11,6 +11,7 @@ from django.core.exceptions import PermissionDenied
 from django.http import Http404
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.text import capfirst
 
 from apps.auth.factories import UserFactory
 from apps.consent import AWAITING, REVOKED, VALIDATED
@@ -458,7 +459,7 @@ def test_templates_render_html_content_with_consents(rf, settings):
     rendered = response.render()
     html = rendered.content.decode()
 
-    assert (entity.name in html) is True
+    assert capfirst(entity.name) in html
     assert all(str(c.id) in html for c in consents)
 
 

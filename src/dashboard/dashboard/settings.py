@@ -234,6 +234,9 @@ CONSENT_UPCOMING_DAYS_LIMIT = 30
 # `Control authority` contact for consent validation.
 CONSENT_CONTROL_AUTHORITY = {
     "name": env.str("CONTROL_AUTHORITY_NAME"),
+    "legal_form": env.str("CONTROL_AUTHORITY_LEGAL_FORM"),
+    "siret": env.str("CONTROL_AUTHORITY_SIRET"),
+    "naf": env.str("CONTROL_AUTHORITY_NAF"),
     "address_1": env.str("CONTROL_AUTHORITY_ADDRESS_1"),
     "address_2": env.str("CONTROL_AUTHORITY_ADDRESS_2", default=""),
     "zip_code": env.str("CONTROL_AUTHORITY_ZIP_CODE"),
