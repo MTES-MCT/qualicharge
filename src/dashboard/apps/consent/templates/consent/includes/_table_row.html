@@ -1,8 +1,8 @@
 <tr>
   <th class="fr-cell--fixed" id="complex-row-{{ row_number }}">
-    {{ label }}
+    {{ label|capfirst }}
   </th>
   <td headers="complex-row-{{ row_number }}">
-    {{ value }}
+    {{ value|default_if_none:"-"|capfirst }}
   </td>
 </tr>

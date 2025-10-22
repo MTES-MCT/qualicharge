@@ -30,7 +30,7 @@ from apps.renewable.forms import (
 from apps.renewable.helpers import get_opening_period_dates, is_in_opening_period
 from apps.renewable.models import Renewable
 
-BREADCRUMB_CURRENT_LABEL = _("Renewable meter")
+BREADCRUMB_CURRENT_LABEL = _("Renewable meters")
 
 
 class RestrictedPeriodView(TemplateView):
