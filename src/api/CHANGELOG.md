@@ -15,13 +15,11 @@ and this project adheres to
 #### Dependencies
 
 - Upgrade `alembic` to `1.17.0`
-- Upgrade `cachetools` to `6.2.1`
 - Upgrade `email-validator` to `2.3.0`
 - Upgrade `fastapi` to `0.120.0`
 - Upgrade `geoalchemy2` to `0.18.0`
 - Upgrade `pandas` to `2.3.3`
 - Upgrade `psycopg` to `3.2.11`
-- Upgrade `pydantic` to `2.12.3`
 - Upgrade `pydantic-extra-types` to `2.10.6`
 - Upgrade `pydantic-settings` to `2.11.0`
 - Upgrade `questionary` to `2.1.1`
