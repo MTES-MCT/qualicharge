@@ -1,2 +1,2 @@
 web: prefect server start
-worker: prefect worker start --pool indicators
+worker: sleep 10 && prefect worker start --pool indicators
