@@ -14,17 +14,18 @@ and this project adheres to
 
 #### Dependencies
 
-- Upgrade `alembic` to `1.16.5`
-- Upgrade `cachetools` to `6.2.0`
+- Upgrade `alembic` to `1.17.0`
 - Upgrade `email-validator` to `2.3.0`
-- Upgrade `fastapi` to `0.117.1`
-- Upgrade `psycopg` to `3.2.10`
-- Upgrade `pydantic` to `2.11.9`
+- Upgrade `fastapi` to `0.120.0`
+- Upgrade `pandas` to `2.3.3`
+- Upgrade `psycopg` to `3.2.11`
+- Upgrade `pydantic-extra-types` to `2.10.6`
+- Upgrade `pydantic-settings` to `2.11.0`
 - Upgrade `questionary` to `2.1.1`
-- Upgrade `sentry-sdk` to `2.38.0`
+- Upgrade `sentry-sdk` to `2.42.1`
 - Upgrade `sqlalchemy-utils` to `0.42.0`
-- Upgrade `sqlmodel` to `0.0.25`
-- Upgrade `typer` to `0.19.1`
+- Upgrade `sqlmodel` to `0.0.27`
+- Upgrade `typer` to `0.20.0`
 
 ## [0.29.0] - 2025-09-01
 
