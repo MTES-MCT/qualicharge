@@ -1,11 +1,15 @@
 """QualiCharge prefect tiruert tests: run."""
 
-from datetime import date, datetime
+import os
+from datetime import date, datetime, timedelta
 
 import pandas as pd
+from pytest import approx
+from sqlalchemy import text
 
 from indicators.types import Environment
 from tiruert.run import (
+    OPERATIONAL_UNIT_WITH_SESSIONS_TEMPLATE,
     enea,
     eneu,
     enex,
@@ -15,8 +19,8 @@ from tiruert.run import (
     get_sessions,
     negs,
     odus,
-    tiruert_for_period,
-    tiruert_for_period_and_operational_unit,
+    tiruert_for_day,
+    tiruert_for_day_and_operational_unit,
 )
 
 
@@ -179,17 +183,71 @@ def test_task_filter_sessions():
     assert all(to_ignore["enea"])
 
 
-def test_flow_tiruert_for_period_and_operational_unit():
-    """Test the `tiruert_for_period_and_operational_unit` flow."""
-    tiruert_for_period_and_operational_unit(
-        Environment.TEST, date(2024, 12, 27), date(2024, 12, 28), "FRPD1"
+def test_flow_tiruert_for_day_and_operational_unit(indicators_db_engine):
+    """Test the `tiruert_for_day_and_operational_unit` flow."""
+    tiruert_for_day_and_operational_unit(Environment.TEST, date(2024, 12, 27), "FRPD1")
+
+    # Assert saved tiruert is as expected
+    with indicators_db_engine.connect() as connection:
+        result = connection.execute(
+            text("SELECT COUNT(*) FROM test WHERE code = 'tirue' AND target = 'FRPD1'")
+        )
+        # We should have saved only a single for for FRPD1 over this period
+        assert result.one()[0] == 1
+
+        result = connection.execute(
+            text("SELECT * FROM test WHERE code = 'tirue' AND target = 'FRPD1'")
+        )
+        indicator = result.one()
+        assert indicator.target == "FRPD1"
+        # expected total for a day
+        expected = 15.850909
+        assert indicator.value == approx(expected)
+        assert indicator.code == "tirue"
+        expected = 5
+        assert indicator.level == expected
+        assert indicator.period == "d"
+        assert indicator.category is None
+        # expected stations
+        expected = 268
+        assert len(indicator.extras) == expected
+
+    # Check we saved ignored sessions
+    expected_path = "qualicharge-sessions/2024/12/27/ignored-FRPD1.parquet"
+    s3_endpoint_url = os.environ.get("S3_ENDPOINT_URL", None)
+    df = pd.read_parquet(
+        f"s3://{expected_path}",
+        engine="pyarrow",
+        dtype_backend="pyarrow",
+        storage_options={
+            "endpoint_url": s3_endpoint_url,
+        },
     )
-    # TODO
-    # Assert saved tiruert is as expected
+    # Check parquet file content
+    n_sessions = 351
+    assert len(df) == n_sessions
 
 
-def test_flow_tiruert_for_period():
-    """Test the `tiruert_for_period_and_operational_unit` flow."""
-    tiruert_for_period(Environment.TEST, date(2024, 12, 27), date(2024, 12, 28))
-    # TODO
+def test_flow_tiruert_for_day(db_connection, indicators_db_engine):
+    """Test the `tiruert_for_day_and_operational_unit` flow."""
+    day = date(2024, 12, 27)
+    tiruert_for_day(Environment.TEST, day)
+
+    # Get the number of operational units with sessions on that day
+    result = db_connection.execute(
+        text(
+            OPERATIONAL_UNIT_WITH_SESSIONS_TEMPLATE.substitute(
+                {"from_date": day, "to_date": day + timedelta(days=1)}
+            )
+        )
+    )
+    n_ou = len(result.all())
+
     # Assert saved tiruert is as expected
+    with indicators_db_engine.connect() as connection:
+        result = connection.execute(
+            text("SELECT COUNT(*) FROM test WHERE code = 'tirue'")
+        )
+        # We should have saved as many indicators as distinct operational units
+        # where sessions occured on that day
+        assert result.one()[0] == n_ou
