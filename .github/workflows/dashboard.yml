@@ -98,7 +98,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       postgresql:
-        image: postgres:14
+        image: postgres:18
         env:
           POSTGRES_DB: test-qualicharge-dashboard
           POSTGRES_USER: qualicharge
