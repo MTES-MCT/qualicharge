@@ -17,7 +17,6 @@ and this project adheres to
 - Upgrade `alembic` to `1.17.0`
 - Upgrade `email-validator` to `2.3.0`
 - Upgrade `fastapi` to `0.120.0`
-- Upgrade `geoalchemy2` to `0.18.0`
 - Upgrade `pandas` to `2.3.3`
 - Upgrade `psycopg` to `3.2.11`
 - Upgrade `pydantic-extra-types` to `2.10.6`
