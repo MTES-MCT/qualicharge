@@ -191,7 +191,7 @@ jobs:
               stamp bench_admin_stats.csv $(git rev-parse --short "${GITHUB_SHA}") \
                 > bench_admin_stats_stamped.csv
       - name: Save bench CSV as artefact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: api-admin-benchmark
           path: ./src/api/bench_admin_stats_stamped.csv
