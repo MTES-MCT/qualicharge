@@ -8,7 +8,7 @@ dependencies = [
     "cachetools==6.2.1",
     "email-validator==2.3.0",
     "fastapi==0.120.0",
-    "geoalchemy2[shapely]==0.18.0",
+    "geoalchemy2[shapely]==0.17.1",
     "geopandas==1.1.1",
     "httpx[cli]==0.28.1",
     "pandas==2.3.3",
