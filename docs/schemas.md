@@ -42,10 +42,11 @@ For control-purpose, some optional fields of the official schema are
 | `contact_amenageur`   | Email string                                                    |    7    |                                                Should not be empty |
 | `nom_amenageur`       | String                                                          |    7    |                                                Should not be empty |
 | `siren_amenageur`     | 9-integers string                                               |    7    |                                                Should not be empty |
-| `num_pdl`             | Max 64-characters string                                        |   20    |                  Should not be empty and should not contain spaces |
+| `num_pdl`             | Max 64-characters string                                        |   20    |                * Should not be empty and should not contain spaces |
 |                       |                                                                 |   34    | Should match energy supplier pattern (_e.g._ 14 digits for ENEDIS) |
 
 > The rule number corresponds to our data-quality control referencial.
+> (*) The rule n° 20 is active only for DC station with a null value or a `direct` value in the `raccordement` field
 
 ### Extra quality controls
 
