@@ -172,6 +172,9 @@ LOGIN_URL = "/accounts/login/"
 LOGIN_REDIRECT_URL = "/"
 LOGOUT_REDIRECT_URL = "/"
 
+SESSION_COOKIE_AGE = env.int("SESSION_COOKIE_AGE", 7200)  # (in seconds)
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+
 
 # Connection to “Pro Connect” (OIDC)
 OIDC_RP_SIGN_ALGO = "RS256"

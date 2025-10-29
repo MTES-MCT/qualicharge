@@ -45,6 +45,7 @@ jobs:
       DASHBOARD_DATABASE_URL: psql://qualicharge:pass@postgresql:5432/qualicharge-dashboard
       DASHBOARD_SECRET_KEY: the_secret_key
       DASHBOARD_DOMAIN: http://localhost:8030/
+      DASHBOARD_SESSION_COOKIE_AGE: 7200
       DASHBOARD_CONTROL_AUTHORITY_NAME: QualiCharge
       DASHBOARD_CONTROL_AUTHORITY_LEGAL_FORM: Service central d'un ministère
       DASHBOARD_CONTROL_AUTHORITY_SIRET: 12008701000068
@@ -140,6 +141,7 @@ jobs:
           DASHBOARD_DATABASE_URL: psql://qualicharge:pass@localhost:5432/test-qualicharge-dashboard
           DASHBOARD_SECRET_KEY: the_secret_key
           DASHBOARD_DOMAIN: http://localhost:8030/
+          DASHBOARD_SESSION_COOKIE_AGE: 7200
           DASHBOARD_CONTROL_AUTHORITY_NAME: QualiCharge
           DASHBOARD_CONTROL_AUTHORITY_LEGAL_FORM: Service central d'un ministère
           DASHBOARD_CONTROL_AUTHORITY_SIRET: 12008701000068
