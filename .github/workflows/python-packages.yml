@@ -25,7 +25,7 @@ jobs:
       - name: Build release distributions
         run: poetry build
       - name: Upload dists
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: release-dists
           path: src/client/dist/
@@ -38,7 +38,7 @@ jobs:
       id-token: write
     steps:
       - name: Retrieve release distributions
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: release-dists
           path: src/client/dist/
