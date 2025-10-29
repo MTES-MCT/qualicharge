@@ -3,65 +3,68 @@
 {% load consent_filters dsfr_tags i18n static %}
 
 {% block dashboard_content %}
-  <h2>Stations suivies</h2>
+  <div class="fr-grid-row">
+    <div class="fr-col-12">
+      <h2>Stations suivies</h2>
 
-  <p>
-    Retrouver ici la liste des stations pour lesquelles la DGEC consulte le gestionnaire
-    de réseau et émet des certificats.
-  </p>
+      <p>
+        Retrouver ici la liste des stations pour lesquelles la DGEC consulte le gestionnaire
+        de réseau et émet des certificats.
+      </p>
 
-  {% if consents %}
-    <div class="fr-table fr-table--no-caption" id="table-pdl-component">
-      <div class="fr-table__wrapper">
-        <div class="fr-table__container">
-          <div class="fr-table__content">
+      {% if consents %}
+        <div class="fr-table fr-table--no-caption" id="table-pdl-component">
+          <div class="fr-table__wrapper">
+            <div class="fr-table__container">
+              <div class="fr-table__content">
 
-            <table id="table-pdl" aria-labelledby="table-pdl-caption">
-              <caption id="table-pdl-caption"> Points de livraison suivis </caption>
+                <table id="table-pdl" aria-labelledby="table-pdl-caption">
+                  <caption id="table-pdl-caption"> Points de livraison suivis </caption>
 
-              <thead>
-                <tr>
-                  <th scope="col">
-                    <div class="fr-cell__title">Noms et Identifiants de station</div>
-                  </th>
-                  <th scope="col">
-                    <div class="fr-cell__title">Identifiant du PDL</div>
-                  </th>
-                  <th scope="col">
-                    <div class="fr-cell__title">Période d'autorisation</div>
-                  </th>
-                </tr>
-              </thead>
+                  <thead>
+                    <tr>
+                      <th scope="col">
+                        <div class="fr-cell__title">Noms et Identifiants de station</div>
+                      </th>
+                      <th scope="col">
+                        <div class="fr-cell__title">Identifiant du PDL</div>
+                      </th>
+                      <th scope="col">
+                        <div class="fr-cell__title">Période d'autorisation</div>
+                      </th>
+                    </tr>
+                  </thead>
 
-              <tbody>
-                {% for consent in consents|sort_by_station %}
-                  <tr id="table-pdl-row-key-{{ forloop.counter }}"
-                      data-row-key="{{ forloop.counter }}"
-                      aria-labelledby="row-label-{{ forloop.counter }}">
+                  <tbody>
+                    {% for consent in consents|sort_by_station %}
+                      <tr id="table-pdl-row-key-{{ forloop.counter }}"
+                          data-row-key="{{ forloop.counter }}"
+                          aria-labelledby="row-label-{{ forloop.counter }}">
 
-                    <td>
-                      {% for station_name, ids in consent.stations_grouped.items %}
-                        {% if forloop.counter0 > 0 %}<br />{% endif %}
-                        {{ station_name }} {% if ids %}({{ ids|join:", " }}){% endif %}
-                      {% endfor %}
-                    </td>
-                    <td> {{ consent.provider_assigned_id }} </td>
-                    <td>
-                      du {{ consent.start|date:'d/m/Y' }} au {{ consent.end|date:'d/m/Y' }} </td>
-                  </tr>
-                {% endfor %}
-              </tbody>
-            </table>
+                        <td>
+                          {% for station_name, ids in consent.stations_grouped.items %}
+                            {% if forloop.counter0 > 0 %}<br />{% endif %}
+                            {{ station_name }} {% if ids %}({{ ids|join:", " }}){% endif %}
+                          {% endfor %}
+                        </td>
+                        <td> {{ consent.provider_assigned_id }} </td>
+                        <td>
+                          du {{ consent.start|date:'d/m/Y' }} au {{ consent.end|date:'d/m/Y' }} </td>
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
 
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+
+        {% dsfr_pagination page_obj %}
+
+      {% else %}
+        {% include "consent/includes/_no_data_card.html" with description="Aucune station suivie." %}
+      {% endif %}
     </div>
-
-    {% dsfr_pagination page_obj %}
-
-  {% else %}
-    {% include "consent/includes/_no_data_card.html" with description="Aucune station suivie." %}
-  {% endif %}
-
+  </div>
 {% endblock dashboard_content %}
