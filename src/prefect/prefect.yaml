@@ -265,7 +265,7 @@ deployments:
     schedules:
       - cron: "2 4 * * *"
         timezone: "Europe/Paris"
-        active: true
+        active: false 
     parameters:
       from_now: 
         days: 15
@@ -280,7 +280,7 @@ deployments:
     schedules:
       - cron: "18 4 * * *"
         timezone: "Europe/Paris"
-        active: true
+        active: false 
     parameters:
       from_now: 
         days: 15
@@ -295,7 +295,7 @@ deployments:
     schedules:
       - cron: "34 4 * * *"
         timezone: "Europe/Paris"
-        active: true
+        active: false
     parameters:
       from_now: 
         days: 15
@@ -310,7 +310,7 @@ deployments:
     schedules:
       - cron: "43 4 * * *"
         timezone: "Europe/Paris"
-        active: true
+        active: false
     parameters:
       from_now: 
         days: 15
