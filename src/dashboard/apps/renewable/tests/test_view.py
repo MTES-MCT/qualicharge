@@ -169,7 +169,9 @@ def test_manage_views_get_context_data(rf, settings):
 
 @pytest.mark.django_db
 @patch("apps.renewable.views.RenewableMetterReadingFormView._is_access_allowed")
-def test_manage_views_post(mock_is_access_allowed, client, monkeypatch):
+def test_manage_views_post(
+    mock_is_access_allowed, client, monkeypatch, disable_session_expiration
+):
     """Test post() method of RenewableMetterReadingFormView."""
     mock_is_access_allowed.return_value = True
 
@@ -241,6 +243,7 @@ def test_manage_views_post_with_invalid_data(  # noqa: PLR0913
     form_error_key,
     client,
     monkeypatch,
+    disable_session_expiration,
 ):
     """Test post() method of RenewableMetterReadingFormView with invalid data."""
     mock_is_access_allowed.return_value = True

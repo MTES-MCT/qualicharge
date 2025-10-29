@@ -13,6 +13,8 @@ and this project adheres to
 - Add `legal_form`, `siret`, and `naf` fields to `control authority` schema
 - Add `legal_form` `siret` and `naf` fields to the `consent` form management interface
 - Add `footer` block with legal and accessibility links in base template
+- Add explicit session management configuration to enhance security (`SESSION_COOKIE_AGE` and 
+  `SESSION_EXPIRE_AT_BROWSER_CLOSE`)
 
 ### Changed
 
