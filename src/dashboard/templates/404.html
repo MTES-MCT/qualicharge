@@ -6,41 +6,39 @@
 {% endblock page_title %}
 
 {% block content %}
-  <main role="main" id="content">
-    <div class="fr-container">
-      <div class="fr-my-7w fr-mt-md-12w fr-mb-md-10w fr-grid-row fr-grid-row--gutters fr-grid-row--middle fr-grid-row--center">
-        <div class="fr-py-0 fr-col-12 fr-col-md-6">
-          <h1>
-            {% trans "Page not found" %}
-          </h1>
-          <p class="fr-text--sm fr-mb-3w">
-            {% trans "Error 404" %}
-          </p>
-          <p class="fr-text--lead fr-mb-3w">
-            {% trans "The page you are looking for could not be found. We apologize for the inconvenience." %}
-          </p>
-          <p class="fr-text--sm fr-mb-5w">
-            {% blocktranslate %} If you typed the web address in the
-browser, check that it is correct. The page may no longer be
-available. <br>In this case, to continue your visit you can consult
-our home page.{% endblocktranslate %}
-          </p>
-          <ul class="fr-btns-group fr-btns-group--inline-md">
-            <li>
-              <a class="fr-btn" href="{% url "home:index" %}"> {% trans "Home page" %}</a>
-            </li>
+  <section>
+    <div class="fr-my-7w fr-mt-md-12w fr-mb-md-10w fr-grid-row fr-grid-row--gutters fr-grid-row--middle fr-grid-row--center">
+      <div class="fr-py-0 fr-col-12 fr-col-md-6">
+        <h1>
+          {% trans "Page not found" %}
+        </h1>
+        <p class="fr-text--sm fr-mb-3w">
+          {% trans "Error 404" %}
+        </p>
+        <p class="fr-text--lead fr-mb-3w">
+          {% trans "The page you are looking for could not be found. We apologize for the inconvenience." %}
+        </p>
+        <p class="fr-text--sm fr-mb-5w">
+          {% blocktranslate %} If you typed the web address in the
+  browser, check that it is correct. The page may no longer be
+  available. <br>In this case, to continue your visit you can consult
+  our home page.{% endblocktranslate %}
+        </p>
+        <ul class="fr-btns-group fr-btns-group--inline-md">
+          <li>
+            <a class="fr-btn" href="{% url "home:index" %}"> {% trans "Home page" %}</a>
+          </li>
 
-            <li>
-              <a class="fr-btn fr-btn--secondary" href="mailto:{{ contact_email }}" target="_blank">
-                {% trans "Contact us" %}
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div class="fr-col-12 fr-col-md-3 fr-col-offset-md-1 fr-px-6w fr-px-md-0 fr-py-0">
-          <img src="{% static "dashboard/img/information.svg" %}" width="160" height="200" alt=""/>
-        </div>
+          <li>
+            <a class="fr-btn fr-btn--secondary" href="mailto:{{ contact_email }}" target="_blank">
+              {% trans "Contact us" %}
+            </a>
+          </li>
+        </ul>
+      </div>
+      <div class="fr-col-12 fr-col-md-3 fr-col-offset-md-1 fr-px-6w fr-px-md-0 fr-py-0 fr-hidden fr-unhidden-md">
+        <img src="{% static "dashboard/img/information.svg" %}" width="160" height="200" alt=""/>
       </div>
     </div>
-  </main>
+  </section>
 {% endblock content %}

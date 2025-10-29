@@ -20,6 +20,7 @@ and this project adheres to
 
 - Update French translations for improved readability and consistency
 - Update content wording in html templates
+- Update html templates to improve responsiveness
 
 #### Dependencies
 
