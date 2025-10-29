@@ -92,12 +92,16 @@ Le modèle ci-dessous représente l'interface d'un point de recharge avec le vé
 
 ```mermaid
 erDiagram
-    "POINT DE RECHARGE" ||--|{ "CONNECTEUR": "est équipé de"
-    "POINT DE RECHARGE" ||..|{ "PLACE DE RECHARGE" : "dessert"
+    "POINT DE RECHARGE" ||..|{ "CONNECTEUR": "est équipé de"
+    "POINT DE RECHARGE" ||..|| "PLACE DE RECHARGE" : "dessert"
 ```
 
-Un point de recharge est équipé de un ou plusieurs connecteurs et dessert une ou plusieurs places de recharge.
+Un point de recharge est équipé de un ou plusieurs connecteurs mais ne dessert qu'une place de recharge (un point de recharge ne peut recharger qu'un seul véhicule à la fois).
 Le nombre de places de recharge est consolidé au niveau de la station de recharge (attribut `nbre_pdc`).
+
+***Nota :***
+
+La représentation d'une relation par une ligne pointillé exprime le fait que cette relation n'est pas gérée explicitement dans Qualicharge.
 
 ### Structure physique
 
@@ -114,7 +118,7 @@ Le modèle associé est le suivant :
 
 ```mermaid
 erDiagram
-    "POINT DE RACCORDEMENT" ||..|{ "STATION DE RECHARGE" : "raccorde électriquement"
+    "POINT DE RACCORDEMENT" ||--|{ "STATION DE RECHARGE" : "raccorde électriquement"
     LOCALISATION ||--|{ "STATION DE RECHARGE": "localise"
 ```
 
@@ -148,10 +152,10 @@ Le modèle ci-dessous représente la gestion des stations.
 ```mermaid
 erDiagram
     AMENAGEUR ||--|{ "STATION DE RECHARGE" : "offre un service de recharge"
-    AMENAGEUR |{--|{ "UNITE D'EXPLOITATION" : "gère"
+    AMENAGEUR |{..|{ "UNITE D'EXPLOITATION" : "gère"
     ENSEIGNE ||--|{ "STATION DE RECHARGE": "héberge"
     OPERATEUR ||--|{ "UNITE D'EXPLOITATION": "supervise"
-    AMENAGEUR |{--|{ OPERATEUR: "délègue l'exploitation à"
+    AMENAGEUR |{..|{ OPERATEUR: "délègue l'exploitation à"
     "UNITE D'EXPLOITATION" ||--|{ "STATION DE RECHARGE": "contient"
 ```
 
@@ -195,7 +199,7 @@ Les deux notions ne sont pas indépendantes. Par exemple, le démarrage d'une se
 erDiagram
     "POINT DE RECHARGE" ||--|{ "STATUS" : "est suivi par"
     "POINT DE RECHARGE" ||--|{ "SESSION" : "distribue de l'énergie par"
-    "SESSION" ||--|| "STATUS" : "est initialisée par"
+    "SESSION" ||..|| "STATUS" : "est initialisée par"
 ```
 
 Les `statuts` sont associés aux `sessions` mais peuvent également signaler d'autres évènements comme par exemple une panne d'un `point de recharge` ou sa remise en service.
@@ -208,17 +212,19 @@ Le modèle ci-dessous regroupe l'ensemble des vues précédentes.
 ```mermaid
 erDiagram
     AMENAGEUR ||--|{ "STATION DE RECHARGE" : "offre un service de recharge"
-    AMENAGEUR |{--|| "UNITE D'EXPLOITATION" : "s'intègre dans"
+    AMENAGEUR |{..|| "UNITE D'EXPLOITATION" : "s'intègre dans"
     ENSEIGNE ||--|{ "STATION DE RECHARGE": "héberge"
     OPERATEUR ||--|{ "UNITE D'EXPLOITATION": "supervise"
-    AMENAGEUR |{--|| OPERATEUR: "délègue l'exploitation à"
+    AMENAGEUR |{..|| OPERATEUR: "délègue l'exploitation à"
     "UNITE D'EXPLOITATION" ||--|{ "STATION DE RECHARGE": "contient"
     "POINT DE RACCORDEMENT" ||--|{ "STATION DE RECHARGE" : "raccorde électriquement"
     LOCALISATION ||--|{ "STATION DE RECHARGE": "localise"
     "STATION DE RECHARGE" ||--|{ "POINT DE RECHARGE" : regroupe
+    "POINT DE RECHARGE" ||..|{ "CONNECTEUR": "est équipé de"
+    "POINT DE RECHARGE" ||..|| "PLACE DE RECHARGE" : "dessert"
     "POINT DE RECHARGE" ||--|{ "STATUS" : "est suivi par"
     "POINT DE RECHARGE" ||--|{ "SESSION" : "distribue de l'énergie par"
-    "SESSION" ||--|| "STATUS" : "est initialisée par"
+    "SESSION" ||..|| "STATUS" : "est initialisée par"
 ```
 
 ## Données détaillées
