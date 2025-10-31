@@ -1,6 +1,6 @@
 [project]
 name = "qualicharge"
-version = "0.29.0"
+version = "0.30.0"
 requires-python = "~=3.12.0"
 dependencies = [
     "alembic==1.17.0",
