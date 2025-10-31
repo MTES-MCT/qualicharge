@@ -8,13 +8,14 @@ data7 = "==0.12.1"
 geoalchemy2 = {extras = ["shapely"], version = "==0.18.0"}
 geopandas = "==1.1.1"
 great_expectations = {extras = ["postgresql"], version = "==1.8.1"}
-pandas = "==2.3.3"
+pandas = "==2.1.4"
 prefect = "==3.4.25"
 psycopg = {extras = ["pool", "binary"], version = "==3.2.12"}
-pyarrow = "==22.0.0"
+pyarrow = "==20.0.0"
 pydantic = "==2.12.3"
 s3fs = "==2025.10.0"
 tabulate = "==0.9.0"
+uv = "*"
 
 [dev-packages]
 black = "==25.9.0"
