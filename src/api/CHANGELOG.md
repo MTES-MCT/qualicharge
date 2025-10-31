@@ -8,6 +8,15 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Changed
+
+#### Dependencies
+
+- Upgrade `alembic` to `1.17.0`
+- Upgrade `fastapi` to `0.120.3`
+- Upgrade `psycopg` to `3.2.12`
+- Upgrade `sentry-sdk` to `2.43.0`
+
 ## [0.30.0] - 2025-10-31
 
 ### Changed

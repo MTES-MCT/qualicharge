@@ -13,16 +13,16 @@ django-stubs = {extras = ["compatible-mypy"], version = "==5.2.7"}
 gunicorn = "==23.0.0"
 jsonschema = "==4.25.1"
 mozilla-django-oidc = "==4.0.1"
-psycopg = {extras = ["pool", "binary"], version = "==3.2.11"}
+psycopg = {extras = ["pool", "binary"], version = "==3.2.12"}
 python-dateutil = "==2.9.0.post0"
 qualicharge-client = "==0.3.0"
 requests = "==2.32.5"
-sentry-sdk = {extras = ["django"], version = "==2.42.1"}
+sentry-sdk = {extras = ["django"], version = "==2.43.0"}
 whitenoise = "==6.11.0"
 
 [dev-packages]
 black = "==25.9.0"
-django-debug-toolbar = "==6.0.0"
+django-debug-toolbar = "==6.1.0"
 djlint = "==1.36.4"
 factory-boy = "==3.3.3"
 honcho = "==2.0.0"
@@ -34,7 +34,7 @@ pytest-cov = "==7.0.0"
 pytest-django = "==4.11.1"
 pytest-httpx = "==0.35.0"
 responses = "==0.25.8"
-ruff = "==0.14.2"
+ruff = "==0.14.3"
 types-mock = "==5.2.0.20250924"
 types-python-dateutil = "==2.9.0.20251008"
 types-requests = "==2.32.4.20250913"
