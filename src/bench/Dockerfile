@@ -1,4 +1,4 @@
-FROM locustio/locust:2.42.0
+FROM locustio/locust:2.42.1
 
 RUN pip install \
   pandas \
