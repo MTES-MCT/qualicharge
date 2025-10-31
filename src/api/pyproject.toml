@@ -1,22 +1,22 @@
 [project]
 name = "qualicharge"
 version = "0.30.0"
-requires-python = "~=3.14.0"
+requires-python = "~=3.12.0"
 dependencies = [
     "alembic==1.17.1",
     "annotated-types==0.7.0",
     "cachetools==6.2.1",
     "email-validator==2.3.0",
     "fastapi==0.120.3",
-    "geoalchemy2[shapely]==0.18.0",
+    "geoalchemy2[shapely]==0.17.1",
     "geopandas==1.1.1",
     "httpx[cli]==0.28.1",
     "pandas==2.3.3",
     "passlib[bcrypt]==1.7.4",
     "postgresql-audit==0.17.1",
     "psycopg[pool, binary]==3.2.12",
-    "pyarrow==22.0.0",
-    "pydantic==2.12.3",
+    "pyarrow==21.0.0",
+    "pydantic==2.11.9",
     "pydantic-extra-types[all]==2.10.6",
     "pydantic-settings==2.11.0",
     "pyinstrument==5.1.1",
