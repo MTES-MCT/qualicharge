@@ -5,7 +5,7 @@ requires-python = "~=3.12.0"
 dependencies = [
     "alembic==1.17.1",
     "annotated-types==0.7.0",
-    "cachetools==6.2.0",
+    "cachetools==6.2.1",
     "email-validator==2.3.0",
     "fastapi==0.120.3",
     "geoalchemy2[shapely]==0.17.1",
