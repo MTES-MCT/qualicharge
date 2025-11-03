@@ -12,10 +12,51 @@ permissions:
   contents: read
 
 jobs:
-  build:
+  build-api:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v5
-      - name: Build all Docker images
-        run: make build
+      - name: Build Docker image
+        run: make build-api
+
+  build-client:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Build Docker image
+        run: make build-client
+
+  build-dashboard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Build Docker image
+        run: make build-dashboard
+
+  build-locust:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Build Docker image
+        run: make build-locust
+
+  build-notebook:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Build Docker image
+        run: make build-notebook
+
+  build-opendata:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Build Docker image
+        run: make build-opendata
+
+  build-prefect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Build Docker image
+        run: make build-prefect
