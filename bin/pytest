@@ -16,6 +16,8 @@ case "${service}" in
     cmd="pytest";;
   api)
     cmd="uv run pytest";;
+  prefect-test)
+    cmd="uv run pytest";;
   *)
     cmd="pipenv run pytest";;
 esac

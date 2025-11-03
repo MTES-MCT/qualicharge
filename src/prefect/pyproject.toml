@@ -4,6 +4,56 @@
 [project]
 name = "qualicharge-prefect"
 version = "0.0.1"
+requires-python = "~=3.12.0"
+dependencies = [
+  "data7==0.12.1",
+  "geoalchemy2[shapely]==0.18.0",
+  "geopandas==1.1.1",
+  "great_expectations[postgresql]==1.8.1",
+  "pandas==2.1.4",
+  "prefect==3.4.25",
+  "psycopg[pool,binary]==3.2.12",
+  "pyarrow==20.0.0",
+  "pydantic==2.12.3",
+  "s3fs==2025.10.0",
+  "tabulate==0.9.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+  "black==25.9.0",
+  "freezegun==1.5.5",
+  "honcho==2.0.0",
+  "mypy==1.18.2",
+  "pandas-stubs==2.3.2.250926",
+  "pytest==8.4.2",
+  "pytest-cov==7.0.0",
+  "ruff==0.14.3",
+  "setuptools==80.9.0",
+  "types-python-dateutil",
+]
+
+[tool.uv]
+package = true
+
+[[tool.uv.index]]
+name = "pypi"
+url = "https://pypi.org/simple"
+
+[tool.uv.sources]
+qualicharge-prefect = { path = ".", editable = true }
+
+[tool.hatch.build.targets.wheel]
+packages = [
+  "cooling", 
+  "indicators", 
+  "quality", 
+  "tiruert",
+]
 
 # Third party packages configuration
 [tool.pytest.ini_options]
