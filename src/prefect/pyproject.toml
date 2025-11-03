@@ -6,12 +6,12 @@ name = "qualicharge-prefect"
 version = "0.0.1"
 requires-python = "~=3.12.0"
 dependencies = [
-  "data7==0.12.1",
+  "data7==0.13.2",
   "geoalchemy2[shapely]==0.18.0",
   "geopandas==1.1.1",
   "great_expectations[postgresql]==1.8.1",
   "pandas==2.1.4",
-  "prefect==3.4.25",
+  "prefect==3.5.0",
   "psycopg[pool,binary]==3.2.12",
   "pyarrow==20.0.0",
   "pydantic==2.12.3",

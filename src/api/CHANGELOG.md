@@ -13,8 +13,9 @@ and this project adheres to
 #### Dependencies
 
 - Upgrade `alembic` to `1.17.0`
-- Upgrade `fastapi` to `0.120.3`
+- Upgrade `fastapi` to `0.121.0`
 - Upgrade `psycopg` to `3.2.12`
+- Upgrade `pyarrow` to `22.0.0`
 - Upgrade `sentry-sdk` to `2.43.0`
 
 ## [0.30.0] - 2025-10-31
