@@ -22,6 +22,10 @@
       "matchPackageNames": [
         "*"
       ]
+    },
+    {
+      "matchDepTypes": ["requires-python"],
+      "enabled": false
     }
   ],
   "prConcurrentLimit": 2,
