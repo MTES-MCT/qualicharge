@@ -19,6 +19,7 @@ def test_cli_main(runner):
             "--api-root-url",
             "http://fake/api/v1",
             "auth",
+            "--help",
         ],
     )
     assert result.exit_code == QCCExitCodes.OK
