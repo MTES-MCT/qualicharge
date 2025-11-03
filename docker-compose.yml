@@ -172,6 +172,7 @@ services:
     env_file:
       - env.d/prefect
       - env.d/prefect-qc
+    command: ["pipenv", "run", "honcho", "start", "-f", "Procfile.dev", "web"]
     healthcheck:
       test:
         - "CMD"

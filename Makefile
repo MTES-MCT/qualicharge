@@ -92,11 +92,22 @@ bootstrap-api: \
   refresh-api-static
 .PHONY: bootstrap-api
 
-bootstrap-dashboard: ## bootstrap the dashboard project for development
+bootstrap-dashboard: ## bootstrap the dashboard service
 bootstrap-dashboard: \
   build-dashboard \
   reset-dashboard-db
 .PHONY: bootstrap-dashboard
+
+bootstrap-prefect: ## bootstrap the prefect service
+bootstrap-prefect: \
+  build-prefect \
+  run-postgresql \
+  restore-api-db \
+  create-prefect-db \
+  migrate-prefect \
+  seed-minio \
+  post-deploy-prefect
+.PHONY: bootstrap-prefect
 
 build: ## build services image
 	$(COMPOSE) build
@@ -182,6 +193,10 @@ run-opendata: ## run the opendata service
 	$(COMPOSE_UP) opendata
 .PHONY: run-opendata
 
+run-postgresql: ## run the postgresql service
+	$(COMPOSE_UP) --wait postgresql
+.PHONY: run-postgresql
+
 run-prefect: ## run the prefect service
 	$(COMPOSE_UP) --wait prefect
 	$(COMPOSE_UP) prefect-worker
@@ -212,7 +227,7 @@ data/qualicharge-api-data.sql:
 
 backup-api-db: ## create API database backup
 backup-api-db: \
-	data/qualicharge-api-schema.sql \
+  data/qualicharge-api-schema.sql \
   data/qualicharge-api-data.sql
 .PHONY: backup-api-db
 
@@ -230,8 +245,9 @@ restore-api-db-schema: data/qualicharge-api-schema.sql
 
 restore-api-db: ## restore API database backup
 restore-api-db: \
-	restore-api-db-schema \
-	restore-api-db-data
+  restore-api-db-schema \
+  restore-api-db-data \
+  refresh-api-static
 .PHONY: restore-api-db
 
 create-api-test-db: ## create API test database
@@ -323,7 +339,7 @@ migrate-prefect:  ## run prefect database migrations
 
 post-deploy-prefect:  ## run prefect post-deployment script
 	@echo "Running prefect service…"
-	@$(COMPOSE_UP) --wait prefect
+	@$(COMPOSE_UP) --wait prefect-worker
 	@echo "Running postdeploy script for prefect service…"
 	@$(COMPOSE) exec prefect pipenv run honcho start postdeploy
 	@echo "Creating all deployments…"
@@ -369,6 +385,7 @@ reset-db: \
 .PHONY: reset-db
 
 refresh-api-static: ## Refresh the API Statique Materialized View
+refresh-api-static: run-api
 	$(COMPOSE) exec api uv run qcm statics refresh
 .PHONY: refresh-api-static
 
