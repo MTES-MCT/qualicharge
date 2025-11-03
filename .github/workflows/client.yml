@@ -17,19 +17,22 @@ permissions:
 jobs:
   build-client:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./src/api
     steps:
       - uses: actions/checkout@v5
-      - name: Install poetry
-        run: pipx install poetry
-      - name: Set up Python 3.12
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.9.7"
+          enable-cache: true
+      - name: Set up Python
         uses: actions/setup-python@v6
         with:
-          python-version: "3.12"
-          cache: "poetry"
-      - name: Install dependencies
-        run: |
-          cd src/client
-          poetry install
+          python-version-file: "./src/client/.python-version"
+      - name: Install the project
+        run: uv sync --locked --all-extras --dev
 
   lint-client:
     needs: build-client
@@ -39,19 +42,21 @@ jobs:
         working-directory: ./src/client
     steps:
       - uses: actions/checkout@v5
-      - name: Install poetry
-        run: pipx install poetry
-      - name: Set up Python 3.12
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.9.7"
+          enable-cache: true
+      - name: Set up Python
         uses: actions/setup-python@v6
         with:
-          python-version: "3.12"
-          cache: "poetry"
+          python-version-file: "./src/client/.python-version"
       - name: Lint with Black
-        run: poetry run black --check qcc tests
+        run: uv run black --check qcc tests
       - name: Lint with Ruff
-        run: poetry run ruff check qcc tests
+        run: uv run ruff check qcc tests
       - name: Lint with MyPy
-        run: poetry run mypy qcc tests
+        run: uv run mypy qcc tests
 
   test-client:
     needs: build-client
@@ -61,12 +66,14 @@ jobs:
         working-directory: ./src/client
     steps:
       - uses: actions/checkout@v5
-      - name: Install poetry
-        run: pipx install poetry
-      - name: Set up Python 3.12
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.9.7"
+          enable-cache: true
+      - name: Set up Python
         uses: actions/setup-python@v6
         with:
-          python-version: "3.12"
-          cache: "poetry"
+          python-version-file: "./src/client/.python-version"
       - name: Test with pytest
-        run: poetry run pytest
+        run: uv run pytest

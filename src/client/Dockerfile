@@ -1,5 +1,5 @@
-# The builder image, used to build the virtual environment
-FROM python:3.12-slim AS base
+# -- Base image --
+FROM python:3.12-slim
 
 ARG DOCKER_UID 1000
 ARG DOCKER_GID 1000
@@ -9,60 +9,58 @@ RUN apt-get update && \
     apt-get -y upgrade && \
     rm -rf /var/lib/apt/lists/*
 
-# Upgrade pip to its latest release to speed up dependencies
-# installation
-RUN pip install --upgrade pip && \
-    pip install poetry==1.8.3
+# Install uv
+COPY --from=ghcr.io/astral-sh/uv:0.9.7 /uv /uvx /bin/
 
-# User and group
-ENV POETRY_USER_UID=${DOCKER_UID} \
-    POETRY_USER_GID=${DOCKER_GID} \
-    POETRY_USER_NAME=poetry \
-    POETRY_GROUP_NAME=poetry \
-    POETRY_USER_HOME=/opt/poetry
+# UV user configuration
+ENV UV_USER_UID=${DOCKER_UID}
+ENV UV_USER_GID=${DOCKER_GID}
+ENV UV_USER_NAME=uv
+ENV UV_GROUP_NAME=uv
+ENV UV_USER_HOME=/home/uv/
+ENV UV_CUSTOM_VENV_NAME=qualicharge
 
-# Create a pipenv user and group
+# Create a uv user and group
 RUN groupadd \
-      -g ${POETRY_USER_GID} \
-      ${POETRY_GROUP_NAME} && \
+      -g ${UV_USER_GID} \
+      ${UV_GROUP_NAME} && \
     useradd -rm \
-      -d ${POETRY_USER_HOME} \
+      -d ${UV_USER_HOME} \
       -s /bin/bash \
-      -u ${POETRY_USER_UID} \
-      -g ${POETRY_USER_GID} \
-      ${POETRY_USER_NAME}
+      -u ${UV_USER_UID} \
+      -g ${UV_USER_GID} \
+      ${UV_USER_NAME}
 
-# /app will be our working directory
-RUN mkdir /app /tmp/cache && \
-    chown ${POETRY_USER_NAME}:${POETRY_GROUP_NAME} /app /tmp/cache
+# Create virtual environment that will be used by uv with appropriate
+# permissions
+RUN mkdir -p /app/.venv && \ 
+    chown -R "${DOCKER_UID}:${DOCKER_GID}" /app
 
-# Poetry configuration
-ENV POETRY_NO_INTERACTION=1 \
-    POETRY_VIRTUALENVS_IN_PROJECT=0 \
-    POETRY_VIRTUALENVS_CREATE=1 \
-    POETRY_CACHE_DIR=/tmp/cache \
-    POETRY_VIRTUALENVS_PATH=${POETRY_USER_HOME}/virtualenvs
+USER ${DOCKER_UID}:${DOCKER_GID}
+
+# UV cache directory
+RUN mkdir -p /home/uv/.cache/uv
 
 WORKDIR /app
 
-USER ${POETRY_USER_NAME}:${POETRY_GROUP_NAME}
+# Enable bytecode compilation
+ENV UV_COMPILE_BYTECODE=1
 
-# -- builder --
-FROM base AS builder
+# Copy from the cache instead of linking since it's a mounted volume
+ENV UV_LINK_MODE=copy
 
-COPY pyproject.toml poetry.lock README.md ./
+# Install dependencies
+RUN --mount=type=cache,uid=${DOCKER_UID},gid=${DOCKER_GID},target=/home/uv/.cache/uv \
+    --mount=type=bind,source=uv.lock,target=uv.lock \
+    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+    uv sync --locked --no-install-project
 
-RUN --mount=type=cache,uid=${POETRY_USER_UID},gid=${POETRY_USER_GID},target=${POETRY_CACHE_DIR} \
-      poetry install --with=dev --no-root
+# Copy the project into the image
+ADD --chown=${DOCKER_UID}:${DOCKER_GID} . /app
 
-# -- development --
-FROM base AS development
+# Sync the project
+RUN --mount=type=cache,uid=${DOCKER_UID},gid=${DOCKER_GID},target=/home/uv/.cache/uv \
+    uv sync --locked
 
-COPY --from=builder ${POETRY_VIRTUALENVS_PATH} ${POETRY_VIRTUALENVS_PATH}
-COPY . /app/
-
-# Install current package
-RUN --mount=type=cache,uid=${POETRY_USER_UID},gid=${POETRY_USER_GID},target=${POETRY_CACHE_DIR} \
-      poetry install
-
-ENTRYPOINT ["poetry", "run"]
+# -- Run --
+ENTRYPOINT ["uv", "run"]
