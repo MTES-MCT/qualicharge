@@ -4,23 +4,12 @@ set -eo pipefail
 
 declare TEST=true
 declare service=${SERVICE:-api}
-declare cmd
+declare cmd="uv run pytest"
 declare volume="./src/${service}:/app"
 declare DOCKER_USER
 DOCKER_UID="$(id -u)"
 DOCKER_GID="$(id -g)"
 DOCKER_USER="${DOCKER_UID}:${DOCKER_GID}"
-
-case "${service}" in
-  client)
-    cmd="pytest";;
-  api)
-    cmd="uv run pytest";;
-  prefect-test)
-    cmd="uv run pytest";;
-  *)
-    cmd="pipenv run pytest";;
-esac
 
 if [ "${service}" == "prefect-test" ]; then 
   volume="./src/prefect:/app";

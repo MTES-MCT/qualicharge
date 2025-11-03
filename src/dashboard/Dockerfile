@@ -1,4 +1,4 @@
-# The builder image, used to build the virtual environment
+# -- Base image --
 FROM python:3.12-slim
 
 ARG DOCKER_UID 1000
@@ -9,40 +9,58 @@ RUN apt-get update && \
     apt-get -y upgrade && \
     rm -rf /var/lib/apt/lists/*
 
-# Upgrade pip to its latest release to speed up dependencies
-# installation
-RUN pip install --upgrade pip && \
-    pip install pipenv==2024.4.0
+# Install uv
+COPY --from=ghcr.io/astral-sh/uv:0.9.7 /uv /uvx /bin/
 
-# Pipenv configuration
-ENV PIPENV_USER_UID=${DOCKER_UID}
-ENV PIPENV_USER_GID=${DOCKER_GID}
-ENV PIPENV_USER_NAME=pipenv
-ENV PIPENV_GROUP_NAME=pipenv
-ENV PIPENV_USER_HOME=/opt/pipenv/
-ENV PIPENV_CUSTOM_VENV_NAME=qualicharge
+# UV user configuration
+ENV UV_USER_UID=${DOCKER_UID}
+ENV UV_USER_GID=${DOCKER_GID}
+ENV UV_USER_NAME=uv
+ENV UV_GROUP_NAME=uv
+ENV UV_USER_HOME=/home/uv/
+ENV UV_CUSTOM_VENV_NAME=qualicharge
 
-# Create a pipenv user and group
+# Create a uv user and group
 RUN groupadd \
-      -g ${PIPENV_USER_GID} \
-      ${PIPENV_GROUP_NAME} && \
+      -g ${UV_USER_GID} \
+      ${UV_GROUP_NAME} && \
     useradd -rm \
-      -d ${PIPENV_USER_HOME} \
+      -d ${UV_USER_HOME} \
       -s /bin/bash \
-      -u ${PIPENV_USER_UID} \
-      -g ${PIPENV_USER_GID} \
-      ${PIPENV_USER_NAME}
+      -u ${UV_USER_UID} \
+      -g ${UV_USER_GID} \
+      ${UV_USER_NAME}
 
-# /app will be our working directory
-RUN mkdir /app && \
-    chown ${PIPENV_USER_NAME}:${PIPENV_GROUP_NAME} /app
+# Create virtual environment that will be used by uv with appropriate
+# permissions
+RUN mkdir -p /app/.venv && \ 
+    chown -R "${DOCKER_UID}:${DOCKER_GID}" /app
 
-# -- build (⚠️ development only) --
-COPY --chown="${PIPENV_USER_NAME}:${PIPENV_GROUP_NAME}" . /app
+USER ${DOCKER_UID}:${DOCKER_GID}
+
+# UV cache directory
+RUN mkdir -p /home/uv/.cache/uv
+
 WORKDIR /app
-USER ${PIPENV_USER_NAME}:${PIPENV_GROUP_NAME}
-RUN pipenv install -d && \
-    pipenv install -v -e .
+
+# Enable bytecode compilation
+ENV UV_COMPILE_BYTECODE=1
+
+# Copy from the cache instead of linking since it's a mounted volume
+ENV UV_LINK_MODE=copy
+
+# Install dependencies
+RUN --mount=type=cache,uid=${DOCKER_UID},gid=${DOCKER_GID},target=/home/uv/.cache/uv \
+    --mount=type=bind,source=uv.lock,target=uv.lock \
+    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+    uv sync --locked --no-install-project
+
+# Copy the project into the image
+ADD --chown=${DOCKER_UID}:${DOCKER_GID} . /app
+
+# Sync the project
+RUN --mount=type=cache,uid=${DOCKER_UID},gid=${DOCKER_GID},target=/home/uv/.cache/uv \
+    uv sync --locked
 
 # -- Run --
-CMD pipenv run honcho -f Procfile.dev start
+CMD uv run honcho -f Procfile.dev start

@@ -14,10 +14,7 @@
     {
       "groupName": "python dependencies",
       "matchManagers": [
-        "pep621",
-        "pipenv",
-        "setup-cfg",
-        "poetry"
+        "pep621"
       ],
       "schedule": [
         "before 7am on monday"

@@ -2,15 +2,15 @@
 SHELL := /bin/bash
 
 # -- Docker
-COMPOSE                    	 = bin/compose
-COMPOSE_UP                 	 = $(COMPOSE) up -d --remove-orphans
-COMPOSE_RUN                	 = $(COMPOSE) run --rm --no-deps
-COMPOSE_EXEC                 = $(COMPOSE) exec
-COMPOSE_EXEC_API             = $(COMPOSE_EXEC) api
-COMPOSE_EXEC_API_UV          = $(COMPOSE_EXEC_API) uv run
-COMPOSE_RUN_CLIENT         	 = $(COMPOSE_RUN) client
-COMPOSE_RUN_PREFECT_UV     	 = $(COMPOSE_RUN) prefect uv run
-COMPOSE_RUN_DASHBOARD_PIPENV = $(COMPOSE_RUN) dashboard pipenv run
+COMPOSE                  = bin/compose
+COMPOSE_UP               = $(COMPOSE) up -d --remove-orphans
+COMPOSE_RUN              = $(COMPOSE) run --rm --no-deps
+COMPOSE_EXEC             = $(COMPOSE) exec
+COMPOSE_EXEC_API         = $(COMPOSE_EXEC) api
+COMPOSE_EXEC_API_UV      = $(COMPOSE_EXEC_API) uv run
+COMPOSE_RUN_CLIENT       = $(COMPOSE_RUN) client
+COMPOSE_RUN_PREFECT_UV   = $(COMPOSE_RUN) prefect uv run
+COMPOSE_RUN_DASHBOARD_UV = $(COMPOSE_RUN) dashboard uv run
 
 # -- Tools
 CURL = $(COMPOSE_RUN) curl
@@ -597,32 +597,32 @@ lint-prefect-mypy: ## lint prefect python sources with mypy
 
 lint-dashboard-black: ## lint dashboard python sources with black
 	@echo 'lint:black dashboard started…'
-	@$(COMPOSE_RUN_DASHBOARD_PIPENV) black dashboard apps tests
+	@$(COMPOSE_RUN_DASHBOARD_UV) black dashboard apps tests
 .PHONY: lint-dashboard-black
 
 lint-dashboard-ruff: ## lint dashboard python sources with ruff
 	@echo 'lint:ruff dashboard started…'
-	@$(COMPOSE_RUN_DASHBOARD_PIPENV) ruff check dashboard apps tests
+	@$(COMPOSE_RUN_DASHBOARD_UV) ruff check dashboard apps tests
 .PHONY: lint-dashboard-ruff
 
 lint-dashboard-ruff-fix: ## lint and fix dashboard python sources with ruff
 	@echo 'lint:ruff-fix dashboard started…'
-	@$(COMPOSE_RUN_DASHBOARD_PIPENV) ruff check --fix dashboard apps tests
+	@$(COMPOSE_RUN_DASHBOARD_UV) ruff check --fix dashboard apps tests
 .PHONY: lint-dashboard-ruff-fix
 
 lint-dashboard-mypy: ## lint dashboard python sources with mypy
 	@echo 'lint:mypy dashboard started…'
-	@$(COMPOSE_RUN_DASHBOARD_PIPENV) mypy dashboard apps tests
+	@$(COMPOSE_RUN_DASHBOARD_UV) mypy dashboard apps tests
 .PHONY: lint-dashboard-mypy
 
 lint-dashboard-djlint: ## lint dashboard html sources with djlint
 	@echo 'lint:djlint dashboard started…'
-	@$(COMPOSE_RUN_DASHBOARD_PIPENV) djlint -
+	@$(COMPOSE_RUN_DASHBOARD_UV) djlint -
 .PHONY: lint-dashboard-djlint
 
 lint-dashboard-djlint-reformat: ## lint and reformat dashboard html sources with djlint
 	@echo 'lint:djlint-reformat dashboard started…'
-	@$(COMPOSE_RUN_DASHBOARD_PIPENV) djlint - --reformat
+	@$(COMPOSE_RUN_DASHBOARD_UV) djlint - --reformat
 .PHONY: lint-dashboard-djlint-reformat
 
 test: ## run all services tests

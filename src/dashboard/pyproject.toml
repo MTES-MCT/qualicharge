@@ -1,16 +1,68 @@
 #
 # QualiCharge Dashboard package
 #
-[build-system]
-requires = ["setuptools >= 61.0"]
-build-backend = "setuptools.build_meta"
-
 [project]
 name = "qualicharge-dashboard"
 version = "0.2.0"
+requires-python = "~=3.12.0"
+dependencies = [
+  "Django==5.2.7",
+  "django-anymail==13.1",
+  "django-dsfr==3.2.0",
+  "django-environ==0.12.0",
+  "django-extensions==4.1",
+  "django-stubs[compatible-mypy]==5.2.7",
+  "gunicorn==23.0.0",
+  "jsonschema==4.25.1",
+  "mozilla-django-oidc==4.0.1",
+  "psycopg[pool,binary]==3.2.12",
+  "python-dateutil==2.9.0.post0",
+  "qualicharge-client==0.3.0",
+  "requests==2.32.5",
+  "sentry-sdk[django]==2.43.0",
+  "whitenoise==6.11.0",
+]
 
-[tool.setuptools]
-packages = ["apps", "dashboard"]
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+  "black==25.9.0",
+  "django-debug-toolbar==6.1.0",
+  "djlint==1.36.4",
+  "factory-boy==3.3.3",
+  "honcho==2.0.0",
+  "mock==5.2.0",
+  "mypy==1.18.2",
+  "pytest==8.4.2",
+  "pytest-asyncio==1.2.0",
+  "pytest-cov==7.0.0",
+  "pytest-django==4.11.1",
+  "pytest-httpx==0.35.0",
+  "responses==0.25.8",
+  "ruff==0.14.3",
+  "types-mock==5.2.0.20250924",
+  "types-python-dateutil==2.9.0.20251008",
+  "types-requests==2.32.4.20250913",
+]
+
+[tool.uv]
+package = true
+
+[[tool.uv.index]]
+name = "pypi"
+url = "https://pypi.org/simple"
+
+[tool.uv.sources]
+qualicharge-dashboard = { path = ".", editable = true }
+
+[tool.hatch.build.targets.wheel]
+packages = [
+  "apps", 
+  "dashboard", 
+]
 
 # Third party packages configuration
 [tool.coverage.run]

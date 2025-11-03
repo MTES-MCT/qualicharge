@@ -17,20 +17,23 @@ permissions:
 jobs:
   build-dashboard:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./src/dashboard
     steps:
       - uses: actions/checkout@v5
-      - name: Install Pipenv
-        run: pipx install pipenv
-      - name: Set up Python 3.12
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.9.7"
+          enable-cache: true
+      - name: Set up Python
         uses: actions/setup-python@v6
         with:
-          python-version: "3.12"
-          cache: "pipenv"
-          cache-dependency-path: "src/dashboard/Pipfile.lock"
-      - name: Install dependencies
-        run: |
-          cd src/dashboard
-          pipenv install -d
+          python-version-file: "./src/api/.python-version"
+      - name: Install the project
+        run: uv sync --locked --all-extras --dev
+
 
   lint-dashboard:
     needs: build-dashboard
@@ -79,22 +82,23 @@ jobs:
       DASHBOARD_RENEWABLE_MIN_DAYS_FOR_METER_READING: 15
     steps:
       - uses: actions/checkout@v5
-      - name: Install pipenv
-        run: pipx install pipenv
-      - name: Set up Python 3.12
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.9.7"
+          enable-cache: true
+      - name: Set up Python
         uses: actions/setup-python@v6
         with:
-          python-version: "3.12"
-          cache: "pipenv"
-          cache-dependency-path: "src/dashboard/Pipfile.lock"
+          python-version-file: "./src/api/.python-version"
       - name: Lint with Black
-        run: pipenv run black --check dashboard apps tests
+        run: uv run black --check dashboard apps tests
       - name: Lint with Ruff
-        run: pipenv run ruff check dashboard apps tests
+        run: uv run ruff check dashboard apps tests
       - name: Lint with MyPy
-        run: pipenv run mypy dashboard apps tests
+        run: uv run mypy dashboard apps tests
       - name: Lint with DjLint
-        run: pipenv run djlint -
+        run: uv run djlint -
 
   test-dashboard:
     needs: build-dashboard
@@ -119,16 +123,17 @@ jobs:
         working-directory: ./src/dashboard
     steps:
       - uses: actions/checkout@v5
-      - name: Install pipenv
-        run: pipx install pipenv
-      - name: Set up Python 3.12
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.9.7"
+          enable-cache: true
+      - name: Set up Python
         uses: actions/setup-python@v6
         with:
-          python-version: "3.12"
-          cache: "pipenv"
-          cache-dependency-path: "src/dashboard/Pipfile.lock"
+          python-version-file: "./src/api/.python-version"
       - name: Test with pytest
-        run: pipenv run pytest
+        run: uv run pytest
         env:
           # fake data in settings.py for mypy checking (due to django environ usage)
           DASHBOARD_DB_NAME: test-qualicharge-dashboard

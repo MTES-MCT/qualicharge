@@ -12,4 +12,4 @@ DOCKER_USER=${DOCKER_USER} \
   DOCKER_GID=${DOCKER_GID} \
   docker compose run -it \
     dashboard \
-    pipenv run python manage.py "$@"
+    uv run python manage.py "$@"
