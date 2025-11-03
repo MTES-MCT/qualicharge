@@ -10,4 +10,4 @@ DOCKER_USER="${DOCKER_UID}:${DOCKER_GID}"
 DOCKER_USER=${DOCKER_USER} \
   DOCKER_UID=${DOCKER_UID} \
   DOCKER_GID=${DOCKER_GID} \
-  docker compose run --rm opendata pipenv run data7 "$@"
+  docker compose run --rm opendata uv run data7 "$@"
