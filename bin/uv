@@ -3,9 +3,22 @@
 set -eo pipefail
 
 declare service="${SERVICE:-api}"
+declare volume="./src/${service}:/app"
+declare DOCKER_USER
+DOCKER_UID="$(id -u)"
+DOCKER_GID="$(id -g)"
+DOCKER_USER="${DOCKER_UID}:${DOCKER_GID}"
 
-docker compose run --rm --no-deps \
-  -u "uv:uv" \
-  -v "./src/api:/app" \
-  "${service}" \
-    uv "$@"
+if [ "${service}" == "prefect-test" ]; then 
+  volume="./src/prefect:/app";
+fi
+
+
+DOCKER_USER=${DOCKER_USER} \
+  DOCKER_UID=${DOCKER_UID} \
+  DOCKER_GID=${DOCKER_GID} \
+  docker compose run --rm --no-deps \
+    -u "uv:uv" \
+    -v "${volume}" \
+    "${service}" \
+      uv "$@"
