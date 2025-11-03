@@ -420,7 +420,7 @@ wheels = [
 
 [[package]]
 name = "data7"
-version = "0.12.1"
+version = "0.13.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "dynaconf" },
@@ -434,9 +434,9 @@ dependencies = [
     { name = "typer" },
     { name = "uvicorn", extra = ["standard"] },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/fa/c6/986f0adffaad68295309c3fa5fdecd2daa60d2a9214f9323540cf4cb2cbe/data7-0.12.1.tar.gz", hash = "sha256:b6149ad305affe07ac8bee8079c4dedd1b42a1934adb4aa897698e502057bbfe", size = 10542, upload-time = "2025-07-24T08:44:46.409Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/55/a4/22eaab2bc00ea9fc6253c136b4e191180a75b2363131a177aaf5defa760e/data7-0.13.2.tar.gz", hash = "sha256:9c26472d99e265705462e6bd6f17b8052979f971e088d3caf9e62425c85d2462", size = 10558, upload-time = "2025-10-31T14:55:09.644Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/f8/00/4aaba9776ef0e9b4fe831987f8b4169247587f1d0c8d753779c0ae518a2f/data7-0.12.1-py3-none-any.whl", hash = "sha256:6ec0024eb1aab06c6c62adea1e2ede84a95c3eca0f0209aec8ad17be52c45cb3", size = 12859, upload-time = "2025-07-24T08:44:44.649Z" },
+    { url = "https://files.pythonhosted.org/packages/79/28/8fe344d8370faf89a5f447defcbf03c9405259a22e191dd7ba18460d782e/data7-0.13.2-py3-none-any.whl", hash = "sha256:24d9e393a5d951948629e844b58ca51ee1616a90df55c594a1673b2962d63147", size = 12905, upload-time = "2025-10-31T14:55:08.038Z" },
 ]
 
 [[package]]
@@ -1190,7 +1190,7 @@ wheels = [
 
 [[package]]
 name = "prefect"
-version = "3.4.25"
+version = "3.5.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiosqlite" },
@@ -1247,9 +1247,9 @@ dependencies = [
     { name = "uvicorn" },
     { name = "websockets" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/50/96/f7d0d331e73b521ba0900ff70c4586edcc0a207608041a29d1cd86f94427/prefect-3.4.25.tar.gz", hash = "sha256:c12943e75f2dc3f06b5d1f4bd4fabf7cd10ffeca35d56a15ad7cff4890067f5a", size = 5638467, upload-time = "2025-10-23T20:47:48.118Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/d3/e3/3869249b4defe65986cb323f11d17ac1fba13a214fc577f8f4e7e3ce45e2/prefect-3.5.0.tar.gz", hash = "sha256:05acf33be811fe62dcc7eb65cac3cc27372a99cb545342d260bd1831933256b8", size = 5633886, upload-time = "2025-10-31T18:03:58.566Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/33/1e/cd07ee424b1835d8443d5cd26b680f08dada9d670e2d2f360679cf582c15/prefect-3.4.25-py3-none-any.whl", hash = "sha256:9dc8b443b354a06446d5e0b153584defb4da0d2882f7c96a1dd78cfa657a94ea", size = 6163543, upload-time = "2025-10-23T20:47:45.371Z" },
+    { url = "https://files.pythonhosted.org/packages/f4/e6/96494debc7f5fb9730a75abfa600efaeac7fa40683ba52b478f0df294ee8/prefect-3.5.0-py3-none-any.whl", hash = "sha256:587da2323c609877f3d89adce970a603a12314516e111e3e0fbfb7a4ef9ef390", size = 6158049, upload-time = "2025-10-31T18:03:55.596Z" },
 ]
 
 [[package]]
@@ -1666,12 +1666,12 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "data7", specifier = "==0.12.1" },
+    { name = "data7", specifier = "==0.13.2" },
     { name = "geoalchemy2", extras = ["shapely"], specifier = "==0.18.0" },
     { name = "geopandas", specifier = "==1.1.1" },
     { name = "great-expectations", extras = ["postgresql"], specifier = "==1.8.1" },
     { name = "pandas", specifier = "==2.1.4" },
-    { name = "prefect", specifier = "==3.4.25" },
+    { name = "prefect", specifier = "==3.5.0" },
     { name = "psycopg", extras = ["pool", "binary"], specifier = "==3.2.12" },
     { name = "pyarrow", specifier = "==20.0.0" },
     { name = "pydantic", specifier = "==2.12.3" },
@@ -2015,15 +2015,15 @@ asyncio = [
 
 [[package]]
 name = "starlette"
-version = "0.47.3"
+version = "0.49.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "anyio" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/15/b9/cc3017f9a9c9b6e27c5106cc10cc7904653c3eec0729793aec10479dd669/starlette-0.47.3.tar.gz", hash = "sha256:6bc94f839cc176c4858894f1f8908f0ab79dfec1a6b8402f6da9be26ebea52e9", size = 2584144, upload-time = "2025-08-24T13:36:42.122Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/de/1a/608df0b10b53b0beb96a37854ee05864d182ddd4b1156a22f1ad3860425a/starlette-0.49.3.tar.gz", hash = "sha256:1c14546f299b5901a1ea0e34410575bc33bbd741377a10484a54445588d00284", size = 2655031, upload-time = "2025-11-01T15:12:26.13Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/ce/fd/901cfa59aaa5b30a99e16876f11abe38b59a1a2c51ffb3d7142bb6089069/starlette-0.47.3-py3-none-any.whl", hash = "sha256:89c0778ca62a76b826101e7c709e70680a1699ca7da6b44d38eb0a7e61fe4b51", size = 72991, upload-time = "2025-08-24T13:36:40.887Z" },
+    { url = "https://files.pythonhosted.org/packages/a3/e0/021c772d6a662f43b63044ab481dc6ac7592447605b5b35a957785363122/starlette-0.49.3-py3-none-any.whl", hash = "sha256:b579b99715fdc2980cf88c8ec96d3bf1ce16f5a8051a7c2b84ef9b1cdecaea2f", size = 74340, upload-time = "2025-11-01T15:12:24.387Z" },
 ]
 
 [[package]]
