@@ -17,20 +17,22 @@ permissions:
 jobs:
   build-prefect:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./src/prefect
     steps:
       - uses: actions/checkout@v5
-      - name: Install Pipenv
-        run: pipx install pipenv
-      - name: Set up Python 3.12
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.9.7"
+          enable-cache: true
+      - name: Set up Python
         uses: actions/setup-python@v6
         with:
-          python-version: "3.12"
-          cache: "pipenv"
-          cache-dependency-path: "src/prefect/Pipfile.lock"
-      - name: Install dependencies
-        run: |
-          cd src/prefect
-          pipenv install -d
+          python-version-file: "./src/prefect/.python-version"
+      - name: Install the project
+        run: uv sync --locked --all-extras --dev
 
   lint-prefect:
     needs: build-prefect
@@ -40,20 +42,21 @@ jobs:
         working-directory: ./src/prefect
     steps:
       - uses: actions/checkout@v5
-      - name: Install pipenv
-        run: pipx install pipenv
-      - name: Set up Python 3.12
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.9.7"
+          enable-cache: true
+      - name: Set up Python
         uses: actions/setup-python@v6
         with:
-          python-version: "3.12"
-          cache: "pipenv"
-          cache-dependency-path: "src/prefect/Pipfile.lock"
+          python-version-file: "./src/prefect/.python-version"
       - name: Lint with Black
-        run: pipenv run black --check indicators tests
+        run: uv run black --check indicators tests
       - name: Lint with Ruff
-        run: pipenv run ruff check indicators tests
+        run: uv run ruff check indicators tests
       - name: Lint with MyPy
-        run: pipenv run mypy indicators tests
+        run: uv run mypy indicators tests
 
   test-prefect:
     needs: build-prefect
@@ -109,13 +112,14 @@ jobs:
           aws --endpoint-url "${S3_ENDPOINT_URL}" s3 mb "s3://qualicharge-sessions"
           aws --endpoint-url "${S3_ENDPOINT_URL}" s3 mb "s3://qualicharge-statuses"
           aws --endpoint-url "${S3_ENDPOINT_URL}" s3 ls
-      - name: Install pipenv
-        run: pipx install pipenv
-      - name: Set up Python 3.12
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.9.7"
+          enable-cache: true
+      - name: Set up Python
         uses: actions/setup-python@v6
         with:
-          python-version: "3.12"
-          cache: "pipenv"
-          cache-dependency-path: "src/prefect/Pipfile.lock"
+          python-version-file: "./src/prefect/.python-version"
       - name: Test with pytest
-        run: pipenv run pytest
+        run: uv run pytest

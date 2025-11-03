@@ -12,4 +12,4 @@ DOCKER_USER=${DOCKER_USER} \
   DOCKER_GID=${DOCKER_GID} \
   docker compose exec \
     prefect \
-    pipenv run prefect "$@"
+    uv run prefect "$@"

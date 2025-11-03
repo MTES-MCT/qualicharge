@@ -9,7 +9,7 @@ COMPOSE_EXEC                 = $(COMPOSE) exec
 COMPOSE_EXEC_API             = $(COMPOSE_EXEC) api
 COMPOSE_EXEC_API_UV          = $(COMPOSE_EXEC_API) uv run
 COMPOSE_RUN_CLIENT         	 = $(COMPOSE_RUN) client
-COMPOSE_RUN_PREFECT_PIPENV 	 = $(COMPOSE_RUN) prefect pipenv run
+COMPOSE_RUN_PREFECT_UV     	 = $(COMPOSE_RUN) prefect uv run
 COMPOSE_RUN_DASHBOARD_PIPENV = $(COMPOSE_RUN) dashboard pipenv run
 
 # -- Tools
@@ -334,16 +334,16 @@ migrate-prefect:  ## run prefect database migrations
 	@echo "Running prefect service database engine…"
 	@$(COMPOSE_UP) --wait postgresql
 	@echo "Running migrations for prefect service…"
-	@$(COMPOSE_RUN_PREFECT_PIPENV) prefect server database upgrade -y
+	@$(COMPOSE_RUN_PREFECT_UV) prefect server database upgrade -y
 .PHONY: migrate-prefect
 
 post-deploy-prefect:  ## run prefect post-deployment script
 	@echo "Running prefect service…"
 	@$(COMPOSE_UP) --wait prefect-worker
 	@echo "Running postdeploy script for prefect service…"
-	@$(COMPOSE) exec prefect pipenv run honcho start postdeploy
+	@$(COMPOSE) exec prefect uv run honcho start postdeploy
 	@echo "Creating all deployments…"
-	@$(COMPOSE) exec -T prefect pipenv run ./prefect-deploy-all.sh
+	@$(COMPOSE) exec -T prefect uv run ./prefect-deploy-all.sh
 .PHONY: post-deploy-prefect
 
 create-api-superuser: ## create api super user
@@ -577,22 +577,22 @@ lint-client-mypy: ## lint api python sources with mypy
 
 lint-prefect-black: ## lint prefect python sources with black
 	@echo 'lint:black started…'
-	@$(COMPOSE_RUN_PREFECT_PIPENV) black indicators tests
+	@$(COMPOSE_RUN_PREFECT_UV) black indicators tests
 .PHONY: lint-prefect-black
 
 lint-prefect-ruff: ## lint prefect python sources with ruff
 	@echo 'lint:ruff started…'
-	@$(COMPOSE_RUN_PREFECT_PIPENV) ruff check indicators tests
+	@$(COMPOSE_RUN_PREFECT_UV) ruff check indicators tests
 .PHONY: lint-prefect-ruff
 
 lint-prefect-ruff-fix: ## lint and fix prefect python sources with ruff
 	@echo 'lint:ruff-fix started…'
-	@$(COMPOSE_RUN_PREFECT_PIPENV) ruff check --fix indicators tests
+	@$(COMPOSE_RUN_PREFECT_UV) ruff check --fix indicators tests
 .PHONY: lint-prefect-ruff-fix
 
 lint-prefect-mypy: ## lint prefect python sources with mypy
 	@echo 'lint:mypy started…'
-	@$(COMPOSE_RUN_PREFECT_PIPENV) mypy indicators tests
+	@$(COMPOSE_RUN_PREFECT_UV) mypy indicators tests
 .PHONY: lint-prefect-mypy
 
 lint-dashboard-black: ## lint dashboard python sources with black
