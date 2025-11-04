@@ -13,7 +13,7 @@ from prefect.artifacts import create_markdown_artifact
 from sqlalchemy.orm import Session
 
 from .db import get_api_db_engine, save_indicators
-from .models import IndicatorPeriod, IndicatorTimeSpan, Level, PeriodDuration
+from .models import IndicatorPeriod, IndicatorTimeSpan, Level
 from .types import Environment
 
 # in AFIR regulation, 22 kw belongs interval [7.4, 22] and not [22, 50]
@@ -40,7 +40,7 @@ def get_period_start_from_pit(  # noqa: PLR0911
     first_minute = {"minute": 0, "second": 0, "microsecond": 0}
     first_hour = first_minute | {"hour": 0}
     start_date = datetime.now() if pit is None else pit
-    start_date += PeriodDuration[period.name].value * offset
+    start_date += period.duration * offset
     match period:
         case IndicatorPeriod.DAY:
             return start_date + relativedelta(**first_hour)  # type: ignore[arg-type]
@@ -61,7 +61,7 @@ def get_period_start_from_pit(  # noqa: PLR0911
 
 def get_timespan_filter_query_params(timespan: IndicatorTimeSpan, session: bool = True):
     """Get timespan query parameters."""
-    date_end = timespan.start + PeriodDuration[timespan.period.name].value
+    date_end = timespan.start + timespan.period.duration
     sql_start = f"'{timespan.start.isoformat(sep=' ')}'"
     sql_end = f"'{date_end.isoformat(sep=' ')}'"
     interval_session = "start >= timestamp $start AND start < timestamp $end"

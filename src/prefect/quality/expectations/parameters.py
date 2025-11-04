@@ -31,6 +31,8 @@ LONS = QARule(
     code="LONS", params={"max_days_per_session": "3 day", "threshold_percent": 0.001}
 )
 FRES = QARule(code="FRES", params={"max_duration_day": 15})
+NEGS = QARule(code="NEGS", params={})
+session_p = [DUPS, OVRS, LONS, FRES, NEGS]
 
 # energy parameters
 # Maximum energy : max_energy = puissance_nominale * session_duration
@@ -40,11 +42,16 @@ FRES = QARule(code="FRES", params={"max_duration_day": 15})
 ENERGY = {"highest_energy_kwh": 1000, "lowest_energy_kwh": 1}
 ENEX = QARule(code="ENEX", params={"excess_coef": 2, "excess_threshold_kWh": 50})
 ENEA = QARule(code="ENEA", params={"abnormal_coef": 1.1, "threshold_percent": 0.1})
+ENEU = QARule(code="ENEU", params={})
 ODUR = QARule(code="ODUR", params={"threshold_percent": 0.001})
+energy_p = [ENEX, ENEA, ENEU, ODUR]
 
 # statuses parameters
 DUPT = QARule(code="DUPT", params={"threshold_percent": 0.01})
 FRET = QARule(code="FRET", params={"mean_duration_second": 300})
+FTRT = QARule(code="FTRT", params={})
+ERRT = QARule(code="ERRT", params={})
+status_p = [DUPT, FRET, FTRT, ERRT]
 
 # statuses-sessions consistency parameters
 RATS = QARule(
@@ -53,3 +60,12 @@ RATS = QARule(
 )
 OCCT = QARule(code="OCCT", params={"threshold_percent": 0.2})
 SEST = QARule(code="SEST", params={"threshold_percent": 0.01})
+session_status_p = [RATS, OCCT, SEST]
+
+# evaluable parameters (check a threshold)
+eval_p = [PDCM, LOCP, NE10, ODUR, ENEA, DUPS, LONS, FRES, DUPT, FRET, RATS, OCCT, SEST]
+
+# parameters categories
+EVALUABLE_PARAMS = [params.code for params in eval_p]
+SESSION_PARAMS = [params.code for params in session_p + energy_p + session_status_p]
+STATUS_PARAMS =  [params.code for params in status_p]

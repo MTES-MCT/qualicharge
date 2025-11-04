@@ -191,7 +191,7 @@ def calculate(  # noqa: PLR0913
         if not offset and start is None
         else get_period_start_from_pit(start, offset, period)
     )
-    timespan = IndicatorTimeSpan(period=period.value, start=start)
+    timespan = IndicatorTimeSpan(period=period, start=start)
     subflows_results = [
         u6_for_level(level, timespan, environment, chunk_size=chunk_size)
         for level in levels

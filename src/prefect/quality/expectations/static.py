@@ -21,15 +21,33 @@ FAKE_PDL: str = """(
 
 pdc_expectations = [
     # POWL : Power less than POWL_PARAMETER (rule 39)
-    gxe.ExpectColumnMinToBeBetween(
-        column="puissance_nominale",
-        min_value=POWL.params["min_power_kw"],
+    gxe.UnexpectedRowsExpectation(
+        unexpected_rows_query=Template(
+            """
+SELECT
+  id_pdc_itinerance,
+  puissance_nominale
+FROM
+  {batch}
+WHERE
+  puissance_nominale <= $min_power_kw
+        """
+        ).substitute(POWL.params),
         meta={"code": POWL.code},
     ),
     # POWU : Power greater than POWU_PARAMETER (rule 1)
-    gxe.ExpectColumnMaxToBeBetween(
-        column="puissance_nominale",
-        max_value=POWU.params["max_power_kw"],
+    gxe.UnexpectedRowsExpectation(
+        unexpected_rows_query=Template(
+            """
+SELECT
+  id_pdc_itinerance,
+  puissance_nominale
+FROM
+  {batch}
+WHERE
+  puissance_nominale >= $max_power_kw
+        """
+        ).substitute(POWU.params),
         meta={"code": POWU.code},
     ),
 ]
@@ -138,7 +156,7 @@ WITH
       {batch}
   )
 SELECT
-  *
+  nbre_stat_max::float / nbre_stat AS ratio
 FROM
   nb_stations_max,
   nb_stations
@@ -234,7 +252,7 @@ WITH
       {batch}
   )
 SELECT
-  *
+  nbre_stat::float / nbre_loc AS ratio
 FROM
   nb_localisation,
   nb_stations
@@ -302,7 +320,7 @@ WITH
       ) AS numpdl_dc
   )
 SELECT
-  *
+  nbre_numpdl_not14::float / nbre_stat_dc AS ratio
 FROM
   nb_station_dc,
   nb_numpdl_not14

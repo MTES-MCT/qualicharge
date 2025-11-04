@@ -30,6 +30,8 @@ and this project adheres to
   - Energy (ENEU, ENEA, ENEX, ODUR)
   - statuses (ERRT, FTRT, DUPT, FRET)
   - consistency (RATS, OCCT, SEST)
+- Separate sessions and statuses expectations
+- Implement expectations as indicators
 
 #### Cooling
 
