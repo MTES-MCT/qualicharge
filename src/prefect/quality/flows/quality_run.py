@@ -3,17 +3,24 @@
 import os
 import re
 import unicodedata
-from datetime import date, timedelta
-from typing import Generator, List, Type
+from datetime import date
+from typing import Generator, List
 
 import great_expectations as gx
+import pandas as pd
 from jinja2 import Environment, FileSystemLoader, select_autoescape
-from prefect import flow
+from prefect import task
 from prefect.artifacts import create_markdown_artifact
+from prefect.cache_policies import NONE
 from pydantic import BaseModel
 from sqlalchemy import create_engine, text
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.orm import Session
+
+from indicators.models import IndicatorPeriod, Level
+from indicators.types import Environment as Environment_enum
+from indicators.utils import export_indicators
+from quality.expectations.parameters import EVALUABLE_PARAMS
 
 API_DATA_SOURCE_NAME: str = "api-{environment}"
 
@@ -64,6 +71,7 @@ def slugify(value, allow_unicode=False):
     return re.sub(r"[-\s]+", "-", value).strip("-_")
 
 
+@task(cache_policy=NONE)
 def get_db_amenageurs(environment: str) -> Generator[str, None, None]:
     """Get amenageurs from database."""
     connection_url = os.getenv(f"QUALICHARGE_API_DATABASE_URLS__{environment}")
@@ -83,6 +91,7 @@ def get_db_amenageurs(environment: str) -> Generator[str, None, None]:
             yield res[0]
 
 
+@task(cache_policy=NONE)
 def run_api_db_checkpoint(  # noqa: PLR0913
     context: gx.data_context.EphemeralDataContext,
     data_source: gx.datasource.fluent.PostgresDatasource,
@@ -146,18 +155,28 @@ def run_api_db_checkpoint(  # noqa: PLR0913
     return result
 
 
+@task(cache_policy=NONE)
 def run_api_db_checkpoint_by_amenageur(  # noqa: PLR0913
     context: gx.data_context.EphemeralDataContext,
     data_source: gx.datasource.fluent.PostgresDatasource,
     suite: gx.ExpectationSuite,
     environment: str,
+    period: IndicatorPeriod,
+    check_date: date,
     report_by_email: bool,
     quality_type: str,
     comment: str = "",
+    create_artifact: bool = False,
+    persist: bool = False,
 ) -> QCReport:
     """Run API DB checkpoint."""
     # QualiCharge markdown report
     report = QCReport(name=f"{quality_type}-{environment}")
+
+    # init indicator
+    indicators = pd.DataFrame(
+        columns=["value", "level", "target", "category", "code", "period", "timestamp"]
+    )
 
     # Run checkpoint for every amenageur
     for amenageur in get_db_amenageurs(environment):
@@ -195,7 +214,7 @@ def run_api_db_checkpoint_by_amenageur(  # noqa: PLR0913
             action_list.append(
                 gx.checkpoint.EmailAction(
                     notify_on="all",
-                    name=f"{quality_type} expectations report",
+                    name=f"{quality_type} expectations report - {check_date.isoformat()}",  # noqa: E501
                     receiver_emails="${GX_RECEIVER_EMAILS}",
                     smtp_address="${GX_BREVO_SMTP_ADDRESS}",
                     smtp_port="${GX_BREVO_SMTP_PORT}",
@@ -221,12 +240,25 @@ def run_api_db_checkpoint_by_amenageur(  # noqa: PLR0913
         )
         for _, v in result.run_results.items():
             for r in v.results:
+                code = r.expectation_config.meta.get("code")
                 qc_results.suite.append(
-                    QCExpectationResult(
-                        code=r.expectation_config.meta.get("code"),  # type: ignore[union-attr]
-                        success=r.success,
-                    )
+                    QCExpectationResult(code=code, success=r.success)
                 )
+                if not r.success:
+                    value = r.result.get("observed_value", 0) + r.result.get(
+                        "unexpected_count", 0
+                    )
+                    if code in EVALUABLE_PARAMS and "details" in r.result:
+                        value = r.result["details"]["unexpected_rows"][0]["ratio"]
+                    indicators.loc[len(indicators)] = {
+                        "value": value,
+                        "level": Level.OU,
+                        "target": amenageur,
+                        "category": code,
+                        "code": "qua",
+                        "period": period,
+                        "timestamp": check_date.isoformat(),
+                    }
         report.results.append(qc_results)
 
     # Generate report
@@ -240,5 +272,15 @@ def run_api_db_checkpoint_by_amenageur(  # noqa: PLR0913
             f"# GX validation by `Amenageur` for API DB instance: {environment}. {comment}"  # noqa: E501
         ),
         key=f"api-db-{quality_type}-amenageurs-{environment}",
+    )
+
+    # Save indicator
+    export_indicators(
+        indicators=indicators,
+        environment=Environment_enum(environment),
+        flow_name="quality-indicators",
+        description="Results of quality indicators.",
+        create_artifact=create_artifact,
+        persist=persist,
     )
     return report

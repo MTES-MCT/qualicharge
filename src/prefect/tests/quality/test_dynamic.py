@@ -2,19 +2,22 @@
 
 from datetime import date
 
+from sqlalchemy import text
+
+from indicators.models import IndicatorPeriod
 from indicators.types import Environment
 from quality.flows import dynamic, quality_run
 
 NEW_NOW = date(year=2025, month=1, day=1)
 FROM_NOW = {"days": 15}
-DURATION = {"days": 7}
+PERIOD = {"days": 7}
 
 
 def test_run_api_db_validation():
     """Run API database validation."""
     results = dynamic.run_api_db_validation(
         Environment.TEST,
-        DURATION,
+        period=IndicatorPeriod.WEEK,
         from_now=FROM_NOW,
         report_by_email=False,
         new_now=NEW_NOW,
@@ -37,7 +40,7 @@ def test_run_api_db_validation_by_amenageur(monkeypatch):
     )
     report = dynamic.run_api_db_validation_by_amenageur(
         Environment.TEST,
-        DURATION,
+        period=IndicatorPeriod.WEEK,
         from_now=FROM_NOW,
         report_by_email=False,
         new_now=NEW_NOW,
@@ -69,3 +72,22 @@ def test_run_api_db_validation_by_amenageur(monkeypatch):
                         assert not result.success
                     else:
                         assert result.success
+
+
+def test_run_indicator_validation_by_amenageur(indicators_db_engine):
+    """Run indicator validation by amenageur."""
+    dynamic.run_api_db_validation_by_amenageur(
+        Environment.TEST,
+        period=IndicatorPeriod.WEEK,
+        from_now=FROM_NOW,
+        report_by_email=False,
+        new_now=NEW_NOW,
+        persist=True,
+    )
+    with indicators_db_engine.connect() as connection:
+        query = """
+        select count(*) from test
+        where target = 'Ionity' and category = 'ENEX'
+        """
+        result = connection.execute(text(query))
+        assert result.one()[0] == 1

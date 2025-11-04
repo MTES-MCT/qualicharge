@@ -29,6 +29,11 @@ class IndicatorPeriod(Enum):
     QUARTER = "q"
     YEAR = "y"
 
+    @property
+    def duration(self):
+        """Time delta of the period."""
+        return PeriodDuration[self.name].value
+
 
 class Indicator(BaseModel):
     """Indicator result."""

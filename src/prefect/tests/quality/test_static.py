@@ -1,6 +1,7 @@
 """QualiCharge prefect quality tests: static data."""
 
 import pytest
+from sqlalchemy import text
 
 from indicators.types import Environment
 from quality.flows import quality_run, static
@@ -90,3 +91,15 @@ def test_run_api_db_validation_by_amenageur(monkeypatch):
                         assert not result.success
                     else:
                         assert result.success
+
+
+def test_run_indicator_validation_by_amenageur(indicators_db_engine):
+    """Run indicator validation by amenageur."""
+    static.run_api_db_validation_by_amenageur(Environment.TEST, persist=True)
+    with indicators_db_engine.connect() as connection:
+        query = """
+        select count(*) from test
+        where target = 'Tesla' and category = 'PDLM'
+        """
+        result = connection.execute(text(query))
+        assert result.one()[0] == 1

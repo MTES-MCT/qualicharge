@@ -12,10 +12,14 @@ from .parameters import (
     DUPT,
     ENEA,
     ENERGY,
+    ENEU,
     ENEX,
+    ERRT,
     FRES,
     FRET,
+    FTRT,
     LONS,
+    NEGS,
     OCCT,
     ODUR,
     OVRS,
@@ -26,7 +30,7 @@ from .parameters import (
 NAME: str = "dynamic"
 
 
-def get_suite(date_start: date, date_end: date):
+def get_suite(date_start: date, date_end: date, parameters: list[str]):
     """Get dynamic expectation suite."""
     date_params = {
         "start": f"'{date_start.isoformat()}'",
@@ -56,7 +60,7 @@ WHERE
             ).substitute(
                 date_params | ENERGY  # type: ignore
             ),
-            meta={"code": "ENEU"},
+            meta={"code": ENEU.code},
         ),
         # ODUR : Session of zero duration (rule 40)
         gxe.UnexpectedRowsExpectation(
@@ -90,7 +94,7 @@ WITH
       AND start < $end
   )
 SELECT
-  *
+  n_inst_ses::float / n_ses as ratio
 FROM
   sessions_instant,
   nb_sessions
@@ -142,7 +146,7 @@ WITH
       AND start < $end
   )
 SELECT
-  *
+  n_max_ses::float / n_ses as ratio
 FROM
   sessions_max,
   nb_sessions
@@ -221,7 +225,7 @@ WITH
       ) AS session_unique
   )
 SELECT
-  *
+  (nbre_session - nbre_unique)::float / nbre_session as ratio
 FROM
   nb_session_unique,
   nb_session
@@ -292,7 +296,7 @@ WITH
       AND start < $end
   )
 SELECT
-  *
+  n_long_ses::float / n_ses AS ratio
 FROM
   long_sessions,
   nb_sessions
@@ -324,7 +328,7 @@ WHERE
   AND start > session.end
                 """
             ).substitute(date_params),
-            meta={"code": "NEGS"},
+            meta={"code": NEGS.code},
         ),
         # FRES : freshness of sessions greater than max_duration days (rule 42)
         gxe.UnexpectedRowsExpectation(
@@ -344,7 +348,7 @@ WITH
       AND START < $end
   )
 SELECT
-  max(EXTRACT(EPOCH FROM (updated_at - session_end))) / 3600 / 24
+  max(EXTRACT(EPOCH FROM (updated_at - session_end))) / 3600 / 24 AS ratio
 FROM
   session_delay
 HAVING
@@ -375,7 +379,7 @@ WHERE
   AND occupation_pdc = 'occupe'
                 """
             ).substitute(date_params),
-            meta={"code": "ERRT"},
+            meta={"code": ERRT.code},
         ),
         # FTRT : Timestamp in the future (rule 36)
         gxe.UnexpectedRowsExpectation(
@@ -395,7 +399,7 @@ WHERE
   OR horodatage IS NULL
                 """
             ).substitute(date_params),
-            meta={"code": "FTRT"},
+            meta={"code": FTRT.code},
         ),
         # DUPT : Duplicate statuses (rule 44)
         gxe.UnexpectedRowsExpectation(
@@ -433,7 +437,7 @@ WITH
       ) AS status_unique
   )
 SELECT
-  *
+  (nbre_status - nbre_unique)::float / nbre_status AS ratio
 FROM
   nb_status_unique,
   nb_status
@@ -441,7 +445,7 @@ WHERE
   (nbre_status - nbre_unique)::float > $threshold_percent * nbre_status::float
                 """
             ).substitute(date_params | DUPT.params),
-            meta={"code": "DUPT"},
+            meta={"code": DUPT.code},
         ),
         # FRET : Freshness of statuses greater than max_duration seconds (rule 43)
         gxe.UnexpectedRowsExpectation(
@@ -462,7 +466,7 @@ WITH
   )
 SELECT
   avg(extract(SECOND FROM updated_at - horodatage) +
-      extract(MINUTE FROM updated_at - horodatage) * 60)
+      extract(MINUTE FROM updated_at - horodatage) * 60) AS ratio
 FROM
   status_delay
 HAVING
@@ -470,7 +474,7 @@ HAVING
       extract(MINUTE FROM updated_at - horodatage) * 60) > $mean_duration_second
                 """
             ).substitute(date_params | FRET.params),
-            meta={"code": "FRET"},
+            meta={"code": FRET.code},
         ),
     ]
     statuses_sessions_expectations = [
@@ -501,8 +505,7 @@ WITH
       AND horodatage < $end
   )
 SELECT
-  nb_status,
-  nb_session
+  nb_status::float / nb_session AS ratio
 FROM
   n_session,
   n_status
@@ -563,8 +566,7 @@ WITH
       nb_sessions IS NULL
   )
 SELECT
-  n_stat_ses,
-  n_stat
+  n_stat_ses::float / n_stat AS ratio
 FROM
   (
     SELECT
@@ -644,8 +646,7 @@ WITH
       nb_status IS NULL
   )
 SELECT
-  n_stat_ses,
-  n_ses
+  n_stat_ses::float / n_ses AS ratio
 FROM
   (
     SELECT
@@ -666,17 +667,20 @@ WHERE
             meta={"code": SEST.code},
         ),
     ]
-    suite = gx.ExpectationSuite(name=NAME)
     expectations = (
         energy_expectations
         + sessions_expectations
         + statuses_expectations
         + statuses_sessions_expectations
     )
+
+    # build ExpectationSuite
+    suite = gx.ExpectationSuite(name=NAME)
     for expectation in expectations:
-        # Make sure expectation is not already assigned to a suite…
-        exp = copy(expectation)
-        exp.id = None
-        # …before adding it to the current suite.
-        suite.add_expectation(exp)
+        if expectation.meta["code"] in parameters:
+            # Make sure expectation is not already assigned to a suite…
+            exp = copy(expectation)
+            exp.id = None
+            # …before adding it to the current suite.
+            suite.add_expectation(exp)
     return suite
