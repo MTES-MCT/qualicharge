@@ -32,7 +32,10 @@ and this project adheres to
 - Add `footer` block with legal and accessibility links in base template
 - Add explicit session management configuration to enhance security (`SESSION_COOKIE_AGE` and 
   `SESSION_EXPIRE_AT_BROWSER_CLOSE`)
-
+- Improved sorting of delivery points by station name in meter reading management forms
+- Added an utility function `sort_delivery_points_by_station()` to `apps/renewable/helpers.py` 
+to centralize the logic for sorting delivery points by station name
+ 
 ### Changed
 
 - Update French translations for improved readability and consistency
@@ -40,6 +43,9 @@ and this project adheres to
 - Update html templates to improve responsiveness
 - Update the display of stations in the management form tables to ensure complete 
   rendering of information
+
+### Fixed
+- Fixed form sorting to prevent misalignment between checkboxes and displayed data
 
 #### Dependencies
 

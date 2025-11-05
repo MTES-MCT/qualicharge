@@ -8,9 +8,11 @@ from anymail.exceptions import AnymailRequestsAPIError
 from anymail.message import AnymailMessage
 from dateutil.relativedelta import relativedelta
 from django.conf import settings
+from django.db.models import OuterRef, QuerySet, Subquery
+from django.db.models.functions import Lower
 from django.utils import timezone
 
-from apps.core.models import Entity
+from apps.core.models import DeliveryPoint, Entity, Station
 from apps.core.utils import get_current_quarter_date_range
 
 DateRange = Tuple[date, date]
@@ -95,3 +97,43 @@ def send_notification_for_opening(entity: Entity) -> None:
         # fail silently and send a sentry log
         sentry_sdk.capture_exception(e)
         return
+
+
+def get_first_station_name(dp: DeliveryPoint) -> str | None:
+    """Get the name of the first linked station (case-insensitive)."""
+    linked_stations = dp.get_linked_stations()
+    if linked_stations:
+        return list(linked_stations.keys())[0].casefold()
+    return None
+
+
+def sort_delivery_points_by_station(
+    delivery_points: QuerySet[DeliveryPoint],
+) -> QuerySet[DeliveryPoint]:
+    """Sort delivery points by their first associated station name.
+
+    This function takes a queryset of DeliveryPoint objects and returns a new
+    queryset sorted alphabetically (case-insensitive) by the name of the first
+    linked station. Delivery points without stations are placed at the end.
+
+    Args:
+        delivery_points: A queryset of delivery points to sort.
+
+    Returns:
+        QuerySet[DeliveryPoint]: A queryset with preserved order sorted by station name.
+
+    Example:
+        >>> delivery_points = entity.delivery_points.filter(is_active=True)
+        >>> sorted_dps = sort_delivery_points_by_station(delivery_points)
+    """
+    # Get delivery point stations ordered by their 'station_name'
+    stations_subquery = (
+        Station.objects.filter(delivery_point=OuterRef("pk"))
+        .order_by(Lower("station_name"))
+        .values("station_name")
+    )
+
+    # Annotate and order the queryset given its first related station name
+    return delivery_points.annotate(
+        first_station=Subquery(stations_subquery[:1])
+    ).order_by(Lower("first_station"))
