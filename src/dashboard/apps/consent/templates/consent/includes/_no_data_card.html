@@ -3,9 +3,6 @@
     {{ description }}
     <br />
     Si vous pensez qu'il s'agit d'une erreur, merci de contacter l'équipe QualiCharge.
-    <a class="fr-link fr-card__desc"
-      href="mailto:{{ contact_email }}?subject=[QualiCharge] Dashboard - {{ description }}." target="_blank">
-      {{ contact_email }}
-    </a>
+    {% include "components/_contact_link.html" %}
   </p>
 </div>

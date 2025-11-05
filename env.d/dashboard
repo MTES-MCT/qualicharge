@@ -54,6 +54,7 @@ DASHBOARD_RENEWABLE_OPENING_PERIOD_DAYS=15
 
 # Email to contact the QualiCharge team
 DASHBOARD_CONTACT_EMAIL=contact@exemple.com
+DASHBOARD_CONTACT_LINK=https://www.qualicharge.beta.gouv.fr/contact/
 DASHBOARD_DEFAULT_FROM_EMAIL=no-reply@qualicharge.beta.gouv.fr
 
 # Brevo Emailing

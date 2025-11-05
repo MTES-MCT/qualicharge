@@ -112,6 +112,7 @@ TEMPLATES = [
                 "django.contrib.messages.context_processors.messages",
                 "dsfr.context_processors.site_config",
                 "apps.core.context_processors.contact_email",
+                "apps.core.context_processors.contact_link",
             ],
         },
     },
@@ -282,6 +283,11 @@ RENEWABLE_OPENING_PERIOD_DAYS = env.int("RENEWABLE_OPENING_PERIOD_DAYS")
 
 # Email to contact the QualiCharge team
 CONTACT_EMAIL = env.str("CONTACT_EMAIL")
+
+# Link to the contact page to contact the QualiCharge team
+CONTACT_LINK = env.str(
+    "CONTACT_LINK", default="https://www.qualicharge.beta.gouv.fr/contact/"
+)
 
 # Configuration of Anymail for Brevo
 EMAIL_BACKEND = "anymail.backends.sendinblue.EmailBackend"

@@ -32,6 +32,7 @@ def send_validation_email(users) -> None:
             "first_name": user.first_name,  # type: ignore[union-attr]
             "link": email_config.get("link"),
             "support_email": settings.CONTACT_EMAIL,
+            "support_link": settings.CONTACT_LINK,
         }
 
     email = AnymailMessage(

@@ -32,6 +32,7 @@ def test_send_validation_email_success():
                     "first_name": user1.first_name,
                     "link": expected_email_config.get("link"),
                     "support_email": settings.CONTACT_EMAIL,
+                    "support_link": settings.CONTACT_LINK,
                 },
             },
         )
@@ -56,12 +57,14 @@ def test_send_validation_email_success():
                     "first_name": user1.first_name,
                     "link": expected_email_config.get("link"),
                     "support_email": settings.CONTACT_EMAIL,
+                    "support_link": settings.CONTACT_LINK,
                 },
                 "user2@example.com": {
                     "last_name": user2.last_name,
                     "first_name": user2.first_name,
                     "link": expected_email_config.get("link"),
                     "support_email": settings.CONTACT_EMAIL,
+                    "support_link": settings.CONTACT_LINK,
                 },
             },
         )

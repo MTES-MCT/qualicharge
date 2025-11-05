@@ -75,6 +75,7 @@ def send_notification_for_opening(entity: Entity) -> None:
             "first_name": user.first_name,
             "link": email_config.get("link"),
             "support_email": settings.CONTACT_EMAIL,
+            "support_link": settings.CONTACT_LINK,
             "start_period": start_period.strftime("%d/%m/%Y"),
             "end_period": end_period.strftime("%d/%m/%Y"),
         }
