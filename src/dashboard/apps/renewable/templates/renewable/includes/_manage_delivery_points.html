@@ -42,7 +42,15 @@
 
                         {% for station_name, ids in form.stations_grouped.items %}
                           {% if forloop.counter0 > 0 %}<br />{% endif %}
-                          {{ station_name }} {% if ids %}({{ ids|join:", " }}){% endif %}
+                          {{ station_name }}
+                          {% if ids %}
+                            (
+                            {% for id in ids %}
+                              {{ id }}{% if not forloop.last %}, {% endif %}
+                              {% if forloop.counter|divisibleby:3 and not forloop.last %}<br>{% endif %}
+                            {% endfor %}
+                            )
+                          {% endif %}
                         {% endfor %}
                       </td>
                       <td>{{ form.delivery_point_obj.provider_assigned_id }}</td>
