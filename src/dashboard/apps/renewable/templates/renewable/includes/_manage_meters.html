@@ -9,7 +9,7 @@
   </legend>
 
   <p>
-    Remplissez les relevés de production correspondant aux PDL.
+    Remplissez les relevés de production correspondant aux PDL pour la période <strong>{% previous_quarter_period %} {% previous_quarter_period_dates %}</strong>.
   </p>
 
   <div class="fr-table fr-table--no-caption" id="table-prm-component">
@@ -27,9 +27,6 @@
                 </th>
                 <th scope="col">
                   <div class="fr-cell__title">Identifiant du PDL</div>
-                </th>
-                <th scope="col">
-                  <div class="fr-cell__title">Période</div>
                 </th>
                 <th scope="col">
                   <div class="fr-cell__title">Relevé précédent (kWh)</div>
@@ -53,7 +50,19 @@
                   <input type="hidden" name="form-{{ forloop.counter0 }}-delivery_point" value="{{ form.delivery_point_obj.id }}">
                   {% for station_name, ids in form.stations_grouped.items %}
                     {% if forloop.counter0 > 0 %}<br />{% endif %}
-                    {{ station_name }} {% if ids %}({{ ids|join:", " }}){% endif %}
+                    {{ station_name }}
+                    {% if ids %}
+                    (
+                    {% for id in ids %}
+                      {{ id }}{% if not forloop.last %}, {% endif %}
+                      {% if forloop.counter == 1 and not forloop.last %}
+                        <br>
+                      {% elif forloop.counter > 1 and forloop.counter|add:"-1"|divisibleby:3 and not forloop.last %}
+                        <br>
+                      {% endif %}
+                    {% endfor %}
+                    )
+                    {% endif %}
                   {% endfor %}
                 </td>
 
@@ -63,14 +72,9 @@
                 </td>
 
                 <td>
-                  {% previous_quarter_period %}<br />
-                  {% previous_quarter_period_dates %}
-                </td>
-
-                <td>
                   {% with last_renewable=form.delivery_point_obj.last_renewable.0 %}
                     {% if last_renewable.meter_reading %}
-                      {{ last_renewable.meter_reading }} kWh
+                      {{ last_renewable.meter_reading|floatformat:5  }} kWh
                       <button class="fr-btn--tooltip fr-btn"
                               type="button"
                               id="button-{{ form.delivery_point_obj.provider_assigned_id }}"

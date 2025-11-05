@@ -21,6 +21,8 @@ and this project adheres to
 - Update French translations for improved readability and consistency
 - Update content wording in html templates
 - Update html templates to improve responsiveness
+- Update the display of stations in the management form tables to ensure complete 
+  rendering of information
 
 #### Dependencies
 
