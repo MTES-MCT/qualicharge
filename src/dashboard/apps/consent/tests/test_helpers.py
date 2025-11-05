@@ -26,9 +26,11 @@ def test_send_notification_for_awaiting_consents(mock_send_mail, settings):
     expected_template_id = 6
     expected_link = "https://example.com/consent"
     expected_support = "support@example.com"
+    expected_support_link = "https://example.com/contact/"
 
     # setup email config
     settings.CONTACT_EMAIL = expected_support
+    settings.CONTACT_LINK = expected_support_link
     settings.DASHBOARD_EMAIL_AWAITING_EMAIL = "awaiting_email"
     settings.DASHBOARD_EMAIL_CONFIGS = {
         "awaiting_email": {
@@ -63,6 +65,7 @@ def test_send_notification_for_awaiting_consents(mock_send_mail, settings):
                     "first_name": user.first_name,
                     "link": expected_link,
                     "support_email": expected_support,
+                    "support_link": expected_support_link,
                 }
             },
         )

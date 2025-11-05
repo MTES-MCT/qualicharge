@@ -78,9 +78,11 @@ def test_send_notification_for_opening(settings, monkeypatch):
     expected_template_id = 8
     expected_link = "https://example.com/consent"
     expected_support = "support@example.com"
+    expected_support_link = "https://example.com/contact"
 
     # setup email config
     settings.CONTACT_EMAIL = expected_support
+    settings.CONTACT_LINK = expected_support_link
     settings.DASHBOARD_EMAIL_RENEWABLE_OPENING_PERIOD = "renewable_opening_period"
     settings.DASHBOARD_EMAIL_CONFIGS = {
         "renewable_opening_period": {
@@ -117,6 +119,7 @@ def test_send_notification_for_opening(settings, monkeypatch):
                     "first_name": user.first_name,
                     "link": expected_link,
                     "support_email": expected_support,
+                    "support_link": expected_support_link,
                     "start_period": "01/01/2025",
                     "end_period": "15/01/2025",
                 }

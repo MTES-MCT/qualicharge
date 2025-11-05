@@ -1,0 +1,30 @@
+{% load i18n %}
+
+{% comment %}
+  option :
+    link_style="btn"
+
+  usage with a link to a form:
+  {% include "components/_contact_link.html" %}
+
+  usage with a mailto link :
+  {% include "components/_contact_link.html" with link_type="mailto" object="subject of the email" %}
+
+  Optionally, you can display the link as a button with link_style="btn".
+  {% include "components/_contact_link.html" with link_style="btn" %}
+{% endcomment %}
+
+{% with link_classes=link_style|yesno:"fr-btn fr-btn--secondary,fr-link fr-card__desc" %}
+
+  {% if link_type == "mailto" %}
+    <a class="{{ link_classes }}"
+      href="mailto:{{ contact_email }}?subject=[QualiCharge] Dashboard - {{ object }}." target="_blank">
+      {{ contact_email }}
+    </a>
+  {% else %}
+    <a class="{{ link_classes }}" href="{{ contact_link }}" target="_blank">
+      {% trans "Contact us" %}
+    </a>
+  {% endif %}
+
+{% endwith %}
