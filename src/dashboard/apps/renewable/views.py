@@ -27,7 +27,11 @@ from apps.renewable.forms import (
     RenewableForm,
     RenewableFormSet,
 )
-from apps.renewable.helpers import get_opening_period_dates, is_in_opening_period
+from apps.renewable.helpers import (
+    get_opening_period_dates,
+    is_in_opening_period,
+    sort_delivery_points_by_station,
+)
 from apps.renewable.models import Renewable
 
 BREADCRUMB_CURRENT_LABEL = _("Renewable meters")
@@ -129,6 +133,18 @@ class RenewableMetterReadingFormView(EntityViewMixin, BaseView, FormView):
         entity = self.get_entity()
         return is_in_opening_period(now) or entity.can_bypass_renewable_period
 
+    def get_sorted_delivery_points(self):
+        """Get sorted delivery points for the current entity.
+
+        Returns a QuerySet of DeliveryPoint objects sorted alphabetically by their
+        first associated station name.
+        """
+        entity = self.get_entity()
+        delivery_points = entity.get_unsubmitted_quarterly_renewables()
+        delivery_points = delivery_points.prefetch_related("renewables")
+
+        return sort_delivery_points_by_station(delivery_points)
+
     def get_context_data(self, **kwargs):
         """Add custom attributes to the context.
 
@@ -139,23 +155,23 @@ class RenewableMetterReadingFormView(EntityViewMixin, BaseView, FormView):
         the formset with its corresponding stations
         """
         entity = self.get_entity()
-        renewable_delivery_points = entity.get_unsubmitted_quarterly_renewables()
-        sorted_dps = self._order_by_stations(renewable_delivery_points)
+        delivery_points = self.get_sorted_delivery_points()
 
         formset = kwargs.get("formset")
         if formset is None:
             formset_class = self.get_formset_class()
             formset = formset_class(queryset=Renewable.objects.none())
 
-        for form, structured_point in zip(formset.forms, sorted_dps, strict=True):
-            form.delivery_point_obj = structured_point["delivery_point"]
-            form.stations_grouped = structured_point["stations_grouped"]
+        # Associate each form with its corresponding delivery point
+        for form, dp in zip(formset.forms, delivery_points, strict=True):
+            form.delivery_point_obj = dp
+            form.stations_grouped = dp.get_linked_stations()
 
         context = super().get_context_data(**kwargs)
         context["formset"] = formset
         context["entity"] = entity
         context["signature_location"] = settings.CONSENT_SIGNATURE_LOCATION
-        context["renewable_delivery_points"] = renewable_delivery_points
+        context["renewable_delivery_points"] = delivery_points
 
         return context
 
@@ -164,8 +180,7 @@ class RenewableMetterReadingFormView(EntityViewMixin, BaseView, FormView):
 
         Important: set 'extra' to match the number of delivery points
         """
-        entity = self.get_entity()
-        delivery_points = entity.get_unsubmitted_quarterly_renewables()
+        delivery_points = self.get_sorted_delivery_points()
 
         return modelformset_factory(
             Renewable,
@@ -175,31 +190,20 @@ class RenewableMetterReadingFormView(EntityViewMixin, BaseView, FormView):
             fields=["delivery_point", "meter_reading", "collected_at"],
         )
 
-    @staticmethod
-    def _order_by_stations(delivery_points):
-        """Sort and group stations alphabetically by name."""
-        structured_delivery_points = [
-            {"delivery_point": dp, "stations_grouped": dp.get_linked_stations()}
-            for dp in delivery_points
-        ]
-
-        return sorted(
-            structured_delivery_points,
-            key=lambda x: (
-                list(x["stations_grouped"].keys())[0].casefold()
-                if x["stations_grouped"]
-                else ""
-            ),
-        )
-
     def post(self, request, *args, **kwargs):
         """Handle POST requests."""
         renewables = None
+        delivery_points = self.get_sorted_delivery_points()
 
         formset_class = self.get_formset_class()
         formset = formset_class(
             request.POST, queryset=Renewable.objects.none(), user=request.user
         )
+
+        # Associate each form with its corresponding delivery point in sorted order
+        for form, dp in zip(formset.forms, delivery_points, strict=True):
+            form.delivery_point_obj = dp
+            form.stations_grouped = dp.get_linked_stations()
 
         if formset.is_valid():
             try:
@@ -335,6 +339,16 @@ class DeliveryPointRenewableFormSetView(EntityViewMixin, BaseView, FormView):
         {"url": reverse("renewable:index"), "title": BREADCRUMB_CURRENT_LABEL},
     ]
 
+    def get_sorted_delivery_points(self):
+        """Get sorted delivery points for the current entity.
+
+        Returns a QuerySet of DeliveryPoint objects sorted alphabetically by their
+        first associated station name.
+        """
+        entity = self.get_entity()
+        delivery_points = entity.delivery_points.filter(is_active=True)
+        return sort_delivery_points_by_station(delivery_points)
+
     def get_context_data(self, **kwargs):
         """Add custom attributes to the context.
 
@@ -343,7 +357,7 @@ class DeliveryPointRenewableFormSetView(EntityViewMixin, BaseView, FormView):
         - add custom attributes to each form in the formset
         """
         entity = self.get_entity()
-        delivery_points = entity.delivery_points.filter(is_active=True)
+        delivery_points = self.get_sorted_delivery_points()
 
         formset = kwargs.get("formset")
         if formset is None:
@@ -374,8 +388,7 @@ class DeliveryPointRenewableFormSetView(EntityViewMixin, BaseView, FormView):
 
     def post(self, request, *args, **kwargs):
         """Handle POST requests."""
-        entity = self.get_entity()
-        delivery_points = entity.delivery_points.filter(is_active=True)
+        delivery_points = self.get_sorted_delivery_points()
         formset_class = self.get_formset_class()
         formset = formset_class(request.POST, queryset=delivery_points)
 

@@ -72,7 +72,7 @@
                 </td>
 
                 <td>
-                  {% with last_renewable=form.delivery_point_obj.last_renewable.0 %}
+                  {% with last_renewable=form.delivery_point_obj.latest_renewable %}
                     {% if last_renewable.meter_reading %}
                       {{ last_renewable.meter_reading|floatformat:5  }} kWh
                       <button class="fr-btn--tooltip fr-btn"

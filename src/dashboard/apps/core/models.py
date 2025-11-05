@@ -312,6 +312,15 @@ class DeliveryPoint(DashboardBase):
 
         return dict(stations_grouped)
 
+    @property
+    def latest_renewable(self):
+        """Get the most recent renewable meter reading for this delivery point.
+
+        Returns:
+             Renewable: latest renewable, ordered by collected_at descending.
+        """
+        return self.renewables.order_by("-collected_at").first()
+
 
 class Station(DashboardBase):
     """Represents a station for electric vehicles."""

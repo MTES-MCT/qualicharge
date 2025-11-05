@@ -17,6 +17,7 @@ from apps.core.factories import DeliveryPointFactory, EntityFactory, StationFact
 from apps.core.mixins import EntityViewMixin
 from apps.core.models import DeliveryPoint, Entity
 from apps.renewable.factories import RenewableFactory
+from apps.renewable.helpers import sort_delivery_points_by_station
 from apps.renewable.models import Renewable
 from apps.renewable.views import (
     DeliveryPointRenewableFormSetView,
@@ -72,6 +73,7 @@ def test_manage_views_with_wrong_slug_raised_404(client):
     assert response.status_code == HTTPStatus.NOT_FOUND
 
 
+# -- Test RenewableMetterReadingFormView
 @pytest.mark.django_db
 @patch("apps.renewable.views.RenewableMetterReadingFormView._is_access_allowed")
 def test_manage_views_rendered_without_data(mock_is_access_allowed, client):
@@ -149,18 +151,25 @@ def test_manage_views_get_context_data(rf, settings):
         has_renewable=True,
         is_active=True,
     )
-    expected_renewable_dps = entity.get_unsubmitted_quarterly_renewables()
+    # get delivery points sorted by station name
+    renewable_dps = entity.get_unsubmitted_quarterly_renewables()
+    renewable_dps = renewable_dps.prefetch_related("renewables")
+    expected_renewable_dps = sort_delivery_points_by_station(renewable_dps)
+
     assert DeliveryPoint.objects.all().count() == size
 
     # accessing the view and get context data
     request = rf.get(reverse("renewable:manage"), kwargs={"slug": entity_name})
     request.user = user
     view.setup(request, slug=entity_name)
+
     context = view.get_context_data()
     assert context.get("entity") == entity
     assert context.get("signature_location") == expected_signature_location
+
     renewable_dps = context.get("renewable_delivery_points")
     assert renewable_dps.count() == size
+
     for renewable, expected_renewable in zip(
         renewable_dps, expected_renewable_dps, strict=True
     ):
@@ -285,6 +294,98 @@ def test_manage_views_post_with_invalid_data(  # noqa: PLR0913
 
 
 @pytest.mark.django_db
+def test_renewable_metter_reading_form_view_get_displays_sorted_delivery_points(client):
+    """Test RenewableMetterReadingFormView GET displays dps sorted by station name."""
+    entity_name = "entity-1"
+
+    user = UserFactory()
+    entity = EntityFactory(
+        users=[user], name=entity_name, can_bypass_renewable_period=True
+    )
+
+    # Create dps with stations in reverse order
+    assert DeliveryPoint.objects.count() == 0
+
+    dp_z = DeliveryPointFactory(entity=entity, is_active=True, has_renewable=True)
+    StationFactory(station_name="z-station", delivery_point=dp_z)
+
+    dp_a = DeliveryPointFactory(entity=entity, is_active=True, has_renewable=True)
+    StationFactory(station_name="a-station", delivery_point=dp_a)
+
+    dp_m = DeliveryPointFactory(entity=entity, is_active=True, has_renewable=True)
+    StationFactory(station_name="m-station", delivery_point=dp_m)
+
+    expected_dps_count = 3
+    assert DeliveryPoint.objects.count() == expected_dps_count
+
+    # accessing the view and get context data
+    client.force_login(user)
+    url = reverse("renewable:manage", kwargs={"slug": entity_name})
+    response = client.get(url)
+    assert response.status_code == HTTPStatus.OK
+
+    # Extract delivery point objects from forms
+    formset = response.context["formset"]
+    form_dps = [form.delivery_point_obj for form in formset.forms]
+
+    # Expected order: a-station, m-station, z-station (alphabetical)
+    assert form_dps[0].pk == dp_a.pk
+    assert form_dps[1].pk == dp_m.pk
+    assert form_dps[2].pk == dp_z.pk
+
+
+@pytest.mark.django_db
+def test_complex_scenario_with_many_delivery_points(client):
+    """RenewableMetterReadingFormView with many dps to ensure order is preserved."""
+    # Create 10 delivery points with random names
+    stations_data = [
+        "Zulu",
+        "Yankee",
+        "X-ray",
+        "Whiskey",
+        "Victor",
+        "Uniform",
+        "Tango",
+        "Sierra",
+        "Romeo",
+        "Quebec",
+    ]
+    entity_name = "entity-1"
+
+    user = UserFactory()
+    entity = EntityFactory(
+        users=[user], name=entity_name, can_bypass_renewable_period=True
+    )
+
+    delivery_points = []
+    for station_name in stations_data:
+        dp = DeliveryPointFactory(entity=entity, is_active=True, has_renewable=True)
+        StationFactory(station_name=f"{station_name} Station", delivery_point=dp)
+        delivery_points.append((station_name, dp))
+
+    # Expected alphabetical order
+    expected_order = sorted(delivery_points, key=lambda x: x[0].casefold())
+
+    # GET request
+    client.force_login(user)
+    url = reverse("renewable:manage", kwargs={"slug": entity_name})
+    response = client.get(url)
+    assert response.status_code == HTTPStatus.OK
+
+    formset = response.context["formset"]
+
+    # Verify order in GET
+    for idx, (expected_name, expected_dp) in enumerate(expected_order):
+        form_dp = formset.forms[idx].delivery_point_obj
+        assert (
+            form_dp.pk == expected_dp.pk
+        ), f"Form {idx} should correspond to {expected_name} Station"
+
+
+# -- End test RenewableMetterReadingFormView
+
+
+@pytest.mark.django_db
 def test_submitted_renewable_view_inherits_mixins():
     """Test SubmittedRenewableView inherits mixins."""
     assert issubclass(SubmittedRenewableView, EntityViewMixin)
@@ -401,6 +502,7 @@ def test_send_email_notification_populated(monkeypatch, rf):
         email_send_mock.assert_called_once()
 
 
+# -- Test DeliveryPointRenewableFormSetView
 @pytest.mark.django_db
 def test_delivery_point_renewable_formset_view_inherits_mixins():
     """Test DeliveryPointRenewableFormSetView inherits mixins."""
@@ -609,6 +711,141 @@ def test_delivery_point_renewable_formset_view_post(client):
 
     dp2.refresh_from_db()
     assert dp2.has_renewable is False
+
+
+@pytest.mark.django_db
+def test_delivery_point_renewable_formset_view_sorted_and_preserves(client):
+    """Test the formset View GET sorted delivery points and preserved form data.
+
+    Test DeliveryPointRenewableFormSetView:
+    - GET displays delivery points sorted by station name,
+    - POST correctly associates form data with delivery points.
+    """
+    entity_name = "entity-1"
+
+    user = UserFactory()
+    entity = EntityFactory(users=[user], name=entity_name)
+
+    # Create dps with stations in reverse order
+    assert DeliveryPoint.objects.count() == 0
+
+    dp_z = DeliveryPointFactory(entity=entity, is_active=True, has_renewable=False)
+    StationFactory(station_name="z-station", delivery_point=dp_z)
+
+    dp_a = DeliveryPointFactory(entity=entity, is_active=True, has_renewable=False)
+    StationFactory(station_name="a-station", delivery_point=dp_a)
+
+    dp_m = DeliveryPointFactory(entity=entity, is_active=True, has_renewable=False)
+    StationFactory(station_name="m-station", delivery_point=dp_m)
+
+    expected_dps_count = 3
+    assert DeliveryPoint.objects.count() == expected_dps_count
+
+    client.force_login(user)
+
+    # -- GET Displays delivery points sorted by station name
+    # accessing the view and get context data
+    url = reverse("renewable:delivery-points", kwargs={"slug": entity_name})
+    response = client.get(url)
+    assert response.status_code == HTTPStatus.OK
+
+    # Extract delivery point IDs from forms
+    formset = response.context["formset"]
+    form_dp_ids = [form.instance.pk for form in formset.forms]
+
+    # Expected order: a-station, m-station, z-station (alphabetical)
+    expected_order = [dp_a.pk, dp_m.pk, dp_z.pk]
+    assert (
+        form_dp_ids == expected_order
+    ), "Forms should be ordered by station name alphabetically"
+
+    # -- POST correctly associates form data with delivery points
+    # Simulate user checking specific delivery points
+    # Form 0 should be a-station, Form 1 should be m-station, Form 2 should be z-station
+    post_data = {
+        "form-TOTAL_FORMS": "3",
+        "form-INITIAL_FORMS": "3",
+        "form-MIN_NUM_FORMS": "0",
+        "form-MAX_NUM_FORMS": "1000",
+        # Check "a-station" (form-0)
+        "form-0-id": str(dp_a.pk),
+        "form-0-has_renewable": "on",
+        # Don't check "m-station" (form-1)
+        "form-1-id": str(dp_m.pk),
+        # Check "z-station" (form-2)
+        "form-2-id": str(dp_z.pk),
+        "form-2-has_renewable": "on",
+    }
+
+    client.post(url, data=post_data)
+
+    # Refresh from database
+    dp_a.refresh_from_db()
+    dp_m.refresh_from_db()
+    dp_z.refresh_from_db()
+
+    # Verify that the correct delivery points were updated
+    assert dp_a.has_renewable, "a-station should be marked as having renewable"
+    assert not dp_m.has_renewable, "m-station should NOT be marked as having renewable"
+    assert dp_z.has_renewable, "z-station should be marked as having renewable"
+
+
+@pytest.mark.django_db
+def test_delivery_point_renewable_formset_view_get_and_post_order_consistency(client):
+    """Test DeliveryPointRenewableFormSetView GET and POST use the same order."""
+    entity_name = "entity-1"
+
+    user = UserFactory()
+    entity = EntityFactory(users=[user], name=entity_name)
+
+    # Create dps with stations in reverse order
+    assert DeliveryPoint.objects.count() == 0
+
+    dp_z = DeliveryPointFactory(entity=entity, is_active=True, has_renewable=False)
+    StationFactory(station_name="z-station", delivery_point=dp_z)
+
+    dp_a = DeliveryPointFactory(entity=entity, is_active=True, has_renewable=False)
+    StationFactory(station_name="a-station", delivery_point=dp_a)
+
+    dp_m = DeliveryPointFactory(entity=entity, is_active=True, has_renewable=False)
+    StationFactory(station_name="m-station", delivery_point=dp_m)
+
+    expected_dps_count = 3
+    assert DeliveryPoint.objects.count() == expected_dps_count
+
+    client.force_login(user)
+
+    # First GET to see the order
+    url = reverse("renewable:delivery-points", kwargs={"slug": entity_name})
+    response_get = client.get(url)
+    assert response_get.status_code == HTTPStatus.OK
+
+    formset_get = response_get.context["formset"]
+    get_order = [form.instance.pk for form in formset_get.forms]
+
+    # Simulate POST
+    post_data = {
+        "form-TOTAL_FORMS": "3",
+        "form-INITIAL_FORMS": "3",
+        "form-MIN_NUM_FORMS": "0",
+        "form-MAX_NUM_FORMS": "1000",
+    }
+
+    # Add form data based on GET order
+    for idx, dp_pk in enumerate(get_order):
+        post_data[f"form-{idx}-id"] = str(dp_pk)
+        post_data[f"form-{idx}-has_renewable"] = "on"
+
+    response_post = client.post(url, data=post_data)
+    assert response_get.status_code == HTTPStatus.OK
+
+    formset_post = response_post.context["formset"]
+    post_order = [form.instance.pk for form in formset_post.forms]
+
+    assert get_order == post_order, "GET and POST should use the same order"
+
+
+# -- End test DeliveryPointRenewableFormSetView
 
 
 @pytest.mark.django_db
