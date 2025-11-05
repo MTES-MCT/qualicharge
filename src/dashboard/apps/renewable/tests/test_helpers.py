@@ -4,15 +4,17 @@ from datetime import date, datetime, timedelta
 from unittest.mock import patch
 
 import pytest
+from django.db.models import QuerySet
 from django.utils import timezone as django_timezone
 
 from apps.auth.factories import UserFactory
-from apps.core.factories import DeliveryPointFactory, EntityFactory
-from apps.core.models import Entity
+from apps.core.factories import DeliveryPointFactory, EntityFactory, StationFactory
+from apps.core.models import DeliveryPoint, Entity
 from apps.renewable.helpers import (
     get_opening_period_dates,
     is_in_opening_period,
     send_notification_for_opening,
+    sort_delivery_points_by_station,
 )
 
 
@@ -140,3 +142,54 @@ def test_send_notification_for_opening(settings, monkeypatch):
         email_send_mock = mock_message.return_value.send
         send_notification_for_opening(entity_without_renewable)
         email_send_mock.assert_not_called()
+
+
+@pytest.mark.django_db
+def test_sort_delivery_points_by_station():
+    """Test that delivery points are sorted by first station name.
+
+    Test with uppercase and lowercase stations and delivery points without stations.
+    """
+    # create, users, entity and consents
+    assert Entity.objects.count() == 0
+    user = UserFactory(email="user@example.com")
+    user2 = UserFactory(email="")
+    entity = EntityFactory(users=[user, user2])
+    assert Entity.objects.count() == 1
+
+    # Create in reverse order
+    assert DeliveryPoint.objects.count() == 0
+    dp_z = DeliveryPointFactory(entity=entity, is_active=True)
+    StationFactory(station_name="z-station", delivery_point=dp_z)
+
+    dp_without = DeliveryPointFactory(entity=entity, is_active=True)
+
+    dp_b_upper_case = DeliveryPointFactory(entity=entity, is_active=True)
+    StationFactory(station_name="B-STATION", delivery_point=dp_b_upper_case)
+
+    dp_a = DeliveryPointFactory(entity=entity, is_active=True)
+    StationFactory(station_name="a-station", delivery_point=dp_a)
+
+    dp_m = DeliveryPointFactory(entity=entity, is_active=True)
+    StationFactory(station_name="m-station", delivery_point=dp_m)
+
+    expected_dps_count = 5
+    assert DeliveryPoint.objects.count() == expected_dps_count
+
+    # Get unsorted queryset
+    unsorted = entity.delivery_points.filter(is_active=True)
+
+    # Sort
+    sorted_qs = sort_delivery_points_by_station(unsorted)
+    sorted_list = list(sorted_qs)
+
+    # Verify order
+    assert sorted_list[0].pk == dp_a.pk
+    assert sorted_list[1].pk == dp_b_upper_case.pk
+    assert sorted_list[2].pk == dp_m.pk
+    assert sorted_list[3].pk == dp_z.pk
+    assert sorted_list[4].pk == dp_without.pk
+
+    # the function returns a QuerySet
+    assert isinstance(sorted_qs, QuerySet)
+    assert hasattr(sorted_qs, "ordered")

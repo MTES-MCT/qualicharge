@@ -1,7 +1,6 @@
 """Dashboard renewable_tags tests."""
 
 from datetime import date
-from unittest.mock import Mock
 
 import pytest
 from django.utils import timezone
@@ -12,7 +11,6 @@ from apps.renewable.templatetags.renewable_tags import (
     previous_quarter_period_dates,
     quarter_period,
     quarter_period_dates,
-    sort_formset_by_station,
 )
 
 
@@ -112,36 +110,3 @@ def test_quarter_period_dates_period_without_reference_date(monkeypatch):
     monkeypatch.setattr(timezone, "now", lambda: date(2025, 5, 6))
     result = quarter_period_dates()
     assert result == "01/04/2025 to 30/06/2025"
-
-
-@pytest.mark.django_db
-def test_sort_formset_by_station():
-    """Test sort_formset_by_station."""
-    # Test sort_formset_by_station with an empty formset
-    formset = []
-    result = sort_formset_by_station(formset)
-    assert result == []
-
-    # Test sort_formset_by_station with a populated formset
-    # Mocking forms in the formset
-    form1 = Mock()
-    form1.instance = Mock()
-    form1.instance.has_renewable = False
-    form1.stations_grouped = {"Station C": None}
-
-    form2 = Mock()
-    form2.instance = Mock()
-    form2.instance.has_renewable = True
-    form2.stations_grouped = {"Station A": None}
-
-    form3 = Mock()
-    form3.instance = Mock()
-    form3.instance.has_renewable = True
-    form3.stations_grouped = {"Station B": None}
-
-    formset = [form1, form2, form3]
-
-    result = sort_formset_by_station(formset)
-
-    # Expected order: form2 (Station A), form3 (Station B), form1 (Station C)
-    assert result == [form2, form3, form1]
