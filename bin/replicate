@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+
+declare archive_name
+declare addon_id
+declare dump_file_name
+
+# Install the Scalingo CLI tool in the container
+install-scalingo-cli
+
+# Install additional tools to interact with the database
+dbclient-fetcher psql
+
+# Login to Scalingo
+scalingo login --api-token "${REPLICA_API_TOKEN}"
+
+# Retrieve the addon id
+addon_id="$( \
+  scalingo --app "${APP}" addons | \
+  grep postgres | \
+  sed "s/.*\(ad-[a-f0-9-]*\).*/\\1/" \
+)"
+
+# Download the latest backup available for the specified addon
+archive_name="backup.tar.gz"
+scalingo --app "${APP}" --addon "${addon_id}" \
+  backups-download --output "${archive_name}"
+
+# Extract the archive containing the downloaded backup
+mkdir backup && \
+  tar xvzf backup.tar.gz -C /app/backup 
+
+# Get Postgres dump to restore file name
+dump_file_name=$(find ./backup | tail -n 1)
+
+# Restore the dump
+pg_restore \
+  --clean \
+  --if-exists \
+  --no-owner \
+  --no-privileges \
+  --no-comments \
+  --dbname "${REPLICA_DATABASE_URL}" \
+  "/app/backup/${dump_file_name}"

@@ -8,6 +8,11 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Added
+
+- Replicate production database every day to perform analytics and prevent
+  performance issues in production
+
 ### Changed
 
 #### Dependencies
