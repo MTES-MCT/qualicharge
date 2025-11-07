@@ -30,7 +30,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
-          python-version-file: "./src/api/.python-version"
+          python-version-file: "./src/dashboard/.python-version"
       - name: Install the project
         run: uv sync --locked --all-extras --dev
 
