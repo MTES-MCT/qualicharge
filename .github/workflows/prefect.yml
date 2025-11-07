@@ -95,6 +95,10 @@ jobs:
       S3_ENDPOINT_URL: "http://localhost:9000"
       AWS_ACCESS_KEY_ID: qualicharge
       AWS_SECRET_ACCESS_KEY: password
+      CARBURE_ROOT_URL: "http://localhost:8088"
+      CARBURE_USER__API_KEY: supersecretsecret
+      CARBURE_USER__EMAIL: foo@example.org
+      CARBURE_USER__PASSWORD: supersecret
     steps:
       - uses: actions/checkout@v6
       - name: Create Indicators database

@@ -7,6 +7,7 @@ version = "0.0.1"
 requires-python = "~=3.12.0"
 dependencies = [
   "data7==0.13.2",
+  "email-validator>=2.3.0",
   "geoalchemy2[shapely]==0.18.1",
   "geopandas==1.1.1",
   "great_expectations[postgresql]==1.9.1",
@@ -32,9 +33,11 @@ dev = [
   "pandas-stubs==2.3.2.250926",
   "pytest==9.0.1",
   "pytest-cov==7.0.0",
+  "pytest-responses>=0.5.1",
   "ruff==0.14.5",
   "setuptools==80.9.0",
   "types-python-dateutil",
+  "types-requests>=2.32.4.20250913",
 ]
 
 [tool.uv]
@@ -57,7 +60,7 @@ packages = [
 
 # Third party packages configuration
 [tool.pytest.ini_options]
-addopts = "-v --cov-report term-missing --cov=indicators --cov=quality --cov=cooling"
+addopts = "-v --cov-report term-missing --cov=indicators --cov=quality --cov=cooling --cov=tiruert"
 python_files = [
     "test_*.py",
     "tests.py",
