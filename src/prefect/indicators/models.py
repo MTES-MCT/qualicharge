@@ -17,6 +17,7 @@ class Level(IntEnum):
     EPCI = 3
     CITY = 4
     OU = 5  # Operational Unit
+    AMENAGEUR = 6
 
 
 class IndicatorPeriod(Enum):

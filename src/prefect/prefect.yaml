@@ -247,13 +247,20 @@ deployments:
   #     work_queue_name: default
   #
   # # -- Tiruert --
-  # - name: tiruert-for-day
-  #   entrypoint: tiruert/run.py:tiruert_for_day
-  #   concurrency_limit: 10
-  #   work_pool:
-  #     name: indicators
-  #     work_queue_name: default
-  #
+  - name: tiruert-for-day
+    entrypoint: tiruert/run.py:tiruert_for_day
+    concurrency_limit: 10
+    work_pool:
+      name: indicators
+      work_queue_name: default
+
+  - name: tiruert-for-month-to-carbure
+    entrypoint: tiruert/submit.py:tiruert_for_month
+    concurrency_limit: 10
+    work_pool:
+      name: indicators
+      work_queue_name: default
+  
   # # -- Data cooling deployments --
   # - name: status-cooling-staging
   #   entrypoint: cooling/statuses.py:extract_old_statuses

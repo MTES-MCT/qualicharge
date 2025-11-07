@@ -13,6 +13,7 @@ from indicators.conf import settings
 from indicators.db import get_indicators_db_engine
 from indicators.schemas import BaseIndicator
 from indicators.types import Environment
+from tiruert.carbure import CarbureAPISettings, CarbureAPIUser, CarbureClient
 
 
 @pytest.fixture(autouse=True, scope="session")
@@ -76,3 +77,41 @@ def clean_s3fs(request):
 
     for archive in s3.glob(f"{bucket}/**/test.parquet"):
         s3.rm(archive, recursive=True)
+
+
+@pytest.fixture(scope="function")
+def carbure_api_user():
+    """Generate a carbure user."""
+    return CarbureAPIUser(
+        email="foo@example.org",
+        password="supersecret",  # noqa: S106
+        api_key="supersecretsecret",
+    )
+
+
+@pytest.fixture(scope="function")
+def carbure_config(carbure_api_user):
+    """Generate a carbure configuration."""
+    return CarbureAPISettings(
+        root_url="http://localhost:8088",
+        user=carbure_api_user,
+    )
+
+
+@pytest.fixture(scope="function")
+def carbure_client(responses, carbure_config):
+    """An authenticated carbure API client."""
+    client = CarbureClient(carbure_config)
+
+    # Perform initial authentication
+    responses.post(
+        f"{carbure_config.root_url}api/token/",
+        status=200,
+        json={
+            "access": "access",
+            "refresh": "refresh",
+        },
+    )
+    client._auth()
+
+    yield client

@@ -137,6 +137,10 @@ df[df["code"] == "FRTSL"]
 ```
 
 ```python
+set(df.columns)
+```
+
+```python
 stations = df[df["code"] == "FRTSL"][["id", "energy", "is_controlled"]].to_dict(orient="records")
 ```
 
@@ -166,6 +170,7 @@ refresh_token_url = f"{CARBURE_ROOT_URL}/api/token/refresh/"
 response = requests.post(refresh_token_url, json={"refresh": refresh_token}, headers=headers)
 token = response.json()
 access_token = token["access"]
+print(token)
 ```
 
 ```python
@@ -177,7 +182,7 @@ headers = {
 
 certificates_url = f"{CARBURE_ROOT_URL}/api/elec/provision-certificates/bulk-create/"
 response = requests.post(certificates_url, json=payload, headers=headers)
-response.json()
+print(response)
 ```
 
 ```python
@@ -190,6 +195,133 @@ headers = {
 check_certificates_url = f"{CARBURE_ROOT_URL}/api/elec/provision-certificates/?source=QUALICHARGE"
 response = requests.get(check_certificates_url, headers=headers)
 response.json()
+```
+
+```python
+!mamba install -y email-validator
+```
+
+```python
+import logging
+from typing import List, Optional
+from urllib.parse import urljoin
+
+import requests
+from pydantic import BaseModel, EmailStr, HttpUrl
+
+logger = logging.getLogger(__name__)
+
+
+class CarbureUser(BaseModel):
+    """Carbure user."""
+
+    email: EmailStr
+    password: str
+    api_key: str
+
+
+class CarbureClient:
+    """Carbure API client."""
+
+    def __init__(self, root_url: HttpUrl, user: CarbureUser) -> None:
+        """Set up Carbure API client."""
+        self.root_url = root_url
+        self.user = user
+        self.session = requests.Session()
+        self.session.headers = {
+            "Accept": "application/json",
+            "X-Api-Key": self.user.api_key,
+        }
+        self.access_token: Optional[str] = None
+        self.refresh_token: Optional[str] = None
+
+    def _api_request(
+        self,
+        method: str,
+        endpoint: str,
+        payload: Optional[dict | List[dict]] = None,
+    ) -> dict | List[dict]:
+        """Perforn an API request."""
+        url = urljoin(str(self.root_url), endpoint)
+
+        # Perform the request
+        response = getattr(self.session, method)(url, json=payload)
+
+        # User is not authenticated.
+        # Perform authentication and perform the request one more time.
+        if response.status_code in (
+            requests.codes.forbidden,
+            requests.codes.unauthorized,
+        ):
+            self._auth()
+            return self._api_request(method, endpoint, payload)
+        # Request seems not satisfying: display error logs before raising an exception
+        elif response.status_code not in (requests.codes.ok, requests.codes.created):
+            logger.error(f"[HTTP {response.status_code}] {response.text}")
+
+        response.raise_for_status()
+        return response.json()
+
+    def _auth(self) -> None:
+        """Authenticate to the Carbure API."""
+        if self.refresh_token is not None:
+            tokens = self._api_request(
+                "post", "/api/token/refresh/", {"refresh": self.refresh_token}
+            )
+        else:
+            tokens = self._api_request(
+                "post", "/api/token/", self.user.model_dump(exclude={"api_key"})
+            )
+            self.refresh_token = tokens["refresh"]
+        self.access_token = tokens["access"]
+        self.session.headers |= {"Authorization": f"Bearer {self.access_token}"}
+
+    def check_entities(self) -> List[dict]:
+        """Check Carbure registered entities."""
+        return self._api_request("get", "/api/resources/entities")
+
+    def bulk_create_certificates(self, certificates: List[dict]) -> None:
+        """Bulk create elec provision certificates."""
+        self._api_request(
+            "post",
+            "/api/elec/provision-certificates-qualicharge/bulk-create/",
+            certificates,
+        )
+
+
+client = CarbureClient(
+    root_url=CARBURE_ROOT_URL, 
+    user=CarbureUser(
+        email=CARBURE_USER_EMAIL, 
+        password=CARBURE_USER_PASSWORD, 
+        api_key=CARBURE_USER_API_KEY
+    )
+)
+```
+
+```python
+entities = client.check_entities()
+entities[:10]
+```
+
+```python
+client.bulk_create_certificates([])
+```
+
+```python
+small_payload = [{'entity': 'Tesla',
+  'siren': '524335262',
+  'operational_units': [{'code': 'FRTSL',
+    'from': '2024-12-01',
+    'to': '2025-01-01',
+    'stations': [{'id': 'FRTSLP10696',
+      'energy': 0.00016399400000000002,
+      'is_controlled': False},]}]}]
+```
+
+```python
+client.bulk_create_certificates(payload)
+payload
 ```
 
 ## Session cleaning

@@ -6,3 +6,7 @@ DATA7_DEFAULT_DTYPE_BACKEND=pyarrow
 S3_ENDPOINT_URL=http://minio:9000
 AWS_ACCESS_KEY_ID=qualicharge
 AWS_SECRET_ACCESS_KEY=password
+CARBURE_ROOT_URL=http://localhost:8088
+CARBURE_USER__API_KEY=supersecretsecret
+CARBURE_USER__EMAIL=foo@example.org
+CARBURE_USER__PASSWORD=supersecret
