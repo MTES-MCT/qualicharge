@@ -18,6 +18,10 @@ and this project adheres to
 - Upgrade `pyarrow` to `22.0.0`
 - Upgrade `sentry-sdk` to `2.43.0`
 
+### Fixed 
+
+- Restore orphan stations cleanup
+
 ## [0.30.0] - 2025-10-31
 
 ### Changed

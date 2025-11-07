@@ -5,9 +5,9 @@ WHERE id IN (
       _Station.id
     FROM
       _Station
-      LEFT JOIN PointDeCharge ON station_id = _Station.id
+      LEFT JOIN _PointDeCharge ON station_id = _Station.id
     WHERE
-      PointDeCharge.station_id ISNULL
+      _PointDeCharge.station_id ISNULL
 );
 
 DELETE
