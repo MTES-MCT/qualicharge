@@ -28,7 +28,7 @@ deployments:
     entrypoint: indicators/run.py:i4_calculate
     concurrency_limit: 10
     schedules:
-      - cron: "2 5 * * *"
+      - cron: "3 5 * * *"
         timezone: "Europe/Paris"
         active: true
     parameters:
@@ -45,7 +45,7 @@ deployments:
     entrypoint: indicators/run.py:i7_calculate
     concurrency_limit: 10
     schedules:
-      - cron: "4 5 * * *"
+      - cron: "6 5 * * *"
         timezone: "Europe/Paris"
         active: true
     parameters:
@@ -62,7 +62,7 @@ deployments:
     entrypoint: indicators/run.py:t1_calculate
     concurrency_limit: 10
     schedules:
-      - cron: "10 5 * * *"
+      - cron: "9 5 * * *"
         timezone: "Europe/Paris"
         active: true
     parameters:
@@ -79,7 +79,7 @@ deployments:
     entrypoint: indicators/run.py:e4_calculate
     concurrency_limit: 10
     schedules:
-      - cron: "20 5 * * *"
+      - cron: "12 5 * * *"
         timezone: "Europe/Paris"
         active: true
     parameters:
@@ -96,7 +96,7 @@ deployments:
     entrypoint: indicators/run.py:u5_calculate
     concurrency_limit: 10
     schedules:
-      - cron: "4 6 * * *"
+      - cron: "15 5 * * *"
         timezone: "Europe/Paris"
         active: true
     parameters:
@@ -113,7 +113,7 @@ deployments:
     entrypoint: indicators/run.py:u6_calculate
     concurrency_limit: 10
     schedules:
-      - cron: "6 6 * * *"
+      - cron: "18 5 * * *"
         timezone: "Europe/Paris"
         active: true
     parameters:
@@ -130,7 +130,7 @@ deployments:
     entrypoint: indicators/run.py:u9_calculate
     concurrency_limit: 10
     schedules:
-      - cron: "8 6 * * *"
+      - cron: "21 5 * * *"
         timezone: "Europe/Paris"
         active: true
     parameters:
@@ -147,7 +147,7 @@ deployments:
     entrypoint: indicators/run.py:u10_calculate
     concurrency_limit: 10
     schedules:
-      - cron: "10 6 * * *"
+      - cron: "24 5 * * *"
         timezone: "Europe/Paris"
         active: true
     parameters:
@@ -164,7 +164,7 @@ deployments:
     entrypoint: indicators/run.py:u11_calculate
     concurrency_limit: 10
     schedules:
-      - cron: "12 6 * * *"
+      - cron: "27 5 * * *"
         timezone: "Europe/Paris"
         active: true
     parameters:
@@ -181,7 +181,7 @@ deployments:
     entrypoint: indicators/run.py:u12_calculate
     concurrency_limit: 10
     schedules:
-      - cron: "14 6 * * *"
+      - cron: "30 5 * * *"
         timezone: "Europe/Paris"
         active: true
     parameters:
@@ -198,7 +198,7 @@ deployments:
     entrypoint: indicators/run.py:u13_calculate
     concurrency_limit: 10
     schedules:
-      - cron: "16 6 * * *"
+      - cron: "33 5 * * *"
         timezone: "Europe/Paris"
         active: true
     parameters:
@@ -216,7 +216,7 @@ deployments:
     entrypoint: indicators/run.py:up_calculate
     concurrency_limit: 10
     schedules:
-      - cron: "22 1 10 * *"
+      - cron: "2 1 10 * *"
         timezone: "Europe/Paris"
         active: true
     parameters:
@@ -233,7 +233,7 @@ deployments:
     entrypoint: indicators/run.py:up_calculate
     concurrency_limit: 10
     schedules:
-      - cron: "02 1 * * 1"
+      - cron: "12 1 * * 1"
         timezone: "Europe/Paris"
         active: true
     parameters:
@@ -249,6 +249,7 @@ deployments:
   # -- Tiruert --
   - name: tiruert-for-day
     entrypoint: tiruert/run.py:tiruert_for_day
+    concurrency_limit: 10
     work_pool:
       name: indicators
       work_queue_name: default
@@ -256,8 +257,9 @@ deployments:
   # -- Data cooling deployments --
   - name: status-cooling-staging
     entrypoint: cooling/statuses.py:extract_old_statuses
+    concurrency_limit: 10
     schedules:
-      - cron: "2 4 * * *"
+      - cron: "32 1 * * *"
         timezone: "Europe/Paris"
         active: false 
     parameters:
@@ -271,8 +273,9 @@ deployments:
 
   - name: status-cooling-production
     entrypoint: cooling/statuses.py:extract_old_statuses
+    concurrency_limit: 10
     schedules:
-      - cron: "18 4 * * *"
+      - cron: "36 1 * * *"
         timezone: "Europe/Paris"
         active: false 
     parameters:
@@ -286,8 +289,9 @@ deployments:
 
   - name: sessions-cooling-staging
     entrypoint: cooling/sessions.py:extract_old_sessions
+    concurrency_limit: 10
     schedules:
-      - cron: "34 4 * * *"
+      - cron: "34 1 * * *"
         timezone: "Europe/Paris"
         active: false
     parameters:
@@ -301,8 +305,9 @@ deployments:
 
   - name: sessions-cooling-production
     entrypoint: cooling/sessions.py:extract_old_sessions
+    concurrency_limit: 10
     schedules:
-      - cron: "43 4 * * *"
+      - cron: "30 2 * * *"
         timezone: "Europe/Paris"
         active: false
     parameters:
@@ -318,8 +323,9 @@ deployments:
 
   - name: quality-static-staging
     entrypoint: quality/flows/static.py:run_api_db_validation
+    concurrency_limit: 10
     schedules:
-      - cron: "2 2 * * *"
+      - cron: "0 3 * * *"
         timezone: "Europe/Paris"
         active: true
     parameters:
@@ -331,8 +337,9 @@ deployments:
 
   - name: quality-static-staging-by-amenageur
     entrypoint: quality/flows/static.py:run_api_db_validation_by_amenageur
+    concurrency_limit: 10
     schedules:
-      - cron: "12 2 * * *"
+      - cron: "2 3 * * *"
         timezone: "Europe/Paris"
         active: true
     parameters:
@@ -346,8 +353,9 @@ deployments:
 
   - name: quality-static-production
     entrypoint: quality/flows/static.py:run_api_db_validation
+    concurrency_limit: 10
     schedules:
-      - cron: "22 2 * * *"
+      - cron: "12 3 * * *"
         timezone: "Europe/Paris"
         active: true
     parameters:
@@ -359,8 +367,9 @@ deployments:
 
   - name: quality-static-production-by-amenageur
     entrypoint: quality/flows/static.py:run_api_db_validation_by_amenageur
+    concurrency_limit: 10
     schedules:
-      - cron: "32 2 * * *"
+      - cron: "14 3 * * *"
         timezone: "Europe/Paris"
         active: true
     parameters:
@@ -374,8 +383,9 @@ deployments:
 
   - name: quality-dynamic-staging
     entrypoint: quality/flows/dynamic.py:run_api_db_validation
+    concurrency_limit: 10
     schedules:
-      - cron: "42 2 * * *"
+      - cron: "16 3 * * *"
         timezone: "Europe/Paris"
         active: true
     parameters:
@@ -390,8 +400,9 @@ deployments:
 
   - name: quality-session-staging-by-amenageur
     entrypoint: quality/flows/dynamic.py:run_api_db_validation_by_amenageur
+    concurrency_limit: 10
     schedules:
-      - cron: "52 2 * * *"
+      - cron: "20 3 * * *"
         timezone: "Europe/Paris"
         active: true
     parameters:
@@ -410,7 +421,7 @@ deployments:
   - name: quality-status-staging-by-amenageur
     entrypoint: quality/flows/dynamic.py:run_api_db_validation_by_amenageur
     schedules:
-      - cron: "2 3 * * *"
+      - cron: "40 3 * * *"
         timezone: "Europe/Paris"
         active: true
     parameters:
@@ -426,8 +437,9 @@ deployments:
 
   - name: quality-dynamic-production
     entrypoint: quality/flows/dynamic.py:run_api_db_validation
+    concurrency_limit: 10
     schedules:
-      - cron: "17 3 * * *"
+      - cron: "0 4 * * *"
         timezone: "Europe/Paris"
         active: true
     parameters:
@@ -442,8 +454,9 @@ deployments:
 
   - name: quality-session-production-by-amenageur
     entrypoint: quality/flows/dynamic.py:run_api_db_validation_by_amenageur
+    concurrency_limit: 10
     schedules:
-      - cron: "32 3 * * *"
+      - cron: "20 4 * * *"
         timezone: "Europe/Paris"
         active: true
     parameters:
@@ -462,7 +475,7 @@ deployments:
   - name: quality-status-production-by-amenageur
     entrypoint: quality/flows/dynamic.py:run_api_db_validation_by_amenageur
     schedules:
-      - cron: "47 3 * * *"
+      - cron: "40 4 * * *"
         timezone: "Europe/Paris"
         active: true
     parameters:
