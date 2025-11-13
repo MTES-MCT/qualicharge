@@ -8,6 +8,7 @@ import great_expectations as gx
 import great_expectations.expectations as gxe
 
 from .parameters import (
+    DECL,
     DUPS,
     DUPT,
     ENEA,
@@ -18,11 +19,14 @@ from .parameters import (
     FRES,
     FRET,
     FTRT,
+    INAC,
+    IS_DC,
     LONS,
     NEGS,
     OCCT,
     ODUR,
     OVRS,
+    OVRT,
     RATS,
     SEST,
 )
@@ -476,6 +480,106 @@ HAVING
             ).substitute(date_params | FRET.params),
             meta={"code": FRET.code},
         ),
+        # OVRT : Number of days-poc with more than max_statuses_per_day (rule 53)
+        gxe.UnexpectedRowsExpectation(
+            unexpected_rows_query=Template(
+                """
+WITH
+  f_statique AS {batch}
+SELECT
+  nb_id,
+  status_date,
+  id_pdc_itinerance,
+  nom_amenageur,
+  nom_operateur
+FROM
+  (
+    SELECT
+      count(id) AS nb_id,
+      horodatage::date as status_date,
+      point_de_charge_id
+    FROM
+      status
+    WHERE
+      horodatage >= $start
+      AND horodatage < $end
+    GROUP BY
+      status_date, 
+      point_de_charge_id
+  ) AS list_statuses
+  INNER JOIN f_statique ON point_de_charge_id = f_statique.pdc_id
+WHERE
+  nb_id > $max_statuses_per_day
+                """
+            ).substitute(date_params | OVRT.params),
+            meta={"code": OVRT.code},
+        ),
+    ]
+    pdc_statuses_expectations = [
+        # INAC : Inactive charge points (rule 51)
+        gxe.UnexpectedRowsExpectation(
+            unexpected_rows_query=Template(
+                """
+WITH
+  nbre_pdc_inactif AS (
+    SELECT
+      COUNT(*) AS nb_pdc_inactif
+    FROM
+      {batch} AS statique
+      INNER JOIN lateststatus ON lateststatus.id_pdc_itinerance = statique.id_pdc_itinerance
+    WHERE
+      horodatage < CURRENT_TIMESTAMP - interval '$inactivity_duration'
+  ),
+  nbre_pdc AS (
+    SELECT
+      COUNT(*) AS nb_pdc
+    FROM
+      {batch} AS statique
+  )
+SELECT
+  *,
+  nb_pdc_inactif::float / nb_pdc AS ratio
+FROM
+  nbre_pdc,
+  nbre_pdc_inactif
+WHERE
+  nb_pdc_inactif::float > $threshold_percent * nb_pdc
+                """
+            ).substitute(date_params | INAC.params),
+            meta={"code": INAC.code},
+        ),
+        # DECL : Declared charge points (rule 52)
+        gxe.UnexpectedRowsExpectation(
+            unexpected_rows_query=Template(
+                """
+WITH
+  nbre_pdc_declare AS (
+    SELECT
+      COUNT(*) AS nb_pdc_declare
+    FROM
+      {batch} AS statique
+      INNER JOIN lateststatus ON lateststatus.id_pdc_itinerance = statique.id_pdc_itinerance
+    WHERE
+      lateststatus.id_pdc_itinerance IS NULL
+  ),
+  nbre_pdc AS (
+    SELECT
+      COUNT(*) AS nb_pdc
+    FROM
+      {batch} AS statique
+  )
+SELECT
+  *,
+  nb_pdc_declare::float / nb_pdc AS ratio
+FROM
+  nbre_pdc,
+  nbre_pdc_declare
+WHERE
+  nb_pdc_declare::float > $threshold_percent * nb_pdc
+                """
+            ).substitute(date_params | DECL.params),
+            meta={"code": DECL.code},
+        ),
     ]
     statuses_sessions_expectations = [
         # RATS : Ratio number of statuses / number of sessions (rule 49)
@@ -483,7 +587,16 @@ HAVING
             unexpected_rows_query=Template(
                 """
 WITH
-  f_statique AS {batch},
+  f_statique AS (
+    SELECT
+      id_pdc_itinerance,
+      pdc_id
+    FROM
+      {batch} AS statique
+    WHERE
+      (raccordement is Null or raccordement = 'Direct')
+      AND $IS_DC
+  ),
   n_session AS (
     SELECT
       COUNT(*) AS nb_session
@@ -510,10 +623,10 @@ FROM
   n_session,
   n_status
 WHERE
-  nb_status::float / nb_session::float > $ratio_statuses_per_session_max
-  OR nb_status::float / nb_session::float < $ratio_statuses_per_session_min
+  nb_status::float > nb_session::float * $ratio_statuses_per_session_max
+  OR nb_status::float < nb_session::float * $ratio_statuses_per_session_min
                 """
-            ).substitute(date_params | RATS.params),
+            ).substitute(date_params | RATS.params | {"IS_DC": IS_DC}),
             meta={"code": RATS.code},
         ),
         # OCCT : Number of days-poc with status 'occupe' and without session (rule 21)
@@ -521,7 +634,16 @@ WHERE
             unexpected_rows_query=Template(
                 """
 WITH
-  f_statique AS {batch},
+  f_statique AS (
+    SELECT
+      id_pdc_itinerance,
+      pdc_id
+    FROM
+      {batch} AS statique
+    WHERE
+      (raccordement is Null or raccordement = 'Direct')
+      AND $IS_DC
+    ),
   nombre_status AS (
     SELECT
       count(status.id) AS nb_status,
@@ -585,9 +707,9 @@ FROM
       nb_status > 1
   ) AS nb_stat
 WHERE
-  n_stat_ses::float / n_stat::float > $threshold_percent
+  n_stat_ses::float > (n_stat::float * $threshold_percent)
                 """
-            ).substitute(date_params | OCCT.params),
+            ).substitute(date_params | OCCT.params | {"IS_DC": IS_DC}),
             meta={"code": OCCT.code},
         ),
         # SEST : Number of days-poc with session and without status 'occupe' (rule 22)
@@ -661,7 +783,7 @@ FROM
       nombre_sessions
   ) AS nb_ses
 WHERE
-  n_stat_ses::float / n_ses::float > $threshold_percent
+  n_stat_ses::float > (n_ses::float * $threshold_percent)
                 """
             ).substitute(date_params | SEST.params),
             meta={"code": SEST.code},
@@ -671,6 +793,7 @@ WHERE
         energy_expectations
         + sessions_expectations
         + statuses_expectations
+        + pdc_statuses_expectations
         + statuses_sessions_expectations
     )
 
