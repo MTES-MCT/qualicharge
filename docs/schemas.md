@@ -68,6 +68,7 @@ Specific rules applies for submitted datasets consistency:
 | 46      | The number of stations per location should be less than **1.5**                                                                     |
 | 47      | The number of charge points per station should be equal to (or greater than) the value `nbre_pdc`                                   |
 | 48      | Two stations with identical first 5 characters of the `id_station_itinerance` should not be associated with two different operators |
+| 51 - 52 | A charge point without statuses since one month should be decommissioned                                                            |
 
 > The rule number corresponds to our data-quality control referencial.
 
@@ -140,8 +141,10 @@ Specific rules applies for submitted datasets consistency:
 | 21      | A status with `occupation_pdc="occupe"` should be associated with a session                                                     |
 | 37      | A status with `etat_pdc="hors_service"` cannot define `occupation_pdc="occupe"` (the later is reserved for charging activities) |
 | 44      | Statuses cannot be duplicated (identical `horodatage` values for a target charge point)                                         |
+| 53      | The number of statuses for a charge point should be less than **1 440 per day**                                                  |
 
 > The rule number corresponds to our data-quality control referencial.
+> Rule 21 is only available for charge points where session flow is enabled
 
 ### Sessions
 
@@ -181,7 +184,7 @@ Specific rules applies for submitted datasets consistency:
 | Rule N° | Rule                                                                                                                                        |
 | :------ | :------------------------------------------------------------------------------------------------------------------------------------------ |
 | 10      | Sessions cannot overlap                                                                                                                     |
-| 13      | The number of sessions at a charge point should be lower than **60 per day**                                                                |
+| 13      | The number of sessions for a charge point should be less than **60 per day**                                                                 |
 | 14      | A session cannot end before it starts                                                                                                       |
 | 15      | A session should last more than **3 days**                                                                                                  |
 | 17      | Sessions cannot be duplicated (identical start/end dates and energy for a target charge point)                                              |

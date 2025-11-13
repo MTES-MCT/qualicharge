@@ -25,11 +25,13 @@ and this project adheres to
   - Locations (INSE, ADDR, LOCP)
   - Power supply (PDLM, NE10)
   - Operator and owner (OPEM, AMEM)
-- Add dynamic expectations
+- Add session expectations
   - Sesssions (DUPS, OVRS, LONS, NEGS, FRES)
   - Energy (ENEU, ENEA, ENEX, ODUR)
-  - statuses (ERRT, FTRT, DUPT, FRET)
   - consistency (RATS, OCCT, SEST)
+- Add status expectations
+  - statuses (ERRT, FTRT, DUPT, FRET, OVRT)
+  - pdc activity (INAC, DECL)
 - Separate sessions and statuses expectations
 - Implement expectations as indicators
 
@@ -44,5 +46,6 @@ and this project adheres to
 - Update indicators table indexes
 - Optimize queries for indexes added on session and status tables
 - Add delay parameter for dynamic Expectations
+- Extend quality to data without sessions
 
 [unreleased]: https://github.com/MTES-MCT/qualicharge/

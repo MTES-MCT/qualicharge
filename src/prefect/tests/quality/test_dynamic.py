@@ -25,7 +25,7 @@ def test_run_api_db_validation():
     for _, v in results.run_results.items():
         for result in v.results:
             code = result.expectation_config.meta.get("code")  # type: ignore[union-attr]
-            if code in ["FRES", "FRET", "ENEX", "ENEA", "OCCT", "SEST"]:
+            if code in ["FRES", "FRET", "ENEX", "ENEA", "OCCT", "SEST", "INAC"]:
                 assert not result.success
             else:
                 assert result.success
@@ -58,17 +58,33 @@ def test_run_api_db_validation_by_amenageur(monkeypatch):
         for result in results.suite:
             match results.amenageur:
                 case "Tesla":
-                    if result.code in ["FRES", "FRET", "OCCT", "SEST"]:
+                    if result.code in ["FRES", "FRET", "OCCT", "SEST", "INAC", "ENEA"]:
                         assert not result.success
                     else:
                         assert result.success
                 case "Ionity":
-                    if result.code in ["FRES", "FRET", "ENEX", "ENEA", "OCCT", "SEST"]:
+                    if result.code in [
+                        "FRES",
+                        "FRET",
+                        "ENEX",
+                        "ENEA",
+                        "OCCT",
+                        "SEST",
+                        "INAC",
+                    ]:
                         assert not result.success
                     else:
                         assert result.success
                 case "Electra":
-                    if result.code in ["FRES", "FRET", "ENEX", "ENEA", "OCCT", "SEST"]:
+                    if result.code in [
+                        "FRES",
+                        "FRET",
+                        "ENEX",
+                        "ENEA",
+                        "OCCT",
+                        "SEST",
+                        "INAC",
+                    ]:
                         assert not result.success
                     else:
                         assert result.success
