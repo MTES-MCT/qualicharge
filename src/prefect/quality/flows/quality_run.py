@@ -250,15 +250,16 @@ def run_api_db_checkpoint_by_amenageur(  # noqa: PLR0913
                     )
                     if code in EVALUABLE_PARAMS and "details" in r.result:
                         value = r.result["details"]["unexpected_rows"][0]["ratio"]
-                    indicators.loc[len(indicators)] = {
-                        "value": value,
-                        "level": Level.OU,
-                        "target": amenageur,
-                        "category": code,
-                        "code": "qua",
-                        "period": period,
-                        "timestamp": check_date.isoformat(),
-                    }
+                    if value > 0:
+                        indicators.loc[len(indicators)] = {
+                            "value": value,
+                            "level": Level.OU,
+                            "target": amenageur,
+                            "category": code,
+                            "code": "qua",
+                            "period": period,
+                            "timestamp": check_date.isoformat(),
+                        }
         report.results.append(qc_results)
 
     # Generate report
