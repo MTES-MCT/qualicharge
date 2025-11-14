@@ -41,6 +41,8 @@ payload = {
 token_url = f"{CARBURE_ROOT_URL}/api/token/"
 
 response = requests.post(token_url, json=payload, headers=headers)
+response.raise_for_status()
+print(response)
 token = response.json()
 access_token = token["access"]
 refresh_token = token["refresh"]
@@ -359,59 +361,158 @@ qc_sessions[qc_sessions["overlap"]]
 qc_sessions
 ```
 
-```python
-i = filtered.groupby(['entity', 'siren', 'code', 'id_station_itinerance'])['energy'].sum()
-i
-```
+## Send volumes to carbure
 
 ```python
-n = i.reset_index()
-n
-```
+from string import Template
 
-```python
-n["energy"].sum()
-```
-
-```python
-indicator = pd.DataFrame({"A": 1, "extras": [n.to_dict(orient="records")]})
-
-with pd.option_context("display.max_colwidth", None):
-    display(indicator)
-```
-
-```python
-from sqlalchemy import text 
-
-OPERATIONAL_UNIT_WITH_SESSIONS_TEMPLATE = Template(
+ENERGY_BY_STATION_TEMPLATE = Template(
     """
+    WITH
+      energy_over_period AS (
+        SELECT
+          jsonb_path_query(extras, '$$.entity') ->> 0 as entity,
+          jsonb_path_query(extras, '$$.siren') ->> 0 AS siren,
+          target as code,
+          jsonb_path_query(extras, '$$.id_station_itinerance') ->> 0 AS station,
+          jsonb_path_query(extras, '$$.energy')::NUMERIC AS energy
+        FROM
+          $environment
+        WHERE
+          code = 'tirue'
+          AND period = 'd'
+          AND (extras @> '[{"siren": "$siren"}]')
+          AND timestamp >= '$from_date'
+          AND timestamp < '$to_date'
+      )
     SELECT
-      SUBSTRING(_pointdecharge.id_pdc_itinerance for 5) AS code,
-      Count(Session.id) AS COUNT
+      entity,
+      siren,
+      code,
+      station,
+      sum(energy) / 1000. AS energy_mwh
     FROM
-      Session
-      JOIN _pointdecharge ON _pointdecharge.id = Session.point_de_charge_id
-    WHERE
-      Session.start >= '$from_date'
-      AND Session.start < '$to_date'
+      energy_over_period
     GROUP BY
-      code
+      entity,
+      siren,
+      code,
+      station
     ORDER BY
-      code
+      siren,
+      code,
+      station
     """
+    
 )
-from_date = date(2024, 12, 27)
-to_date = date(2024, 12, 28)
+```
 
-with Session(engine) as session:
-    result = session.execute(
+```python
+import os
+from datetime import date
+
+import pandas as pd
+from sqlalchemy import create_engine, text
+from sqlalchemy.orm import Session
+
+indicators_engine = create_engine("postgresql+psycopg://qualicharge:pass@postgresql:5432/qualicharge-indicators")
+api_engine = create_engine(os.getenv("DATABASE_URL"))
+```
+
+```python
+with Session(api_engine) as session:
+    results = session.execute(
         text(
-            OPERATIONAL_UNIT_WITH_SESSIONS_TEMPLATE.substitute(
-                {"from_date": from_date, "to_date": to_date}
-            )
+            """
+            SELECT DISTINCT
+              siren_amenageur
+            FROM
+              Amenageur
+            ORDER BY
+              siren_amenageur
+            """
         )
     )
-result.all()
+sirens = [row[0] for row in results.all()]
+sirens
+```
+
+```python
+with Session(engine) as session:
+    energies = pd.read_sql_query(
+        ENERGY_BY_STATION_TEMPLATE.substitute(
+            {
+                "environment": "development",
+                "siren": "524335262",
+                "from_date": date(2024, 12, 1),
+                "to_date": date(2025, 1, 1),
+            }
+        ),
+        con=session.connection(),
+    )
+energies
+```
+
+```python
+from_date = date(2024, 12, 1)
+to_date = date(2025, 1, 1)
+with Session(engine) as session:
+    energies = pd.read_sql_query(
+        ENERGY_BY_STATION_TEMPLATE.substitute(
+            {
+                "environment": "development",
+                "siren": "524335262",
+                "from_date": from_date,
+                "to_date": to_date,
+            }
+        ),
+        con=session.connection(),
+    )
+energies["from"] = from_date 
+energies["to"] = to_date
+energies["is_controlled"] = False
+energies.rename(columns={"station": "id", "energy_mwh": "energy"}, inplace=True)
+energies
+```
+
+```python
+by_index = energies.set_index(["entity", "siren", "code", "from", "to", "id"])
+by_index
+```
+
+```python
+payload = []
+by_entity = energies.groupby(["entity", "siren"])
+for entity_group in by_entity.groups:
+    entity, siren = entity_group
+    entity_payload = {
+        "entity": entity,
+        "siren": siren,
+        "operational_units": []
+    }
+    by_code = by_entity.get_group(group).groupby(["code", "from", "to"])
+    for code_group in by_code.groups:
+        code, from_, to_ = code_group
+        by_stations = by_code.get_group(code_group)
+        code_payload = {
+            "code": code,
+            "from": str(from_),
+            "to": str(to_),
+            "stations": by_stations[["id", "energy", "is_controlled"]].to_dict(orient="records")
+        }
+        entity_payload["operational_units"].append(code_payload)
+    payload.append(entity_payload)
+payload
+```
+
+```python
+import json
+
+json.dumps(payload)
+```
+
+```python
+energies["energy"].sum()
 ```
 
 ```python
