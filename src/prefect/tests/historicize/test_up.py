@@ -183,7 +183,7 @@ def test_to_historicization_up_extras():
 
 def test_flow_up_calculate():
     """Test the `calculate` flow."""
-    indicators = i1.calculate(
+    indicators = i1.i1(
         Environment.TEST,
         levels=[Level.NATIONAL, Level.REGION],
         start=TIMESPAN.start,
@@ -205,7 +205,7 @@ def test_flow_up_calculate():
 
 def test_flow_calculate_persistence(indicators_db_engine):
     """Test the `calculate` flow."""
-    indicators = i1.calculate(
+    indicators = i1.i1(
         Environment.TEST,
         levels=[Level.NATIONAL, Level.REGION],
         start=TIMESPAN.start,
@@ -220,7 +220,7 @@ def test_flow_calculate_persistence(indicators_db_engine):
         period=IndicatorPeriod.DAY,
         create_artifact=False,
     )
-    t1.calculate(
+    t1.t1(
         Environment.TEST,
         levels=[Level.NATIONAL],
         start=TIMESPAN.start,
@@ -246,7 +246,7 @@ def test_flow_calculate_persistence(indicators_db_engine):
 
 def test_flow_calculate_up_with_start_none(indicators_db_engine):
     """Test the `calculate` flow with start=None."""
-    i1.calculate(
+    i1.i1(
         Environment.TEST,
         levels=[Level.NATIONAL],
         start=TIMESPAN.start,

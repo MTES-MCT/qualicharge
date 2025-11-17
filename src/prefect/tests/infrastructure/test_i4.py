@@ -71,8 +71,8 @@ def test_flow_i4_national(db_connection):
     assert indicators.at[0, "value"] == expected
 
 
-def test_flow_i4_calculate(db_connection):
-    """Test the `calculate` flow."""
+def test_flow_i4(db_connection):
+    """Test the `i4` flow."""
     expected = N_NAT_REG_DPT_EPCI_CITY
     all_levels = [
         Level.NATIONAL,
@@ -81,23 +81,23 @@ def test_flow_i4_calculate(db_connection):
         Level.CITY,
         Level.EPCI,
     ]
-    indicators = i4.calculate(
+    indicators = i4.i4(
         Environment.TEST,
         all_levels,
         TIMESPAN.start,
-        TIMESPAN.period.value,
+        TIMESPAN.period,
         create_artifact=True,
     )
     assert len(indicators) == expected
 
 
-def test_flow_calculate_persistence(indicators_db_engine):
-    """Test the `calculate` flow."""
-    indicators = i4.calculate(
+def test_flow_i4_persistence(indicators_db_engine):
+    """Test the `i4` flow."""
+    indicators = i4.i4(
         Environment.TEST,
         [Level.NATIONAL],
         TIMESPAN.start,
-        TIMESPAN.period.value,
+        TIMESPAN.period,
         persist=True,
     )
 

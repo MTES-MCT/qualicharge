@@ -69,8 +69,8 @@ def test_flow_t1_national(db_connection):
     assert indicators["value"].sum() == expected
 
 
-def test_flow_t1_calculate():
-    """Test the `calculate` flow."""
+def test_flow_t1():
+    """Test the `t1` flow."""
     all_levels = [
         Level.NATIONAL,
         Level.REGION,
@@ -78,23 +78,23 @@ def test_flow_t1_calculate():
         Level.CITY,
         Level.EPCI,
     ]
-    indicators = t1.calculate(
+    indicators = t1.t1(
         Environment.TEST,
         all_levels,
         TIMESPAN.start,
-        TIMESPAN.period.value,
+        TIMESPAN.period,
         create_artifact=True,
     )
     assert list(indicators["level"].unique()) == all_levels
 
 
-def test_flow_calculate_persistence(indicators_db_engine):
-    """Test the `calculate` flow."""
-    indicators = t1.calculate(
+def test_flow_t1_persistence(indicators_db_engine):
+    """Test the `t1` flow."""
+    indicators = t1.t1(
         Environment.TEST,
         [Level.NATIONAL],
         TIMESPAN.start,
-        TIMESPAN.period.value,
+        TIMESPAN.period,
         persist=True,
     )
 

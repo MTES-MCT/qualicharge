@@ -79,8 +79,8 @@ def test_flow_i7_national(db_connection):
     assert int(indicators.at[0, "value"]) == expected
 
 
-def test_flow_i7_calculate(db_connection):
-    """Test the `calculate` flow."""
+def test_flow_i7(db_connection):
+    """Test the `i7` flow."""
     expected = N_NAT_REG_DPT_EPCI_CITY
     all_levels = [
         Level.NATIONAL,
@@ -89,23 +89,23 @@ def test_flow_i7_calculate(db_connection):
         Level.CITY,
         Level.EPCI,
     ]
-    indicators = i7.calculate(
+    indicators = i7.i7(
         Environment.TEST,
         all_levels,
         TIMESPAN.start,
-        TIMESPAN.period.value,
+        TIMESPAN.period,
         create_artifact=True,
     )
     assert len(indicators) == expected
 
 
-def test_flow_calculate_persistence(indicators_db_engine):
-    """Test the `calculate` flow."""
-    indicators = i7.calculate(
+def test_flow_i7_persistence(indicators_db_engine):
+    """Test the `i7` flow."""
+    indicators = i7.i7(
         Environment.TEST,
         [Level.NATIONAL],
         TIMESPAN.start,
-        TIMESPAN.period.value,
+        TIMESPAN.period,
         persist=True,
     )
     with indicators_db_engine.connect() as connection:

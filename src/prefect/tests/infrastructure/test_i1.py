@@ -72,8 +72,8 @@ def test_flow_i1_national(db_connection):
     assert indicators.at[0, "value"] == expected
 
 
-def test_flow_i1_calculate():
-    """Test the `calculate` flow."""
+def test_flow_i1():
+    """Test the `i1` flow."""
     expected = N_NAT_REG_DPT_EPCI_CITY
     all_levels = [
         Level.NATIONAL,
@@ -82,23 +82,23 @@ def test_flow_i1_calculate():
         Level.CITY,
         Level.EPCI,
     ]
-    indicators = i1.calculate(
+    indicators = i1.i1(
         Environment.TEST,
         all_levels,
         TIMESPAN.start,
-        TIMESPAN.period.value,
+        TIMESPAN.period,
         create_artifact=True,
     )
     assert len(indicators) == expected
 
 
-def test_flow_calculate_persistence(indicators_db_engine):
-    """Test the `calculate` flow."""
-    indicators = i1.calculate(
+def test_flow_i1_persistence(indicators_db_engine):
+    """Test the `i1` flow."""
+    indicators = i1.i1(
         Environment.TEST,
         [Level.NATIONAL],
         TIMESPAN.start,
-        TIMESPAN.period.value,
+        TIMESPAN.period,
         persist=True,
     )
 
@@ -107,9 +107,9 @@ def test_flow_calculate_persistence(indicators_db_engine):
         assert result.one()[0] == len(indicators)
 
 
-def test_flow_calculate_with_start_none():
-    """Test the `calculate` flow with start=None."""
-    assert isinstance(i1.calculate(Environment.TEST, [Level.NATIONAL]), pd.DataFrame)
+def test_flow_i1_with_start_none():
+    """Test the `i1` flow with start=None."""
+    assert isinstance(i1.i1(Environment.TEST, [Level.NATIONAL]), pd.DataFrame)
 
 
 # query used to get N_LEVEL

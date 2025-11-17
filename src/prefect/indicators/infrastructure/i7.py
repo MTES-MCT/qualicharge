@@ -125,7 +125,7 @@ def i7_national(timespan: IndicatorTimeSpan, environment: Environment) -> pd.Dat
 @flow(
     flow_run_name="meta-i7-{period.value}",
 )
-def calculate(  # noqa: PLR0913
+def i7(  # noqa: PLR0913
     environment: Environment,
     levels: List[Level],
     start: datetime | None = None,
