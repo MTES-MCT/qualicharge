@@ -11,7 +11,7 @@ from quality.flows.quality_run import (
     API_DATA_SOURCE_NAME,
     QCReport,
     run_api_db_checkpoint,
-    run_api_db_checkpoint_by_amenageur,
+    run_api_db_checkpoint_by_unit,
 )
 
 
@@ -41,14 +41,14 @@ def run_api_db_validation(
 
 
 @flow(log_prints=True)
-def run_api_db_validation_by_amenageur(
+def run_api_db_validation_by_unit(
     environment: str,
     period: IndicatorPeriod = IndicatorPeriod.DAY,
     report_by_email: bool = False,
     create_artifact: bool = False,
     persist: bool = False,
 ) -> QCReport:
-    """Run API DB checkpoint by amenageur."""
+    """Run API DB checkpoint by operational unit."""
     # Context
     context = gx.get_context(mode="ephemeral")
 
@@ -63,7 +63,7 @@ def run_api_db_validation_by_amenageur(
     context.suites.add(suite)
 
     # Checkpoints
-    report = run_api_db_checkpoint_by_amenageur(
+    report = run_api_db_checkpoint_by_unit(
         context,
         data_source,
         suite,
