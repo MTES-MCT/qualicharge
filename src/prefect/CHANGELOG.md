@@ -35,6 +35,7 @@ and this project adheres to
 - Separate sessions and statuses expectations
 - Implement expectations as indicators
 - Implement historicization (up)
+- Calculate the indicators per operational unit rather than per 'amenageur'
 
 #### Cooling
 
