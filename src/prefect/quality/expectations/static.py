@@ -6,15 +6,11 @@ from string import Template
 import great_expectations as gx
 import great_expectations.expectations as gxe
 
-from .parameters import CRDF, LOCP, NE10, PDCM, POWL, POWU
+from .parameters import CRDF, IS_DC, LOCP, NE10, PDCM, POWL, POWU
 
 NAME: str = "static"
 
-IS_DC: str = """(
-puissance_nominale >= 50
-OR prise_type_combo_ccs
-OR prise_type_chademo
-)"""
+
 FAKE_PDL: str = """(
 '', '00000000000000', '012345678987654', '11111111111111', '99999999999999')
 """
@@ -123,6 +119,7 @@ FROM
   {batch}
 WHERE
   id_pdc_itinerance not like 'FR___E%'
+  OR substring(id_pdc_itinerance from 1 for 5) != substring(id_station_itinerance from 1 for 5)
         """,
         meta={"code": "AFIE"},
     ),
@@ -268,7 +265,7 @@ num_PDL_expectations = [
     gxe.UnexpectedRowsExpectation(
         unexpected_rows_query=Template(
             """
-SELECT
+SELECT DISTINCT ON (id_station_itinerance)
   id_station_itinerance
 FROM
   {batch}

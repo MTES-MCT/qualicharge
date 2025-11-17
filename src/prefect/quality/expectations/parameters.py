@@ -10,6 +10,12 @@ class QARule(BaseModel):
     params: dict
 
 
+IS_DC: str = """(
+puissance_nominale >= 50
+OR prise_type_combo_ccs
+OR prise_type_chademo
+)"""
+
 # static parameters
 POWU = QARule(code="POWU", params={"max_power_kw": 4000.0})
 POWL = QARule(code="POWL", params={"min_power_kw": 1.3})
@@ -41,7 +47,7 @@ session_p = [DUPS, OVRS, LONS, FRES, NEGS]
 # Abnormal energy : if energy > abnormal_coef * max_energy
 ENERGY = {"highest_energy_kwh": 1000, "lowest_energy_kwh": 1}
 ENEX = QARule(code="ENEX", params={"excess_coef": 2, "excess_threshold_kWh": 50})
-ENEA = QARule(code="ENEA", params={"abnormal_coef": 1.1, "threshold_percent": 0.1})
+ENEA = QARule(code="ENEA", params={"abnormal_coef": 1.1, "threshold_percent": 0.001})
 ENEU = QARule(code="ENEU", params={})
 ODUR = QARule(code="ODUR", params={"threshold_percent": 0.001})
 energy_p = [ENEX, ENEA, ENEU, ODUR]
@@ -51,7 +57,15 @@ DUPT = QARule(code="DUPT", params={"threshold_percent": 0.01})
 FRET = QARule(code="FRET", params={"mean_duration_second": 300})
 FTRT = QARule(code="FTRT", params={})
 ERRT = QARule(code="ERRT", params={})
-status_p = [DUPT, FRET, FTRT, ERRT]
+OVRT = QARule(code="OVRT", params={"max_statuses_per_day": 1440})
+status_p = [DUPT, FRET, FTRT, ERRT, OVRT]
+
+# pdc-status parameters
+INAC = QARule(
+    code="INAC", params={"inactivity_duration": "1 month", "threshold_percent": 0.02}
+)
+DECL = QARule(code="DECL", params={"threshold_percent": 0.02})
+pdc_status_p = [INAC, DECL]
 
 # statuses-sessions consistency parameters
 RATS = QARule(
@@ -63,9 +77,25 @@ SEST = QARule(code="SEST", params={"threshold_percent": 0.01})
 session_status_p = [RATS, OCCT, SEST]
 
 # evaluable parameters (check a threshold)
-eval_p = [PDCM, LOCP, NE10, ODUR, ENEA, DUPS, LONS, FRES, DUPT, FRET, RATS, OCCT, SEST]
+eval_p = [
+    PDCM,
+    LOCP,
+    NE10,
+    ODUR,
+    ENEA,
+    DUPS,
+    LONS,
+    FRES,
+    DUPT,
+    FRET,
+    RATS,
+    OCCT,
+    SEST,
+    INAC,
+    DECL,
+]
 
 # parameters categories
 EVALUABLE_PARAMS = [params.code for params in eval_p]
 SESSION_PARAMS = [params.code for params in session_p + energy_p + session_status_p]
-STATUS_PARAMS =  [params.code for params in status_p]
+STATUS_PARAMS = [params.code for params in status_p + pdc_status_p]
