@@ -12,7 +12,7 @@ from quality.flows.quality_run import (
     API_DATA_SOURCE_NAME,
     QCReport,
     run_api_db_checkpoint,
-    run_api_db_checkpoint_by_amenageur,
+    run_api_db_checkpoint_by_unit,
 )
 
 
@@ -60,7 +60,7 @@ def run_api_db_validation(  # noqa: PLR0913
 
 
 @flow(log_prints=True)
-def run_api_db_validation_by_amenageur(  # noqa: PLR0913
+def run_api_db_validation_by_unit(  # noqa: PLR0913
     environment: str,
     period: IndicatorPeriod = IndicatorPeriod.DAY,
     from_now: dict | None = None,
@@ -71,7 +71,7 @@ def run_api_db_validation_by_amenageur(  # noqa: PLR0913
     check_session: bool = True,
     check_status: bool = True,
 ) -> QCReport:
-    """Run API DB checkpoint by amenageur."""
+    """Run API DB checkpoint by operational unit."""
     # datation
     delta_from_now = timedelta() if not from_now else timedelta(**from_now)
     date_now = date.today() if not new_now else new_now
@@ -99,7 +99,7 @@ def run_api_db_validation_by_amenageur(  # noqa: PLR0913
     context.suites.add(suite)
 
     # Checkpoints
-    report = run_api_db_checkpoint_by_amenageur(
+    report = run_api_db_checkpoint_by_unit(
         context,
         data_source,
         suite,
