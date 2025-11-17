@@ -122,7 +122,7 @@ def i4_national(timespan: IndicatorTimeSpan, environment: Environment) -> pd.Dat
 @flow(
     flow_run_name="meta-i4-{period.value}",
 )
-def calculate(  # noqa: PLR0913
+def i4(  # noqa: PLR0913
     environment: Environment,
     levels: List[Level],
     start: datetime | None = None,

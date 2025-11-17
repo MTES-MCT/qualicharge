@@ -8,7 +8,7 @@ deployments:
 
   # null start value -> datetime.now()
   - name: i1-daily
-    entrypoint: indicators/run.py:i1_calculate
+    entrypoint: indicators/infrastructure/i1.py:i1
     concurrency_limit: 10
     schedules:
       - cron: "0 5 * * *"
@@ -25,7 +25,7 @@ deployments:
       work_queue_name: default
 
   - name: i4-daily
-    entrypoint: indicators/run.py:i4_calculate
+    entrypoint: indicators/infrastructure/i4.py:i4
     concurrency_limit: 10
     schedules:
       - cron: "3 5 * * *"
@@ -42,7 +42,7 @@ deployments:
       work_queue_name: default
 
   - name: i7-daily
-    entrypoint: indicators/run.py:i7_calculate
+    entrypoint: indicators/infrastructure/i7.py:i7
     concurrency_limit: 10
     schedules:
       - cron: "6 5 * * *"
@@ -59,7 +59,7 @@ deployments:
       work_queue_name: default
 
   - name: t1-daily
-    entrypoint: indicators/run.py:t1_calculate
+    entrypoint: indicators/infrastructure/t1.py:t1
     concurrency_limit: 10
     schedules:
       - cron: "9 5 * * *"
