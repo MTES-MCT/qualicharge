@@ -5,15 +5,13 @@ E1: the list of stations of pools in activity.
 data : id_pool
 """
 
-from datetime import date, datetime, timedelta
-from string import Template
+from datetime import date, datetime
 
 import geopandas as gpd  # type: ignore
 import pandas as pd  # type: ignore
 from prefect import flow, runtime, task
-from sqlalchemy.orm import Session
 
-from indicators.db import get_indicators_db_engine
+from indicators.extract.utils import get_pdc_station_for_day
 from indicators.models import IndicatorPeriod, Level
 from indicators.types import Environment
 from indicators.utils import (
@@ -24,41 +22,7 @@ from indicators.utils import (
 )
 
 HISTORY_STRATEGY_FIELD: str = "mean"
-PDC_STATION_FOR_DAY_TEMPLATE = """
-SELECT
-  value,
-  extras
-FROM
-  $environment
-WHERE
-  code = 'e5' and level = 0  and period = 'd' and target = '00'
-  AND timestamp >= '$from_date'
-  AND timestamp < '$to_date'
-ORDER BY
-  value desc
-"""
 PERIOD = IndicatorPeriod.DAY
-
-
-@task
-def get_pdc_station_for_day(from_date: date, environment: Environment) -> pd.DataFrame:
-    """Get points of charge and stations for a given day."""
-    query_template = Template(PDC_STATION_FOR_DAY_TEMPLATE)
-    query_params = {
-        "from_date": from_date,
-        "to_date": from_date + timedelta(days=1),
-        "environment": environment.value,
-    }
-    with Session(get_indicators_db_engine()) as session:
-        e5_data = pd.read_sql_query(
-            query_template.substitute(query_params), con=session.connection()
-        )
-    if e5_data.empty:
-        return pd.DataFrame()
-    pdc_station = pd.DataFrame(e5_data["extras"][0])
-    if len(pdc_station) != e5_data["value"][0]:
-        return pd.DataFrame()
-    return pdc_station
 
 
 @task

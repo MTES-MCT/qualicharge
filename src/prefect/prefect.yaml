@@ -90,6 +90,19 @@ deployments:
       name: indicators
       work_queue_name: default
 
+  - name: e2_e3-daily
+    entrypoint: indicators/extract/e2_e3.py:e2_e3
+    concurrency_limit: 10
+    parameters:
+      environment: production
+      min_power: 75
+      offset: -16
+      create_artifact: false
+      persist: true
+    work_pool:
+      name: indicators
+      work_queue_name: default
+
   - name: e4-daily
     entrypoint: indicators/extract/e4.py:e4
     concurrency_limit: 10
