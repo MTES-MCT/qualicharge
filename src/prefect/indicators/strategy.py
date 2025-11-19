@@ -5,6 +5,7 @@ from quality.expectations.parameters import HISTORY_STRATEGY_FIELD as QUA_STRATE
 
 # extract
 from .extract.e1 import HISTORY_STRATEGY_FIELD as E1_STRATEGY
+from .extract.e2_e3 import HISTORY_STRATEGY_FIELD as E2_E3_STRATEGY
 from .extract.e4 import HISTORY_STRATEGY_FIELD as E4_STRATEGY
 from .extract.e5 import HISTORY_STRATEGY_FIELD as E5_STRATEGY
 
@@ -30,6 +31,7 @@ STRATEGY = {
     "i7": I7_STRATEGY,
     "t1": T1_STRATEGY,
     "e1": E1_STRATEGY,
+    "e2_e3": E2_E3_STRATEGY,
     "e4": E4_STRATEGY,
     "e5": E5_STRATEGY,
     "u5": U5_STRATEGY,

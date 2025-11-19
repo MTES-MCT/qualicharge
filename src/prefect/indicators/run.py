@@ -4,6 +4,7 @@
 
 # extract
 from .extract.e1 import e1
+from .extract.e2_e3 import e2_e3
 from .extract.e4 import e4
 from .extract.e5 import e5
 
