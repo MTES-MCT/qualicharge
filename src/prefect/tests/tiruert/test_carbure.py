@@ -156,10 +156,6 @@ def test_carbure_bulk_create_certificates(responses, carbure_client):
     responses.post(
         f"{carbure_client.root_url}api/elec/provision-certificates-qualicharge/bulk-create/",
         status=201,
-        json={
-            "status": "success",
-            "errors": [],
-        },
     )
     carbure_client.bulk_create_certificates(certificates)
 
