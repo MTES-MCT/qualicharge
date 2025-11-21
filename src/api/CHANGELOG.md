@@ -14,13 +14,13 @@ and this project adheres to
 
 #### Dependencies
 
-- Upgrade `alembic` to `1.17.0`
+- Upgrade `alembic` to `1.17.2`
 - Upgrade `cachetools` to `6.2.2`
-- Upgrade `fastapi` to `0.121.2`
+- Upgrade `fastapi` to `0.121.3`
 - Upgrade `psycopg` to `3.2.12`
 - Upgrade `pyarrow` to `22.0.0`
 - Upgrade `pydantic-settings` to `2.12.0`
-- Upgrade `sentry-sdk` to `2.44.0`
+- Upgrade `sentry-sdk` to `2.45.0`
 
 ### Fixed 
 

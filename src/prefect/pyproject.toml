@@ -10,10 +10,10 @@ dependencies = [
   "geoalchemy2[shapely]==0.18.1",
   "geopandas==1.1.1",
   "great_expectations[postgresql]==1.9.1",
-  "pandas==2.3.3",
+  "pandas==2.1.4",
   "prefect==3.6.3",
   "psycopg[pool,binary]==3.2.12",
-  "pyarrow==22.0.0",
+  "pyarrow==20.0.0",
   "pydantic==2.12.4",
   "s3fs==2025.10.0",
   "tabulate==0.9.0",
@@ -102,6 +102,11 @@ convention = "google"
 [tool.mypy]
 plugins = "pydantic.mypy"
 files = "./**/*.py"
+# Temporary disable typing issue with prefect:
+# https://github.com/PrefectHQ/prefect/issues/19469
+disable_error_code = [
+  "unused-coroutine",
+]
 
 [[tool.mypy.overrides]]
 module = [

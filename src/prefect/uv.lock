@@ -588,15 +588,15 @@ wheels = [
 
 [[package]]
 name = "geoalchemy2"
-version = "0.18.0"
+version = "0.18.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "packaging" },
     { name = "sqlalchemy" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/d3/15/88398e863a9e044e06957d0f214cc5f7ef3c1dee4c540d828bfa6c7d4535/geoalchemy2-0.18.0.tar.gz", hash = "sha256:9a04690cc33fbc580d15c7c028d9b1b1ea08271489730096c7092e1d486c2b7a", size = 239129, upload-time = "2025-07-21T10:51:47.52Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/05/df/f6d689120a15a2287794e16696c3bdb4cf2e53038255d288b61a4d59e1fa/geoalchemy2-0.18.1.tar.gz", hash = "sha256:4bdc7daf659e36f6456e2f2c3bcce222b879584921a4f50a803ab05fa2bb3124", size = 239302, upload-time = "2025-11-18T15:12:05.296Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/b5/f5/1e36e49d4380d70d58c777953fd3c465b4fb242309b6bd6b88e45ef11bd7/geoalchemy2-0.18.0-py3-none-any.whl", hash = "sha256:ff0fe7339ba535c50845a2c7e8817a20c164364128991d795733b3c5904b1ee1", size = 81248, upload-time = "2025-07-21T10:51:46.291Z" },
+    { url = "https://files.pythonhosted.org/packages/48/25/b3d6fc757d8d909e0e666ec6fbf1b7914e9ad18d6e1b08994cd9d2e63330/geoalchemy2-0.18.1-py3-none-any.whl", hash = "sha256:a49d9559bf7acbb69129a01c6e1861657c15db420886ad0a09b1871fb0ff4bdb", size = 81261, upload-time = "2025-11-18T15:12:03.985Z" },
 ]
 
 [package.optional-dependencies]
@@ -632,7 +632,7 @@ wheels = [
 
 [[package]]
 name = "great-expectations"
-version = "1.9.0"
+version = "1.9.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "altair" },
@@ -654,9 +654,9 @@ dependencies = [
     { name = "typing-extensions" },
     { name = "tzlocal" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/db/fb/1fbc31586ab0d9d62411e701b6ddcc4808babbb3e4e555db5de01faa9248/great_expectations-1.9.0.tar.gz", hash = "sha256:3113c25a521c848313a6b07443f0435c727128d2860b00d5b1aabaa6051b5663", size = 36297762, upload-time = "2025-11-07T18:17:12.303Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/b5/11/15125a66ccc55884d60b04f88dc820e151682439cf8c4b39392fbdc0a3a3/great_expectations-1.9.1.tar.gz", hash = "sha256:34e795aa616e72e82b7ea360262c986e24c5fafaacec145d844a14adc3dff327", size = 36299092, upload-time = "2025-11-20T23:18:08.73Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/f2/a9/b5270fe0c022ffd18e08949f6c5f81c097a950b8d9783d7ce741409c8540/great_expectations-1.9.0-py3-none-any.whl", hash = "sha256:7dc60b05013507a9c3ae6751d08e5e9d5fe2a03228e868bfc3106ec41444d56f", size = 4940738, upload-time = "2025-11-07T18:17:09.417Z" },
+    { url = "https://files.pythonhosted.org/packages/ba/27/baeb74f94336eaf124208a5915d03a085dcb4c2ae335afa60cb416dc8245/great_expectations-1.9.1-py3-none-any.whl", hash = "sha256:ab2b40fb3bfda378d09635afc5e1c2c1a2bc3bcf555f4c371b73b381ad0399e1", size = 4941509, upload-time = "2025-11-20T23:18:05.999Z" },
 ]
 
 [package.optional-dependencies]
@@ -1279,7 +1279,7 @@ wheels = [
 
 [[package]]
 name = "prefect"
-version = "3.6.2"
+version = "3.6.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiosqlite" },
@@ -1337,9 +1337,9 @@ dependencies = [
     { name = "uvicorn" },
     { name = "websockets" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/60/83/4f9b459560f09d8369a4ad9d5384f1fadc066f19a91a092778e505d64abe/prefect-3.6.2.tar.gz", hash = "sha256:4b25335dc3e3beaf7635444252cf67181f3fdcb04f44c0061122f84458abde14", size = 5641752, upload-time = "2025-11-14T01:02:41.677Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/c9/f0/abe0dfc4eb63039dac79bb5aeee0d11270f838db9d9cc9d731397c9333a1/prefect-3.6.3.tar.gz", hash = "sha256:6e4155c6d4bcd37a801641ae504fb41ea5075dd626313138714e0026108206c3", size = 5643454, upload-time = "2025-11-19T22:47:58.262Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/f4/d2/c0e7aff4836a99346cb62f255a7f7d101173019afe7b93767806ad759ab1/prefect-3.6.2-py3-none-any.whl", hash = "sha256:cb741e4968c9a0126371c328723d2171ee4f7b4d4af0f93babdf4db7125e4e86", size = 6168581, upload-time = "2025-11-14T01:02:39.126Z" },
+    { url = "https://files.pythonhosted.org/packages/f1/8a/be38354b3dd9ec4721636730b4fcde2d4062d7cd55f60335f3ef143d5fc3/prefect-3.6.3-py3-none-any.whl", hash = "sha256:17a2b330b0cd142d5345cccb1b5d30ef86d93642feacab287bf384af180ed0f3", size = 6170461, upload-time = "2025-11-19T22:47:56.046Z" },
 ]
 
 [[package]]
@@ -1672,7 +1672,7 @@ wheels = [
 
 [[package]]
 name = "pytest"
-version = "8.4.2"
+version = "9.0.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "colorama", marker = "sys_platform == 'win32'" },
@@ -1681,9 +1681,9 @@ dependencies = [
     { name = "pluggy" },
     { name = "pygments" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/a3/5c/00a0e072241553e1a7496d638deababa67c5058571567b92a7eaa258397c/pytest-8.4.2.tar.gz", hash = "sha256:86c0d0b93306b961d58d62a4db4879f27fe25513d4b969df351abdddb3c30e01", size = 1519618, upload-time = "2025-09-04T14:34:22.711Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/07/56/f013048ac4bc4c1d9be45afd4ab209ea62822fb1598f40687e6bf45dcea4/pytest-9.0.1.tar.gz", hash = "sha256:3e9c069ea73583e255c3b21cf46b8d3c56f6e3a1a8f6da94ccb0fcf57b9d73c8", size = 1564125, upload-time = "2025-11-12T13:05:09.333Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/a8/a4/20da314d277121d6534b3a980b29035dcd51e6744bd79075a6ce8fa4eb8d/pytest-8.4.2-py3-none-any.whl", hash = "sha256:872f880de3fc3a5bdc88a11b39c9710c3497a547cfa9320bc3c5e62fbf272e79", size = 365750, upload-time = "2025-09-04T14:34:20.226Z" },
+    { url = "https://files.pythonhosted.org/packages/0b/8b/6300fb80f858cda1c51ffa17075df5d846757081d11ab4aa35cef9e6258b/pytest-9.0.1-py3-none-any.whl", hash = "sha256:67be0030d194df2dfa7b556f2e56fb3c3315bd5c8822c6951162b92b32ce7dad", size = 373668, upload-time = "2025-11-12T13:05:07.379Z" },
 ]
 
 [[package]]
@@ -1823,11 +1823,11 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "data7", specifier = "==0.13.2" },
-    { name = "geoalchemy2", extras = ["shapely"], specifier = "==0.18.0" },
+    { name = "geoalchemy2", extras = ["shapely"], specifier = "==0.18.1" },
     { name = "geopandas", specifier = "==1.1.1" },
-    { name = "great-expectations", extras = ["postgresql"], specifier = "==1.9.0" },
+    { name = "great-expectations", extras = ["postgresql"], specifier = "==1.9.1" },
     { name = "pandas", specifier = "==2.1.4" },
-    { name = "prefect", specifier = "==3.6.2" },
+    { name = "prefect", specifier = "==3.6.3" },
     { name = "psycopg", extras = ["pool", "binary"], specifier = "==3.2.12" },
     { name = "pyarrow", specifier = "==20.0.0" },
     { name = "pydantic", specifier = "==2.12.4" },
@@ -1842,7 +1842,7 @@ dev = [
     { name = "honcho", specifier = "==2.0.0" },
     { name = "mypy", specifier = "==1.18.2" },
     { name = "pandas-stubs", specifier = "==2.3.2.250926" },
-    { name = "pytest", specifier = "==8.4.2" },
+    { name = "pytest", specifier = "==9.0.1" },
     { name = "pytest-cov", specifier = "==7.0.0" },
     { name = "ruff", specifier = "==0.14.5" },
     { name = "setuptools", specifier = "==80.9.0" },
