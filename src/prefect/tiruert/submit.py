@@ -4,6 +4,7 @@ This is the core part that handles TIRUERT calculation for a quarter
 and CARBURE API integration.
 """
 
+import logging
 from datetime import date, datetime
 from string import Template
 from typing import List
@@ -23,6 +24,8 @@ from indicators.types import Environment
 from indicators.utils import export_indicators
 
 from .carbure import CarbureAPISettings, CarbureClient
+
+logger = logging.getLogger(__name__)
 
 ENERGY_BY_STATION_TEMPLATE = Template(
     """
@@ -190,7 +193,12 @@ def submit(payload: List[dict], siren: str, from_date: date):
 
     try:
         client.bulk_create_certificates(payload)
-    except requests.HTTPError:
+    except requests.HTTPError as exc:
+        logger.error(
+            "Submission failed, server response was: "
+            f"[Status: {exc.response.status_code}] "
+            f"{exc.response.text}"
+        )
         return Failed(
             message=(
                 f"CARBURE submission failed for amenageur {siren} (date: {from_date})"
