@@ -42,6 +42,7 @@ dev = [
 
 [tool.uv]
 package = true
+link-mode = "copy"
 
 [[tool.uv.index]]
 name = "pypi"
