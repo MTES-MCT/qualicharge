@@ -54,7 +54,7 @@ class CarbureClient:
         method: str,
         endpoint: str,
         payload: Optional[dict | List[dict]] = None,
-    ) -> dict | List[dict]:
+    ) -> dict | List[dict] | None:
         """Perform an API request."""
         url = urljoin(str(self.root_url), endpoint)
 
@@ -74,7 +74,7 @@ class CarbureClient:
             logger.error(f"[HTTP {response.status_code}] {response.text}")
 
         response.raise_for_status()
-        return response.json()
+        return response.json() if response.text else None
 
     def _auth(self) -> None:
         """Authenticate to the Carbure API."""

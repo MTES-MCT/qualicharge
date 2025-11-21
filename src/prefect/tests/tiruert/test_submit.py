@@ -201,10 +201,6 @@ def test_task_submit(responses):
     responses.post(
         "http://localhost:8088/api/elec/provision-certificates-qualicharge/bulk-create/",
         status=201,
-        json={
-            "status": "success",
-            "errors": [],
-        },
     )
     result = tiruert_submit.submit(payload, "891118473", date(2024, 12, 1))
     assert (
@@ -238,10 +234,6 @@ def test_flow_tiruert_for_month_and_amenageur(indicators_db_engine, responses):
     responses.post(
         "http://localhost:8088/api/elec/provision-certificates-qualicharge/bulk-create/",
         status=201,
-        json={
-            "status": "success",
-            "errors": [],
-        },
     )
     tiruert_submit.tiruert_for_month_and_amenageur(
         Environment.TEST, year=2024, month=12, siren="891118473"
@@ -275,8 +267,8 @@ def test_flow_tiruert_for_month_and_amenageur_failed_submission(
         "http://localhost:8088/api/elec/provision-certificates-qualicharge/bulk-create/",
         status=400,
         json={
-            "status": "success",
-            "errors": [],
+            "status": "validation_error",
+            "errors": ["Misc"],
         },
     )
     tiruert_submit.tiruert_for_month_and_amenageur(
@@ -307,10 +299,6 @@ def test_flow_tiruert_for_month(indicators_db_engine, responses, monkeypatch):
     responses.post(
         "http://localhost:8088/api/elec/provision-certificates-qualicharge/bulk-create/",
         status=201,
-        json={
-            "status": "success",
-            "errors": [],
-        },
     )
 
     # Pretend to have only two amenageurs to speed up test execution
