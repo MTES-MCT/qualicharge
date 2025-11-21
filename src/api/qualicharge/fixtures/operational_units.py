@@ -184,10 +184,6 @@ data: List[Item] = [
         "Atlante",
     ),
     Item(
-        "FRAUT",
-        "Autel Europe",
-    ),
-    Item(
         "FRAVE",
         "AVENEL",
     ),
@@ -558,10 +554,6 @@ data: List[Item] = [
     Item(
         "FRG58",
         "CI2C",
-    ),
-    Item(
-        "FRGCE",
-        "Elli",
     ),
     Item(
         "FRGFX",
@@ -2061,6 +2053,47 @@ data: List[Item] = [
     Item(
         "FRZEE",
         "ZEENCO e-mobility",
+    ),
+    # Update: 2025/11/21
+    Item(
+        "FR47B",
+        "47 BORNES",
+    ),
+    Item(
+        "FRAQI",
+        "AQUI",
+    ),
+    Item(
+        "FRAUT",
+        "Evota",
+    ),
+    Item(
+        "FRFLX",
+        "FLEXIS",
+    ),
+    Item(
+        "FRGCE",
+        "Elli Mobility",
+    ),
+    Item(
+        "FRLES",
+        "Restaurant l'Essentiel La Crèche",
+    ),
+    Item(
+        "FRMIL",
+        "Milence",
+    ),
+    Item(
+        "FRMJF",
+        "MJF CONNECT",
+    ),
+    Item(
+        "FRNUT",
+        "Nutribabig",
+    ),
+    Item(
+        "FRS89",
+        "IRVE Yonne",
     ),
 ]
 
