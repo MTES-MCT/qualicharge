@@ -30,7 +30,7 @@ and this project adheres to
 - Upgrade `jsonschema` to `4.25.1`
 - Upgrade `psycopg` to `3.2.12`
 - Upgrade `requests` to `2.32.5`
-- Upgrade `sentry-sdk` to `2.44.0`
+- Upgrade `sentry-sdk` to `2.45.0`
 - Upgrade `whitenoise` to `6.11.0`
 
 ## Fixed
