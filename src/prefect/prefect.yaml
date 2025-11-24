@@ -341,9 +341,9 @@ deployments:
   #   work_pool:
   #     name: indicators
   #     work_queue_name: default
-  #
+  
   # - name: quality-static-staging-by-amenageur
-  #   entrypoint: quality/flows/static.py:run_api_db_validation_by_amenageur
+  #   entrypoint: quality/flows/static.py:run_api_db_validation_by_unit
   #   concurrency_limit: 10
   #   schedules:
   #     - cron: "2 3 * * *"
@@ -372,8 +372,8 @@ deployments:
   #     name: indicators
   #     work_queue_name: default
   #
-  # - name: quality-static-production-by-amenageur
-  #   entrypoint: quality/flows/static.py:run_api_db_validation_by_amenageur
+  # - name: quality-static-production-by-unit
+  #   entrypoint: quality/flows/static.py:run_api_db_validation_by_unit
   #   concurrency_limit: 10
   #   schedules:
   #     - cron: "14 3 * * *"
@@ -404,9 +404,9 @@ deployments:
   #   work_pool:
   #     name: indicators
   #     work_queue_name: default
-  #
-  # - name: quality-session-staging-by-amenageur
-  #   entrypoint: quality/flows/dynamic.py:run_api_db_validation_by_amenageur
+  
+  # - name: quality-session-staging-by-unit
+  #   entrypoint: quality/flows/dynamic.py:run_api_db_validation_by_unit
   #   concurrency_limit: 10
   #   schedules:
   #     - cron: "20 3 * * *"
@@ -424,9 +424,10 @@ deployments:
   #   work_pool:
   #     name: indicators
   #     work_queue_name: default
-  #
-  # - name: quality-status-staging-by-amenageur
-  #   entrypoint: quality/flows/dynamic.py:run_api_db_validation_by_amenageur
+  
+  # - name: quality-status-staging-by-unit
+  #   entrypoint: quality/flows/dynamic.py:run_api_db_validation_by_unit
+  #   concurrency_limit: 10
   #   schedules:
   #     - cron: "40 3 * * *"
   #       timezone: "Europe/Paris"
@@ -459,8 +460,8 @@ deployments:
   #     name: indicators
   #     work_queue_name: default
   #
-  # - name: quality-session-production-by-amenageur
-  #   entrypoint: quality/flows/dynamic.py:run_api_db_validation_by_amenageur
+  # - name: quality-session-production-by-unit
+  #   entrypoint: quality/flows/dynamic.py:run_api_db_validation_by_unit
   #   concurrency_limit: 10
   #   schedules:
   #     - cron: "20 4 * * *"
@@ -479,8 +480,9 @@ deployments:
   #     name: indicators
   #     work_queue_name: default
   #
-  # - name: quality-status-production-by-amenageur
-  #   entrypoint: quality/flows/dynamic.py:run_api_db_validation_by_amenageur
+  # - name: quality-status-production-by-unit
+  #   entrypoint: quality/flows/dynamic.py:run_api_db_validation_by_unit
+  #   concurrency_limit: 10
   #   schedules:
   #     - cron: "40 4 * * *"
   #       timezone: "Europe/Paris"

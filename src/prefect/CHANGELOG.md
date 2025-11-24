@@ -32,6 +32,7 @@ and this project adheres to
   - consistency (RATS, OCCT, SEST)
 - Separate sessions and statuses expectations
 - Implement expectations as indicators
+- calculate the indicators per operational unit rather than per 'amenageur'
 
 #### Cooling
 
