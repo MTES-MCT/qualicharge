@@ -8,6 +8,8 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.30.1] - 2025-11-24
+
 ### Changed
 
 - Update the list of active operational units
@@ -633,7 +635,8 @@ update` command
 
 - Implement base FastAPI app
 
-[unreleased]: https://github.com/MTES-MCT/qualicharge/compare/v0.30.0...main
+[unreleased]: https://github.com/MTES-MCT/qualicharge/compare/v0.30.1...main
+[0.30.1]: https://github.com/MTES-MCT/qualicharge/compare/v0.30.0...v0.30.1
 [0.30.0]: https://github.com/MTES-MCT/qualicharge/compare/v0.29.0...v0.30.0
 [0.29.0]: https://github.com/MTES-MCT/qualicharge/compare/v0.28.0...v0.29.0
 [0.28.0]: https://github.com/MTES-MCT/qualicharge/compare/v0.27.0...v0.28.0
