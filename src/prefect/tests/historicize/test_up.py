@@ -181,8 +181,8 @@ def test_to_historicization_up_extras():
     assert df["value"].equals(df["mean"])
 
 
-def test_flow_up_calculate():
-    """Test the `calculate` flow."""
+def test_flow_up():
+    """Test the `up` flow."""
     indicators = i1.i1(
         Environment.TEST,
         levels=[Level.NATIONAL, Level.REGION],
@@ -191,7 +191,7 @@ def test_flow_up_calculate():
         create_artifact=True,
         persist=True,
     )
-    histo_up = up.calculate(
+    histo_up = up.up(
         environment=Environment.TEST,
         to_period=IndicatorPeriod.MONTH,
         start=TIMESPAN.start,
@@ -203,8 +203,8 @@ def test_flow_up_calculate():
     assert histo_up["period"][0] == IndicatorPeriod.MONTH
 
 
-def test_flow_calculate_persistence(indicators_db_engine):
-    """Test the `calculate` flow."""
+def test_flow_up_persistence(indicators_db_engine):
+    """Test the `up` flow."""
     indicators = i1.i1(
         Environment.TEST,
         levels=[Level.NATIONAL, Level.REGION],
@@ -213,7 +213,7 @@ def test_flow_calculate_persistence(indicators_db_engine):
         create_artifact=True,
         persist=True,
     )
-    e4.calculate(
+    e4.e4(
         Environment.TEST,
         levels=[Level.NATIONAL, Level.REGION],
         start=TIMESPAN.start,
@@ -227,7 +227,7 @@ def test_flow_calculate_persistence(indicators_db_engine):
         period=IndicatorPeriod.DAY,
         persist=True,
     )
-    up.calculate(
+    up.up(
         environment=Environment.TEST,
         to_period=IndicatorPeriod.MONTH,
         start=TIMESPAN.start,
@@ -244,8 +244,8 @@ def test_flow_calculate_persistence(indicators_db_engine):
         assert result.one()[0] == len(indicators)
 
 
-def test_flow_calculate_up_with_start_none(indicators_db_engine):
-    """Test the `calculate` flow with start=None."""
+def test_flow_up_with_start_none(indicators_db_engine):
+    """Test the `up` flow with start=None."""
     i1.i1(
         Environment.TEST,
         levels=[Level.NATIONAL],
@@ -255,5 +255,5 @@ def test_flow_calculate_up_with_start_none(indicators_db_engine):
     )
     with indicators_db_engine.connect():
         assert isinstance(
-            up.calculate(Environment.TEST, to_period=IndicatorPeriod.WEEK), pd.DataFrame
+            up.up(Environment.TEST, to_period=IndicatorPeriod.WEEK), pd.DataFrame
         )

@@ -172,7 +172,7 @@ def get_indicators(query_template: Template, query_params: dict) -> pd.DataFrame
 @flow(
     flow_run_name="meta-up-{to_period.value}{offset}",
 )
-def calculate(  # noqa: PLR0913
+def up(  # noqa: PLR0913
     environment: Environment,
     to_period: IndicatorPeriod,
     start: datetime | None = None,
@@ -187,7 +187,7 @@ def calculate(  # noqa: PLR0913
         if not offset and start is None
         else get_period_start_from_pit(start, offset, to_period)
     )
-    final_timespan = IndicatorTimeSpan(period=to_period.value, start=init_period)
+    final_timespan = IndicatorTimeSpan(period=to_period, start=init_period)
     query_params = {
         "environment": environment,
         "period": period.value,
