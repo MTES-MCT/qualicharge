@@ -292,6 +292,12 @@ def test_list_pagination(client_auth, db_session):
     save_statiques(db_session, StatiqueFactory.batch(n_statiques))
     refresh_materialized_view(db_session, STATIQUE_MV_TABLE_NAME)
 
+    # Invalid limit or offset
+    for offset, limit in ((0, -2), (-1, 0), (-3, -3)):
+        response = client_auth.get(f"/statique/?{offset=}&{limit=}")
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+
+    # Two pages
     offset = 0
     limit = 2
     response = client_auth.get(f"/statique/?{offset=}&{limit=}")

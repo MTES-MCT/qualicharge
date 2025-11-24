@@ -24,6 +24,7 @@ and this project adheres to
 
 ### Fixed 
 
+- Restrict `offset` and `limit` allowed values in statique list pagination
 - Restore orphan stations cleanup
 
 ## [0.30.0] - 2025-10-31
