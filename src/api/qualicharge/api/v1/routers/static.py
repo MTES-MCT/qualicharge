@@ -109,10 +109,14 @@ BulkStatiqueList = Annotated[
 async def list(
     user: Annotated[User, Security(get_user, scopes=[ScopesEnum.STATIC_READ.value])],
     request: Request,
-    offset: int = 0,
+    offset: int = Query(
+        default=0,
+        ge=0,
+    ),
     limit: int = Query(
         default=settings.API_STATIQUE_PAGE_SIZE,
         le=settings.API_STATIQUE_PAGE_MAX_SIZE,
+        ge=0,
     ),
     session: Session = Depends(get_session),
 ) -> PaginatedStatiqueListResponse:
