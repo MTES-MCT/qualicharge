@@ -3,6 +3,8 @@
 from datetime import date, datetime
 from zoneinfo import ZoneInfo
 
+import pytest
+from prefect.exceptions import FailedRun
 from sqlalchemy import text
 
 from indicators.types import Environment
@@ -271,9 +273,13 @@ def test_flow_tiruert_for_month_and_amenageur_failed_submission(
             "errors": ["Misc"],
         },
     )
-    tiruert_submit.tiruert_for_month_and_amenageur(
-        Environment.TEST, year=2024, month=12, siren="891118473"
-    )
+    with pytest.raises(
+        FailedRun, match="Submission failed for amenageur with siren 891118473"
+    ):
+        tiruert_submit.tiruert_for_month_and_amenageur(
+            Environment.TEST, year=2024, month=12, siren="891118473"
+        )
+
     with indicators_db_engine.connect() as connection:
         result = connection.execute(
             text(
