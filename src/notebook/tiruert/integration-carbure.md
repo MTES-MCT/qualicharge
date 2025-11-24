@@ -340,58 +340,72 @@ engine = create_engine(os.getenv("DATABASE_URL"))
 ```
 
 ```python
-OPERATIONAL_UNIT_SESSIONS_FOR_A_DAY_TEMPLATE = Template(
+AMENAGEUR_WITH_SESSIONS_TEMPLATE = Template(
     """
-    WITH
-      pdcs AS (
-        SELECT
-          Statique.nom_amenageur AS entity,
-          Statique.siren_amenageur AS siren,
-          OperationalUnit.code AS code,
-          Statique.id_station_itinerance AS id_station_itinerance,
-          Statique.id_pdc_itinerance AS id_pdc_itinerance,
-          Statique.puissance_nominale AS max_power,
-          Statique.pdc_id
-        FROM
-          Statique
-          JOIN OperationalUnit ON Statique.id_pdc_itinerance LIKE OperationalUnit.code || '%%'
-        WHERE
-          OperationalUnit.code = '$operational_unit_code'
-      ),
-      sessions AS (
-        SELECT
-          SESSION.id AS session_id,
-          SESSION.start AS "from",
-          SESSION.end AS TO,
-          SESSION.energy AS energy,
-          SESSION.point_de_charge_id
-        FROM
-          SESSION
-        WHERE
-          SESSION.start >= '$from_date'
-          AND SESSION.start < '$to_date'
-      )
-    SELECT
-      entity,
-      siren,
-      code,
-      id_station_itinerance,
-      id_pdc_itinerance,
-      max_power,
-      session_id,
-      "from",
-      "to",
-      energy
+    SELECT DISTINCT
+      Amenageur.siren_amenageur as siren,
+      Amenageur.nom_amenageur as nom,
+      Count(Session.id) AS COUNT
     FROM
-      pdcs
-      JOIN sessions ON pdcs.pdc_id = sessions.point_de_charge_id
+      Session
+      INNER JOIN _pointdecharge ON _pointdecharge.id = Session.point_de_charge_id
+      INNER JOIN _station ON _station.id = _pointdecharge.station_id
+      INNER JOIN Amenageur ON _station.amenageur_id = amenageur.id
+    WHERE
+      Session.start >= '$from_date'
+      AND Session.start < '$to_date'
+    GROUP BY
+      siren,
+      nom
     ORDER BY
-      pdcs.id_pdc_itinerance,
-      sessions."from"
+      siren
     """
 )
-params = {"from_date": date(2024, 12, 27), "to_date": date(2024, 12, 28), "operational_unit_code": "FRPD1"}
-query = OPERATIONAL_UNIT_SESSIONS_FOR_A_DAY_TEMPLATE.substitute(params)
+
+params = {"from_date": date(2024, 12, 27), "to_date": date(2024, 12, 28)}
+query = AMENAGEUR_WITH_SESSIONS_TEMPLATE.substitute(params)
+print(query)
+with Session(engine) as session:
+    amenageurs = pd.read_sql_query(query, con=session.connection())
+amenageurs
+```
+
+```python
+AMENAGEUR_SESSIONS_FOR_A_DAY_TEMPLATE = Template(
+    """
+    SELECT
+      Amenageur.nom_amenageur AS entity,
+      Amenageur.siren_amenageur AS siren,
+      operationalunit.code AS code,
+      _station.id_station_itinerance AS id_station_itinerance,
+      _pointdecharge.id_pdc_itinerance AS id_pdc_itinerance,
+      _pointdecharge.puissance_nominale AS max_power,
+      Session.id AS session_id,
+      Session.start AS "from",
+      Session.end AS "to",
+      Session.energy AS energy,
+      Session.point_de_charge_id
+    FROM
+      Session
+      LEFT JOIN _pointdecharge ON _pointdecharge.id = Session.point_de_charge_id
+      LEFT JOIN _station ON _station.id = _pointdecharge.station_id
+      LEFT JOIN operationalunit ON operationalunit.id = _station.operational_unit_id
+      LEFT JOIN Amenageur ON _station.amenageur_id = amenageur.id
+    WHERE
+      Session.start >= '$from_date'
+      AND Session.start < '$to_date'
+      AND Amenageur.siren_amenageur = '$siren'
+    ORDER BY
+      id_pdc_itinerance,
+      "from"
+    """
+)
+
+SESSION_ENE_MAX = 1000.0  # in kWh
+
+
+params = {"from_date": date(2024, 12, 27), "to_date": date(2024, 12, 28), "siren": "539188169"}
+query = AMENAGEUR_SESSIONS_FOR_A_DAY_TEMPLATE.substitute(params)
 print(query)
 ```
 
