@@ -223,7 +223,7 @@ def tiruert_for_month_and_amenageur(
 
     # Only save indicator if submission is successful
     if state.type == StateType.FAILED:
-        return
+        return Failed(message=f"Submission failed for amenageur with siren {siren}")
 
     load(environment, siren, energy_by_station["energy"].sum(), from_date, payload)
 
