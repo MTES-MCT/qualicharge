@@ -34,7 +34,7 @@ ENERGY_BY_STATION_TEMPLATE = Template(
         SELECT
           jsonb_path_query(extras, '$$.entity') ->> 0 as entity,
           jsonb_path_query(extras, '$$.siren') ->> 0 AS siren,
-          target as code,
+          jsonb_path_query(extras, '$$.code') ->> 0 AS code,
           jsonb_path_query(extras, '$$.id_station_itinerance') ->> 0 AS station,
           jsonb_path_query(extras, '$$.energy')::NUMERIC AS energy
         FROM
@@ -42,7 +42,7 @@ ENERGY_BY_STATION_TEMPLATE = Template(
         WHERE
           code = 'tirue'
           AND period = 'd'
-          AND (extras @> '[{"siren": "$siren"}]')
+          AND target = '$siren'
           AND timestamp >= '$from_date'
           AND timestamp < '$to_date'
       )

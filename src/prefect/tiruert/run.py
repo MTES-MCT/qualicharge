@@ -7,6 +7,7 @@ from string import Template
 
 import pandas as pd
 from prefect import flow, task
+from prefect.artifacts import create_markdown_artifact
 from prefect.states import Failed
 from pyarrow import fs
 from sqlalchemy.orm import Session
@@ -18,27 +19,27 @@ from indicators.utils import export_indicators
 
 logger = logging.getLogger(__name__)
 
-OPERATIONAL_UNIT_WITH_SESSIONS_TEMPLATE = Template(
+AMENAGEUR_WITH_SESSIONS_TEMPLATE = Template(
     """
     SELECT DISTINCT
-      operationalunit.code AS code,
+      Amenageur.siren_amenageur as siren,
       Count(Session.id) AS COUNT
     FROM
       Session
       INNER JOIN _pointdecharge ON _pointdecharge.id = Session.point_de_charge_id
       INNER JOIN _station ON _station.id = _pointdecharge.station_id
-      INNER JOIN operationalunit ON operationalunit.id = _station.operational_unit_id
+      INNER JOIN Amenageur ON _station.amenageur_id = amenageur.id
     WHERE
       Session.start >= '$from_date'
       AND Session.start < '$to_date'
     GROUP BY
-      code
+      siren
     ORDER BY
-      code
+      siren
     """
 )
 
-OPERATIONAL_UNIT_SESSIONS_FOR_A_DAY_TEMPLATE = Template(
+AMENAGEUR_SESSIONS_FOR_A_DAY_TEMPLATE = Template(
     """
     SELECT
       Amenageur.nom_amenageur AS entity,
@@ -61,7 +62,7 @@ OPERATIONAL_UNIT_SESSIONS_FOR_A_DAY_TEMPLATE = Template(
     WHERE
       Session.start >= '$from_date'
       AND Session.start < '$to_date'
-      AND SUBSTRING(_pointdecharge.id_pdc_itinerance FOR 5) = '$operational_unit_code'
+      AND Amenageur.siren_amenageur = '$siren'
     ORDER BY
       id_pdc_itinerance,
       "from"
@@ -72,10 +73,10 @@ SESSION_ENE_MAX = 1000.0  # in kWh
 
 
 @task
-def get_operational_units_for_period(
+def get_amenageurs_for_period(
     environment: Environment, from_date: date, to_date: date
 ) -> pd.DataFrame:
-    """Get operational units for a defined period.
+    """Get amenageurs for a defined period.
 
     Args:
     environment (Environment): target environment
@@ -84,7 +85,7 @@ def get_operational_units_for_period(
     """
     with Session(get_api_db_engine(environment)) as session:
         return pd.read_sql_query(
-            OPERATIONAL_UNIT_WITH_SESSIONS_TEMPLATE.substitute(
+            AMENAGEUR_WITH_SESSIONS_TEMPLATE.substitute(
                 {"from_date": from_date, "to_date": to_date}
             ),
             con=session.connection(),
@@ -93,7 +94,7 @@ def get_operational_units_for_period(
 
 @task
 def get_sessions(
-    environment: Environment, from_date: date, to_date: date, code: str
+    environment: Environment, from_date: date, to_date: date, siren: str
 ) -> pd.DataFrame:
     """Get sessions for a period and an operational unit.
 
@@ -101,14 +102,14 @@ def get_sessions(
     environment (Environment): target environment
     from_date (date): included
     to_date (date): excluded
-    code (str): operational unit code (e.g. FRXXX)
+    siren (str): SIREN amenageur (e.g. 0123456789)
 
     """
     with Session(get_api_db_engine(environment)) as session:
         return pd.read_sql_query(
-            OPERATIONAL_UNIT_SESSIONS_FOR_A_DAY_TEMPLATE.substitute(
+            AMENAGEUR_SESSIONS_FOR_A_DAY_TEMPLATE.substitute(
                 {
-                    "operational_unit_code": code,
+                    "siren": siren,
                     "from_date": from_date,
                     "to_date": to_date,
                 }
@@ -216,7 +217,7 @@ def filter_sessions(sessions: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]
 def archive_ignored_session_for_day(
     ignored: pd.DataFrame,
     day: date,
-    code: str,
+    siren: str,
 ):
     """Archive ignored sessions to S3."""
     bucket = "qualicharge-sessions"
@@ -227,7 +228,7 @@ def archive_ignored_session_for_day(
     # Target bucket
     s3 = fs.S3FileSystem(endpoint_override=s3_endpoint_url)
     dir_path = f"{bucket}/{day.year}/{day.month}/{day.day}"
-    file_path = f"{dir_path}/ignored-{code}.parquet"
+    file_path = f"{dir_path}/ignored-{siren}.parquet"
 
     # Default output stream method
     s3_open_output_stream = s3.open_output_stream
@@ -242,26 +243,31 @@ def archive_ignored_session_for_day(
         ignored.to_parquet(archive)
 
 
-@task
-def save_indicator_for_day(
-    sessions: pd.DataFrame, environment: Environment, day: date, code: str
-):
-    """Save cumulated sessions as an indicator."""
-    # Sum by EVSE pool for an operational unit for the day
+def _sessions_by_station(sessions: pd.DataFrame) -> pd.DataFrame:
+    """Convert sessions data frame to a per-station report."""
     by_station_report = sessions.groupby(
         ["entity", "siren", "code", "id_station_itinerance"]
     )["energy"].sum()
     by_station_report /= 1000.0  # Convert to MWh
-    by_station_report_df = by_station_report.reset_index()
+    return by_station_report.reset_index()
+
+
+@task
+def save_indicator_for_day(
+    sessions: pd.DataFrame, environment: Environment, day: date, siren: str
+):
+    """Save cumulated sessions as an indicator."""
+    # Sum by EVSE pool for an amenageur for the day
+    by_station_report_df = _sessions_by_station(sessions)
 
     # Build result DataFrame
     indicators = pd.DataFrame(
         {
-            "target": code,
+            "target": siren,
             # total for period in MWh
             "value": by_station_report_df["energy"].sum(),
             "code": "tirue",
-            "level": Level.OU,
+            "level": Level.AMENAGEUR,
             "period": IndicatorPeriod.DAY,
             "timestamp": datetime(day.year, day.month, day.day).isoformat(),
             "category": None,
@@ -272,29 +278,48 @@ def save_indicator_for_day(
     export_indicators(
         indicators=indicators,
         environment=environment,
-        flow_name="tiruert-for-period-and-operational-unit",
+        flow_name="tiruert-for-period-and-amenageur",
         description="Sessions that will be used for TIRUERT calculation.",
         create_artifact=False,
         persist=True,
     )
 
 
-@flow
-def tiruert_for_day_and_operational_unit(
-    environment: Environment, day: date, code: str
-):
-    """Calculate the TIRUERT for a defined day and an operational unit."""
-    sessions = get_sessions(environment, day, day + timedelta(days=1), code)
+@flow(flow_run_name="{siren}-on-{day:%x}")
+def tiruert_for_day_and_amenageur(environment: Environment, day: date, siren: str):
+    """Calculate the TIRUERT for a defined day and an amenageur."""
+    sessions = get_sessions(environment, day, day + timedelta(days=1), siren)
     sessions, ignored = filter_sessions(sessions)
-    save_indicator_for_day(sessions, environment, day, code)
-    archive_ignored_session_for_day(ignored, day, code)
+    save_indicator_for_day(sessions, environment, day, siren)
+    archive_ignored_session_for_day(ignored, day, siren)
 
 
 @flow
 def tiruert_for_day(environment: Environment, day: date):
     """Calculate the TIRUERT for a defined day."""
-    operational_units = get_operational_units_for_period(
-        environment, day, day + timedelta(days=1)
+    amenageurs = get_amenageurs_for_period(environment, day, day + timedelta(days=1))
+    for siren in amenageurs["siren"]:
+        tiruert_for_day_and_amenageur(environment, day, siren)
+
+
+@flow(flow_run_name="{siren}-from-{from_date:%x}-to-{to_date:%x}")
+def tiruert_for_period_and_amenageur(
+    environment: Environment, from_date: date, to_date: date, siren: str
+):
+    """Calculate the TIRUERT for a defined period and an amenageur.
+
+    Note that dates from the period interval are both included. This flow result is not
+    saved as an indicator but rather as an artifact for inspection purpose.
+    """
+    sessions = get_sessions(environment, from_date, to_date + timedelta(days=1), siren)
+    sessions, _ = filter_sessions(sessions)
+    by_station_report_df = _sessions_by_station(sessions)
+    total = by_station_report_df["energy"].sum()
+
+    create_markdown_artifact(
+        key=f"tiruert-{siren}-{from_date}-{to_date}",
+        markdown=by_station_report_df.to_markdown(),
+        description=(
+            f"TIRUERT for '{siren}' from {from_date} to {to_date} (total: {total})"
+        ),
     )
-    for code in operational_units["code"]:
-        tiruert_for_day_and_operational_unit(environment, day, code)
