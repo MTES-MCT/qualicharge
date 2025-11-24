@@ -159,7 +159,7 @@ def t1(  # noqa: PLR0913
 ) -> pd.DataFrame:
     """Run all t1 subflows."""
     start = datetime.now() if start is None else get_period_start_from_pit(start)
-    timespan = IndicatorTimeSpan(period=period.value, start=start)
+    timespan = IndicatorTimeSpan(period=period, start=start)
     subflows_results = [
         t1_for_level(level, timespan, environment, chunk_size=chunk_size)
         for level in levels

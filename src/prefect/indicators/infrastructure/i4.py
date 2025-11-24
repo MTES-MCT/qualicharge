@@ -133,7 +133,7 @@ def i4(  # noqa: PLR0913
 ) -> pd.DataFrame:
     """Run all i4 subflows."""
     start = datetime.now() if start is None else get_period_start_from_pit(start)
-    timespan = IndicatorTimeSpan(period=period.value, start=start)
+    timespan = IndicatorTimeSpan(period=period, start=start)
     subflows_results = [
         i4_for_level(level, timespan, environment, chunk_size=chunk_size)
         for level in levels

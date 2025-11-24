@@ -144,7 +144,7 @@ def u11_national(timespan: IndicatorTimeSpan, environment: Environment) -> pd.Da
 @flow(
     flow_run_name="meta-u11-{period.value}",
 )
-def calculate(  # noqa: PLR0913
+def u11(  # noqa: PLR0913
     environment: Environment,
     levels: List[Level],
     start: datetime | None = None,

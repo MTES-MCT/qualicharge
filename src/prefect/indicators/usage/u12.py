@@ -173,7 +173,7 @@ def u12_national(timespan: IndicatorTimeSpan, environment: Environment) -> pd.Da
 @flow(
     flow_run_name="meta-u12-{period.value}",
 )
-def calculate(  # noqa: PLR0913
+def u12(  # noqa: PLR0913
     environment: Environment,
     levels: List[Level],
     start: datetime | None = None,

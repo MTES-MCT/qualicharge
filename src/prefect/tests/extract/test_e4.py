@@ -78,8 +78,8 @@ def test_flow_e4_national():
     assert int(indicators["value"].sum()) == N_LEVEL_NATIONAL
 
 
-def test_flow_e4_calculate():
-    """Test the `calculate` flow."""
+def test_flow_e4():
+    """Test the `e4` flow."""
     all_levels = [
         Level.NATIONAL,
         Level.REGION,
@@ -87,7 +87,7 @@ def test_flow_e4_calculate():
         Level.CITY,
         Level.EPCI,
     ]
-    indicators = e4.calculate(
+    indicators = e4.e4(
         Environment.TEST,
         all_levels,
         start=TIMESPAN.start,
@@ -97,9 +97,9 @@ def test_flow_e4_calculate():
     assert list(indicators["level"].unique()) == all_levels
 
 
-def test_flow_calculate_persistence(indicators_db_engine):
-    """Test the `calculate` flow."""
-    indicators = e4.calculate(
+def test_flow_e4_persistence(indicators_db_engine):
+    """Test the `e4` flow."""
+    indicators = e4.e4(
         Environment.TEST,
         [Level.NATIONAL],
         start=TIMESPAN.start,

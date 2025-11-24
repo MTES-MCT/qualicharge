@@ -99,8 +99,8 @@ def test_flow_u11_national(db_connection):
     assert indicators.at[0, "value"] == N_LEVEL_NATIONAL
 
 
-def test_flow_u11_calculate(db_connection):
-    """Test the `calculate` flow."""
+def test_flow_u11(db_connection):
+    """Test the `u11` flow."""
     all_levels = [
         Level.NATIONAL,
         Level.REGION,
@@ -108,7 +108,7 @@ def test_flow_u11_calculate(db_connection):
         Level.CITY,
         Level.EPCI,
     ]
-    indicators = u11.calculate(
+    indicators = u11.u11(
         Environment.TEST,
         all_levels,
         start=TIMESPAN.start,
@@ -119,9 +119,9 @@ def test_flow_u11_calculate(db_connection):
     assert list(indicators["level"].unique()) == all_levels
 
 
-def test_flow_calculate_persistence(indicators_db_engine):
-    """Test the `calculate` flow."""
-    indicators = u11.calculate(
+def test_flow_u11_persistence(indicators_db_engine):
+    """Test the `u11` flow."""
+    indicators = u11.u11(
         Environment.TEST,
         [Level.NATIONAL],
         start=TIMESPAN.start,

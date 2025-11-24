@@ -167,7 +167,7 @@ def e4_national(
 @flow(
     flow_run_name="meta-e4-{period.value}",
 )
-def calculate(  # noqa: PLR0913
+def e4(  # noqa: PLR0913
     environment: Environment,
     levels: List[Level],
     start: datetime | None = None,
@@ -183,7 +183,7 @@ def calculate(  # noqa: PLR0913
         if not offset and start is None
         else get_period_start_from_pit(start, offset, period)
     )
-    timespan = IndicatorTimeSpan(period=period.value, start=start)
+    timespan = IndicatorTimeSpan(period=period, start=start)
     subflows_results = [
         e4_for_level(level, timespan, environment, chunk_size=chunk_size)
         for level in levels
