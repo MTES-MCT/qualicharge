@@ -40,7 +40,7 @@ env.prefix = "DASHBOARD_"
 SECRET_KEY = env.str("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = env.str("DEBUG")
+DEBUG = env.bool("DEBUG")
 
 #'DASHBOARD_ALLOWED_HOSTS' should be a single string of hosts with a space between each.
 ALLOWED_HOSTS = env.list("ALLOWED_HOSTS")
