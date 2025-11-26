@@ -38,6 +38,7 @@ and this project adheres to
 ## Fixed
 
 - Fix static file path formatting (remove leading "/" in template paths)
+- Fix DEBUG setting to use boolean type
 
 ## [0.2.0] - 2025-06-23
 
