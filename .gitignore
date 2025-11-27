@@ -67,3 +67,6 @@ src/opendata/.htpasswd
 # -- Provisioning
 provisioning/.terraform*
 provisioning/terraform.tfstate*
+
+# -- static
+src/dashboard/staticfiles/

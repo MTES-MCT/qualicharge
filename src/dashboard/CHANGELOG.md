@@ -9,7 +9,14 @@ and this project adheres to
 ## [Unreleased]
 
 ### Added
+
+- Add `STORAGES` configuration with `CompressedManifestStaticFilesStorage` for static file handling
+- Add `DSFR_USE_INTEGRITY_CHECKSUMS` to False to disable integrity checks for DSFR assets
+
 ### Changed
+
+- Updated `STATIC_ROOT` path to `BASE_DIR / "staticfiles"`
+
 ### Fixed
 
 ## [0.3.0] - 2025-11-26
