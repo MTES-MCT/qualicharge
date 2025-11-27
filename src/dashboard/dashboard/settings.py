@@ -20,6 +20,9 @@ from sentry_sdk.integrations.django import DjangoIntegration
 # is pytest running
 TEST = os.environ.get("TEST") or False
 
+# is pytest running in GitHub workflows
+CI = os.environ.get("CI") is not None
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -79,6 +82,18 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
+
+# storage
+if CI:
+    STATICFILES_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
+else:
+    STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
+STORAGES = {
+    "staticfiles": {
+        "BACKEND": STATICFILES_STORAGE,
+    },
+}
 
 ROOT_URLCONF = "dashboard.urls"
 
@@ -153,7 +168,7 @@ LOCALE_PATHS = [BASE_DIR / "locale"]
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
 STATIC_URL = "static/"
-STATIC_ROOT = BASE_DIR.parent / "static"
+STATIC_ROOT = BASE_DIR / "staticfiles"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
@@ -175,6 +190,8 @@ LOGOUT_REDIRECT_URL = "/"
 SESSION_COOKIE_AGE = env.int("SESSION_COOKIE_AGE", 7200)  # (in seconds)
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
+# DSFR
+DSFR_USE_INTEGRITY_CHECKSUMS = False
 
 # Connection to “Pro Connect” (OIDC)
 OIDC_RP_SIGN_ALGO = "RS256"
