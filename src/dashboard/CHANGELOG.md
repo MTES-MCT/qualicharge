@@ -9,6 +9,12 @@ and this project adheres to
 ## [Unreleased]
 
 ### Added
+### Changed
+### Fixed
+
+## [0.4.0] - 2025-11-28
+
+### Added
 
 - Add `STORAGES` configuration with `CompressedManifestStaticFilesStorage` for static file handling
 - Add `DSFR_USE_INTEGRITY_CHECKSUMS` to False to disable integrity checks for DSFR assets
@@ -16,8 +22,6 @@ and this project adheres to
 ### Changed
 
 - Updated `STATIC_ROOT` path to `BASE_DIR / "staticfiles"`
-
-### Fixed
 
 ## [0.3.0] - 2025-11-26
 
@@ -159,7 +163,8 @@ and this project adheres to
 - add a command to seed consents (for development only)
 - add cron job configuration to schedule management tasks
 
-[unreleased]: https://github.com/MTES-MCT/qualicharge/compare/v0.3.0-dashboard...main
+[unreleased]: https://github.com/MTES-MCT/qualicharge/compare/v0.4.0-dashboard...main
+[0.4.0]: https://github.com/MTES-MCT/qualicharge/compare/v0.3.0-dashboard...v0.4.0-dashboard
 [0.3.0]: https://github.com/MTES-MCT/qualicharge/compare/v0.2.0-dashboard...v0.3.0-dashboard
 [0.2.0]: https://github.com/MTES-MCT/qualicharge/releases/tag/v0.1.0-dashboard...v0.2.0-dashboard
 [0.1.0]: https://github.com/MTES-MCT/qualicharge/releases/tag/v0.1.0-dashboard
