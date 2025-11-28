@@ -9,7 +9,7 @@ from sqlalchemy import text
 
 from indicators.types import Environment
 from tiruert import submit as tiruert_submit
-from tiruert.run import tiruert_for_day_and_operational_unit
+from tiruert.run import tiruert_for_day_and_amenageur
 
 
 def test_task_get_amenageurs_siren():
@@ -22,7 +22,7 @@ def test_task_get_amenageurs_siren():
 def test_task_extract(indicators_db_engine):
     """Test the `extract` task."""
     # Store energies for the 2024/12/27 day
-    tiruert_for_day_and_operational_unit(Environment.TEST, date(2024, 12, 27), "FRPD1")
+    tiruert_for_day_and_amenageur(Environment.TEST, date(2024, 12, 27), "891118473")
 
     # We query only energies stored for the 2024/12/27 day
     df = tiruert_submit.extract(
@@ -42,7 +42,7 @@ def test_task_extract(indicators_db_engine):
     assert df[df.station == "FRPD1PACCSAT"].energy_mwh.values[0] == energy
 
     # Store energies for the 2024/12/28 day
-    tiruert_for_day_and_operational_unit(Environment.TEST, date(2024, 12, 28), "FRPD1")
+    tiruert_for_day_and_amenageur(Environment.TEST, date(2024, 12, 28), "891118473")
 
     # We query (again) only energy stored for the 2024/12/27 day to ensure nothing has
     # altered expected results
@@ -79,8 +79,8 @@ def test_task_extract(indicators_db_engine):
 def test_task_transform(indicators_db_engine):
     """Test the `transform` task."""
     # Prepare data
-    tiruert_for_day_and_operational_unit(Environment.TEST, date(2024, 12, 27), "FRPD1")
-    tiruert_for_day_and_operational_unit(Environment.TEST, date(2024, 12, 28), "FRPD1")
+    tiruert_for_day_and_amenageur(Environment.TEST, date(2024, 12, 27), "891118473")
+    tiruert_for_day_and_amenageur(Environment.TEST, date(2024, 12, 28), "891118473")
     energy_by_station = tiruert_submit.extract(
         Environment.TEST, date(2024, 12, 27), date(2024, 12, 28), "891118473"
     )
@@ -229,8 +229,8 @@ def test_task_submit(responses):
 def test_flow_tiruert_for_month_and_amenageur(indicators_db_engine, responses):
     """Test the `tiruert_for_month_and_amenageur` flow."""
     # Add test data
-    tiruert_for_day_and_operational_unit(Environment.TEST, date(2024, 12, 27), "FRPD1")
-    tiruert_for_day_and_operational_unit(Environment.TEST, date(2024, 12, 28), "FRPD1")
+    tiruert_for_day_and_amenageur(Environment.TEST, date(2024, 12, 27), "891118473")
+    tiruert_for_day_and_amenageur(Environment.TEST, date(2024, 12, 28), "891118473")
 
     # Mock successful submission
     responses.post(
@@ -261,8 +261,8 @@ def test_flow_tiruert_for_month_and_amenageur_failed_submission(
 ):
     """Test the `tiruert_for_month_and_amenageur` flow when submission fails."""
     # Add test data
-    tiruert_for_day_and_operational_unit(Environment.TEST, date(2024, 12, 27), "FRPD1")
-    tiruert_for_day_and_operational_unit(Environment.TEST, date(2024, 12, 28), "FRPD1")
+    tiruert_for_day_and_amenageur(Environment.TEST, date(2024, 12, 27), "891118473")
+    tiruert_for_day_and_amenageur(Environment.TEST, date(2024, 12, 28), "891118473")
 
     # Mock failed submission
     responses.post(
@@ -297,9 +297,15 @@ def test_flow_tiruert_for_month_and_amenageur_failed_submission(
 def test_flow_tiruert_for_month(indicators_db_engine, responses, monkeypatch):
     """Test the `tiruert_for_month` flow."""
     # Add test data
-    tiruert_for_day_and_operational_unit(Environment.TEST, date(2024, 12, 27), "FRPD1")
-    tiruert_for_day_and_operational_unit(Environment.TEST, date(2024, 12, 28), "FRPD1")
-    tiruert_for_day_and_operational_unit(Environment.TEST, date(2024, 12, 25), "FRTSL")
+    tiruert_for_day_and_amenageur(
+        Environment.TEST, date(2024, 12, 27), "891118473"
+    )  # FRPD1
+    tiruert_for_day_and_amenageur(
+        Environment.TEST, date(2024, 12, 28), "891118473"
+    )  # FRPD1
+    tiruert_for_day_and_amenageur(
+        Environment.TEST, date(2024, 12, 25), "524335262"
+    )  # FRTSL
 
     # Mock successful submission
     responses.post(
