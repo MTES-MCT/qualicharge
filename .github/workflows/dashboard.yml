@@ -57,6 +57,7 @@ jobs:
       DASHBOARD_CONTROL_AUTHORITY_EMAIL: jdoe@exemple.com
       DASHBOARD_CONSENT_SIGNATURE_LOCATION: Paris
       DASHBOARD_CONTACT_EMAIL: contact@exemple.com
+      DASHBOARD_CONTACT_LINK: https://www.qualicharge.beta.gouv.fr/contact/
       DASHBOARD_DEFAULT_FROM_EMAIL: contact@exemple.com
       DASHBOARD_BREVO_API_KEY: the_secret_api_key
       DASHBOARD_CONSENT_VALIDATION_TEMPLATE_ID: 3
@@ -153,6 +154,7 @@ jobs:
           DASHBOARD_CONTROL_AUTHORITY_EMAIL: jdoe@exemple.com
           DASHBOARD_CONSENT_SIGNATURE_LOCATION: Paris
           DASHBOARD_CONTACT_EMAIL: contact@exemple.com
+          DASHBOARD_CONTACT_LINK: https://www.qualicharge.beta.gouv.fr/contact/
           DASHBOARD_DEFAULT_FROM_EMAIL: contact@exemple.com
           DASHBOARD_BREVO_API_KEY: the_secret_api_key
           DASHBOARD_CONSENT_VALIDATION_TEMPLATE_ID: 3

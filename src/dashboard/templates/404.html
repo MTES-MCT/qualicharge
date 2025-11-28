@@ -30,9 +30,7 @@
           </li>
 
           <li>
-            <a class="fr-btn fr-btn--secondary" href="mailto:{{ contact_email }}" target="_blank">
-              {% trans "Contact us" %}
-            </a>
+            {% include "components/_contact_link.html" with link_style="btn" %}
           </li>
         </ul>
       </div>

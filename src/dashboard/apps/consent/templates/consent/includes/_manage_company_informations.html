@@ -16,10 +16,7 @@
     signataire du présent formulaire.
     <br />
     En cas d'informations erronées, merci de nous contacter :
-    <a class="fr-link fr-link--icon-left fr-icon-mail-line"
-       href="mailto:{{ contact_email }}?subject=[QualiCharge] Informations erronées dans le formulaire de gestion des autorisations" target="_blank">
-      {{ contact_email }}
-    </a>
+    {% include "components/_contact_link.html" %}
   </p>
 
   {% with row_number=0 %}

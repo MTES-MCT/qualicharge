@@ -56,6 +56,7 @@ def send_notification_for_awaiting_consents(entity: Entity) -> None:
             "first_name": user.first_name,
             "link": email_config.get("link"),
             "support_email": settings.CONTACT_EMAIL,
+            "support_link": settings.CONTACT_LINK,
         }
 
     send_mail(recipients, template_id, email_data)
