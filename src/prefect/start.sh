@@ -8,8 +8,4 @@ echo "🚀 Will start prefect server…"
 prefect version
 
 # Run prefect server
-python3 -m uvicorn \
-  --factory prefect.server.api.server:create_app \
-  --host $PREFECT_SERVER_API_HOST \
-  --port $PREFECT_SERVER_API_PORT \
-  --log-level debug
+prefect server start --host 0.0.0.0 --port "${PORT}" --workers 1
