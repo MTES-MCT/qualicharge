@@ -13,6 +13,7 @@
   "packageRules": [
     {
       "groupName": "python dependencies",
+      "minimumReleaseAge": "7 days",
       "matchManagers": [
         "pep621"
       ],
