@@ -1,2 +1,2 @@
-web: prefect server start
+web: prefect server start --no-services
 worker: prefect worker start --pool indicators
