@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-10-24 11:39+0200\n"
-"PO-Revision-Date: 2025-10-24 13:42+0200\n"
+"POT-Creation-Date: 2025-12-03 11:51+0100\n"
+"PO-Revision-Date: 2025-12-03 14:19+0100\n"
 "Last-Translator: ssorin <ssorin@dwdlc.com>\n"
 "Language-Team: \n"
 "Language: fr\n"
@@ -93,29 +93,19 @@ msgstr "Votre compte n'a pas encore été validé."
 
 #: apps/auth/templates/auth/user_not_validated.html:20
 msgid ""
-"\n"
-"            If this is your first time logging in, this is expected.<br />\n"
-"            An administrator needs to validate your account, and you will "
-"receive an email notification once this has been completed.\n"
-"            "
+"If this is your first time logging in, this is expected.<br /> An "
+"administrator needs to validate your account, and you will receive an email "
+"notification once this has been completed."
 msgstr ""
-"\n"
-"Si il s'agit de votre première connexion, cela est normal.<br />\n"
-"Un administrateur doit valider votre compte. Vous recevrez une notification "
-"par e-mail une fois cette opération terminée.\n"
-"            "
+"Si il s'agit de votre première connexion, cela est normal.<br />Un "
+"administrateur doit valider votre compte. Vous recevrez une notification par "
+"e-mail une fois cette opération terminée."
 
 #: apps/auth/templates/auth/user_not_validated.html:26
 #: apps/renewable/templates/renewable/restricted_period.html:26
 msgid "If you think this is a mistake, you can contact our team."
 msgstr ""
 "Si vous pensez qu'il s'agit d'une erreur, vous pouvez contacter notre équipe."
-
-#: apps/auth/templates/auth/user_not_validated.html:32
-#: apps/renewable/templates/renewable/restricted_period.html:32
-#: templates/403.html:36 templates/404.html:35 templates/500.html:29
-msgid "Contact us"
-msgstr "Contactez-nous"
 
 #: apps/consent/__init__.py:11
 msgid "Awaiting"
@@ -403,7 +393,7 @@ msgstr "est actif"
 msgid "has renewable"
 msgstr "a des énergies renouvelables"
 
-#: apps/core/models.py:291 apps/core/models.py:327
+#: apps/core/models.py:291 apps/core/models.py:336
 msgid "delivery point"
 msgstr "point de livraison"
 
@@ -411,19 +401,19 @@ msgstr "point de livraison"
 msgid "delivery points"
 msgstr "points de livraison"
 
-#: apps/core/models.py:320
+#: apps/core/models.py:329
 msgid "id station itinerance"
 msgstr "id station itinérance"
 
-#: apps/core/models.py:322
+#: apps/core/models.py:331
 msgid "station name"
 msgstr "nom de la station"
 
-#: apps/core/models.py:331
+#: apps/core/models.py:340
 msgid "station"
 msgstr "station"
 
-#: apps/core/models.py:332
+#: apps/core/models.py:341
 msgid "stations"
 msgstr "stations"
 
@@ -538,19 +528,13 @@ msgstr ""
 #: apps/renewable/templates/renewable/restricted_period.html:20
 #, python-format
 msgid ""
-"\n"
-"              The statement entry period must be within the first "
-"%(period_days)s days of the current\n"
-"              quarter for the previous quarter <em>(from %(start_period)s to "
-"%(end_period)s for the current quarter.)</em>.\n"
-"            "
+"The statement entry period must be within the first %(period_days)s days of "
+"the current quarter for the previous quarter <em>(from %(start_period)s to "
+"%(end_period)s for the current quarter.)</em>."
 msgstr ""
-"\n"
-"              La période de saisie du relevé doit être comprise dans les "
-"%(period_days)s premiers jours\n"
-"              du trimestre en cours pour le trimestre précédent <em>(de "
-"%(start_period)s à %(end_period)s pour le trimestre en cours.)</em>.\n"
-"            "
+"La période de saisie du relevé doit être comprise dans les %(period_days)s "
+"premiers jours du trimestre en cours pour le trimestre précédent <em>(de "
+"%(start_period)s à %(end_period)s pour le trimestre en cours.)</em>."
 
 #: apps/renewable/templatetags/renewable_tags.py:26
 #, python-format
@@ -562,11 +546,11 @@ msgstr "T%(quarter)s %(year)s"
 msgid "%(start_date)s to %(end_date)s"
 msgstr "du %(start_date)s au %(end_date)s"
 
-#: apps/renewable/views.py:33
+#: apps/renewable/views.py:37
 msgid "Renewable meters"
 msgstr "Relevés d'énergies renouvelables"
 
-#: apps/renewable/views.py:94
+#: apps/renewable/views.py:98
 #, python-format
 msgid ""
 "The quarterly submission period for renewable energy readings (<em>from "
@@ -575,72 +559,67 @@ msgstr ""
 "La période de soumission trimestrielle des relevés d'énergie renouvelable "
 "(<em>de %(start_period)s à %(end_period)s</em>) est terminée."
 
-#: apps/renewable/views.py:108 apps/renewable/views.py:333
+#: apps/renewable/views.py:112 apps/renewable/views.py:337
 msgid "Manage renewable meter reading"
 msgstr "Gérer les relevés de compteurs d'énergies renouvelables"
 
-#: apps/renewable/views.py:214
+#: apps/renewable/views.py:218
 #, python-format
 msgid "%(count)d renewable meter reading updated."
 msgid_plural "%(count)d renewable meter readings updated."
 msgstr[0] "%(count)d relevé de compteur renouvelable mis à jour."
 msgstr[1] "%(count)d relevés de compteur renouvelable mis à jour."
 
-#: apps/renewable/views.py:226
+#: apps/renewable/views.py:230
 msgid "The form contains errors."
 msgstr "Le formulaire contient des erreurs."
 
-#: apps/renewable/views.py:280
+#: apps/renewable/views.py:284
 msgid "Submitted renewable meter reading"
 msgstr "Relevés de compteur renouvelable soumis"
 
-#: apps/renewable/views.py:391
+#: apps/renewable/views.py:404
 msgid "Delivery points have been successfully updated."
 msgstr "Les points de livraison ont été mis à jour avec succès."
 
-#: dashboard/settings.py:143
+#: dashboard/settings.py:159
 msgid "French"
 msgstr "Français"
 
-#: templates/403.html:5 templates/403.html:14
+#: templates/403.html:5 templates/403.html:13
 msgid "Permission denied"
 msgstr "Permission refusée"
 
-#: templates/403.html:17
+#: templates/403.html:16
 msgid "Error 403"
 msgstr "Erreur 403"
 
-#: templates/403.html:20
+#: templates/403.html:19
 msgid "Sorry, you are not allowed to access this page."
 msgstr "Désolé, vous n'êtes pas autorisé à accéder à cette page."
 
-#: templates/403.html:23
+#: templates/403.html:22
 msgid ""
-"\n"
-"          If you think this is a mistake, you can contact our team.<br />\n"
-"          Otherwise, to continue your visit you can consult our home "
-"page.                \n"
-"        "
+"If you think this is a mistake, you can contact our team.<br /> Otherwise, "
+"to continue your visit you can consult our home page."
 msgstr ""
-"\n"
-"          Si vous pensez qu'il s'agit d'une erreur, vous pouvez contacter "
-"notre équipe.<br />\n"
-"          Sinon, pour continuer votre visite, vous pouvez consulter notre "
-"page d'accueil.               "
+"Si vous pensez qu'il s'agit d'une erreur, vous pouvez contacter notre équipe."
+"<br /> Sinon, pour continuer votre visite, vous pouvez consulter notre page "
+"d'accueil."
 
-#: templates/403.html:31 templates/404.html:30 templates/blocks/header.html:6
+#: templates/403.html:30 templates/404.html:31 templates/blocks/header.html:6
 msgid "Home page"
 msgstr "Accueil"
 
-#: templates/404.html:5 templates/404.html:14
+#: templates/404.html:5 templates/404.html:13
 msgid "Page not found"
 msgstr "Page non trouvée"
 
-#: templates/404.html:17
+#: templates/404.html:16
 msgid "Error 404"
 msgstr "Erreur 404"
 
-#: templates/404.html:20
+#: templates/404.html:19
 msgid ""
 "The page you are looking for could not be found. We apologize for the "
 "inconvenience."
@@ -648,34 +627,32 @@ msgstr ""
 "La page que vous cherchez est introuvable. Excusez nous pour la gêne "
 "occasionnée."
 
-#: templates/404.html:23
+#: templates/404.html:22
 msgid ""
-" If you typed the web address in the\n"
-"browser, check that it is correct. The page may no longer be\n"
-"available. <br>In this case, to continue your visit you can consult\n"
-"our home page."
+"If you typed the web address in the browser, check that it is correct. The "
+"page may no longer be available. <br>In this case, to continue your visit "
+"you can consult our home page."
 msgstr ""
-" Si vous avez tapé l'adresse web dans le navigateur, vérifier qu'elle est "
-"correcte. La page n'est peut-être plus disponible.<br>\n"
-"Dans ce cas, pour continuer votre visite vous pouvez consulter notre page "
-"d'accueil."
+"Si vous avez tapé l'adresse web dans le navigateur, vérifier qu'elle est "
+"correcte. La page n'est peut-être plus disponible.<br>Dans ce cas, pour "
+"continuer votre visite vous pouvez consulter notre page d'accueil."
 
-#: templates/500.html:5 templates/500.html:14
+#: templates/500.html:5 templates/500.html:13
 msgid "Unexpected error"
 msgstr "Erreur inattendue"
 
-#: templates/500.html:17
+#: templates/500.html:16
 msgid "Error 500"
 msgstr "Erreur 500"
 
-#: templates/500.html:20
+#: templates/500.html:19
 msgid ""
 "Oops, looks like something terrible happened. We have already been notified."
 msgstr ""
 "Désolé, le service rencontre un problème, nous travaillons pour le résoudre "
 "le plus rapidement possible."
 
-#: templates/500.html:23
+#: templates/500.html:22
 msgid "Try refreshing the page or try again later."
 msgstr "Essayez de rafraichir la page ou bien revenez plus tard."
 
@@ -720,26 +697,26 @@ msgstr "Menu principal"
 msgid "Home"
 msgstr "Accueil"
 
-#: templates/registration/login.html:15
-msgid "Login to"
-msgstr "Se connecter"
+#: templates/components/_contact_link.html:26
+msgid "Contact us"
+msgstr "Contactez-nous"
 
-#: templates/registration/login.html:18
-msgid ""
-"\n"
-"              Description — Lorem ipsum dolor sit amet, consectetur "
-"adipiscing elit.\n"
-"              "
+#: templates/registration/login.html:13
+msgid "Login to"
+msgstr "Se connecter à"
+
+#: templates/registration/login.html:16
+msgid "Description — Lorem ipsum dolor sit amet, consectetur adipiscing elit."
 msgstr ""
 
-#: templates/registration/login.html:26
+#: templates/registration/login.html:24
 msgid "Log in with"
 msgstr "Se connecter avec"
 
-#: templates/registration/login.html:33
+#: templates/registration/login.html:31
 msgid "What is ProConnect? - new window"
 msgstr "Qu'est-ce que ProConnect ? - nouvelle fenêtre"
 
-#: templates/registration/login.html:34
+#: templates/registration/login.html:32
 msgid "What is ProConnect?"
 msgstr "Qu’est-ce que ProConnect ?"
