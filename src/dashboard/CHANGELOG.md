@@ -12,6 +12,8 @@ and this project adheres to
 
 ### Changed
 
+- Update `blocktrans` with `blocktranslate trimmed` in templates for improved consistency
+
 #### Dependencies
 
 - Upgrade `psycopg` to `3.2.13`
