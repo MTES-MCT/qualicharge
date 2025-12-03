@@ -13,6 +13,7 @@ and this project adheres to
 ### Changed
 
 - Update `blocktrans` with `blocktranslate trimmed` in templates for improved consistency
+- Update content wording in `login.html` template
 
 #### Dependencies
 
