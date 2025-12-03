@@ -21,14 +21,16 @@ jobs:
       run:
         working-directory: ./src/api
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          persist-credentials: false
       - name: Install uv
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@1e862dfacbd1d6d858c55d9b792c756523627244 # v7.1.4
         with:
           version: "0.9.11"
           enable-cache: true
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548 # v6.1.0
         with:
           python-version-file: "./src/api/.python-version"
       - name: Install the project
@@ -41,14 +43,16 @@ jobs:
       run:
         working-directory: ./src/api
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          persist-credentials: false
       - name: Install uv
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@1e862dfacbd1d6d858c55d9b792c756523627244 # v7.1.4
         with:
           version: "0.9.11"
           enable-cache: true
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548 # v6.1.0
         with:
           python-version-file: "./src/api/.python-version"
       - name: Lint with Black
@@ -65,14 +69,16 @@ jobs:
       run:
         working-directory: ./src/api
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          persist-credentials: false
       - name: Install uv
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@1e862dfacbd1d6d858c55d9b792c756523627244 # v7.1.4
         with:
           version: "0.9.11"
           enable-cache: true
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548 # v6.1.0
         with:
           python-version-file: "./src/api/.python-version"
       - name: Lint with Black
@@ -130,20 +136,21 @@ jobs:
       QUALICHARGE_OAUTH2_TOKEN_ISSUER: http://test:8000
       QUALICHARGE_EXECUTION_ENVIRONMENT: ci
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           ref: ${{ github.head_ref }}
+          persist-credentials: false
       - name: Create postgis extension
         run: psql "postgresql://qualicharge:pass@localhost:5432/qualicharge-api" -c "create extension postgis;"
       - name: Create btree_gist extension
         run: psql "postgresql://qualicharge:pass@localhost:5432/qualicharge-api" -c "create extension btree_gist;"
       - name: Install uv
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@1e862dfacbd1d6d858c55d9b792c756523627244 # v7.1.4
         with:
           version: "0.9.11"
           enable-cache: true
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548 # v6.1.0
         with:
           python-version-file: "./src/api/.python-version"
       - name: Run database migrations
@@ -191,7 +198,7 @@ jobs:
               stamp bench_admin_stats.csv $(git rev-parse --short "${GITHUB_SHA}") \
                 > bench_admin_stats_stamped.csv
       - name: Save bench CSV as artefact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
         with:
           name: api-admin-benchmark
           path: ./src/api/bench_admin_stats_stamped.csv
@@ -212,7 +219,7 @@ jobs:
             uv run \
               csvlook -I >> bench_admin_stats.md
           cat bench_admin_stats.md
-      - uses: actions/github-script@v8
+      - uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
         # Only when in PR, not when merged to main
         if: ${{ github.event_name == 'pull_request' }}
         with:
@@ -323,18 +330,20 @@ jobs:
       run:
         working-directory: ./src/api
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          persist-credentials: false
       - name: Create postgis extension
         run: psql "postgresql://qualicharge:pass@localhost:5432/test-qualicharge-api" -c "create extension postgis;"
       - name: Create btree_gist extension
         run: psql "postgresql://qualicharge:pass@localhost:5432/test-qualicharge-api" -c "create extension btree_gist;"
       - name: Install uv
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@1e862dfacbd1d6d858c55d9b792c756523627244 # v7.1.4
         with:
           version: "0.9.11"
           enable-cache: true
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548 # v6.1.0
         with:
           python-version-file: "./src/api/.python-version"
       - name: Run migrations
@@ -374,18 +383,20 @@ jobs:
       run:
         working-directory: ./src/api
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          persist-credentials: false
       - name: Create postgis extension
         run: psql "postgresql://qualicharge:pass@localhost:5432/test-qualicharge-api" -c "create extension postgis;"
       - name: Create btree_gist extension
         run: psql "postgresql://qualicharge:pass@localhost:5432/test-qualicharge-api" -c "create extension btree_gist;"
       - name: Install uv
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@1e862dfacbd1d6d858c55d9b792c756523627244 # v7.1.4
         with:
           version: "0.9.11"
           enable-cache: true
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548 # v6.1.0
         with:
           python-version-file: "./src/api/.python-version"
       - name: Test with pytest
