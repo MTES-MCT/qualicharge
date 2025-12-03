@@ -14,9 +14,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           fetch-depth: 0
+          persist-credentials: false
       - name: Check absence of fixup commits
         run: |
           ! git log --pretty=format:%s | grep 'fixup!'
@@ -25,9 +26,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           fetch-depth: 0
+          persist-credentials: false
       - name: Check that a CHANGELOG has been modified in the current branch
         run: |
           git diff --name-only origin/main | grep CHANGELOG
@@ -36,7 +38,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          persist-credentials: false
       - name: Check API CHANGELOG max line length
         run: |
           test $(cat src/api/CHANGELOG.md | grep -Ev "^\[.*\]: https://github.com/MTES-MCT/qualicharge" | wc -L) -le 80
