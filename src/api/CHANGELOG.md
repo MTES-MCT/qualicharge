@@ -12,6 +12,12 @@ and this project adheres to
 
 - Update the list of active operational units
 
+#### Dependencies
+
+- Upgrade `fastapi` to `0.122.0`
+- Upgrade `psycopg` to `3.2.13`
+- Upgrade `sentry-sdk` to `2.46.0`
+
 ## [0.30.1] - 2025-11-24
 
 ### Changed
