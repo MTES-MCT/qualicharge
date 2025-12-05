@@ -9,7 +9,11 @@ and this project adheres to
 ## [Unreleased]
 
 ### Added
+
 ### Changed
+
+- Update `blocktrans` with `blocktranslate trimmed` in templates for improved consistency
+
 ### Fixed
 
 ## [0.4.0] - 2025-11-28
