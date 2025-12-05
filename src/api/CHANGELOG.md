@@ -8,6 +8,10 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Changed
+
+- Update the list of active operational units
+
 ## [0.30.1] - 2025-11-24
 
 ### Changed
