@@ -2095,6 +2095,31 @@ data: List[Item] = [
         "FRS89",
         "IRVE Yonne",
     ),
+    # Update: 2025/11/21
+    Item(
+        "FRALD",
+        "Alpis - Drive",
+    ),
+    Item(
+        "FRALP",
+        "Alpis - Kilowatt",
+    ),
+    Item(
+        "FRHXW",
+        "Concessions IRVE France",
+    ),
+    Item(
+        "FRPRL",
+        "Prologis Mobility",
+    ),
+    Item(
+        "FRRYM",
+        "Ramery Mobility",
+    ),
+    Item(
+        "FRWPK",
+        "WATTPARK",
+    ),
 ]
 
 prefixes = [item.code for item in data]
