@@ -20,7 +20,7 @@ and this project adheres to
 
 #### Dependencies
 
-- Upgrade Psycopg to `3.2.9`
+- Upgrade Psycopg to `3.2.13`
 - Upgrade `urllib3` to `2.5.0`
 
 [unreleased]: https://github.com/MTES-MCT/qualicharge/
