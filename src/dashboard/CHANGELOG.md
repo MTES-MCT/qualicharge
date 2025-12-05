@@ -9,7 +9,11 @@ and this project adheres to
 ## [Unreleased]
 
 ### Added
+
 ### Changed
+
+- Update content wording in `login.html` template
+
 ### Fixed
 
 ## [0.4.0] - 2025-11-28
