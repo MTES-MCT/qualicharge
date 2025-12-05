@@ -2181,4 +2181,4 @@ def test_check_session_anon(db_session, client):
         "/dynamique/session/check",
         params={"session_id": session.id},
     )
-    assert response.status_code == status.HTTP_403_FORBIDDEN
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED

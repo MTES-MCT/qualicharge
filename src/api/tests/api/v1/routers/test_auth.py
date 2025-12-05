@@ -23,7 +23,7 @@ def setup_function():
 def test_whoami_not_auth(client):
     """Test the whoami endpoint when user is not authenticated."""
     response = client.get("/auth/whoami")
-    assert response.status_code == status.HTTP_403_FORBIDDEN
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED
     assert response.json() == {"detail": "Not authenticated"}
 
 
