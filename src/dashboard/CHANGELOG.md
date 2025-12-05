@@ -9,7 +9,14 @@ and this project adheres to
 ## [Unreleased]
 
 ### Added
+
 ### Changed
+
+#### Dependencies
+
+- Upgrade `psycopg` to `3.2.13`
+- Upgrade `sentry-sdk` to `2.46.0`
+
 ### Fixed
 
 ## [0.4.0] - 2025-11-28
