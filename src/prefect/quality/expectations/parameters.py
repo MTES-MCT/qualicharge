@@ -9,7 +9,7 @@ class QARule(BaseModel):
     code: str
     params: dict
 
-
+HISTORY_STRATEGY_FIELD: str = "mean"
 IS_DC: str = """(
 puissance_nominale >= 50
 OR prise_type_combo_ccs
