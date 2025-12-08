@@ -22,7 +22,8 @@ FROM
 WHERE
     period = '$period' AND
     timestamp >= '$start' AND
-    timestamp < '$end'
+    timestamp < '$end' AND
+    code IN $strategy_codes
 """
 NULL_EXTRAS: dict = {"history": {}}
 NULL_HISTORY: dict = {}
@@ -139,7 +140,7 @@ def encode_historicization_format(
     df_up["period"] = timespan_up.period
     values = []
     for _idx, row in df_up.iterrows():
-        values.append(row[STRATEGY[row["code"]]])
+        values.append(row[STRATEGY.get(row["code"], "mean")])
     df_up["value"] = pd.Series(values)
     return df_up[index_fields + value_fields + extras_fields + temporal_fields]
 
@@ -193,6 +194,7 @@ def up(  # noqa: PLR0913
         "period": period.value,
         "start": init_period,
         "end": init_period + PeriodDuration[to_period.name].value,
+        "strategy_codes": tuple(STRATEGY),
     }
     query_template = Template(QUERY_HISTORICIZE)
     histo_df = get_indicators(query_template, query_params)

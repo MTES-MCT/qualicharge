@@ -34,6 +34,7 @@ and this project adheres to
   - pdc activity (INAC, DECL)
 - Separate sessions and statuses expectations
 - Implement expectations as indicators
+- Implement historicization (up)
 
 #### Cooling
 

@@ -1,5 +1,8 @@
 """QualiCharge prefect indicators: strategy."""
 
+# quality
+from quality.expectations.parameters import HISTORY_STRATEGY_FIELD as QUA_STRATEGY
+
 # extract
 from .extract.e4 import HISTORY_STRATEGY_FIELD as E4_STRATEGY
 
@@ -31,4 +34,5 @@ STRATEGY = {
     "u11": U11_STRATEGY,
     "u12": U12_STRATEGY,
     "u13": U13_STRATEGY,
+    "qua": QUA_STRATEGY,
 }

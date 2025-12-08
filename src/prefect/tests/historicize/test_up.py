@@ -45,7 +45,9 @@ def init_data(size: int, extras: bool = False) -> dict[str, Any]:
 
 def init_dataframe(size: int, duree: int, extras: bool = False) -> pd.DataFrame:
     """Create DataFrame."""
+    # data without extras
     histo = pd.DataFrame(init_data(size, extras))
+    # data with extras
     data2 = init_data(size, extras)
     date_init2 = DATE_INIT
     for j in range(1, duree):
@@ -156,7 +158,6 @@ def test_to_historicization_up_extras():
     del df["extras"]
     df = pd.concat([df, pd.json_normalize(df["history"], max_level=0)], axis=1)
     del df["history"]
-
     assert df["mean"].equals(pd.Series(range(1, SIZE + 1), dtype="float"))
     assert df["min"].equals(pd.Series(range(SIZE), dtype="float"))
     assert df["max"].equals(pd.Series(range(2, SIZE + 2), dtype="float"))
@@ -179,6 +180,26 @@ def test_to_historicization_up_extras():
     assert df["liste"].equals(pd.Series([[DUREE, 1 + DUREE, 2 + DUREE]] * SIZE))
 
     assert df["value"].equals(df["mean"])
+
+
+def test_to_historicization_up_with_ignored_data():
+    """Test 'to_historicization_up' function with extras."""
+    extras = True
+    histo = init_dataframe(SIZE, DUREE, extras)
+    # data ignored
+    data3 = {
+        "value": [999],
+        "target": ["999"],
+        "category": None,
+        "code": ["zzz"],
+        "level": ["01"],
+        "timestamp": [DATE_INIT],
+        "period": ["d"],
+    }
+    histo = pd.concat([histo, pd.DataFrame(data3)], ignore_index=True)
+    mensuel = up.to_historicization_up(histo, IndicatorPeriod.DAY, TIMESPAN)
+
+    assert len(mensuel) == SIZE + 1
 
 
 def test_flow_up():
