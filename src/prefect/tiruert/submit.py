@@ -4,7 +4,6 @@ This is the core part that handles TIRUERT calculation for a quarter
 and CARBURE API integration.
 """
 
-import logging
 from datetime import date, datetime
 from string import Template
 from typing import List
@@ -14,6 +13,7 @@ import requests
 from dateutil.relativedelta import relativedelta
 from prefect import flow, task
 from prefect.client.schemas.objects import StateType
+from prefect.logging import get_run_logger
 from prefect.states import Completed, Failed
 from sqlalchemy import text
 from sqlalchemy.orm import Session
@@ -24,8 +24,6 @@ from indicators.types import Environment
 from indicators.utils import export_indicators
 
 from .carbure import CarbureAPISettings, CarbureClient
-
-logger = logging.getLogger(__name__)
 
 ENERGY_BY_STATION_TEMPLATE = Template(
     """
@@ -190,6 +188,7 @@ def submit(payload: List[dict], siren: str, from_date: date):
     """Submit payload to CARBURE."""
     carbure_config = CarbureAPISettings()
     client = CarbureClient(carbure_config)
+    logger = get_run_logger()
 
     try:
         client.bulk_create_certificates(payload)
