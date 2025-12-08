@@ -203,6 +203,7 @@ def submit(payload: List[dict], siren: str, from_date: date):
                 f"CARBURE submission failed for amenageur {siren} (date: {from_date})"
             )
         )
+    logger.info(f"Monthly volumes sent for amenageur {siren} (date: {from_date})")
     return Completed(
         message=f"Monthly volumes sent for amenageur {siren} (date: {from_date})"
     )
@@ -213,16 +214,21 @@ def tiruert_for_month_and_amenageur(
     environment: Environment, year: int, month: int, siren: str
 ):
     """Handle TIRUERT for an amenageur and a target month."""
+    logger = get_run_logger()
     from_date = date(year=year, month=month, day=1)
     to_date = from_date + relativedelta(months=1) + relativedelta(days=-1)
 
     energy_by_station = extract(environment, from_date, to_date, siren)
     payload = transform(environment, from_date, to_date, siren, energy_by_station)
-    state = submit(payload, siren, from_date)
 
-    # Only save indicator if submission is successful
-    if state.type == StateType.FAILED:
-        return Failed(message=f"Submission failed for amenageur with siren {siren}")
+    # Allow CARBURE submission to fail to avoid breaking meta-flow
+    carbure_submission = submit.submit(payload, siren, from_date)
+    state = carbure_submission.result(raise_on_failure=False)
+
+    # Only save indicator if submission is successful, else exit
+    if carbure_submission.state.is_failed():
+        logger.error(f"SubFlow failed for amenageur with siren {siren}: {state}")
+        return
 
     load(environment, siren, energy_by_station["energy"].sum(), from_date, payload)
 
