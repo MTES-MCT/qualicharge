@@ -1,6 +1,5 @@
 """Tiruert calculation flows."""
 
-import logging
 import os
 from datetime import date, datetime, timedelta
 from string import Template
@@ -16,8 +15,6 @@ from indicators.db import get_api_db_engine
 from indicators.models import IndicatorPeriod, Level
 from indicators.types import Environment
 from indicators.utils import export_indicators
-
-logger = logging.getLogger(__name__)
 
 AMENAGEUR_WITH_SESSIONS_TEMPLATE = Template(
     """
