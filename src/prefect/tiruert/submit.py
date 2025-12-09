@@ -209,7 +209,7 @@ def submit(payload: List[dict], siren: str, from_date: date):
     )
 
 
-@flow
+@flow(flow_run_name="TIRUERT-for-{siren}-on-{year}-{month}")
 def tiruert_for_month_and_amenageur(
     environment: Environment, year: int, month: int, siren: str
 ):
@@ -233,7 +233,7 @@ def tiruert_for_month_and_amenageur(
     load(environment, siren, energy_by_station["energy"].sum(), from_date, payload)
 
 
-@flow
+@flow(flow_run_name="TIRUERT-for-{year}-{month}")
 def tiruert_for_month(environment: Environment, year: int, month: int):
     """Handle TIRUERT for an amenageur and a target month."""
     for siren in get_amenageurs_siren(environment):
