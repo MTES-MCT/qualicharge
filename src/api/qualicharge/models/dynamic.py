@@ -5,11 +5,13 @@ from enum import StrEnum
 from typing import Annotated, Optional
 
 from pydantic import AfterValidator, PositiveFloat, model_validator
-from pydantic.types import PastDatetime
+from pydantic.types import AwareDatetime, PastDatetime
 from sqlmodel import Field, SQLModel
 from typing_extensions import Self
 
 from ..conf import settings
+
+AwarePastDatetime = Annotated[AwareDatetime, PastDatetime]
 
 
 def not_older_than(value: datetime, max_age: timedelta):
@@ -72,7 +74,7 @@ class StatusCreate(StatusAPIBase):
     """Point of charge status create."""
 
     horodatage: Annotated[
-        PastDatetime,
+        AwarePastDatetime,
         AfterValidator(
             lambda v: not_older_than(v, timedelta(seconds=settings.API_MAX_STATUS_AGE))
         ),
@@ -108,8 +110,9 @@ class SessionCreate(SessionBase):
         },
     )
     start: Annotated[
-        PastDatetime,
+        AwarePastDatetime,
         AfterValidator(
             lambda v: not_older_than(v, timedelta(seconds=settings.API_MAX_SESSION_AGE))
         ),
     ]
+    end: AwarePastDatetime

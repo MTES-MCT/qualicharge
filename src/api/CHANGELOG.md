@@ -10,6 +10,7 @@ and this project adheres to
 
 ### Changed
 
+- Status and session date time fields should be timezone aware
 - Forbid session older than `API_MAX_SESSION_AGE` submission
   (defaults to 15 days)
 - Forbid status older than `API_MAX_STATUS_AGE` submission
