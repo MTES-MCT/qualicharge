@@ -10,6 +10,8 @@ and this project adheres to
 
 ### Changed 
 
+- Status and session date time fields should be timezone aware
+
 #### Dependencies
 
 - Upgrade `python-multipart` to `0.0.22`

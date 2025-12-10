@@ -1106,6 +1106,28 @@ def test_create_status_too_old(db_session, client_auth):
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
 
+def test_create_status_not_aware(db_session, client_auth):
+    """Test the /status/ create endpoint with timezone-naive horodatage."""
+    id_pdc_itinerance = "FR911E1111ER1"
+    now = datetime.now()
+
+    # Create point of charge
+    save_statique(
+        db_session, StatiqueFactory.build(id_pdc_itinerance=id_pdc_itinerance)
+    )
+    payload = {
+        "id_pdc_itinerance": id_pdc_itinerance,
+        "etat_pdc": "en_service",
+        "occupation_pdc": "occupe",
+        "horodatage": (now - timedelta(seconds=5)).isoformat(),
+    }
+
+    # Create a new status
+    response = client_auth.post("/dynamique/status/", json=payload)
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert "Input should have timezone info" in response.json()["detail"][0]["msg"]
+
+
 @pytest.mark.parametrize(
     "client_auth",
     (
@@ -1476,6 +1498,32 @@ def test_create_status_bulk_too_old(db_session, client_auth):
     assert "older than 1 day" in response.json()["detail"][0]["msg"]
 
 
+def test_create_status_bulk_not_aware(db_session, client_auth):
+    """Test the /status/bulk create endpoint with timezone-naive horodatage."""
+    now = datetime.now()
+    qc_statuses = StatusCreateFactory.batch(3)
+    qc_statuses[2].horodatage = now - timedelta(
+        seconds=settings.API_MAX_STATUS_AGE + 3600
+    )
+
+    # Create points of charge
+    save_statiques(
+        db_session,
+        [
+            StatiqueFactory.build(id_pdc_itinerance=s.id_pdc_itinerance)
+            for s in qc_statuses
+        ],
+    )
+
+    # We expect the same answer as one point of charge does not exist
+    response = client_auth.post(
+        "/dynamique/status/bulk",
+        json=[json.loads(s.model_dump_json()) for s in qc_statuses],
+    )
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert "Input should have timezone info" in response.json()["detail"][0]["msg"]
+
+
 @pytest.mark.parametrize(
     "client_auth",
     (
@@ -1737,6 +1785,27 @@ def test_create_session_too_old(db_session, client_auth):
     assert "is older than 365 days" in response.json()["detail"][0]["msg"]
 
 
+def test_create_session_not_aware(db_session, client_auth):
+    """Test the /session/ create endpoint with timezone-naive datetime fields."""
+    id_pdc_itinerance = "FR911E1111ER1"
+    now = datetime.now()
+    qc_session = SessionCreateFactory.build(id_pdc_itinerance=id_pdc_itinerance)
+    qc_session.start = now - timedelta(seconds=settings.API_MAX_SESSION_AGE + 3600)
+    qc_session.end = now - timedelta(seconds=settings.API_MAX_SESSION_AGE - 3600)
+
+    # Create point of charge
+    save_statique(
+        db_session, StatiqueFactory.build(id_pdc_itinerance=id_pdc_itinerance)
+    )
+
+    # Create a new session
+    response = client_auth.post(
+        "/dynamique/session/", json=json.loads(qc_session.model_dump_json())
+    )
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert "Input should have timezone info" in response.json()["detail"][0]["msg"]
+
+
 def test_create_session_for_inactive_pdc(db_session, client_auth):
     """Test the /session/ create endpoint (inactive PDC)."""
     id_pdc_itinerance = "FR911E1111ER1"
@@ -1978,6 +2047,31 @@ def test_create_session_bulk_too_old(db_session, client_auth):
     )
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
     assert "is older than 365 days" in response.json()["detail"][0]["msg"]
+
+
+def test_create_session_bulk_not_aware(db_session, client_auth):
+    """Test the /session/bulk create endpoint with timezone-naive date time fields."""
+    qc_sessions = SessionCreateFactory.batch(3)
+    now = datetime.now()
+    qc_sessions[2].start = now - timedelta(hours=2)
+    qc_sessions[2].end = now - timedelta(hours=1)
+
+    # Create points of charge
+    save_statiques(
+        db_session,
+        [
+            StatiqueFactory.build(id_pdc_itinerance=s.id_pdc_itinerance)
+            for s in qc_sessions
+        ],
+    )
+
+    # We expect the same answer as one point of charge does not exist
+    response = client_auth.post(
+        "/dynamique/session/bulk",
+        json=[json.loads(s.model_dump_json()) for s in qc_sessions],
+    )
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert "Input should have timezone info" in response.json()["detail"][0]["msg"]
 
 
 def test_create_session_bulk_with_inactive_pdc(db_session, client_auth):
