@@ -44,6 +44,19 @@ def test_session_create_model_start_max_age():
         )
 
 
+def test_session_create_model_is_timezone_aware():
+    """Test SessionCreate datetime fields shoud be aware."""
+    now = datetime.now()
+
+    with pytest.raises(ValueError, match="Input should have timezone info"):
+        SessionCreate(
+            id_pdc_itinerance="FRFASE3300405",
+            start=now - timedelta(seconds=settings.API_MAX_SESSION_AGE + 3600),
+            end=now - timedelta(days=4),
+            energy=12.0,
+        )
+
+
 def test_status_create_factory():
     """Test the dynamic StatusCreate model factory."""
     status = StatusCreateFactory.build()
@@ -57,6 +70,18 @@ def test_status_create_model():
     base = StatusCreateFactory.build()
 
     with pytest.raises(ValueError, match="is older than 1 day"):
+        StatusCreate(
+            **base.model_dump(exclude={"horodatage"}),
+            horodatage=now - timedelta(seconds=settings.API_MAX_STATUS_AGE + 3600),
+        )
+
+
+def test_status_create_model_is_timezone_aware():
+    """Test StatusCreate datetime fields shoud be aware."""
+    now = datetime.now()
+    base = StatusCreateFactory.build()
+
+    with pytest.raises(ValueError, match="Input should have timezone info"):
         StatusCreate(
             **base.model_dump(exclude={"horodatage"}),
             horodatage=now - timedelta(seconds=settings.API_MAX_STATUS_AGE + 3600),
