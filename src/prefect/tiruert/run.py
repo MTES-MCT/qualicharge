@@ -320,3 +320,18 @@ def tiruert_for_period_and_amenageur(
             f"TIRUERT for '{siren}' from {from_date} to {to_date} (total: {total})"
         ),
     )
+
+
+@flow(flow_run_name="daily-{siren}-from-{from_date:%x}-to-{to_date:%x}")
+def tiruert_for_day_and_amenageur_over_period(
+    environment: Environment, from_date: date, to_date: date, siren: str
+):
+    """Calculate the daily TIRUERT for an amenageur over a pediod.
+
+    Note that dates from the period interval are both included.
+    """
+    days = [
+        from_date + timedelta(days=d) for d in range((to_date - from_date).days + 1)
+    ]
+    for day in days:
+        tiruert_for_day_and_amenageur(environment, day, siren)
