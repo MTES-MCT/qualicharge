@@ -261,6 +261,13 @@ deployments:
       name: indicators
       work_queue_name: default
 
+  - name: tiruert-for-day-and-amenageur-over-period
+    entrypoint: tiruert/run.py:tiruert_for_day_and_amenageur_over_period
+    concurrency_limit: 10
+    work_pool:
+      name: indicators
+      work_queue_name: default
+
   - name: tiruert-for-month-to-carbure
     entrypoint: tiruert/submit.py:tiruert_for_month
     concurrency_limit: 10

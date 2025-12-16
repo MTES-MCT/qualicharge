@@ -21,6 +21,7 @@ from tiruert.run import (
     odus,
     tiruert_for_day,
     tiruert_for_day_and_amenageur,
+    tiruert_for_day_and_amenageur_over_period,
 )
 
 
@@ -254,3 +255,22 @@ def test_flow_tiruert_for_day(db_connection, indicators_db_engine):
     # We should have saved as many indicators as distinct operational units
     # where sessions occured on that day
     assert result.one()[0] == n_amenageurs
+
+
+def test_flow_tiruert_for_day_and_amenageur_over_period(indicators_db_engine):
+    """Test the `tiruert_for_day_and_amenageur_over_period` flow."""
+    from_date = date(2024, 12, 1)
+    to_date = date(2024, 12, 31)
+    siren = "891118473"
+    tiruert_for_day_and_amenageur_over_period(
+        Environment.TEST, from_date, to_date, siren
+    )
+
+    # Assert saved tiruert is as expected
+    with indicators_db_engine.connect() as connection:
+        result = connection.execute(
+            text("SELECT COUNT(*) FROM test WHERE code = 'tirue'")
+        )
+    # We should have saved as many indicators as days
+    expected = 31
+    assert result.one()[0] == expected
