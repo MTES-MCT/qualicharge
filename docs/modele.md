@@ -432,6 +432,32 @@ Les combinaisons de valeurs correspondent aux évènements de passage dans les �
 
 En particulier, les combinaisons 'hors_service' et 'occupe' ainsi que 'inconnu' et 'occupe' sont interdites.
 
+A titre d'exemple, le mapping avec les statuts OCPI et OCPP est le suivant :
+
+| OCPI Value  | OCPI Description                                                                            | etat_pdc      | occupation_pdc     |
+| ----------- | ------------------------------------------------------------------------------------------- | ------------- | ------------------ |
+| AVAILABLE   | The EVSE is able to start a new charging session.                                           | en_service    | libre              |
+| BLOCKED     | The EVSE is not accessible because of a physical barrier, i.e. a car.                       | en_service    | inconnu            |
+| CHARGING    | The EVSE is in use.                                                                         | en_service    | occupe             |
+| INOPERATIVE | The EVSE is not yet active, or temporarily not available for use, but not broken or defect. | Not supported | Not supported      |
+| OUTOFORDER  | The EVSE is currently out of order, some part/components may be broken/defect.              | hors_service  | inconnu            |
+| PLANNED     | The EVSE is planned, will be operating soon.                                                | Not supported | Not supported      |
+| REMOVED     | The EVSE was discontinued/removed.                                                          | Not supported | decommisioning API |
+| RESERVED    | The EVSE is reserved for a particular EV driver and is unavailable for other drivers.       | en_service    | reserve            |
+| UNKNOWN     | No status information available (also used when offline).                                   | inconnu       | inconnu            |
+
+| OCPP Value    | OCPP Description                                                                                                     | etat_pdc     | occupation_pdc |
+| ------------- | -------------------------------------------------------------------------------------------------------------------- | ------------ | -------------- |
+| AVAILABLE     | No vehicle is plugged in to the port, and it's available for a new vehicle to plug in.                               | en_service   | libre          |
+| CHARGING      | The port is currently charging a vehicle.                                                                            | en_service   | occupe         |
+| PREPARING     | The port is no longer available for a new vehicle to plug in, but charging has not started yet.                      | en_service   | inconnu        |
+| FINISHING     | Charging has ended but the vehicle is still plugged in, so the port is not yet available for another vehicle to use. | en_service   | inconnu        |
+| SUSPENDEDEVSE | A vehicle is plugged into the port, but the charger is not delivering any power due to a charger-related reason.     | en_service   | inconnu        |
+| SUSPENDEDEV   | A vehicle is plugged into the port, but the vehicle is not accepting power from the charger.                         | en_service   | occupe         |
+| RESERVED      | The port is currently reserved for a specific user or vehicle and is unavailable for other drivers.                  | en_service   | reserve        |
+| UNAVAILABLE   | The port is not available for charging at this time (eg awaiting maintenance or about to restart).                   | hors_service | inconnu        |
+| FAULTED       | The port is currently experiencing a fault or issue.                                                                 | hors_service | inconnu        |
+
 ### Session
 
 Les `sessions`ne sont pas définies dans le schéma de données dynamique.
