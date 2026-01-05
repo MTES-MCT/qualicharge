@@ -48,12 +48,11 @@ wheels = [
 
 [[package]]
 name = "data7"
-version = "0.13.2"
+version = "1.0.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "dynaconf" },
     { name = "pandas" },
-    { name = "pip" },
     { name = "pyarrow" },
     { name = "pyinstrument" },
     { name = "sentry-sdk", extra = ["starlette"] },
@@ -62,9 +61,9 @@ dependencies = [
     { name = "typer" },
     { name = "uvicorn", extra = ["standard"] },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/55/a4/22eaab2bc00ea9fc6253c136b4e191180a75b2363131a177aaf5defa760e/data7-0.13.2.tar.gz", hash = "sha256:9c26472d99e265705462e6bd6f17b8052979f971e088d3caf9e62425c85d2462", size = 10558, upload-time = "2025-10-31T14:55:09.644Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/5e/42/6567e9632ef7f172d25063072d62caf2b8dfada95cfdb209cc76694d8db9/data7-1.0.1.tar.gz", hash = "sha256:881d76a16856753b4901cd3a82f7478a59c9c859916b1724db1ea521f96fced7", size = 213243, upload-time = "2026-01-05T18:20:58.17Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/79/28/8fe344d8370faf89a5f447defcbf03c9405259a22e191dd7ba18460d782e/data7-0.13.2-py3-none-any.whl", hash = "sha256:24d9e393a5d951948629e844b58ca51ee1616a90df55c594a1673b2962d63147", size = 12905, upload-time = "2025-10-31T14:55:08.038Z" },
+    { url = "https://files.pythonhosted.org/packages/e0/31/9e2f5f354d8f9e7345fbf7d1245d531717e414291191bd4db47f10342d1f/data7-1.0.1-py3-none-any.whl", hash = "sha256:6faa725a67ccf4fef79633391d3707e2c97f9483a2a2f3db3307a163e7cc5f2c", size = 12773, upload-time = "2026-01-05T18:20:56.508Z" },
 ]
 
 [[package]]
@@ -199,15 +198,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/a6/de/8b1895b107277d52f2b42d3a6806e69cfef0d5cf1d0ba343470b9d8e0a04/pandas-2.3.3-cp312-cp312-musllinux_1_2_aarch64.whl", hash = "sha256:a68e15f780eddf2b07d242e17a04aa187a7ee12b40b930bfdd78070556550e98", size = 12771002, upload-time = "2025-09-29T23:20:26.76Z" },
     { url = "https://files.pythonhosted.org/packages/87/21/84072af3187a677c5893b170ba2c8fbe450a6ff911234916da889b698220/pandas-2.3.3-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:371a4ab48e950033bcf52b6527eccb564f52dc826c02afd9a1bc0ab731bba084", size = 13450971, upload-time = "2025-09-29T23:20:41.344Z" },
     { url = "https://files.pythonhosted.org/packages/86/41/585a168330ff063014880a80d744219dbf1dd7a1c706e75ab3425a987384/pandas-2.3.3-cp312-cp312-win_amd64.whl", hash = "sha256:a16dcec078a01eeef8ee61bf64074b4e524a2a3f4b3be9326420cabe59c4778b", size = 10992722, upload-time = "2025-09-29T23:20:54.139Z" },
-]
-
-[[package]]
-name = "pip"
-version = "25.3"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/fe/6e/74a3f0179a4a73a53d66ce57fdb4de0080a8baa1de0063de206d6167acc2/pip-25.3.tar.gz", hash = "sha256:8d0538dbbd7babbd207f261ed969c65de439f6bc9e5dbd3b3b9a77f25d95f343", size = 1803014, upload-time = "2025-10-25T00:55:41.394Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/44/3c/d717024885424591d5376220b5e836c2d5293ce2011523c9de23ff7bf068/pip-25.3-py3-none-any.whl", hash = "sha256:9655943313a94722b7774661c21049070f6bbb0a1516bf02f7c8d5d9201514cd", size = 1778622, upload-time = "2025-10-25T00:55:39.247Z" },
 ]
 
 [[package]]
@@ -365,7 +355,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "data7", specifier = "==0.13.2" },
+    { name = "data7", specifier = "==1.0.1" },
     { name = "psycopg", extras = ["binary", "pool"], specifier = "==3.2.13" },
 ]
 
