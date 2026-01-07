@@ -22,6 +22,7 @@ Pour travailler sur ce projet, vous aurez besoin d'installer les outils suivants
 sur votre poste de travail :
 
 - [Docker](https://www.docker.com)
+- [Docker buildx](https://github.com/docker/buildx)
 - [Docker compose](https://docs.docker.com/compose/)
 - [GNU Make](https://www.gnu.org/software/make/manual/make.html)
 
