@@ -116,8 +116,8 @@ def renew_expiring_consents() -> list[Consent]:
     # Subquery to check if a renewed consent exists for validated consents.
     # (this subquery only returns the `provider_assigned_id` of the consents found)
     existing_renewed_consents = Consent.objects.filter(
-        start__gte=OuterRef("end"),
-        delivery_point=OuterRef("delivery_point"),
+        start__date__gte=OuterRef("end__date"),
+        delivery_point_id=OuterRef("delivery_point_id"),
         provider_assigned_id=OuterRef("provider_assigned_id"),
     ).values("provider_assigned_id")
 
