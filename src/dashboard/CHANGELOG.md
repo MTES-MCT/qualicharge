@@ -22,6 +22,8 @@ and this project adheres to
 
 ### Fixed
 
+- Fix consent comparison for renewal
+
 ## [0.4.0] - 2025-11-28
 
 ### Added
