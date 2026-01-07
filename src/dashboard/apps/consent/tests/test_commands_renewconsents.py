@@ -4,6 +4,7 @@ import datetime
 from unittest.mock import MagicMock, patch
 
 import pytest
+from django.utils import timezone
 
 from apps.consent import AWAITING, VALIDATED
 from apps.consent.helpers import renew_expiring_consents
@@ -62,7 +63,11 @@ def test_renew_expiring_consents_outside_period(monkeypatch):
 
 
 @pytest.mark.django_db
-def test_renew_expiring_consents(monkeypatch, settings):  # noqa: PLR0915
+def test_renew_expiring_consents(  # noqa: PLR0915
+    monkeypatch,
+    settings,
+    patch_datetime_now,
+):
     """Tests the `renew_expiring_consents`."""
     settings.CONSENT_UPCOMING_DAYS_LIMIT = 30
 
@@ -74,14 +79,17 @@ def test_renew_expiring_consents(monkeypatch, settings):  # noqa: PLR0915
         2026, 12, 31, 23, 59, 59, tzinfo=datetime.timezone.utc
     )
 
+    # Pretend to be 2025, Nov 15
+    fake_time = datetime.datetime(2025, 11, 15, tzinfo=datetime.timezone.utc)
+    monkeypatch.setattr(timezone, "now", lambda: fake_time)
+
     # create 2 validated consents - period: 2025-01-01 to 2025-12-31
     consent_size = 2
     DeliveryPointFactory.create_batch(consent_size)
+    end = datetime.datetime(2025, 12, 31, 23, 59, 59, tzinfo=datetime.timezone.utc)
     for consent in Consent.objects.all():
         consent.start = start_date
-        consent.end = datetime.datetime(
-            2025, 12, 31, 23, 59, 59, tzinfo=datetime.timezone.utc
-        )
+        consent.end = end
         consent.status = VALIDATED
         consent.save()
     assert Consent.objects.count() == consent_size
@@ -89,7 +97,7 @@ def test_renew_expiring_consents(monkeypatch, settings):  # noqa: PLR0915
     assert Consent.validated_objects.count() == consent_size
 
     # create a validated consent with an end date is in 30 days
-    # period: 2025-01-01 to 2025-11-15.
+    # period: 2025-01-01 to 2025-12-15.
     end = datetime.datetime(2025, 12, 15, 1, 5, 55, 0, tzinfo=datetime.timezone.utc)
     _create_consent(start_date, end, VALIDATED)
     assert Consent.objects.count() == 3  # noqa: PLR2004
@@ -122,7 +130,6 @@ def test_renew_expiring_consents(monkeypatch, settings):  # noqa: PLR0915
     # test renew_expiring_consents()
     # 1- mock now() to be before the consents to be duplicated.
     fake_time = datetime.datetime(2025, 3, 31, tzinfo=datetime.timezone.utc)
-    monkeypatch.setattr("django.utils.timezone.now", lambda: fake_time)
 
     # no consents should be renewed
     duplicated_consents = renew_expiring_consents()
@@ -131,7 +138,6 @@ def test_renew_expiring_consents(monkeypatch, settings):  # noqa: PLR0915
 
     # 2 -mock now() to be the 2025-12-14
     fake_time = datetime.datetime(2025, 12, 14, tzinfo=datetime.timezone.utc)
-    monkeypatch.setattr("django.utils.timezone.now", lambda: fake_time)
 
     # test renew_expiring_consents() - 3 consents should be renewed.
     duplicated_consents = renew_expiring_consents()
