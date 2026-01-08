@@ -114,7 +114,7 @@ def e4_for_level(
     results_list["level_id"] = [name for name, group in grp]
     results_list["extras"] = [
         {"list": list(group["id_pdc_itinerance"])} for name, group in grp
-    ]
+    ]  # type: ignore[assignment]
     results_list["value"] = [
         len(list(group["id_pdc_itinerance"])) for name, group in grp
     ]

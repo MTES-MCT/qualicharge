@@ -17,8 +17,12 @@ and this project adheres to
 
 #### Dependencies
 
-- Upgrade `psycopg` to `3.2.13`
-- Upgrade `sentry-sdk` to `2.46.0`
+- Upgrade `Django` to `6.0.0`
+- Upgrade `django-anymail` to `14.0`
+- Upgrade `django-dsfr` to `3.3.0`
+- Upgrade `mozilla-django-oidc` to `5.0.2`
+- Upgrade `psycopg` to `3.3.2`
+- Upgrade `sentry-sdk` to `2.48.0`
 
 ### Fixed
 
