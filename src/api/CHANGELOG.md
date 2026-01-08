@@ -21,7 +21,6 @@ and this project adheres to
 
 - Upgrade `cachetools` to `6.2.4`
 - Upgrade `fastapi` to `0.128.0`
-- Upgrade `geoalchemy2` to `0.18.1`
 - Upgrade `geopandas` to `1.1.2`
 - Upgrade `psycopg` to `3.3.2`
 - Upgrade `pydantic-extra-types` to `2.11.0`
