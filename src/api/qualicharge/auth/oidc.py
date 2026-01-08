@@ -151,22 +151,22 @@ def get_token(
     return IDToken(**decoded_token)
 
 
-@cached(
-    TTLCache(
-        maxsize=settings.API_GET_USER_CACHE_MAXSIZE,
-        ttl=settings.API_GET_USER_CACHE_TTL,
-    ),
-    lock=Lock(),
-    key=lambda email, session: email,
-    info=settings.API_GET_USER_CACHE_INFO,
-)
+# @cached(
+#     TTLCache(
+#         maxsize=settings.API_GET_USER_CACHE_MAXSIZE,
+#         ttl=settings.API_GET_USER_CACHE_TTL,
+#     ),
+#     lock=Lock(),
+#     key=lambda email, session: email,
+#     info=settings.API_GET_USER_CACHE_INFO,
+# )
 def get_user_from_db(
     email: str,
     session: Annotated[
         SMSession,
         Depends(get_session),
     ],
-):
+) -> User | None:
     """Fetch user and related objects from database."""
     logging.debug(f"Getting user from database: {email}")
     return (
