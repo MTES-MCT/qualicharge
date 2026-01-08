@@ -42,9 +42,8 @@ def decode_historicization_format(indicator: pd.DataFrame) -> pd.DataFrame:
     df_in = indicator.sort_values(by="timestamp").reset_index(drop=True)
     if "id" in df_in.columns:
         df_in.drop(
-            columns=[
-                "id",
-            ]
+            columns=["id"],
+            inplace=True,
         )
     # groupby KO with NA values
     df_in["category"] = df_in["category"].fillna(" ")
@@ -55,9 +54,8 @@ def decode_historicization_format(indicator: pd.DataFrame) -> pd.DataFrame:
     extras = pd.json_normalize(list(df_in["extras"]), max_level=0, errors="ignore")
     df_in = pd.concat([df_in, extras], axis=1)
     df_in.drop(
-        columns=[
-            "extras",
-        ]
+        columns=["extras"],
+        inplace=True,
     )
 
     null_history = pd.Series([NULL_HISTORY] * len(df_in))
@@ -67,9 +65,8 @@ def decode_historicization_format(indicator: pd.DataFrame) -> pd.DataFrame:
     history = pd.json_normalize(list(df_in["history"]), max_level=0, errors="ignore")
     df_in = pd.concat([df_in, history], axis=1)
     df_in.drop(
-        columns=[
-            "history",
-        ]
+        columns=["history"],
+        inplace=True,
     )
 
     if "size" not in df_in.columns:
