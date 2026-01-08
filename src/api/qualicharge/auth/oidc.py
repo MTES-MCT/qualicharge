@@ -166,7 +166,7 @@ def get_user_from_db(
         SMSession,
         Depends(get_session),
     ],
-):
+) -> User | None:
     """Fetch user and related objects from database."""
     logging.debug(f"Getting user from database: {email}")
     return (

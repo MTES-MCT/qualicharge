@@ -19,9 +19,16 @@ and this project adheres to
 
 #### Dependencies
 
-- Upgrade `fastapi` to `0.122.0`
-- Upgrade `psycopg` to `3.2.13`
-- Upgrade `sentry-sdk` to `2.46.0`
+- Upgrade `cachetools` to `6.2.4`
+- Upgrade `fastapi` to `0.128.0`
+- Upgrade `geopandas` to `1.1.2`
+- Upgrade `psycopg` to `3.3.2`
+- Upgrade `pydantic-extra-types` to `2.11.0`
+- Upgrade `python-multipart` to `0.0.21`
+- Upgrade `sentry-sdk` to `2.48.0`
+- Upgrade `sqlalchemy-utils` to `0.42.1`
+- Upgrade `sqlmodel` to `0.0.31`
+- Upgrade `typer` to `0.21.0`
 
 ## [0.30.1] - 2025-11-24
 
