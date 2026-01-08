@@ -119,7 +119,7 @@ def save_indicators(environment: Environment, indicators: pd.DataFrame):
     create_tables()
 
     # Add identifiers
-    df["id"] = df.apply(lambda _: uuid4(), axis=1)
+    df["id"] = df.apply(lambda _: uuid4(), axis=1)  # type: ignore[call-overload]
 
     # Replace IndicatorPeriod enums by their value
     df["period"] = df["period"].apply(lambda x: x.value)

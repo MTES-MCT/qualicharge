@@ -41,7 +41,11 @@ def decode_historicization_format(indicator: pd.DataFrame) -> pd.DataFrame:
     """Return a normalize DataFrame."""
     df_in = indicator.sort_values(by="timestamp").reset_index(drop=True)
     if "id" in df_in.columns:
-        del df_in["id"]
+        df_in.drop(
+            columns=[
+                "id",
+            ]
+        )
     # groupby KO with NA values
     df_in["category"] = df_in["category"].fillna(" ")
     null_extras = pd.Series([NULL_EXTRAS] * len(df_in))
@@ -50,7 +54,11 @@ def decode_historicization_format(indicator: pd.DataFrame) -> pd.DataFrame:
     df_in["extras"] = df_in["extras"].fillna(null_extras)
     extras = pd.json_normalize(list(df_in["extras"]), max_level=0, errors="ignore")
     df_in = pd.concat([df_in, extras], axis=1)
-    del df_in["extras"]
+    df_in.drop(
+        columns=[
+            "extras",
+        ]
+    )
 
     null_history = pd.Series([NULL_HISTORY] * len(df_in))
     if "history" not in df_in.columns:
@@ -58,7 +66,11 @@ def decode_historicization_format(indicator: pd.DataFrame) -> pd.DataFrame:
     df_in["history"] = df_in["history"].fillna(null_history)
     history = pd.json_normalize(list(df_in["history"]), max_level=0, errors="ignore")
     df_in = pd.concat([df_in, history], axis=1)
-    del df_in["history"]
+    df_in.drop(
+        columns=[
+            "history",
+        ]
+    )
 
     if "size" not in df_in.columns:
         df_in["size"] = 1
@@ -134,10 +146,10 @@ def encode_historicization_format(
 ) -> pd.DataFrame:
     """Return a nested DataFrame."""
     fld_extra_other = list(set(df_up.columns) - set(common_fields))
-    df_up["history"] = df_up[summary_fields].to_dict(orient="records")
-    df_up["extras"] = df_up[["history"] + fld_extra_other].to_dict(orient="records")
+    df_up["history"] = df_up[summary_fields].to_dict(orient="records")  # type: ignore[assignment]
+    df_up["extras"] = df_up[["history"] + fld_extra_other].to_dict(orient="records")  # type: ignore[assignment]
     df_up["timestamp"] = timespan_up.start.isoformat()
-    df_up["period"] = timespan_up.period
+    df_up["period"] = timespan_up.period  # type: ignore[call-overload]
     values = []
     for _idx, row in df_up.iterrows():
         values.append(row[STRATEGY.get(row["code"], "mean")])

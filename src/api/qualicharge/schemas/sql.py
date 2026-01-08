@@ -66,12 +66,12 @@ class StatiqueImporter:
 
     def _add_auditable_model_fields(self, df: pd.DataFrame):
         """Add required fields for a BaseAuditableSQLModel."""
-        df["id"] = df.apply(lambda x: uuid.uuid4(), axis=1)
+        df["id"] = df.apply(lambda x: uuid.uuid4(), axis=1)  # type: ignore[call-overload]
         now = pd.Timestamp.now(tz="utc")
         df["created_at"] = now
         df["updated_at"] = now
-        df["created_by_id"] = self.author.id if self.author else None
-        df["updated_by_id"] = self.author.id if self.author else None
+        df["created_by_id"] = self.author.id if self.author else None  # type: ignore[assignment]
+        df["updated_by_id"] = self.author.id if self.author else None  # type: ignore[assignment]
         return df
 
     @staticmethod
