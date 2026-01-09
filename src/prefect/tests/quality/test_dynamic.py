@@ -31,14 +31,14 @@ def test_run_api_db_validation():
                 assert result.success
 
 
-def test_run_api_db_validation_by_amenageur(monkeypatch):
-    """Run API database validation by amenageur."""
+def test_run_api_db_validation_by_unit(monkeypatch):
+    """Run API database validation by unit."""
     monkeypatch.setattr(
         quality_run,
-        "get_db_amenageurs",
-        lambda _: ["Tesla", "Ionity", "TesLa ", "Electra"],
+        "get_db_units",
+        lambda _: ["FRTSL", "FRIOY", "FRELC"],
     )
-    report = dynamic.run_api_db_validation_by_amenageur(
+    report = dynamic.run_api_db_validation_by_unit(
         Environment.TEST,
         period=IndicatorPeriod.WEEK,
         from_now=FROM_NOW,
@@ -49,50 +49,34 @@ def test_run_api_db_validation_by_amenageur(monkeypatch):
     expected = 3
     assert len(report.results) == expected
 
-    # (almost) all amenageurs should pass tests
-    assert [r.amenageur for r in report.results] == ["Tesla", "Ionity", "Electra"]
+    # (almost) all units should pass tests
+    assert [r.unit for r in report.results] == ["FRTSL", "FRIOY", "FRELC"]
     for results in report.results:
         successes = [s.success for s in results.suite]
         assert len(successes) == len(results.suite)
-
+        not_success_all = ["FRES", "FRET", "ENEA", "OCCT", "SEST", "INAC"]
         for result in results.suite:
-            match results.amenageur:
-                case "Tesla":
-                    if result.code in ["FRES", "FRET", "OCCT", "SEST", "INAC", "ENEA"]:
+            match results.unit:
+                case "FRTSL":
+                    if result.code in not_success_all:
                         assert not result.success
                     else:
                         assert result.success
-                case "Ionity":
-                    if result.code in [
-                        "FRES",
-                        "FRET",
-                        "ENEX",
-                        "ENEA",
-                        "OCCT",
-                        "SEST",
-                        "INAC",
-                    ]:
+                case "FRIOY":
+                    if result.code in not_success_all + ["ENEX"]:
                         assert not result.success
                     else:
                         assert result.success
-                case "Electra":
-                    if result.code in [
-                        "FRES",
-                        "FRET",
-                        "ENEX",
-                        "ENEA",
-                        "OCCT",
-                        "SEST",
-                        "INAC",
-                    ]:
+                case "FRELC":
+                    if result.code in not_success_all + ["ENEX"]:
                         assert not result.success
                     else:
                         assert result.success
 
 
-def test_run_indicator_validation_by_amenageur(indicators_db_engine):
-    """Run indicator validation by amenageur."""
-    dynamic.run_api_db_validation_by_amenageur(
+def test_run_indicator_validation_by_unit(indicators_db_engine):
+    """Run indicator validation by unit."""
+    dynamic.run_api_db_validation_by_unit(
         Environment.TEST,
         period=IndicatorPeriod.WEEK,
         from_now=FROM_NOW,
@@ -103,7 +87,7 @@ def test_run_indicator_validation_by_amenageur(indicators_db_engine):
     with indicators_db_engine.connect() as connection:
         query = """
         select count(*) from test
-        where target = 'Ionity' and category = 'ENEX'
+        where target = 'FRIOY' and category = 'ENEX'
         """
         result = connection.execute(text(query))
         assert result.one()[0] == 1

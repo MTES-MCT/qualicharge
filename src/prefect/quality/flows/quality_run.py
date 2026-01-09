@@ -1,8 +1,6 @@
 """Prefect flows: quality static and dynamic."""
 
 import os
-import re
-import unicodedata
 from datetime import date
 from typing import Generator, List
 
@@ -35,7 +33,7 @@ class QCExpectationResult(BaseModel):
 class QCExpectationsSuiteResult(BaseModel):
     """QualiCharge simplified expectation suite result."""
 
-    amenageur: str
+    unit: str
     success: bool
     suite: List[QCExpectationResult] = []
 
@@ -47,33 +45,9 @@ class QCReport(BaseModel):
     results: List[QCExpectationsSuiteResult] = []
 
 
-def slugify(value, allow_unicode=False):
-    """Slugify a string.
-
-    Convert to ASCII if 'allow_unicode' is False. Convert spaces or repeated
-    dashes to single dashes. Remove characters that aren't alphanumerics,
-    underscores, or hyphens. Convert to lowercase. Also strip leading and
-    trailing whitespace, dashes, and underscores.
-
-    Taken from Django code base:
-    https://github.com/django/django/blob/main/django/utils/text.py
-    """
-    value = str(value)
-    if allow_unicode:
-        value = unicodedata.normalize("NFKC", value)
-    else:
-        value = (
-            unicodedata.normalize("NFKD", value)
-            .encode("ascii", "ignore")
-            .decode("ascii")
-        )
-    value = re.sub(r"[^\w\s-]", "", value.lower())
-    return re.sub(r"[-\s]+", "-", value).strip("-_")
-
-
 @task(cache_policy=NONE)
-def get_db_amenageurs(environment: str) -> Generator[str, None, None]:
-    """Get amenageurs from database."""
+def get_db_units(environment: str) -> Generator[str, None, None]:
+    """Get operational units from database."""
     connection_url = os.getenv(f"QUALICHARGE_API_DATABASE_URLS__{environment}")
     if not connection_url:
         raise LookupError("Undefined API database environment variable")
@@ -81,11 +55,11 @@ def get_db_amenageurs(environment: str) -> Generator[str, None, None]:
     with Session(db_engine) as session:
         for res in session.execute(
             text(
-                "SELECT nom_amenageur "
-                "FROM Statique "
-                "WHERE nom_amenageur <> ''"
-                "GROUP BY nom_amenageur "
-                "ORDER BY nom_amenageur"
+                "SELECT DISTINCT code "
+                "FROM _station "
+                "INNER JOIN operationalunit ON operational_unit_id = operationalunit.id "  # noqa: E501
+                "WHERE code <> '' "
+                "ORDER BY code"
             )
         ).all():
             yield res[0]
@@ -156,7 +130,7 @@ def run_api_db_checkpoint(  # noqa: PLR0913
 
 
 @task(cache_policy=NONE)
-def run_api_db_checkpoint_by_amenageur(  # noqa: PLR0913
+def run_api_db_checkpoint_by_unit(  # noqa: PLR0913
     context: gx.data_context.EphemeralDataContext,
     data_source: gx.datasource.fluent.PostgresDatasource,
     suite: gx.ExpectationSuite,
@@ -178,27 +152,20 @@ def run_api_db_checkpoint_by_amenageur(  # noqa: PLR0913
         columns=["value", "level", "target", "category", "code", "period", "timestamp"]
     )
 
-    # Run checkpoint for every amenageur
-    for amenageur in get_db_amenageurs(environment):
-        slug = slugify(amenageur)
-        name = f"{quality_type}-{environment}-{slug}"
-
-        try:
-            data_source.get_asset(name)
-            print(f"Found duplicate for amenageur: {amenageur} ({slug=})")
-            continue
-        except LookupError:
-            pass
+    # Run checkpoint for every operational unit
+    for unit in get_db_units(environment):
+        name = f"{quality_type}-{environment}-{unit}"
 
         # Data asset
         query = str(
-            text(r"SELECT * FROM STATIQUE where nom_amenageur = :amenageur")
-            .bindparams(amenageur=amenageur)
+            text(
+                r"SELECT * FROM statique WHERE substring(id_pdc_itinerance from 1 for 5) = :unit"  # noqa: E501
+            )
+            .bindparams(unit=unit)
             .compile(
                 dialect=postgresql.dialect(), compile_kwargs={"literal_binds": True}
             )
         )
-
         data_asset = data_source.add_query_asset(name=name, query=query)
 
         # Batch
@@ -235,9 +202,7 @@ def run_api_db_checkpoint_by_amenageur(  # noqa: PLR0913
         if result is None:
             continue
 
-        qc_results = QCExpectationsSuiteResult(
-            amenageur=amenageur, success=result.success
-        )
+        qc_results = QCExpectationsSuiteResult(unit=unit, success=result.success)
         for _, v in result.run_results.items():
             for r in v.results:
                 code = r.expectation_config.meta.get("code")
@@ -254,7 +219,7 @@ def run_api_db_checkpoint_by_amenageur(  # noqa: PLR0913
                         indicators.loc[len(indicators)] = {
                             "value": value,
                             "level": Level.OU,
-                            "target": amenageur,
+                            "target": unit,
                             "category": code,
                             "code": "qua",
                             "period": period,
@@ -266,13 +231,13 @@ def run_api_db_checkpoint_by_amenageur(  # noqa: PLR0913
     jinja_env = Environment(
         loader=FileSystemLoader("quality/templates"), autoescape=select_autoescape()
     )
-    template = jinja_env.get_template("quality-by-amenageur.md.j2")
+    template = jinja_env.get_template("quality-by-unit.md.j2")
     create_markdown_artifact(
         template.render(report=report),
         description=(
-            f"# GX validation by `Amenageur` for API DB instance: {environment}. {comment}"  # noqa: E501
+            f"# GX validation by `Operational unit` for API DB instance: {environment}. {comment}"  # noqa: E501
         ),
-        key=f"api-db-{quality_type}-amenageurs-{environment}",
+        key=f"api-db-{quality_type}-units-{environment}",
     )
 
     # Save indicator
