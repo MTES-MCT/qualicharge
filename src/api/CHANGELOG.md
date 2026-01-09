@@ -20,7 +20,7 @@ and this project adheres to
 #### Dependencies
 
 - Upgrade `cachetools` to `6.2.4`
-- Upgrade `fastapi` to `0.128.0`
+- Upgrade `fastapi` to `0.122.1`
 - Upgrade `geopandas` to `1.1.2`
 - Upgrade `psycopg` to `3.3.2`
 - Upgrade `pydantic-extra-types` to `2.11.0`
