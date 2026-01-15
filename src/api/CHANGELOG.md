@@ -8,6 +8,10 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Fixed
+
+- Force `Session.end` naive date times to be aware
+
 ## [0.31.1] - 2026-01-15
 
 ### Changed

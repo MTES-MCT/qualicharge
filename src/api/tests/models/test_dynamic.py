@@ -21,7 +21,16 @@ def test_session_create_factory():
 def test_session_create_model_start_end_consistency():
     """Test the dynamic SessionCreate model: start/end consistency."""
     now = datetime.now(tz=timezone.utc)
+    with pytest.raises(ValueError, match="A session cannot start after it has ended."):
+        SessionCreate(
+            id_pdc_itinerance="FRFASE3300405",
+            start=now - timedelta(days=5),
+            end=now - timedelta(days=6),
+            energy=12.0,
+        )
 
+    # Should also work with naive datetime
+    now = datetime.now()
     with pytest.raises(ValueError, match="A session cannot start after it has ended."):
         SessionCreate(
             id_pdc_itinerance="FRFASE3300405",
