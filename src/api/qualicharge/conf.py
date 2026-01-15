@@ -6,6 +6,7 @@ from typing import List, Optional
 
 from passlib.context import CryptContext
 from pydantic import AnyHttpUrl, HttpUrl, PostgresDsn, computed_field
+from pydantic_extra_types.timezone_name import TimeZoneName
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # Configuration logger
@@ -16,6 +17,7 @@ class Settings(BaseSettings):
     """Pydantic model for QualiCharge's global environment & configuration settings."""
 
     DEBUG: bool = False
+    DEFAULT_TZ: TimeZoneName = TimeZoneName("Europe/Paris")
 
     # Security
     ALLOWED_HOSTS: List[str]
