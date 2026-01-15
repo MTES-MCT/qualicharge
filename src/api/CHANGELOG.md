@@ -8,6 +8,8 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.31.0] - 2026-01-15
+
 ### Changed
 
 - Forbid session older than `API_MAX_SESSION_AGE` submission
@@ -656,7 +658,8 @@ update` command
 
 - Implement base FastAPI app
 
-[unreleased]: https://github.com/MTES-MCT/qualicharge/compare/v0.30.1...main
+[unreleased]: https://github.com/MTES-MCT/qualicharge/compare/v0.31.0...main
+[0.31.0]: https://github.com/MTES-MCT/qualicharge/compare/v0.30.1...v0.31.0
 [0.30.1]: https://github.com/MTES-MCT/qualicharge/compare/v0.30.0...v0.30.1
 [0.30.0]: https://github.com/MTES-MCT/qualicharge/compare/v0.29.0...v0.30.0
 [0.29.0]: https://github.com/MTES-MCT/qualicharge/compare/v0.28.0...v0.29.0
