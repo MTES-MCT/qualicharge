@@ -3,6 +3,7 @@
 from datetime import datetime, timedelta, timezone
 from enum import StrEnum
 from typing import Annotated, Optional
+from zoneinfo import ZoneInfo
 
 from pydantic import AfterValidator, PositiveFloat, model_validator
 from pydantic.types import PastDatetime
@@ -12,9 +13,16 @@ from typing_extensions import Self
 from ..conf import settings
 
 
+def is_aware(value: datetime):
+    """Check if a datetime instance is aware or not."""
+    return value.tzinfo is not None and value.tzinfo.utcoffset(value) is not None
+
+
 def not_older_than(value: datetime, max_age: timedelta):
     """Validator function to ensure a datetime is not older than a now - max_age."""
     now = datetime.now(tz=timezone.utc)
+    if not is_aware(value):
+        value = value.replace(tzinfo=ZoneInfo(settings.DEFAULT_TZ))
     if value < now - max_age:
         raise ValueError(f"{value} is older than {max_age}")
     return value

@@ -34,7 +34,16 @@ def test_session_create_model_start_end_consistency():
 def test_session_create_model_start_max_age():
     """Test the dynamic SessionCreate model: start max age."""
     now = datetime.now(tz=timezone.utc)
+    with pytest.raises(ValueError, match="is older than 365 days"):
+        SessionCreate(
+            id_pdc_itinerance="FRFASE3300405",
+            start=now - timedelta(seconds=settings.API_MAX_SESSION_AGE + 3600),
+            end=now - timedelta(days=4),
+            energy=12.0,
+        )
 
+    # Should also work with naive datetime
+    now = datetime.now()
     with pytest.raises(ValueError, match="is older than 365 days"):
         SessionCreate(
             id_pdc_itinerance="FRFASE3300405",
@@ -56,6 +65,14 @@ def test_status_create_model():
     now = datetime.now(tz=timezone.utc)
     base = StatusCreateFactory.build()
 
+    with pytest.raises(ValueError, match="is older than 1 day"):
+        StatusCreate(
+            **base.model_dump(exclude={"horodatage"}),
+            horodatage=now - timedelta(seconds=settings.API_MAX_STATUS_AGE + 3600),
+        )
+
+    # Should also work with naive datetime
+    now = datetime.now()
     with pytest.raises(ValueError, match="is older than 1 day"):
         StatusCreate(
             **base.model_dump(exclude={"horodatage"}),

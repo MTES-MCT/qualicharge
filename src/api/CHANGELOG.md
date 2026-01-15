@@ -8,6 +8,11 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Changed 
+
+- Add default 'Europe/Paris' timezone to submitted naive date times 
+  (for dynamic data)
+
 ## [0.31.0] - 2026-01-15
 
 ### Changed
