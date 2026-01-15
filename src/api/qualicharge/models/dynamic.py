@@ -18,11 +18,16 @@ def is_aware(value: datetime):
     return value.tzinfo is not None and value.tzinfo.utcoffset(value) is not None
 
 
+def set_default_tz(value: datetime):
+    """Set the default timezone to value."""
+    return value.replace(tzinfo=ZoneInfo(settings.DEFAULT_TZ))
+
+
 def not_older_than(value: datetime, max_age: timedelta):
     """Validator function to ensure a datetime is not older than a now - max_age."""
     now = datetime.now(tz=timezone.utc)
     if not is_aware(value):
-        value = value.replace(tzinfo=ZoneInfo(settings.DEFAULT_TZ))
+        value = set_default_tz(value)
     if value < now - max_age:
         raise ValueError(f"{value} is older than {max_age}")
     return value
@@ -120,4 +125,8 @@ class SessionCreate(SessionBase):
         AfterValidator(
             lambda v: not_older_than(v, timedelta(seconds=settings.API_MAX_SESSION_AGE))
         ),
+    ]
+    end: Annotated[
+        PastDatetime,
+        AfterValidator(lambda v: v if is_aware(v) else set_default_tz(v)),
     ]
