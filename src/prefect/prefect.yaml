@@ -247,22 +247,19 @@ deployments:
       work_queue_name: default
 
   # # -- Tiruert --
-  - name: tiruert-for-day
-    entrypoint: tiruert/run.py:tiruert_for_day
+  - name: tiruert-daily
+    entrypoint: tiruert/run.py:daily-tiruert
     concurrency_limit: 10
+    schedules:
+      - cron: "12 4 * * *"
+        timezone: "Europe/Paris"
+        active: true
     work_pool:
       name: indicators
       work_queue_name: default
 
-  - name: tiruert-for-period-and-amenageur
-    entrypoint: tiruert/run.py:tiruert_for_period_and_amenageur
-    concurrency_limit: 10
-    work_pool:
-      name: indicators
-      work_queue_name: default
-
-  - name: tiruert-for-day-and-amenageur-over-period
-    entrypoint: tiruert/run.py:tiruert_for_day_and_amenageur_over_period
+  - name: tiruert-for-day-over-period
+    entrypoint: tiruert/run.py:tiruert_for_day_over_period
     concurrency_limit: 10
     work_pool:
       name: indicators
