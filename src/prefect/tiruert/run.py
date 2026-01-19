@@ -299,6 +299,39 @@ def tiruert_for_day(environment: Environment, day: date):
         tiruert_for_day_and_amenageur(environment, day, siren)
 
 
+@flow
+def tiruert_for_day_over_period(
+    environment: Environment,
+    from_date: date,
+    to_date: date,
+):
+    """Calculate the TIRUERT for a defined period.
+
+    Note that dates from the period interval are both included.
+    """
+    days = [
+        from_date + timedelta(days=d) for d in range((to_date - from_date).days + 1)
+    ]
+    for day in days:
+        tiruert_for_day(environment, day)
+
+
+def _get_daily_tiruert_day() -> date:
+    """Get target date for the TIRUERT calculation."""
+    return (datetime.today() - timedelta(days=21)).date()
+
+
+@flow
+def daily_tiruert(environment: Environment = Environment.PRODUCTION):
+    """A wrapper around the tiruert for a day flow that hardcodes deployment parameters.
+
+    This flow should be a ran on a daily basis as a cronjob. It will calculate the
+    TIRUERT for now - 21 days for all amenageurs on that day only in production
+    environment.
+    """
+    tiruert_for_day(environment, _get_daily_tiruert_day())
+
+
 @flow(flow_run_name="{siren}-from-{from_date:%x}-to-{to_date:%x}")
 def tiruert_for_period_and_amenageur(
     environment: Environment, from_date: date, to_date: date, siren: str

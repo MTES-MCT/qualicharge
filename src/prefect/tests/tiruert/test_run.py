@@ -1,15 +1,17 @@
 """QualiCharge prefect tiruert tests: run."""
 
+import datetime
 import os
-from datetime import date, datetime, timedelta
 
 import pandas as pd
 from pytest import approx
 from sqlalchemy import text
 
+import tiruert.run
 from indicators.types import Environment
 from tiruert.run import (
     AMENAGEUR_WITH_SESSIONS_TEMPLATE,
+    daily_tiruert,
     enea,
     eneu,
     enex,
@@ -22,13 +24,14 @@ from tiruert.run import (
     tiruert_for_day,
     tiruert_for_day_and_amenageur,
     tiruert_for_day_and_amenageur_over_period,
+    tiruert_for_day_over_period,
 )
 
 
 def test_task_get_amenageurs_for_period():
     """Test the `get_amenageurs_for_period` task."""
     amenageurs = get_amenageurs_for_period(
-        Environment.TEST, date(2024, 12, 27), date(2024, 12, 28)
+        Environment.TEST, datetime.date(2024, 12, 27), datetime.date(2024, 12, 28)
     )
     expected = 24
     assert len(amenageurs) == expected
@@ -37,7 +40,10 @@ def test_task_get_amenageurs_for_period():
 def test_task_get_sessions():
     """Test the `get_sessions` task."""
     sessions = get_sessions(
-        Environment.TEST, date(2024, 12, 27), date(2024, 12, 28), "891118473"
+        Environment.TEST,
+        datetime.date(2024, 12, 27),
+        datetime.date(2024, 12, 28),
+        "891118473",
     )
     expected = 851
     assert len(sessions) == expected
@@ -48,8 +54,8 @@ def test_negs():
     # To < From
     df = pd.DataFrame(
         data={
-            "from": [datetime(2024, 12, 25, 20, 12, 34)],
-            "to": [datetime(2024, 12, 25, 20, 48, 38)],
+            "from": [datetime.datetime(2024, 12, 25, 20, 12, 34)],
+            "to": [datetime.datetime(2024, 12, 25, 20, 48, 38)],
         }
     )
     assert not negs(df.loc[0])
@@ -57,8 +63,8 @@ def test_negs():
     # From > To
     df = pd.DataFrame(
         data={
-            "from": [datetime(2024, 12, 25, 20, 12, 42)],
-            "to": [datetime(2024, 12, 25, 20, 12, 34)],
+            "from": [datetime.datetime(2024, 12, 25, 20, 12, 42)],
+            "to": [datetime.datetime(2024, 12, 25, 20, 12, 34)],
         }
     )
     assert negs(df.loc[0])
@@ -76,12 +82,12 @@ def test_enea():
     df = pd.DataFrame(
         data={
             "from": [
-                datetime(2024, 12, 25, 20, 12, 42),
-                datetime(2024, 12, 25, 20, 12, 42),
+                datetime.datetime(2024, 12, 25, 20, 12, 42),
+                datetime.datetime(2024, 12, 25, 20, 12, 42),
             ],
             "to": [
-                datetime(2024, 12, 25, 21, 18, 23),
-                datetime(2024, 12, 25, 21, 18, 23),
+                datetime.datetime(2024, 12, 25, 21, 18, 23),
+                datetime.datetime(2024, 12, 25, 21, 18, 23),
             ],
             "max_power": [250.0, 11.0],
             "energy": [28.9, 30.0],
@@ -95,8 +101,8 @@ def test_odus():
     # To < From
     df = pd.DataFrame(
         data={
-            "from": [datetime(2024, 12, 25, 20, 12, 34)],
-            "to": [datetime(2024, 12, 25, 20, 48, 38)],
+            "from": [datetime.datetime(2024, 12, 25, 20, 12, 34)],
+            "to": [datetime.datetime(2024, 12, 25, 20, 48, 38)],
             "energy": [20.0],
         }
     )
@@ -105,8 +111,8 @@ def test_odus():
     # From > To
     df = pd.DataFrame(
         data={
-            "from": [datetime(2024, 12, 25, 20, 12, 42)],
-            "to": [datetime(2024, 12, 25, 20, 12, 34)],
+            "from": [datetime.datetime(2024, 12, 25, 20, 12, 42)],
+            "to": [datetime.datetime(2024, 12, 25, 20, 12, 34)],
             "energy": [20.0],
         }
     )
@@ -115,8 +121,8 @@ def test_odus():
     # From > To and energy < 1
     df = pd.DataFrame(
         data={
-            "from": [datetime(2024, 12, 25, 20, 12, 42)],
-            "to": [datetime(2024, 12, 25, 20, 12, 34)],
+            "from": [datetime.datetime(2024, 12, 25, 20, 12, 42)],
+            "to": [datetime.datetime(2024, 12, 25, 20, 12, 34)],
             "energy": [0.2],
         }
     )
@@ -128,12 +134,12 @@ def test_enex():
     df = pd.DataFrame(
         data={
             "from": [
-                datetime(2024, 12, 25, 20, 12, 42),
-                datetime(2024, 12, 25, 20, 12, 42),
+                datetime.datetime(2024, 12, 25, 20, 12, 42),
+                datetime.datetime(2024, 12, 25, 20, 12, 42),
             ],
             "to": [
-                datetime(2024, 12, 25, 21, 18, 23),
-                datetime(2024, 12, 25, 21, 18, 23),
+                datetime.datetime(2024, 12, 25, 21, 18, 23),
+                datetime.datetime(2024, 12, 25, 21, 18, 23),
             ],
             "max_power": [250.0, 11.0],
             "energy": [28.9, 1200.0],
@@ -147,16 +153,16 @@ def test_flag_duplicates():
     df = pd.DataFrame(
         data={
             "from": [
-                datetime(2024, 12, 25, 20, 12, 42),
-                datetime(2024, 12, 25, 20, 12, 42),
-                datetime(2024, 12, 26, 20, 12, 42),
-                datetime(2024, 12, 25, 20, 34, 42),
+                datetime.datetime(2024, 12, 25, 20, 12, 42),
+                datetime.datetime(2024, 12, 25, 20, 12, 42),
+                datetime.datetime(2024, 12, 26, 20, 12, 42),
+                datetime.datetime(2024, 12, 25, 20, 34, 42),
             ],
             "to": [
-                datetime(2024, 12, 25, 21, 18, 23),
-                datetime(2024, 12, 25, 21, 18, 23),
-                datetime(2024, 12, 26, 21, 18, 23),
-                datetime(2024, 12, 25, 21, 25, 23),
+                datetime.datetime(2024, 12, 25, 21, 18, 23),
+                datetime.datetime(2024, 12, 25, 21, 18, 23),
+                datetime.datetime(2024, 12, 26, 21, 18, 23),
+                datetime.datetime(2024, 12, 25, 21, 25, 23),
             ],
             "id_pdc_itinerance": [
                 "FRXXXEYYY1",
@@ -174,7 +180,10 @@ def test_flag_duplicates():
 def test_task_filter_sessions():
     """Test the `get_sessions` task."""
     sessions = get_sessions(
-        Environment.TEST, date(2024, 12, 27), date(2024, 12, 28), "891118473"
+        Environment.TEST,
+        datetime.date(2024, 12, 27),
+        datetime.date(2024, 12, 28),
+        "891118473",
     )
     filtered, to_ignore = filter_sessions(sessions)
     expected = 500
@@ -186,7 +195,9 @@ def test_task_filter_sessions():
 
 def test_flow_tiruert_for_day_and_amenageur(indicators_db_engine):
     """Test the `tiruert_for_day_and_amenageur` flow."""
-    tiruert_for_day_and_amenageur(Environment.TEST, date(2024, 12, 27), "891118473")
+    tiruert_for_day_and_amenageur(
+        Environment.TEST, datetime.date(2024, 12, 27), "891118473"
+    )
 
     # Assert saved tiruert is as expected
     with indicators_db_engine.connect() as connection:
@@ -234,14 +245,14 @@ def test_flow_tiruert_for_day_and_amenageur(indicators_db_engine):
 
 def test_flow_tiruert_for_day(db_connection, indicators_db_engine):
     """Test the `tiruert_for_day_and_amenageur` flow."""
-    day = date(2024, 12, 27)
+    day = datetime.date(2024, 12, 27)
     tiruert_for_day(Environment.TEST, day)
 
     # Get the number of operational units with sessions on that day
     result = db_connection.execute(
         text(
             AMENAGEUR_WITH_SESSIONS_TEMPLATE.substitute(
-                {"from_date": day, "to_date": day + timedelta(days=1)}
+                {"from_date": day, "to_date": day + datetime.timedelta(days=1)}
             )
         )
     )
@@ -257,10 +268,81 @@ def test_flow_tiruert_for_day(db_connection, indicators_db_engine):
     assert result.one()[0] == n_amenageurs
 
 
+def test__get_daily_tiruert_day():
+    """Test the `_get_daily_tiruert_day` utility."""
+    assert (
+        tiruert.run._get_daily_tiruert_day()
+        == (datetime.datetime.today() - datetime.timedelta(days=21)).date()
+    )
+
+
+def test_flow_daily_tiruert(db_connection, indicators_db_engine, monkeypatch):
+    """Test the `daily_tiruert` flow."""
+    target = datetime.datetime(2024, 12, 27) - datetime.timedelta(days=21)
+
+    monkeypatch.setattr(tiruert.run, "_get_daily_tiruert_day", lambda: target.date())
+
+    daily_tiruert(Environment.TEST)
+
+    # Get the number of operational units with sessions on that day
+    result = db_connection.execute(
+        text(
+            AMENAGEUR_WITH_SESSIONS_TEMPLATE.substitute(
+                {
+                    "from_date": target.date(),
+                    "to_date": (target + datetime.timedelta(days=1)).date(),
+                }
+            )
+        )
+    )
+    n_amenageurs = len(result.all())
+
+    # Assert saved tiruert is as expected
+    with indicators_db_engine.connect() as connection:
+        result = connection.execute(
+            text("SELECT COUNT(*) FROM test WHERE code = 'tirue'")
+        )
+    # We should have saved as many indicators as distinct operational units
+    # where sessions occured on that day
+    assert result.one()[0] == n_amenageurs
+
+    # Assert we've calculated the TIRUERT for target - 21 days
+    with indicators_db_engine.connect() as connection:
+        result = connection.execute(
+            text(
+                "SELECT COUNT(*) FROM test "
+                "WHERE "
+                "code = 'tirue' AND "
+                "timestamp::date = '2024-12-6'"
+            )
+        )
+    assert result.one()[0] == n_amenageurs
+
+
+def test_flow_tiruert_for_day_over_period(indicators_db_engine):
+    """Test the `tiruert_for_day_over_period` flow."""
+    from_date = datetime.date(2024, 12, 1)
+    to_date = datetime.date(2024, 12, 10)
+    tiruert_for_day_over_period(Environment.TEST, from_date, to_date)
+
+    # Assert saved tiruert is as expected
+    with indicators_db_engine.connect() as connection:
+        result = connection.execute(
+            text(
+                "SELECT COUNT(*), timestamp::date as day FROM test "
+                "WHERE code = 'tirue' "
+                "GROUP BY day"
+            )
+        )
+    # We should have saved as many indicators as days
+    expected = 10
+    assert len(result.all()) == expected
+
+
 def test_flow_tiruert_for_day_and_amenageur_over_period(indicators_db_engine):
     """Test the `tiruert_for_day_and_amenageur_over_period` flow."""
-    from_date = date(2024, 12, 1)
-    to_date = date(2024, 12, 31)
+    from_date = datetime.date(2024, 12, 1)
+    to_date = datetime.date(2024, 12, 31)
     siren = "891118473"
     tiruert_for_day_and_amenageur_over_period(
         Environment.TEST, from_date, to_date, siren
