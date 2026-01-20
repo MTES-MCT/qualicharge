@@ -248,7 +248,7 @@ deployments:
 
   # # -- Tiruert --
   - name: tiruert-daily
-    entrypoint: tiruert/run.py:daily-tiruert
+    entrypoint: tiruert/run.py:daily_tiruert
     concurrency_limit: 10
     schedules:
       - cron: "12 4 * * *"
