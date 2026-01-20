@@ -3,12 +3,15 @@
 import os
 from datetime import date, datetime, timedelta
 from string import Template
+from typing import Annotated
 
 import pandas as pd
+from annotated_types import Len
 from prefect import flow, task
 from prefect.artifacts import create_markdown_artifact
 from prefect.states import Failed
 from pyarrow import fs
+from pydantic import AfterValidator
 from sqlalchemy.orm import Session
 
 from indicators.db import get_api_db_engine
@@ -69,6 +72,38 @@ AMENAGEUR_SESSIONS_FOR_A_DAY_TEMPLATE = Template(
 SESSION_ENE_MAX = 1000.0  # in kWh
 
 
+def check_siren(siren: str) -> str:
+    """Check SIREN validity given the Luhn algorithm."""
+    error_msg = f"{siren} is not a valid SIREN number"
+    blacklist = [
+        "000000000",
+    ]
+    assert siren not in blacklist, error_msg
+    assert all(c.isdigit() for c in siren), error_msg
+    assert (
+        sum(  # 3. sum all string chars
+            map(
+                int,
+                "".join(
+                    map(  # 2. make string from all numbers
+                        str,
+                        [  # 1. multiply by 2 pair positions (1-based ranking from end)
+                            s * 2 if i % 2 else s
+                            for i, s in enumerate(map(int, reversed(siren)))
+                        ],
+                    )
+                ),
+            )
+        )
+        % 10  # 4. the sum should be a 10-modulo
+        == 0
+    ), error_msg
+    return siren
+
+
+Siren = Annotated[str, Len(min_length=9, max_length=9), AfterValidator(check_siren)]
+
+
 @task
 def get_amenageurs_for_period(
     environment: Environment, from_date: date, to_date: date
@@ -91,7 +126,7 @@ def get_amenageurs_for_period(
 
 @task
 def get_sessions(
-    environment: Environment, from_date: date, to_date: date, siren: str
+    environment: Environment, from_date: date, to_date: date, siren: Siren
 ) -> pd.DataFrame:
     """Get sessions for a period and an operational unit.
 
@@ -214,7 +249,7 @@ def filter_sessions(sessions: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]
 def archive_ignored_session_for_day(
     ignored: pd.DataFrame,
     day: date,
-    siren: str,
+    siren: Siren,
 ):
     """Archive ignored sessions to S3."""
     bucket = "qualicharge-sessions"
@@ -251,7 +286,7 @@ def _sessions_by_station(sessions: pd.DataFrame) -> pd.DataFrame:
 
 @task
 def save_indicator_for_day(
-    sessions: pd.DataFrame, environment: Environment, day: date, siren: str
+    sessions: pd.DataFrame, environment: Environment, day: date, siren: Siren
 ):
     """Save cumulated sessions as an indicator."""
     # Sum by EVSE pool for an amenageur for the day
@@ -283,7 +318,7 @@ def save_indicator_for_day(
 
 
 @flow(flow_run_name="{siren}-on-{day:%x}")
-def tiruert_for_day_and_amenageur(environment: Environment, day: date, siren: str):
+def tiruert_for_day_and_amenageur(environment: Environment, day: date, siren: Siren):
     """Calculate the TIRUERT for a defined day and an amenageur."""
     sessions = get_sessions(environment, day, day + timedelta(days=1), siren)
     sessions, ignored = filter_sessions(sessions)
@@ -334,7 +369,7 @@ def daily_tiruert(environment: Environment = Environment.PRODUCTION):
 
 @flow(flow_run_name="{siren}-from-{from_date:%x}-to-{to_date:%x}")
 def tiruert_for_period_and_amenageur(
-    environment: Environment, from_date: date, to_date: date, siren: str
+    environment: Environment, from_date: date, to_date: date, siren: Siren
 ):
     """Calculate the TIRUERT for a defined period and an amenageur.
 
@@ -357,7 +392,7 @@ def tiruert_for_period_and_amenageur(
 
 @flow(flow_run_name="daily-{siren}-from-{from_date:%x}-to-{to_date:%x}")
 def tiruert_for_day_and_amenageur_over_period(
-    environment: Environment, from_date: date, to_date: date, siren: str
+    environment: Environment, from_date: date, to_date: date, siren: Siren
 ):
     """Calculate the daily TIRUERT for an amenageur over a pediod.
 
