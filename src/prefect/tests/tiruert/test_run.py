@@ -4,13 +4,16 @@ import datetime
 import os
 
 import pandas as pd
-from pytest import approx
+import pytest
+from prefect.exceptions import ParameterTypeError
+from pydantic import TypeAdapter, ValidationError
 from sqlalchemy import text
 
 import tiruert.run
 from indicators.types import Environment
 from tiruert.run import (
     AMENAGEUR_WITH_SESSIONS_TEMPLATE,
+    Siren,
     daily_tiruert,
     enea,
     eneu,
@@ -26,6 +29,51 @@ from tiruert.run import (
     tiruert_for_day_and_amenageur_over_period,
     tiruert_for_day_over_period,
 )
+
+
+@pytest.mark.parametrize(
+    "value",
+    [
+        "",  # too short
+        "1",
+        "1234567890",  # too long
+    ],
+)
+def test_siren_ckeck_invalid_length(value):
+    """Test the `Siren` type validation."""
+    siren = TypeAdapter(Siren)
+    with pytest.raises(ValidationError, match="1 validation error"):
+        siren.validate_python(value)
+
+
+@pytest.mark.parametrize(
+    "value",
+    [
+        "abcdefghi",  # not a number
+        "1234e6789",
+        "000000000",  # blacklist
+        "123456789",  # invalid
+    ],
+)
+def test_siren_ckeck_invalid(value):
+    """Test the `Siren` type validation."""
+    siren = TypeAdapter(Siren)
+    with pytest.raises(ValidationError, match=f"{value} is not a valid SIREN number"):
+        siren.validate_python(value)
+
+
+@pytest.mark.parametrize(
+    "value",
+    [
+        "732829320",
+        "842718512",
+        "844192443",
+    ],
+)
+def test_siren_ckeck_valid(value):
+    """Test the `Siren` custom type."""
+    siren = TypeAdapter(Siren)
+    assert siren.validate_python(value) == value
 
 
 def test_task_get_amenageurs_for_period():
@@ -193,6 +241,14 @@ def test_task_filter_sessions():
     assert all(to_ignore["enea"])
 
 
+def test_flow_tiruert_for_day_and_amenageur_with_invalid_siren():
+    """Test the `tiruert_for_day_and_amenageur` flow with an invalid siren."""
+    with pytest.raises(ParameterTypeError, match="Flow run received invalid parameter"):
+        tiruert_for_day_and_amenageur(
+            Environment.TEST, datetime.date(2024, 12, 27), "123456789"
+        )
+
+
 def test_flow_tiruert_for_day_and_amenageur(indicators_db_engine):
     """Test the `tiruert_for_day_and_amenageur` flow."""
     tiruert_for_day_and_amenageur(
@@ -217,7 +273,7 @@ def test_flow_tiruert_for_day_and_amenageur(indicators_db_engine):
         assert indicator.target == "891118473"
         # expected total for a day
         expected = 15.850909
-        assert indicator.value == approx(expected)
+        assert indicator.value == pytest.approx(expected)
         assert indicator.code == "tirue"
         expected = 6
         assert indicator.level == expected
@@ -356,3 +412,14 @@ def test_flow_tiruert_for_day_and_amenageur_over_period(indicators_db_engine):
     # We should have saved as many indicators as days
     expected = 31
     assert result.one()[0] == expected
+
+
+def test_flow_tiruert_for_day_and_amenageur_over_period_with_invalid_siren():
+    """Test the `tiruert_for_day_and_amenageur_over_period` flow w/ an invalid SIREN."""
+    with pytest.raises(ParameterTypeError, match="Flow run received invalid parameter"):
+        tiruert_for_day_and_amenageur_over_period(
+            Environment.TEST,
+            datetime.date(2024, 12, 1),
+            datetime.date(2024, 12, 31),
+            "123456789",
+        )
