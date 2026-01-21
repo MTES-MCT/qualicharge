@@ -9,9 +9,10 @@ import pandas as pd
 from annotated_types import Len
 from prefect import flow, task
 from prefect.artifacts import create_markdown_artifact
+from prefect.logging import get_run_logger
 from prefect.states import Failed
 from pyarrow import fs
-from pydantic import AfterValidator
+from pydantic import AfterValidator, TypeAdapter, ValidationError
 from sqlalchemy.orm import Session
 
 from indicators.db import get_api_db_engine
@@ -330,7 +331,16 @@ def tiruert_for_day_and_amenageur(environment: Environment, day: date, siren: Si
 def tiruert_for_day(environment: Environment, day: date):
     """Calculate the TIRUERT for a defined day."""
     amenageurs = get_amenageurs_for_period(environment, day, day + timedelta(days=1))
+    siren_type = TypeAdapter(Siren)
+    logger = get_run_logger()
     for siren in amenageurs["siren"]:
+        try:
+            siren_type.validate_python(siren)
+        except ValidationError:
+            # If the SIREN number is incorrect, we may skip the subflow without stoping
+            # this parent flow.
+            logger.warning(f"Ignoring amenageur with invalid SIREN: {siren}")
+            continue
         tiruert_for_day_and_amenageur(environment, day, siren)
 
 
