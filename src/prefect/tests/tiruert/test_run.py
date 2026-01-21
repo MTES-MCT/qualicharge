@@ -324,6 +324,28 @@ def test_flow_tiruert_for_day(db_connection, indicators_db_engine):
     assert result.one()[0] == n_amenageurs
 
 
+def test_flow_tiruert_for_day_with_invalid_siren(
+    db_connection, indicators_db_engine, monkeypatch
+):
+    """Test the `tiruert_for_day_and_amenageur` flow with invalid SIREN."""
+    monkeypatch.setattr(
+        tiruert.run,
+        "get_amenageurs_for_period",
+        lambda *_: {"siren": ["123456789", "891118473"]},
+    )
+    day = datetime.date(2024, 12, 27)
+    tiruert_for_day(Environment.TEST, day)
+
+    # Assert saved tiruert is as expected
+    with indicators_db_engine.connect() as connection:
+        result = connection.execute(
+            text("SELECT COUNT(*) FROM test WHERE code = 'tirue'")
+        )
+    # We should have saved a single indicator as invalid SIREN should have been ignored
+    n_amenageurs = 1
+    assert result.one()[0] == n_amenageurs
+
+
 def test__get_daily_tiruert_day():
     """Test the `_get_daily_tiruert_day` utility."""
     assert (
