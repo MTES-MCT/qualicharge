@@ -30,7 +30,7 @@ jobs:
           version: "0.9.26"
           enable-cache: true
       - name: Set up Python
-        uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548 # v6.1.0
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version-file: "./src/api/.python-version"
       - name: Install the project
@@ -52,7 +52,7 @@ jobs:
           version: "0.9.26"
           enable-cache: true
       - name: Set up Python
-        uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548 # v6.1.0
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version-file: "./src/api/.python-version"
       - name: Lint with Black
@@ -78,7 +78,7 @@ jobs:
           version: "0.9.26"
           enable-cache: true
       - name: Set up Python
-        uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548 # v6.1.0
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version-file: "./src/api/.python-version"
       - name: Lint with Black
@@ -150,7 +150,7 @@ jobs:
           version: "0.9.26"
           enable-cache: true
       - name: Set up Python
-        uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548 # v6.1.0
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version-file: "./src/api/.python-version"
       - name: Run database migrations
@@ -343,7 +343,7 @@ jobs:
           version: "0.9.26"
           enable-cache: true
       - name: Set up Python
-        uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548 # v6.1.0
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version-file: "./src/api/.python-version"
       - name: Run migrations
@@ -396,7 +396,7 @@ jobs:
           version: "0.9.26"
           enable-cache: true
       - name: Set up Python
-        uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548 # v6.1.0
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version-file: "./src/api/.python-version"
       - name: Test with pytest
