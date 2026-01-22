@@ -21,7 +21,7 @@ jobs:
       run:
         working-directory: ./src/dashboard
     steps:
-      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
       - name: Install uv
@@ -85,7 +85,7 @@ jobs:
       DASHBOARD_QCC_API_ROOT_URL: http://api:8000/api/v1
       DASHBOARD_RENEWABLE_MIN_DAYS_FOR_METER_READING: 15
     steps:
-      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
       - name: Install uv
@@ -128,7 +128,7 @@ jobs:
       run:
         working-directory: ./src/dashboard
     steps:
-      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
       - name: Install uv
