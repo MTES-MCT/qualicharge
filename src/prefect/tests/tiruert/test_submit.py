@@ -85,7 +85,6 @@ def test_task_transform(indicators_db_engine):
 
     # Generate the payload
     payload = tiruert_submit.transform(
-        Environment.TEST,
         date(2024, 12, 27),
         date(2024, 12, 28),
         "891118473",
@@ -288,6 +287,58 @@ def test_flow_tiruert_for_month_and_amenageur_failed_submission(
         )
     # Nothing should have been saved if the submission to CARBURE failed
     assert result.one()[0] == 0
+
+
+def test_flow_tiruert_for_month_failed_submission(
+    indicators_db_engine, responses, monkeypatch
+):
+    """Test the `tiruert_for_month` flow."""
+    # Add test data
+    tiruert_for_day_and_amenageur(
+        Environment.TEST, date(2024, 12, 27), "891118473"
+    )  # FRPD1
+    tiruert_for_day_and_amenageur(
+        Environment.TEST, date(2024, 12, 28), "891118473"
+    )  # FRPD1
+    tiruert_for_day_and_amenageur(
+        Environment.TEST, date(2024, 12, 25), "524335262"
+    )  # FRTSL
+
+    # Mock failed submission for FRPD1
+    responses.post(
+        "http://localhost:8088/api/elec/provision-certificates-qualicharge/bulk-create/",
+        status=400,
+        json={
+            "status": "validation_error",
+            "errors": ["Misc"],
+        },
+    )
+    # # Mock successful submission for FRTSL
+    responses.post(
+        "http://localhost:8088/api/elec/provision-certificates-qualicharge/bulk-create/",
+        status=201,
+    )
+
+    # Pretend to have only two amenageurs to speed up test execution
+    monkeypatch.setattr(
+        tiruert_submit, "get_amenageurs_siren", lambda _: ["891118473", "524335262"]
+    )
+
+    tiruert_submit.tiruert_for_month(Environment.TEST, year=2024, month=12)
+    with indicators_db_engine.connect() as connection:
+        result = connection.execute(
+            text(
+                "SELECT * FROM test "
+                "WHERE code = 'tirue' "
+                "AND level = 6 "
+                "AND period = 'm' "
+            )
+        )
+    # We should have saved only a single for for FRPD1 over this period
+    records = result.mappings().all()
+    expected = 1
+    assert len(records) == expected
+    assert records[0]["target"] == "524335262"
 
 
 def test_flow_tiruert_for_month(indicators_db_engine, responses, monkeypatch):

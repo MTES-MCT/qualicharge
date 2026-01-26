@@ -278,6 +278,13 @@ deployments:
     work_pool:
       name: indicators
       work_queue_name: default
+
+  - name: tiruert-for-month-and-amenageur-to-carbure
+    entrypoint: tiruert/submit.py:tiruert_for_month_and_amenageur
+    concurrency_limit: 10
+    work_pool:
+      name: indicators
+      work_queue_name: default
   
   # # -- Data cooling deployments --
   - name: status-cooling-staging
