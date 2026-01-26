@@ -12,9 +12,10 @@ import pandas as pd
 import requests
 from dateutil.relativedelta import relativedelta
 from prefect import flow, task
-from prefect.client.schemas.objects import StateType
 from prefect.logging import get_run_logger
 from prefect.states import Completed, Failed
+from prefect.utilities.annotations import allow_failure
+from pydantic import TypeAdapter, ValidationError
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
@@ -24,6 +25,7 @@ from indicators.types import Environment
 from indicators.utils import export_indicators
 
 from .carbure import CarbureAPISettings, CarbureClient
+from .run import Siren
 
 ENERGY_BY_STATION_TEMPLATE = Template(
     """
@@ -86,7 +88,7 @@ def get_amenageurs_siren(environment: Environment) -> List[str]:
 
 @task
 def extract(
-    environment: Environment, from_date: date, to_date: date, siren: str
+    environment: Environment, from_date: date, to_date: date, siren: Siren
 ) -> pd.DataFrame:
     """Aggregate daily calculation for a period and an amenageur."""
     with Session(get_indicators_db_engine()) as session:
@@ -106,10 +108,9 @@ def extract(
 
 @task
 def transform(
-    environment: Environment,
     from_date: date,
     to_date: date,
-    siren: str,
+    siren: Siren,
     energy_by_station: pd.DataFrame,
 ) -> List[dict]:
     """Prepare monthly volumes by amenageur for carbure."""
@@ -148,7 +149,7 @@ def transform(
 @task
 def load(
     environment: Environment,
-    siren: str,
+    siren: Siren,
     total: float,
     from_date: date,
     payload: List[dict],
@@ -184,7 +185,7 @@ def load(
 
 
 @task
-def submit(payload: List[dict], siren: str, from_date: date):
+def submit(payload: List[dict], siren: Siren, from_date: date):
     """Submit payload to CARBURE."""
     carbure_config = CarbureAPISettings()
     client = CarbureClient(carbure_config)
@@ -211,23 +212,18 @@ def submit(payload: List[dict], siren: str, from_date: date):
 
 @flow(flow_run_name="TIRUERT-for-{siren}-on-{year}-{month}")
 def tiruert_for_month_and_amenageur(
-    environment: Environment, year: int, month: int, siren: str
+    environment: Environment, year: int, month: int, siren: Siren
 ):
     """Handle TIRUERT for an amenageur and a target month."""
-    logger = get_run_logger()
     from_date = date(year=year, month=month, day=1)
     to_date = from_date + relativedelta(months=1) + relativedelta(days=-1)
 
     energy_by_station = extract(environment, from_date, to_date, siren)
-    payload = transform(environment, from_date, to_date, siren, energy_by_station)
+    payload = transform(from_date, to_date, siren, energy_by_station)
 
-    # Allow CARBURE submission to fail to avoid breaking meta-flow
-    carbure_submission = submit.submit(payload, siren, from_date)
-    state = carbure_submission.result(raise_on_failure=False)
-
-    # Only save indicator if submission is successful, else exit
-    if carbure_submission.state.is_failed():
-        logger.error(f"SubFlow failed for amenageur with siren {siren}: {state}")
+    # If submission to Carbure failed, exit now!
+    state = submit(payload, siren, from_date)
+    if state.is_failed():
         return
 
     load(environment, siren, energy_by_station["energy"].sum(), from_date, payload)
@@ -236,5 +232,17 @@ def tiruert_for_month_and_amenageur(
 @flow(flow_run_name="TIRUERT-for-{year}-{month}")
 def tiruert_for_month(environment: Environment, year: int, month: int):
     """Handle TIRUERT for an amenageur and a target month."""
+    siren_type = TypeAdapter(Siren)
+    logger = get_run_logger()
+
     for siren in get_amenageurs_siren(environment):
+        try:
+            siren_type.validate_python(siren)
+        except ValidationError:
+            # If the SIREN number is incorrect, we may skip the subflow without stoping
+            # this parent flow.
+            logger.warning(f"Ignoring amenageur with invalid SIREN: {siren}")
+            continue
+
+        # Allow CARBURE submission to fail to avoid breaking the flow
         tiruert_for_month_and_amenageur(environment, year, month, siren)
