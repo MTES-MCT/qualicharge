@@ -6,7 +6,7 @@ name = "qualicharge-dashboard"
 version = "0.4.0"
 requires-python = "~=3.12.0"
 dependencies = [
-  "Django==6.0.1",
+  "Django==6.0.2",
   "django-anymail==14.0",
   "django-dsfr==3.3.0",
   "django-environ==0.12.0",
