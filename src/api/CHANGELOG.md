@@ -14,7 +14,15 @@ and this project adheres to
 
 #### Dependencies
 
+- Upgrade `alembic` to `1.18.1`
+- Upgrade `cachetools` to `6.2.5`
+- Upgrade `fastapi` to `0.128.0`
+- Upgrade `pandas` to `3.0.0`
+- Upgrade `pyarrow` to `23.0.0`
+- Upgarde `pyinstrument` to `5.1.2`
 - Upgrade `python-multipart` to `0.0.22`
+- Upgrade `sentry-sdk` to `2.50.0`
+- Upgrade `typer` to `0.21.1`
 
 ## [0.31.2] - 2026-01-15
 
