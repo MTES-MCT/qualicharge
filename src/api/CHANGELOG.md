@@ -8,12 +8,6 @@ and this project adheres to
 
 ## [Unreleased]
 
-## [0.32.0] - 2026-02-03
-
-### Changed 
-
-- Status and session date time fields should be timezone aware
-
 #### Dependencies
 
 - Upgrade `alembic` to `1.18.1`
@@ -21,9 +15,18 @@ and this project adheres to
 - Upgrade `pandas` to `3.0.0`
 - Upgrade `pyarrow` to `23.0.0`
 - Upgarde `pyinstrument` to `5.1.2`
-- Upgrade `python-multipart` to `0.0.22`
 - Upgrade `sentry-sdk` to `2.50.0`
 - Upgrade `typer` to `0.21.1`
+
+## [0.32.0] - 2026-02-03
+
+### Changed
+
+- Status and session date time fields should be timezone aware
+
+#### Dependencies
+
+- Upgrade `python-multipart` to `0.0.22`
 
 ## [0.31.2] - 2026-01-15
 
