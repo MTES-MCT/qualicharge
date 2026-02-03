@@ -8,6 +8,8 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.32.0] - 2026-02-03
+
 ### Changed 
 
 - Status and session date time fields should be timezone aware
@@ -686,7 +688,8 @@ update` command
 
 - Implement base FastAPI app
 
-[unreleased]: https://github.com/MTES-MCT/qualicharge/compare/v0.31.2...main
+[unreleased]: https://github.com/MTES-MCT/qualicharge/compare/v0.32.0...main
+[0.32.0]: https://github.com/MTES-MCT/qualicharge/compare/v0.31.2...v0.32.0
 [0.31.2]: https://github.com/MTES-MCT/qualicharge/compare/v0.31.1...v0.31.2
 [0.31.1]: https://github.com/MTES-MCT/qualicharge/compare/v0.31.0...v0.31.1
 [0.31.0]: https://github.com/MTES-MCT/qualicharge/compare/v0.30.1...v0.31.0
