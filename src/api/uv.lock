@@ -408,7 +408,7 @@ wheels = [
 
 [[package]]
 name = "fastapi"
-version = "0.122.1"
+version = "0.128.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "annotated-doc" },
@@ -416,9 +416,9 @@ dependencies = [
     { name = "starlette" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/66/1c/0ad8fef92080ab7c34ffc88ba842ed89393423d17f2e06990330454ae67f/fastapi-0.122.1.tar.gz", hash = "sha256:0fd815e8bd9a56afdd16b2f82b3e765116cd50714080f98caf732babf06d71a4", size = 346643, upload-time = "2025-11-30T12:02:16.193Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/52/08/8c8508db6c7b9aae8f7175046af41baad690771c9bcde676419965e338c7/fastapi-0.128.0.tar.gz", hash = "sha256:1cc179e1cef10a6be60ffe429f79b829dce99d8de32d7acb7e6c8dfdf7f2645a", size = 365682, upload-time = "2025-12-27T15:21:13.714Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/d5/dc/6bc1b530749a0fab8616ca59062eb291de86ea6a163881cffc1f1eac7267/fastapi-0.122.1-py3-none-any.whl", hash = "sha256:35cac3f1f14e38171f28d8e4ba2e7fa42a204b12249a9f13cfdf417bd8e86b52", size = 110678, upload-time = "2025-11-30T12:02:14.089Z" },
+    { url = "https://files.pythonhosted.org/packages/5c/05/5cbb59154b093548acd0f4c7c474a118eda06da25aa75c616b72d8fcd92a/fastapi-0.128.0-py3-none-any.whl", hash = "sha256:aebd93f9716ee3b4f4fcfe13ffb7cf308d99c9f3ab5622d8877441072561582d", size = 103094, upload-time = "2025-12-27T15:21:12.154Z" },
 ]
 
 [[package]]
@@ -1572,7 +1572,7 @@ requires-dist = [
     { name = "annotated-types", specifier = "==0.7.0" },
     { name = "cachetools", specifier = "==6.2.4" },
     { name = "email-validator", specifier = "==2.3.0" },
-    { name = "fastapi", specifier = "==0.122.1" },
+    { name = "fastapi", specifier = "==0.128.0" },
     { name = "geoalchemy2", extras = ["shapely"], specifier = "==0.17.1" },
     { name = "geopandas", specifier = "==1.1.2" },
     { name = "httpx", extras = ["cli"], specifier = "==0.28.1" },
