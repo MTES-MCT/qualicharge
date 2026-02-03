@@ -42,7 +42,7 @@ def client_auth(request, db_session: Session, id_token_factory=IDTokenFactory):
         "is_staff": True,
     }
     if hasattr(request, "param"):
-        (persist, extras) = request.param
+        persist, extras = request.param
         fields.update(extras)
     user = UserFactory.build(**fields)
     if persist:

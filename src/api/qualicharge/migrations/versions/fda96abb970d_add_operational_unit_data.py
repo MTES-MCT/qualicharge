@@ -16,7 +16,6 @@ from alembic import op
 
 from qualicharge.fixtures.operational_units import data as operational_units
 
-
 # revision identifiers, used by Alembic.
 revision: str = "fda96abb970d"
 down_revision: Union[str, None] = "9d22385a3ae8"
@@ -491,8 +490,7 @@ def data_upgrades():
     )
 
     # Create FK
-    op.execute(
-        """
+    op.execute("""
         WITH station_ou AS (
                 SELECT
                   Station.id as station_id,
@@ -506,8 +504,7 @@ def data_upgrades():
             SET operational_unit_id = station_ou.operational_unit_id
             FROM station_ou
             WHERE Station.id = station_ou.station_id
-        """
-    )
+        """)
 
 
 def data_downgrades():
