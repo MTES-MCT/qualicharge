@@ -19,7 +19,6 @@ import geopandas as gp
 import pandas as pd
 from alembic import op
 
-
 # revision identifiers, used by Alembic.
 revision: str = "f5416bc7dd5f"
 down_revision: Union[str, None] = "7b8c33d8399d"

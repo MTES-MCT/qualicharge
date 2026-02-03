@@ -10,13 +10,13 @@ dependencies = [
   "email-validator>=2.3.0",
   "geoalchemy2[shapely]==0.18.1",
   "geopandas==1.1.2",
-  "great_expectations[postgresql]==1.10.0",
+  "great_expectations[postgresql]==1.11.2",
   "pandas==2.3.3",
-  "prefect==3.6.9",
+  "prefect==3.6.13",
   "psycopg[pool,binary]==3.3.2",
-  "pyarrow==22.0.0",
+  "pyarrow==23.0.0",
   "pydantic==2.12.5",
-  "s3fs==2025.12.0",
+  "s3fs==2026.1.0",
   "tabulate==0.9.0",
 ]
 
@@ -26,16 +26,16 @@ build-backend = "hatchling.build"
 
 [dependency-groups]
 dev = [
-  "black==25.12.0",
+  "black==26.1.0",
   "freezegun==1.5.5",
   "honcho==2.0.0",
   "mypy==1.19.1",
-  "pandas-stubs==2.3.3.251219",
+  "pandas-stubs==2.3.3.260113",
   "pytest==9.0.2",
   "pytest-cov==7.0.0",
   "pytest-responses>=0.5.1",
-  "ruff==0.14.10",
-  "setuptools==80.9.0",
+  "ruff==0.14.14",
+  "setuptools==80.10.2",
   "types-python-dateutil",
   "types-requests>=2.32.4.20250913",
 ]

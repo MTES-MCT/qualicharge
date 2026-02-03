@@ -17,8 +17,7 @@ from .models import IndicatorPeriod, IndicatorTimeSpan, Level
 from .types import Environment
 
 # in AFIR regulation, 22 kw belongs interval [7.4, 22] and not [22, 50]
-POWER_RANGE_CTE: dict = {
-    "power_range": """
+POWER_RANGE_CTE: dict = {"power_range": """
     puissance(category, p_cat) AS (
         VALUES
             (numrange(0.0, 7.4), 1),
@@ -27,8 +26,7 @@ POWER_RANGE_CTE: dict = {
             (numrange(50, 150.0), 4),
             (numrange(150, 350.0), 5),
             (numrange(350, NULL), 6)
-    )"""
-}
+    )"""}
 
 
 def get_period_start_from_pit(  # noqa: PLR0911

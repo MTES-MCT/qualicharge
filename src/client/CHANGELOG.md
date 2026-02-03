@@ -12,10 +12,10 @@ and this project adheres to
 
 #### Dependencies
 
-- Upgrade `anyio` to `4.12.0`
+- Upgrade `anyio` to `4.12.1`
 - Upgrade `Pydantic` to `2.12.5`
 - Upgrade `pydantic-settings` to `2.12.0`
-- Upgrade `typer` to `0.21.0`
+- Upgrade `typer` to `0.21.1`
 
 ### Fixed
 
