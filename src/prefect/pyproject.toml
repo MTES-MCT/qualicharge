@@ -11,7 +11,7 @@ dependencies = [
   "geoalchemy2[shapely]==0.18.1",
   "geopandas==1.1.2",
   "great_expectations[postgresql]==1.11.2",
-  "pandas==3.0.0",
+  "pandas==2.3.3",
   "prefect==3.6.13",
   "psycopg[pool,binary]==3.3.2",
   "pyarrow==23.0.0",
