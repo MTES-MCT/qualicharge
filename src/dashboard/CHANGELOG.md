@@ -17,7 +17,7 @@ and this project adheres to
 
 #### Dependencies
 
-- Upgrade `Django` to `6.0.1`
+- Upgrade `Django` to `6.0.2`
 - Upgrade `django-anymail` to `14.0`
 - Upgrade `django-dsfr` to `3.3.0`
 - Upgrade `gunicorn` to `24.1.1`
