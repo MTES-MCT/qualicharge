@@ -9,11 +9,11 @@ authors = [
 license = "MIT"
 readme = "README.md"
 dependencies = [
-  "anyio[trio]==4.12.0",
+  "anyio[trio]==4.12.1",
   "httpx==0.28.1",
   "pydantic==2.12.5",
   "pydantic-settings==2.12.0",
-  "typer==0.21.0",
+  "typer==0.21.1",
 ]
 
 [project.scripts]
@@ -25,12 +25,12 @@ build-backend = "hatchling.build"
 
 [dependency-groups]
 dev = [
-  "black==25.12.0",
+  "black==26.1.0",
   "mypy==1.19.1",
   "pytest==9.0.2",
   "pytest-cov==7.0.0",
   "pytest-httpx==0.36.0",
-  "ruff==0.14.10",
+  "ruff==0.14.14",
 ]
 
 [tool.uv]
