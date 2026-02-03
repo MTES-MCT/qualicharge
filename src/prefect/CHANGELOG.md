@@ -24,7 +24,7 @@ and this project adheres to
   - Stations (AFIE, AFIP, P50E, PDCL, POWU, POWL, CRDF)
   - Locations (INSE, ADDR, LOCP)
   - Power supply (PDLM, NE10)
-  - Operator and owner (OPEM, AMEM)
+  - Operator and owner (OPEM, AMEM, SIRI)
 - Add session expectations
   - Sesssions (DUPS, OVRS, LONS, NEGS, FRES)
   - Energy (ENEU, ENEA, ENEX, ODUR)
@@ -49,5 +49,11 @@ and this project adheres to
 - Optimize queries for indexes added on session and status tables
 - Add delay parameter for dynamic Expectations
 - Extend quality to data without sessions
+- Adjust controls :
+  - OCCT : include long sessions
+  - SEST : add energy threshold
+  - ENEA : add power threshold
+  - LONS : extend threshold to 7 days
+  - ERRT : add 'inconnu' statuses
 
 [unreleased]: https://github.com/MTES-MCT/qualicharge/
