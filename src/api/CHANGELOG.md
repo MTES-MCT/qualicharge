@@ -8,6 +8,12 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Changed 
+
+#### Dependencies
+
+- Upgrade `python-multipart` to `0.0.22`
+
 ## [0.31.2] - 2026-01-15
 
 ### Fixed
