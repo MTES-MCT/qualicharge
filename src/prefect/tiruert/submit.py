@@ -51,7 +51,7 @@ ENERGY_BY_STATION_TEMPLATE = Template(
       siren,
       code,
       station,
-      sum(energy) / 1000. AS energy_mwh
+      sum(energy) AS energy_mwh
     FROM
       energy_over_period
     GROUP BY

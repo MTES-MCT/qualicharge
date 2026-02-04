@@ -36,7 +36,7 @@ def test_task_extract(indicators_db_engine):
     n_stations = 268
     assert len(df) == n_stations
     assert len(df[df.station == "FRPD1PACCSAT"].energy_mwh.values) == 1
-    energy = 4.720800e-05
+    energy = 0.047208
     assert df[df.station == "FRPD1PACCSAT"].energy_mwh.values[0] == energy
 
     # Store energies for the 2024/12/28 day
@@ -50,7 +50,7 @@ def test_task_extract(indicators_db_engine):
     n_stations = 268
     assert len(df) == n_stations
     assert len(df[df.station == "FRPD1PACCSAT"].energy_mwh.values) == 1
-    energy = 4.720800e-05
+    energy = 0.047208
     assert df[df.station == "FRPD1PACCSAT"].energy_mwh.values[0] == energy
 
     # We now query energy stored for the 2024/12/28 day
@@ -60,7 +60,7 @@ def test_task_extract(indicators_db_engine):
     n_stations = 263
     assert len(df) == n_stations
     assert len(df[df.station == "FRPD1PACCSAT"].energy_mwh.values) == 1
-    energy = 9.621400e-05
+    energy = 0.096214
     assert df[df.station == "FRPD1PACCSAT"].energy_mwh.values[0] == energy
 
     # Now we extend the period for a two-days trail. Energy should be the sum.
@@ -70,7 +70,7 @@ def test_task_extract(indicators_db_engine):
     n_stations = 358
     assert len(df) == n_stations
     assert len(df[df.station == "FRPD1PACCSAT"].energy_mwh.values) == 1
-    energy = 1.434220e-04
+    energy = 0.143422
     assert df[df.station == "FRPD1PACCSAT"].energy_mwh.values[0] == energy
 
 
@@ -102,7 +102,7 @@ def test_task_transform(indicators_db_engine):
     n_stations = 358
     assert len(ou["stations"]) == n_stations
     assert [s for s in ou["stations"] if s["id"] == "FRPD1PACCSAT"] == [
-        {"id": "FRPD1PACCSAT", "energy": 1.434220e-04, "is_controlled": False}
+        {"id": "FRPD1PACCSAT", "energy": 0.143422, "is_controlled": False}
     ]
 
 
