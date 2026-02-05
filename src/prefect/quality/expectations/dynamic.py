@@ -43,8 +43,7 @@ def get_suite(date_start: date, date_end: date, parameters: list[str]):
     energy_expectations = [
         # ENEU : Energy greater than highest_energy_kwh (rule 11)
         gxe.UnexpectedRowsExpectation(
-            unexpected_rows_query=Template(
-                """
+            unexpected_rows_query=Template("""
 WITH
   f_statique AS {batch}
 SELECT
@@ -60,16 +59,12 @@ WHERE
   energy > $highest_energy_kwh
   AND start >= $start
   AND start < $end
-                """
-            ).substitute(
-                date_params | ENERGY  # type: ignore
-            ),
+                """).substitute(date_params | ENERGY),  # type: ignore
             meta={"code": ENEU.code},
         ),
         # ODUR : Session of zero duration (rule 40)
         gxe.UnexpectedRowsExpectation(
-            unexpected_rows_query=Template(
-                """
+            unexpected_rows_query=Template("""
 WITH
   f_statique AS {batch},
   sessions_instant AS (
@@ -104,14 +99,12 @@ FROM
   nb_sessions
 WHERE
   n_inst_ses::float > $threshold_percent * n_ses::float
-                """
-            ).substitute(date_params | ODUR.params | ENERGY),
+                """).substitute(date_params | ODUR.params | ENERGY),
             meta={"code": ODUR.code},
         ),
         # ENEA : Session with abnormal energy (rule 38)
         gxe.UnexpectedRowsExpectation(
-            unexpected_rows_query=Template(
-                """
+            unexpected_rows_query=Template("""
 WITH
   f_statique AS {batch},
   sessions_max AS (
@@ -156,14 +149,12 @@ FROM
   nb_sessions
 WHERE
   n_max_ses::float > $threshold_percent * n_ses::float
-                """
-            ).substitute(date_params | ENEA.params | ENEX.params | ENERGY),
+                """).substitute(date_params | ENEA.params | ENEX.params | ENERGY),
             meta={"code": ENEA.code},
         ),
         # ENEX : Session with excessive energy (rule 41)
         gxe.UnexpectedRowsExpectation(
-            unexpected_rows_query=Template(
-                """
+            unexpected_rows_query=Template("""
 WITH
   f_statique AS {batch}
 SELECT
@@ -184,8 +175,7 @@ WHERE
   AND energy > extract(
     'epoch' FROM (session.end - start)
   ) / 3600.0 * puissance_nominale * $excess_coef
-                """
-            ).substitute(date_params | ENEX.params | ENERGY),
+                """).substitute(date_params | ENEX.params | ENERGY),
             meta={"code": ENEX.code},
         ),
     ]
@@ -193,8 +183,7 @@ WHERE
     sessions_expectations = [
         # DUPS : Duplicate sessions (rule 17)
         gxe.UnexpectedRowsExpectation(
-            unexpected_rows_query=Template(
-                """
+            unexpected_rows_query=Template("""
 WITH
   f_statique AS {batch},
   nb_session AS (
@@ -235,14 +224,12 @@ FROM
   nb_session
 WHERE
   (nbre_session - nbre_unique)::float > $threshold_percent * nbre_session::float
-                """
-            ).substitute(date_params | DUPS.params),
+                """).substitute(date_params | DUPS.params),
             meta={"code": DUPS.code},
         ),
         # OVRS : Number of days-poc with more than max_sessions_per_day (rule 13)
         gxe.UnexpectedRowsExpectation(
-            unexpected_rows_query=Template(
-                """
+            unexpected_rows_query=Template("""
 WITH
   f_statique AS {batch}
 SELECT
@@ -268,14 +255,12 @@ FROM
   INNER JOIN f_statique ON point_de_charge_id = f_statique.pdc_id
 WHERE
   nb_id > $max_sessions_per_day
-                """
-            ).substitute(date_params | OVRS.params),
+                """).substitute(date_params | OVRS.params),
             meta={"code": OVRS.code},
         ),
         # LONS : Sessions of more than max_days_per_session (rule 15)
         gxe.UnexpectedRowsExpectation(
-            unexpected_rows_query=Template(
-                """
+            unexpected_rows_query=Template("""
 WITH
   f_statique AS {batch},
   long_sessions AS (
@@ -306,14 +291,12 @@ FROM
   nb_sessions
 WHERE
   n_long_ses::float > $threshold_percent * n_ses::float
-            """
-            ).substitute(date_params | LONS.params),
+            """).substitute(date_params | LONS.params),
             meta={"code": LONS.code},
         ),
         # NEGS : Sessions with negative duration (rule 14)
         gxe.UnexpectedRowsExpectation(
-            unexpected_rows_query=Template(
-                """
+            unexpected_rows_query=Template("""
 WITH
   f_statique AS {batch}
 SELECT
@@ -330,14 +313,12 @@ WHERE
   start >= $start
   AND start < $end
   AND start > session.end
-                """
-            ).substitute(date_params),
+                """).substitute(date_params),
             meta={"code": NEGS.code},
         ),
         # FRES : freshness of sessions greater than max_duration days (rule 42)
         gxe.UnexpectedRowsExpectation(
-            unexpected_rows_query=Template(
-                """
+            unexpected_rows_query=Template("""
 WITH
   f_statique AS {batch},
   session_delay AS (
@@ -357,16 +338,14 @@ FROM
   session_delay
 HAVING
   max(EXTRACT(EPOCH FROM (updated_at - session_end))) / 3600 / 24 > $max_duration_day
-                """
-            ).substitute(date_params | FRES.params),
+                """).substitute(date_params | FRES.params),
             meta={"code": FRES.code},
         ),
     ]
     statuses_expectations = [
         # ERRT : Inconsistent statuses (rule 37)
         gxe.UnexpectedRowsExpectation(
-            unexpected_rows_query=Template(
-                """
+            unexpected_rows_query=Template("""
 WITH
   f_statique AS {batch}
 SELECT
@@ -381,14 +360,12 @@ WHERE
   AND horodatage < $end
   AND etat_pdc = 'hors_service'
   AND occupation_pdc = 'occupe'
-                """
-            ).substitute(date_params),
+                """).substitute(date_params),
             meta={"code": ERRT.code},
         ),
         # FTRT : Timestamp in the future (rule 36)
         gxe.UnexpectedRowsExpectation(
-            unexpected_rows_query=Template(
-                """
+            unexpected_rows_query=Template("""
 WITH
   f_statique AS {batch}
 SELECT
@@ -401,14 +378,12 @@ WHERE
   horodatage < timestamp '01-01-2024'
   OR horodatage > CURRENT_TIMESTAMP
   OR horodatage IS NULL
-                """
-            ).substitute(date_params),
+                """).substitute(date_params),
             meta={"code": FTRT.code},
         ),
         # DUPT : Duplicate statuses (rule 44)
         gxe.UnexpectedRowsExpectation(
-            unexpected_rows_query=Template(
-                """
+            unexpected_rows_query=Template("""
 WITH
   f_statique AS {batch},
   nb_status AS (
@@ -447,14 +422,12 @@ FROM
   nb_status
 WHERE
   (nbre_status - nbre_unique)::float > $threshold_percent * nbre_status::float
-                """
-            ).substitute(date_params | DUPT.params),
+                """).substitute(date_params | DUPT.params),
             meta={"code": DUPT.code},
         ),
         # FRET : Freshness of statuses greater than max_duration seconds (rule 43)
         gxe.UnexpectedRowsExpectation(
-            unexpected_rows_query=Template(
-                """
+            unexpected_rows_query=Template("""
 WITH
   f_statique AS {batch},
   status_delay AS (
@@ -476,14 +449,12 @@ FROM
 HAVING
   avg(extract(SECOND FROM updated_at - horodatage) +
       extract(MINUTE FROM updated_at - horodatage) * 60) > $mean_duration_second
-                """
-            ).substitute(date_params | FRET.params),
+                """).substitute(date_params | FRET.params),
             meta={"code": FRET.code},
         ),
         # OVRT : Number of days-poc with more than max_statuses_per_day (rule 53)
         gxe.UnexpectedRowsExpectation(
-            unexpected_rows_query=Template(
-                """
+            unexpected_rows_query=Template("""
 WITH
   f_statique AS {batch}
 SELECT
@@ -504,29 +475,28 @@ FROM
       horodatage >= $start
       AND horodatage < $end
     GROUP BY
-      status_date, 
+      status_date,
       point_de_charge_id
   ) AS list_statuses
   INNER JOIN f_statique ON point_de_charge_id = f_statique.pdc_id
 WHERE
   nb_id > $max_statuses_per_day
-                """
-            ).substitute(date_params | OVRT.params),
+                """).substitute(date_params | OVRT.params),
             meta={"code": OVRT.code},
         ),
     ]
     pdc_statuses_expectations = [
         # INAC : Inactive charge points (rule 51)
         gxe.UnexpectedRowsExpectation(
-            unexpected_rows_query=Template(
-                """
+            unexpected_rows_query=Template("""
 WITH
   nbre_pdc_inactif AS (
     SELECT
       COUNT(*) AS nb_pdc_inactif
     FROM
       {batch} AS statique
-      INNER JOIN lateststatus ON lateststatus.id_pdc_itinerance = statique.id_pdc_itinerance
+      INNER JOIN lateststatus
+        ON lateststatus.id_pdc_itinerance = statique.id_pdc_itinerance
     WHERE
       horodatage < CURRENT_TIMESTAMP - interval '$inactivity_duration'
   ),
@@ -544,21 +514,20 @@ FROM
   nbre_pdc_inactif
 WHERE
   nb_pdc_inactif::float > $threshold_percent * nb_pdc
-                """
-            ).substitute(date_params | INAC.params),
+                """).substitute(date_params | INAC.params),
             meta={"code": INAC.code},
         ),
         # DECL : Declared charge points (rule 52)
         gxe.UnexpectedRowsExpectation(
-            unexpected_rows_query=Template(
-                """
+            unexpected_rows_query=Template("""
 WITH
   nbre_pdc_declare AS (
     SELECT
       COUNT(*) AS nb_pdc_declare
     FROM
       {batch} AS statique
-      INNER JOIN lateststatus ON lateststatus.id_pdc_itinerance = statique.id_pdc_itinerance
+      INNER JOIN lateststatus
+        ON lateststatus.id_pdc_itinerance = statique.id_pdc_itinerance
     WHERE
       lateststatus.id_pdc_itinerance IS NULL
   ),
@@ -576,16 +545,14 @@ FROM
   nbre_pdc_declare
 WHERE
   nb_pdc_declare::float > $threshold_percent * nb_pdc
-                """
-            ).substitute(date_params | DECL.params),
+                """).substitute(date_params | DECL.params),
             meta={"code": DECL.code},
         ),
     ]
     statuses_sessions_expectations = [
         # RATS : Ratio number of statuses / number of sessions (rule 49)
         gxe.UnexpectedRowsExpectation(
-            unexpected_rows_query=Template(
-                """
+            unexpected_rows_query=Template("""
 WITH
   f_statique AS (
     SELECT
@@ -625,14 +592,12 @@ FROM
 WHERE
   nb_status::float > nb_session::float * $ratio_statuses_per_session_max
   OR nb_status::float < nb_session::float * $ratio_statuses_per_session_min
-                """
-            ).substitute(date_params | RATS.params | {"IS_DC": IS_DC}),
+                """).substitute(date_params | RATS.params | {"IS_DC": IS_DC}),
             meta={"code": RATS.code},
         ),
         # OCCT : Number of days-poc with status 'occupe' and without session (rule 21)
         gxe.UnexpectedRowsExpectation(
-            unexpected_rows_query=Template(
-                """
+            unexpected_rows_query=Template("""
 WITH
   f_statique AS (
     SELECT
@@ -708,14 +673,12 @@ FROM
   ) AS nb_stat
 WHERE
   n_stat_ses::float > (n_stat::float * $threshold_percent)
-                """
-            ).substitute(date_params | OCCT.params | {"IS_DC": IS_DC}),
+                """).substitute(date_params | OCCT.params | {"IS_DC": IS_DC}),
             meta={"code": OCCT.code},
         ),
         # SEST : Number of days-poc with session and without status 'occupe' (rule 22)
         gxe.UnexpectedRowsExpectation(
-            unexpected_rows_query=Template(
-                """
+            unexpected_rows_query=Template("""
 WITH
   f_statique AS {batch},
   nombre_status AS (
@@ -784,8 +747,7 @@ FROM
   ) AS nb_ses
 WHERE
   n_stat_ses::float > (n_ses::float * $threshold_percent)
-                """
-            ).substitute(date_params | SEST.params),
+                """).substitute(date_params | SEST.params),
             meta={"code": SEST.code},
         ),
     ]
@@ -800,10 +762,11 @@ WHERE
     # build ExpectationSuite
     suite = gx.ExpectationSuite(name=NAME)
     for expectation in expectations:
-        if expectation.meta["code"] in parameters:
-            # Make sure expectation is not already assigned to a suite…
-            exp = copy(expectation)
-            exp.id = None
-            # …before adding it to the current suite.
-            suite.add_expectation(exp)
+        if expectation.meta is None or expectation.meta.get("code") not in parameters:
+            continue
+        # Make sure expectation is not already assigned to a suite…
+        exp = copy(expectation)
+        exp.id = None
+        # …before adding it to the current suite.
+        suite.add_expectation(exp)
     return suite

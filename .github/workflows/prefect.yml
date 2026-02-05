@@ -56,11 +56,11 @@ jobs:
         with:
           python-version-file: "./src/prefect/.python-version"
       - name: Lint with Black
-        run: uv run black --check indicators tests
+        run: uv run black --check $(ls -d -- */)
       - name: Lint with Ruff
-        run: uv run ruff check indicators tests
+        run: uv run ruff check $(ls -d -- */)
       - name: Lint with MyPy
-        run: uv run mypy indicators tests
+        run: uv run mypy $(ls -d -- */)
 
   test-prefect:
     needs: build-prefect

@@ -1,7 +1,7 @@
 """QualiCharge prefect indicators: models."""
 
 from datetime import datetime, timedelta
-from enum import Enum, IntEnum
+from enum import Enum, IntEnum, StrEnum
 from typing import Optional
 
 from dateutil.relativedelta import relativedelta
@@ -20,7 +20,7 @@ class Level(IntEnum):
     AMENAGEUR = 6
 
 
-class IndicatorPeriod(Enum):
+class IndicatorPeriod(StrEnum):
     """Time-based indicator periods."""
 
     HOUR = "h"

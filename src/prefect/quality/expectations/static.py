@@ -18,8 +18,7 @@ FAKE_PDL: str = """(
 pdc_expectations = [
     # POWL : Power less than POWL_PARAMETER (rule 39)
     gxe.UnexpectedRowsExpectation(
-        unexpected_rows_query=Template(
-            """
+        unexpected_rows_query=Template("""
 SELECT
   id_pdc_itinerance,
   puissance_nominale
@@ -27,14 +26,12 @@ FROM
   {batch}
 WHERE
   puissance_nominale <= $min_power_kw
-        """
-        ).substitute(POWL.params),
+        """).substitute(POWL.params),
         meta={"code": POWL.code},
     ),
     # POWU : Power greater than POWU_PARAMETER (rule 1)
     gxe.UnexpectedRowsExpectation(
-        unexpected_rows_query=Template(
-            """
+        unexpected_rows_query=Template("""
 SELECT
   id_pdc_itinerance,
   puissance_nominale
@@ -42,8 +39,7 @@ FROM
   {batch}
 WHERE
   puissance_nominale >= $max_power_kw
-        """
-        ).substitute(POWU.params),
+        """).substitute(POWU.params),
         meta={"code": POWU.code},
     ),
 ]
@@ -79,8 +75,7 @@ operateur_expectations = [
 localisation_expectations = [
     # CRDF : Geographic coordinates outside France (rule 3)
     gxe.UnexpectedRowsExpectation(
-        unexpected_rows_query=Template(
-            """
+        unexpected_rows_query=Template("""
 SELECT
   id_station_itinerance,
   ST_X ("coordonneesXY"::geometry) AS longitude,
@@ -92,8 +87,7 @@ WHERE
   OR ST_X ("coordonneesXY"::geometry) < $min_lon
   OR ST_Y ("coordonneesXY"::geometry) > $max_lat
   OR ST_Y ("coordonneesXY"::geometry) < $min_lat
-        """
-        ).substitute(CRDF.params),
+        """).substitute(CRDF.params),
         meta={"code": CRDF.code},
     )
 ]
@@ -119,7 +113,9 @@ FROM
   {batch}
 WHERE
   id_pdc_itinerance not like 'FR___E%'
-  OR substring(id_pdc_itinerance from 1 for 5) != substring(id_station_itinerance from 1 for 5)
+  OR
+    substring(id_pdc_itinerance from 1 for 5)
+        != substring(id_station_itinerance from 1 for 5)
         """,
         meta={"code": "AFIE"},
     ),
@@ -127,8 +123,7 @@ WHERE
 stations_pdc_expectations = [
     # PDCM : Stations with more than PDCM_PARAMETER charging points > PDCM_THRESHOLD (rule 30)  # noqa: E501
     gxe.UnexpectedRowsExpectation(
-        unexpected_rows_query=Template(
-            """
+        unexpected_rows_query=Template("""
 WITH
   nb_stations_max AS (
     SELECT
@@ -159,8 +154,7 @@ FROM
   nb_stations
 WHERE
   nbre_stat_max::float > $threshold_percent * nbre_stat
-        """
-        ).substitute(PDCM.params),
+        """).substitute(PDCM.params),
         meta={"code": PDCM.code},
     ),
     # PDCL : number of pdc per station lower than nbre_pdc field (rule 47)
@@ -233,8 +227,7 @@ WHERE
 stations_per_location_expectations = [
     # LOCP : Number of stations per location > LOCP_THRESHOLD (rule 46)
     gxe.UnexpectedRowsExpectation(
-        unexpected_rows_query=Template(
-            """
+        unexpected_rows_query=Template("""
 WITH
   nb_localisation AS (
     SELECT
@@ -255,16 +248,14 @@ FROM
   nb_stations
 WHERE
   nbre_stat::float > $ratio_stations_per_location * nbre_loc
-        """
-        ).substitute(LOCP.params),
+        """).substitute(LOCP.params),
         meta={"code": LOCP.code},
     ),
 ]
 num_PDL_expectations = [
     # PDLM : PDL identifier not documented (rule 20)
     gxe.UnexpectedRowsExpectation(
-        unexpected_rows_query=Template(
-            """
+        unexpected_rows_query=Template("""
 SELECT DISTINCT ON (id_station_itinerance)
   id_station_itinerance
 FROM
@@ -278,14 +269,12 @@ WHERE
     OR num_pdl LIKE '%NA%'
     OR num_pdl IN $FAKE_PDL
   )
-        """
-        ).substitute({"IS_DC": IS_DC, "FAKE_PDL": FAKE_PDL}),
+        """).substitute({"IS_DC": IS_DC, "FAKE_PDL": FAKE_PDL}),
         meta={"code": "PDLM"},
     ),
     # NE10 : ENEDIS format not respected (14 digits) > NE10_THRESHOLD (rule 34)
     gxe.UnexpectedRowsExpectation(
-        unexpected_rows_query=Template(
-            """
+        unexpected_rows_query=Template("""
 WITH
   nb_station_dc AS (
     SELECT
@@ -323,10 +312,7 @@ FROM
   nb_numpdl_not14
 WHERE
   nbre_numpdl_not14::float > $threshold_percent * nbre_stat_dc
-        """
-        ).substitute(
-            {"IS_DC": IS_DC} | NE10.params  # type: ignore
-        ),
+        """).substitute({"IS_DC": IS_DC} | NE10.params),  # type: ignore
         meta={"code": NE10.code},
     ),
 ]
