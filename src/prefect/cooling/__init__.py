@@ -1,6 +1,7 @@
 """Prefect: cooling module."""
 
-from datetime import date
+import os
+from datetime import date, datetime, timedelta
 from enum import StrEnum
 from string import Template
 from typing import List, Tuple
@@ -13,6 +14,7 @@ from prefect.logging import get_run_logger
 from prefect.states import Completed, Failed
 from pyarrow import fs
 from pyarrow import parquet as pq
+from pydantic import HttpUrl
 from sqlalchemy import Engine, text
 
 from indicators.db import get_api_db_engine
@@ -27,6 +29,19 @@ class IfExistStrategy(StrEnum):
     FAIL = "fail"
     OVERWRITE = "overwrite"
     APPEND = "append"
+
+
+@task
+def get_s3_endpoint_url() -> HttpUrl:
+    """Get S3 endpoint URL from the environment."""
+    if (s3_endpoint_url := os.environ.get("S3_ENDPOINT_URL", None)) is None:
+        raise ValueError("S3_ENDPOINT_URL environment variable not set.")
+    return HttpUrl(s3_endpoint_url)
+
+
+def get_daily_cooling_day(days: int) -> date:
+    """Get target date for cooling."""
+    return (datetime.today() - timedelta(days=days)).date()
 
 
 def _check_archive(
@@ -57,11 +72,10 @@ def _check_archive(
 
 @task
 def extract_data_for_day(  # noqa: PLR0913,PLR0911
-    engine: Engine,
     day: date,
     environment: Environment,
     bucket: str,
-    s3_endpoint_url: str,
+    s3_endpoint_url: HttpUrl,
     select_query: Template,
     check_query: Template,
     if_exists: IfExistStrategy = IfExistStrategy.FAIL,
@@ -73,6 +87,7 @@ def extract_data_for_day(  # noqa: PLR0913,PLR0911
     """
     day_iso: str = day.isoformat()
     logger = get_run_logger()
+    engine = get_api_db_engine(environment)
 
     # Dataset
     basename = f"{bucket}-{day_iso}-{environment.value}"
@@ -80,7 +95,7 @@ def extract_data_for_day(  # noqa: PLR0913,PLR0911
     dataset = Dataset(basename=basename, query=query)
 
     # Target bucket
-    s3 = fs.S3FileSystem(endpoint_override=s3_endpoint_url)
+    s3 = fs.S3FileSystem(endpoint_override=str(s3_endpoint_url))
     dir_path = f"{bucket}/{day.year}/{day.month}/{day.day}"
     file_path = f"{dir_path}/{environment}.parquet"
 
@@ -157,31 +172,28 @@ def extract_data_for_day(  # noqa: PLR0913,PLR0911
     return Completed(message=f"{bucket} archive '{file_path}' created")
 
 
-def extract_data_older_than(  # noqa: PLR0913
-    older_than: date,
+@task
+def extract_data_for_period(  # noqa: PLR0913
+    from_date: date,
+    to_date: date,
     environment: Environment,
     bucket: str,
-    s3_endpoint_url: str,
-    days_to_extract_query: Template,
+    s3_endpoint_url: HttpUrl,
     select_query: Template,
     check_query: Template,
     if_exists: IfExistStrategy = IfExistStrategy.FAIL,
     chunk_size: int = 5000,
-):
-    """Extract data older than a date to daily archives."""
-    db_engine = get_api_db_engine(environment)
+) -> List[State]:
+    """Extract data to daily archives for a period.
 
+    Note that dates from the period interval are both included.
+    """
+    days = [
+        from_date + timedelta(days=d) for d in range((to_date - from_date).days + 1)
+    ]
     tasks_state: List[State] = []
-    with db_engine.connect() as connection:
-        days = [
-            row[0]
-            for row in connection.execute(
-                text(days_to_extract_query.substitute({"older_than": older_than}))
-            ).fetchall()
-        ]
     for day in days:
         state = extract_data_for_day(
-            db_engine,
             day,
             environment,
             bucket,

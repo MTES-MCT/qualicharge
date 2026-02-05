@@ -76,7 +76,7 @@ def clean_s3fs(request):
     yield s3
 
     for archive in s3.glob(f"{bucket}/**/test.parquet"):
-        s3.rm(archive, recursive=True)
+        s3.rm(archive, recursive=False)
 
 
 @pytest.fixture(scope="function")
