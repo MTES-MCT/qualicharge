@@ -1,14 +1,19 @@
 """Prefect flows: cooling statuses."""
 
-import os
 from datetime import date
 from string import Template
+from typing import List
 
-from dateutil.relativedelta import relativedelta
 from prefect import flow
-from prefect.states import Failed
+from prefect.client.schemas.objects import State
 
-from cooling import IfExistStrategy, extract_data_older_than
+from cooling import (
+    IfExistStrategy,
+    extract_data_for_day,
+    extract_data_for_period,
+    get_daily_cooling_day,
+    get_s3_endpoint_url,
+)
 from indicators.types import Environment
 
 SESSIONS_FOR_A_DAY_QUERY_TEMPLATE = Template("""
@@ -29,39 +34,50 @@ SESSION_COUNT_FOR_A_DAY_QUERY_TEMPLATE = Template("""
     WHERE
         start::DATE = '$date'
     """)
-SESSION_DAYS_TO_EXTRACT_QUERY_TEMPLATE = Template("""
-    SELECT
-      DISTINCT start::DATE AS event_date
-    FROM
-      Session
-    WHERE
-      start < '$older_than'
-    GROUP BY
-      event_date
-    ORDER BY
-      event_date
-    """)
+BUCKET_NAME = "qualicharge-sessions"
+COOL_AFTER_DAYS: int = 21
 
 
-@flow(log_prints=True)
-def extract_old_sessions(
-    from_now: dict,
+@flow(
+    flow_run_name="extract-sessions-{environment}-from-{from_date:%x}-to-{to_date:%x}"
+)
+def cool_sessions_for_period(
+    from_date: date,
+    to_date: date,
     environment: Environment,
     if_exists: IfExistStrategy = IfExistStrategy.FAIL,
     chunk_size: int = 5000,
-):
-    """Extract sessions older than now - from_now to daily archives."""
-    s3_endpoint_url = os.environ.get("S3_ENDPOINT_URL", None)
-    if s3_endpoint_url is None:
-        return Failed(message="S3_ENDPOINT_URL environment variable not set.")
-    bucket = "qualicharge-sessions"
-    older_than = date.today() - relativedelta(**from_now)
-    return extract_data_older_than(
-        older_than,
+) -> List[State]:
+    """Extract sessions to daily archives for a period.
+
+    Note that dates from the period interval are both included.
+    """
+    return extract_data_for_period(
+        from_date,
+        to_date,
         environment,
-        bucket,
-        s3_endpoint_url,
-        SESSION_DAYS_TO_EXTRACT_QUERY_TEMPLATE,
+        BUCKET_NAME,
+        get_s3_endpoint_url(),
+        SESSIONS_FOR_A_DAY_QUERY_TEMPLATE,
+        SESSION_COUNT_FOR_A_DAY_QUERY_TEMPLATE,
+        if_exists=if_exists,
+        chunk_size=chunk_size,
+    )
+
+
+@flow
+def daily_cool_sessions(
+    environment: Environment = Environment.PRODUCTION,
+    if_exists: IfExistStrategy = IfExistStrategy.FAIL,
+    days: int = COOL_AFTER_DAYS,
+    chunk_size: int = 5000,
+) -> State:
+    """Cool sessions for (today - `days`) day."""
+    return extract_data_for_day(
+        get_daily_cooling_day(days),
+        environment,
+        BUCKET_NAME,
+        get_s3_endpoint_url(),
         SESSIONS_FOR_A_DAY_QUERY_TEMPLATE,
         SESSION_COUNT_FOR_A_DAY_QUERY_TEMPLATE,
         if_exists=if_exists,
