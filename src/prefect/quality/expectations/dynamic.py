@@ -124,6 +124,7 @@ WITH
       session.end != session.start
       AND energy > $lowest_energy_kwh
       AND energy <= $highest_energy_kwh
+      AND puissance_nominale > $min_power_kw
       AND start >= $start
       AND start < $end
       AND energy > extract(
@@ -379,7 +380,7 @@ FROM
 WHERE
   horodatage >= $start
   AND horodatage < $end
-  AND etat_pdc = 'hors_service'
+  AND etat_pdc IN ('hors_service', 'inconnu')
   AND occupation_pdc = 'occupe'
                 """
             ).substitute(date_params),
@@ -669,9 +670,10 @@ WITH
       SESSION
       INNER JOIN f_statique on session.point_de_charge_id = f_statique.pdc_id
 	WHERE
-      SESSION.start >= $start
-      AND SESSION.start < $end
-    GROUP BY
+    (SESSION.start > $start AND SESSION.start < $end)
+    OR (SESSION.end > $start AND SESSION.end < $end)
+    OR (SESSION.start < $start AND SESSION.end > $end)
+  GROUP BY
       session_pdc_id,
       date_session
   ),
@@ -748,6 +750,7 @@ WITH
     WHERE
       session.start >= $start
       AND session.start < $end
+      AND session.energy > $min_energy_kwh
 	GROUP BY
       id_pdc_itinerance,
       session_pdc_id,

@@ -9,13 +9,37 @@ class QARule(BaseModel):
     code: str
     params: dict
 
+
 HISTORY_STRATEGY_FIELD: str = "mean"
 IS_DC: str = """(
 puissance_nominale >= 50
 OR prise_type_combo_ccs
 OR prise_type_chademo
 )"""
-
+IS_SIREN_VALID: str = """(
+mod(
+      mod(substr(siren_amenageur, 1, 1) :: int * 1, 10) +
+      substr(siren_amenageur, 1, 1) :: int * 1 / 10 +
+      mod(substr(siren_amenageur, 2, 1) :: int * 2, 10) +
+      substr(siren_amenageur, 2, 1) :: int * 2 / 10 +
+      mod(substr(siren_amenageur, 3, 1) :: int * 1, 10) +
+      substr(siren_amenageur, 3, 1) :: int * 1 / 10 +
+      mod(substr(siren_amenageur, 4, 1) :: int * 2, 10) +
+      substr(siren_amenageur, 4, 1) :: int * 2 / 10 +
+      mod(substr(siren_amenageur, 5, 1) :: int * 1, 10) +
+      substr(siren_amenageur, 5, 1) :: int * 1 / 10 +
+      mod(substr(siren_amenageur, 6, 1) :: int * 2, 10) +
+      substr(siren_amenageur, 6, 1) :: int * 2 / 10 +
+      mod(substr(siren_amenageur, 7, 1) :: int * 1, 10) +
+      substr(siren_amenageur, 7, 1) :: int * 1 / 10 +
+      mod(substr(siren_amenageur, 8, 1) :: int * 2, 10) +
+      substr(siren_amenageur, 8, 1) :: int * 2 / 10 +
+      mod(substr(siren_amenageur, 9, 1) :: int * 1, 10) +
+      substr(siren_amenageur, 9, 1) :: int * 1 / 10,
+      10
+    ) = 0
+    and siren_amenageur :: int > 1
+)"""
 # static parameters
 POWU = QARule(code="POWU", params={"max_power_kw": 4000.0})
 POWL = QARule(code="POWL", params={"min_power_kw": 1.3})
@@ -34,7 +58,7 @@ NE10 = QARule(code="NE10", params={"threshold_percent": 0.1})
 DUPS = QARule(code="DUPS", params={"threshold_percent": 0.001})
 OVRS = QARule(code="OVRS", params={"max_sessions_per_day": 60})
 LONS = QARule(
-    code="LONS", params={"max_days_per_session": "3 day", "threshold_percent": 0.001}
+    code="LONS", params={"max_days_per_session": "7 day", "threshold_percent": 0.001}
 )
 FRES = QARule(code="FRES", params={"max_duration_day": 15})
 NEGS = QARule(code="NEGS", params={})
@@ -47,7 +71,10 @@ session_p = [DUPS, OVRS, LONS, FRES, NEGS]
 # Abnormal energy : if energy > abnormal_coef * max_energy
 ENERGY = {"highest_energy_kwh": 1000, "lowest_energy_kwh": 1}
 ENEX = QARule(code="ENEX", params={"excess_coef": 2, "excess_threshold_kWh": 50})
-ENEA = QARule(code="ENEA", params={"abnormal_coef": 1.1, "threshold_percent": 0.001})
+ENEA = QARule(
+    code="ENEA",
+    params={"min_power_kw": 2, "abnormal_coef": 1.1, "threshold_percent": 0.001},
+)
 ENEU = QARule(code="ENEU", params={})
 ODUR = QARule(code="ODUR", params={"threshold_percent": 0.001})
 energy_p = [ENEX, ENEA, ENEU, ODUR]
@@ -73,7 +100,7 @@ RATS = QARule(
     params={"ratio_statuses_per_session_min": 1, "ratio_statuses_per_session_max": 30},
 )
 OCCT = QARule(code="OCCT", params={"threshold_percent": 0.2})
-SEST = QARule(code="SEST", params={"threshold_percent": 0.01})
+SEST = QARule(code="SEST", params={"min_energy_kwh": 0.1, "threshold_percent": 0.01})
 session_status_p = [RATS, OCCT, SEST]
 
 # evaluable parameters (check a threshold)

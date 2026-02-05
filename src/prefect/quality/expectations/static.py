@@ -6,7 +6,7 @@ from string import Template
 import great_expectations as gx
 import great_expectations.expectations as gxe
 
-from .parameters import CRDF, IS_DC, LOCP, NE10, PDCM, POWL, POWU
+from .parameters import CRDF, IS_DC, IS_SIREN_VALID, LOCP, NE10, PDCM, POWL, POWU
 
 NAME: str = "static"
 
@@ -62,6 +62,22 @@ amenageur_expectations = [
     gxe.ExpectColumnValuesToNotBeNull(
         column="contact_amenageur",
         meta={"code": "AMEM3"},
+    ),
+    # SIRI : SIREN invalid (rule 55)
+    gxe.UnexpectedRowsExpectation(
+        unexpected_rows_query=Template(
+            """
+SELECT distinct
+  nom_amenageur,
+  siren_amenageur,
+  nom_operateur
+FROM
+  {batch}
+WHERE
+  not $IS_SIREN_VALID
+        """
+        ).substitute({"IS_SIREN_VALID": IS_SIREN_VALID}),
+        meta={"code": "SIRI"},
     ),
 ]
 operateur_expectations = [
