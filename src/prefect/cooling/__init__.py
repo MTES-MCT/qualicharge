@@ -56,7 +56,7 @@ def _check_archive(
 
 
 @task
-def extract_data_for_day(
+def extract_data_for_day(  # noqa: PLR0913,PLR0911
     engine: Engine,
     day: date,
     environment: Environment,
@@ -157,7 +157,7 @@ def extract_data_for_day(
     return Completed(message=f"{bucket} archive '{file_path}' created")
 
 
-def extract_data_older_than(
+def extract_data_older_than(  # noqa: PLR0913
     older_than: date,
     environment: Environment,
     bucket: str,

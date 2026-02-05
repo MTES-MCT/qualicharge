@@ -6,7 +6,7 @@ and CARBURE API integration.
 
 from datetime import date, datetime
 from string import Template
-from typing import List
+from typing import TYPE_CHECKING, List
 
 import pandas as pd
 import requests
@@ -14,7 +14,6 @@ from dateutil.relativedelta import relativedelta
 from prefect import flow, task
 from prefect.logging import get_run_logger
 from prefect.states import Completed, Failed
-from prefect.utilities.annotations import allow_failure
 from pydantic import TypeAdapter, ValidationError
 from sqlalchemy import text
 from sqlalchemy.orm import Session
@@ -27,8 +26,11 @@ from indicators.utils import export_indicators
 from .carbure import CarbureAPISettings, CarbureClient
 from .run import Siren
 
-ENERGY_BY_STATION_TEMPLATE = Template(
-    """
+if TYPE_CHECKING:
+    from prefect.client.schemas.objects import State
+    from prefect.results import R
+
+ENERGY_BY_STATION_TEMPLATE = Template("""
     WITH
       energy_over_period AS (
         SELECT
@@ -63,26 +65,21 @@ ENERGY_BY_STATION_TEMPLATE = Template(
       siren,
       code,
       station
-    """
-)
+    """)
 
 
 @task
 def get_amenageurs_siren(environment: Environment) -> List[str]:
     """Get distinct amenageurs SIREN for an environment."""
     with Session(get_api_db_engine(environment)) as session:
-        results = session.execute(
-            text(
-                """
+        results = session.execute(text("""
                 SELECT DISTINCT
                   siren_amenageur
                 FROM
                   Amenageur
                 ORDER BY
                   siren_amenageur
-                """
-            )
-        )
+                """))
     return [row[0] for row in results.all()]
 
 
@@ -126,16 +123,20 @@ def transform(
     payload = []
     by_entity = energy_by_station.groupby(["entity", "siren"])
     for entity_group in by_entity.groups:
-        entity, siren = entity_group
-        entity_payload = {"entity": entity, "siren": siren, "operational_units": []}
+        # As we groupby multiple columns, by_entity.groups is a list of tuples
+        # MyPy does not get it.
+        entity, siren = entity_group  # type: ignore[misc]
+        entity_payload = {"entity": entity, "siren": siren, "operational_units": []}  # type: ignore[has-type]
         by_code = by_entity.get_group(entity_group).groupby(["code", "from", "to"])
         for code_group in by_code.groups:
-            code, from_, to_ = code_group
+            # As we groupby multiple columns, by_code.groups is a list of tuples
+            # MyPy does not get it.
+            code, from_, to_ = code_group  # type: ignore[misc]
             by_stations = by_code.get_group(code_group)
             code_payload = {
-                "code": code,
-                "from": str(from_),
-                "to": str(to_),
+                "code": code,  # type: ignore[has-type]
+                "from": str(from_),  # type: ignore[has-type]
+                "to": str(to_),  # type: ignore[has-type]
                 "stations": by_stations[["id", "energy", "is_controlled"]].to_dict(
                     orient="records"
                 ),
@@ -185,7 +186,7 @@ def load(
 
 
 @task
-def submit(payload: List[dict], siren: Siren, from_date: date):
+def submit(payload: List[dict], siren: Siren, from_date: date) -> "State[R]":
     """Submit payload to CARBURE."""
     carbure_config = CarbureAPISettings()
     client = CarbureClient(carbure_config)
@@ -222,7 +223,7 @@ def tiruert_for_month_and_amenageur(
     payload = transform(from_date, to_date, siren, energy_by_station)
 
     # If submission to Carbure failed, exit now!
-    state = submit(payload, siren, from_date)
+    state: State = submit(payload, siren, from_date)
     if state.is_failed():
         return
 

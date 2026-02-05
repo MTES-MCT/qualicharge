@@ -18,6 +18,7 @@ CURL = $(COMPOSE_RUN) curl
 # -- Ressources
 AFIREV_CHARGING_DATASET_URL = https://afirev.fr/en/liste-des-identifiants-attribues/
 
+PREFECT_MODULES = $(subst src/prefect/,./,$(sort $(dir $(wildcard src/prefect/*/))))
 # ==============================================================================
 # RULES
 
@@ -577,22 +578,22 @@ lint-client-mypy: ## lint api python sources with mypy
 
 lint-prefect-black: ## lint prefect python sources with black
 	@echo 'lint:black started…'
-	@$(COMPOSE_RUN_PREFECT_UV) black indicators tests
+	@$(COMPOSE_RUN_PREFECT_UV) black $(PREFECT_MODULES)
 .PHONY: lint-prefect-black
 
 lint-prefect-ruff: ## lint prefect python sources with ruff
 	@echo 'lint:ruff started…'
-	@$(COMPOSE_RUN_PREFECT_UV) ruff check indicators tests
+	@$(COMPOSE_RUN_PREFECT_UV) ruff check $(PREFECT_MODULES)
 .PHONY: lint-prefect-ruff
 
 lint-prefect-ruff-fix: ## lint and fix prefect python sources with ruff
 	@echo 'lint:ruff-fix started…'
-	@$(COMPOSE_RUN_PREFECT_UV) ruff check --fix indicators tests
+	@$(COMPOSE_RUN_PREFECT_UV) ruff check --fix $(PREFECT_MODULES)
 .PHONY: lint-prefect-ruff-fix
 
 lint-prefect-mypy: ## lint prefect python sources with mypy
 	@echo 'lint:mypy started…'
-	@$(COMPOSE_RUN_PREFECT_UV) mypy indicators tests
+	@$(COMPOSE_RUN_PREFECT_UV) mypy $(PREFECT_MODULES)
 .PHONY: lint-prefect-mypy
 
 lint-dashboard-black: ## lint dashboard python sources with black

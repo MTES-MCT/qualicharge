@@ -20,8 +20,7 @@ from indicators.models import IndicatorPeriod, Level
 from indicators.types import Environment
 from indicators.utils import export_indicators
 
-AMENAGEUR_WITH_SESSIONS_TEMPLATE = Template(
-    """
+AMENAGEUR_WITH_SESSIONS_TEMPLATE = Template("""
     SELECT DISTINCT
       Amenageur.siren_amenageur as siren,
       Count(Session.id) AS COUNT
@@ -37,11 +36,9 @@ AMENAGEUR_WITH_SESSIONS_TEMPLATE = Template(
       siren
     ORDER BY
       siren
-    """
-)
+    """)
 
-AMENAGEUR_SESSIONS_FOR_A_DAY_TEMPLATE = Template(
-    """
+AMENAGEUR_SESSIONS_FOR_A_DAY_TEMPLATE = Template("""
     SELECT
       Amenageur.nom_amenageur AS entity,
       Amenageur.siren_amenageur AS siren,
@@ -67,8 +64,7 @@ AMENAGEUR_SESSIONS_FOR_A_DAY_TEMPLATE = Template(
     ORDER BY
       id_pdc_itinerance,
       "from"
-    """
-)
+    """)
 
 SESSION_ENE_MAX = 1000.0  # in kWh
 
@@ -79,9 +75,9 @@ def check_siren(siren: str) -> str:
     blacklist = [
         "000000000",
     ]
-    assert siren not in blacklist, error_msg
-    assert all(c.isdigit() for c in siren), error_msg
-    assert (
+    assert siren not in blacklist, error_msg  # noqa: S101
+    assert all(c.isdigit() for c in siren), error_msg  # noqa: S101
+    assert (  # noqa: S101
         sum(  # 3. sum all string chars
             map(
                 int,

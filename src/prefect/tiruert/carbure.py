@@ -86,13 +86,22 @@ class CarbureClient:
             tokens = self._api_request(
                 "post", "/api/token/", self.user.model_dump(exclude={"api_key"})
             )
-            self.refresh_token = tokens["refresh"]
-        self.access_token = tokens["access"]
-        self.session.headers |= {"Authorization": f"Bearer {self.access_token}"}
+            self.refresh_token = (
+                tokens.get("refresh", None)
+                if tokens and isinstance(tokens, dict)
+                else None
+            )
+        if not isinstance(tokens, dict):
+            return
+        self.access_token = tokens.get("access", None)
+        self.session.headers.update({"Authorization": f"Bearer {self.access_token}"})
 
     def check_entities(self) -> List[dict]:
         """Check Carbure registered entities."""
-        return self._api_request("get", "/api/resources/entities")
+        entities = self._api_request("get", "/api/resources/entities")
+        if not isinstance(entities, list):
+            raise TypeError("Expecting a list of entities")
+        return entities
 
     def bulk_create_certificates(self, certificates: List[dict]) -> None:
         """Bulk create elec provision certificates."""

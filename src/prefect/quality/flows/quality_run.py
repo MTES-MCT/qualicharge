@@ -6,6 +6,7 @@ from typing import Generator, List
 
 import great_expectations as gx
 import pandas as pd
+from great_expectations.datasource.fluent import PostgresDatasource
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from prefect import task
 from prefect.artifacts import create_markdown_artifact
@@ -68,7 +69,7 @@ def get_db_units(environment: str) -> Generator[str, None, None]:
 @task(cache_policy=NONE)
 def run_api_db_checkpoint(  # noqa: PLR0913
     context: gx.data_context.EphemeralDataContext,
-    data_source: gx.datasource.fluent.PostgresDatasource,
+    data_source: PostgresDatasource,
     suite: gx.ExpectationSuite,
     environment: str,
     report_by_email: bool,
@@ -132,7 +133,7 @@ def run_api_db_checkpoint(  # noqa: PLR0913
 @task(cache_policy=NONE)
 def run_api_db_checkpoint_by_unit(  # noqa: PLR0913
     context: gx.data_context.EphemeralDataContext,
-    data_source: gx.datasource.fluent.PostgresDatasource,
+    data_source: PostgresDatasource,
     suite: gx.ExpectationSuite,
     environment: str,
     period: IndicatorPeriod,
@@ -205,6 +206,8 @@ def run_api_db_checkpoint_by_unit(  # noqa: PLR0913
         qc_results = QCExpectationsSuiteResult(unit=unit, success=result.success)
         for _, v in result.run_results.items():
             for r in v.results:
+                if r.expectation_config is None:
+                    continue
                 code = r.expectation_config.meta.get("code")
                 qc_results.suite.append(
                     QCExpectationResult(code=code, success=r.success)

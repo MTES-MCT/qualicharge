@@ -11,8 +11,7 @@ from prefect.states import Failed
 from cooling import IfExistStrategy, extract_data_older_than
 from indicators.types import Environment
 
-SESSIONS_FOR_A_DAY_QUERY_TEMPLATE = Template(
-    """
+SESSIONS_FOR_A_DAY_QUERY_TEMPLATE = Template("""
     SELECT
         PointDeCharge.id_pdc_itinerance,
         Session.*
@@ -21,20 +20,16 @@ SESSIONS_FOR_A_DAY_QUERY_TEMPLATE = Template(
     INNER JOIN PointDeCharge ON Session.point_de_charge_id = PointDeCharge.id
     WHERE
         start::DATE = '$date'
-    """
-)
-SESSION_COUNT_FOR_A_DAY_QUERY_TEMPLATE = Template(
-    """
+    """)
+SESSION_COUNT_FOR_A_DAY_QUERY_TEMPLATE = Template("""
     SELECT
         COUNT(*)
     FROM
         Session
     WHERE
         start::DATE = '$date'
-    """
-)
-SESSION_DAYS_TO_EXTRACT_QUERY_TEMPLATE = Template(
-    """
+    """)
+SESSION_DAYS_TO_EXTRACT_QUERY_TEMPLATE = Template("""
     SELECT
       DISTINCT start::DATE AS event_date
     FROM
@@ -45,8 +40,7 @@ SESSION_DAYS_TO_EXTRACT_QUERY_TEMPLATE = Template(
       event_date
     ORDER BY
       event_date
-    """
-)
+    """)
 
 
 @flow(log_prints=True)
