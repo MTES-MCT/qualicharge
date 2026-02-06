@@ -246,7 +246,8 @@ deployments:
       name: indicators
       work_queue_name: default
 
-  # # -- Tiruert --
+  # -- Tiruert --
+
   - name: tiruert-daily
     entrypoint: tiruert/run.py:daily_tiruert
     concurrency_limit: 10
@@ -286,71 +287,50 @@ deployments:
       name: indicators
       work_queue_name: default
   
-  # # -- Data cooling deployments --
-  - name: status-cooling-staging
-    entrypoint: cooling/statuses.py:extract_old_statuses
+  # -- Data cooling deployments --
+
+  - name: statuses-cooling
+    entrypoint: cooling/statuses.py:cool_statuses_for_period
     concurrency_limit: 10
-  #   schedules:
-  #     - cron: "32 1 * * *"
-  #       timezone: "Europe/Paris"
-  #       active: false 
     parameters:
-      from_now: 
-        days: 15
-      environment: staging 
-      if_exists: ignore 
-    work_pool:
-      name: indicators
-      work_queue_name: default
-  
-  - name: status-cooling-production
-    entrypoint: cooling/statuses.py:extract_old_statuses
-    concurrency_limit: 10
-  #   schedules:
-  #     - cron: "36 1 * * *"
-  #       timezone: "Europe/Paris"
-  #       active: false 
-    parameters:
-      from_now: 
-        days: 15
       environment: production
       if_exists: ignore 
     work_pool:
       name: indicators
       work_queue_name: default
   
-  - name: sessions-cooling-staging
-    entrypoint: cooling/sessions.py:extract_old_sessions
+  - name: statuses-cooling-daily
+    entrypoint: cooling/statuses.py:daily_cool_statuses
     concurrency_limit: 10
-  #   schedules:
-  #     - cron: "34 1 * * *"
-  #       timezone: "Europe/Paris"
-  #       active: false
-    parameters:
-      from_now: 
-        days: 15
-      environment: staging 
-      if_exists: ignore 
+    schedules:
+      - cron: "32 1 * * *"
+        timezone: "Europe/Paris"
+        active: true
     work_pool:
       name: indicators
       work_queue_name: default
-  
-  - name: sessions-cooling-production
-    entrypoint: cooling/sessions.py:extract_old_sessions
+
+  - name: sessions-cooling
+    entrypoint: cooling/sessions.py:cool_sessions_for_period
     concurrency_limit: 10
-  #   schedules:
-  #     - cron: "30 2 * * *"
-  #       timezone: "Europe/Paris"
-  #       active: false
     parameters:
-      from_now: 
-        days: 15
       environment: production
       if_exists: ignore 
     work_pool:
       name: indicators
       work_queue_name: default
   
+  - name: sessions-cooling-daily
+    entrypoint: cooling/sessions.py:daily_cool_sessions
+    concurrency_limit: 10
+    schedules:
+      - cron: "36 1 * * *"
+        timezone: "Europe/Paris"
+        active: true
+    work_pool:
+      name: indicators
+      work_queue_name: default
+
   # -- Quality deployments --
   
   - name: quality-static-staging
