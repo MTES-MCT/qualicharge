@@ -41,12 +41,13 @@ COOL_AFTER_DAYS: int = 21
 @flow(
     flow_run_name="extract-sessions-{environment}-from-{from_date:%x}-to-{to_date:%x}"
 )
-def cool_sessions_for_period(
+def cool_sessions_for_period(  # noqa: PLR0913
     from_date: date,
     to_date: date,
     environment: Environment,
     if_exists: IfExistStrategy = IfExistStrategy.FAIL,
     chunk_size: int = 5000,
+    ignore_errors: bool = False,
 ) -> List[State]:
     """Extract sessions to daily archives for a period.
 
@@ -62,6 +63,7 @@ def cool_sessions_for_period(
         SESSION_COUNT_FOR_A_DAY_QUERY_TEMPLATE,
         if_exists=if_exists,
         chunk_size=chunk_size,
+        ignore_errors=ignore_errors,
     )
 
 

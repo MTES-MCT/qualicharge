@@ -1,12 +1,14 @@
 """QualiCharge prefect cooling tests: sessions."""
 
 import os
+import re
 from datetime import date
 
 import pandas as pd
 import pytest
 from freezegun import freeze_time
 from prefect.client.schemas.objects import StateType
+from prefect.exceptions import FailedRun
 
 import cooling
 from cooling import IfExistStrategy
@@ -116,21 +118,36 @@ def test_cool_sessions_for_period_flow_check_fails(clean_s3fs, monkeypatch):
 
     monkeypatch.setattr(cooling, "_check_archive", fake_check)
 
+    expected_path = "qualicharge-sessions/2024/11/30/test.parquet"
+    expected_message = re.escape(
+        "Extraction failed for day: 2024-11-30. Reason: "
+        f"qualicharge-sessions archive '{expected_path}' and database content"
+        " have diverged (1 vs 2 expected rows)"
+    )
+    with pytest.raises(FailedRun, match=expected_message):
+        cool_sessions_for_period(
+            from_date=date(2024, 11, 30),
+            to_date=date(2024, 11, 30),
+            environment=Environment.TEST,
+            if_exists=IfExistStrategy.IGNORE,
+        )
+
+    # Ignore errors
     results = cool_sessions_for_period(
         from_date=date(2024, 11, 30),
         to_date=date(2024, 11, 30),
         environment=Environment.TEST,
-        if_exists=IfExistStrategy.IGNORE,
+        if_exists=IfExistStrategy.OVERWRITE,
+        ignore_errors=True,
     )
 
     result = results[0]
-    expected_path = "qualicharge-sessions/2024/11/30/test.parquet"
     assert len(results) == 1
     assert result.type == StateType.FAILED
-    assert result.message == (
+    assert (
         f"qualicharge-sessions archive '{expected_path}' and database content"
         f" have diverged (1 vs 2 expected rows)"
-    )
+    ) in result.message
 
 
 @pytest.mark.parametrize(
@@ -168,11 +185,19 @@ def test_extract_old_sessions_flow_archive_exists(clean_s3fs):
     )
 
     # Test fail strategy
+    with pytest.raises(FailedRun, match="Extraction failed for day"):
+        cool_sessions_for_period(
+            from_date=date(2024, 11, 30),
+            to_date=date(2024, 11, 30),
+            environment=Environment.TEST,
+            if_exists=IfExistStrategy.FAIL,
+        )
     results = cool_sessions_for_period(
         from_date=date(2024, 11, 30),
         to_date=date(2024, 11, 30),
         environment=Environment.TEST,
         if_exists=IfExistStrategy.FAIL,
+        ignore_errors=True,
     )
     result = results[0]
     assert len(results) == 1
@@ -199,6 +224,7 @@ def test_extract_old_sessions_flow_archive_exists(clean_s3fs):
         to_date=date(2024, 11, 30),
         environment=Environment.TEST,
         if_exists=IfExistStrategy.APPEND,
+        ignore_errors=True,
     )
     result = results[0]
     assert len(results) == 1
@@ -252,11 +278,19 @@ def test_cool_sessions_for_period_flow_archive_exists_check(clean_s3fs, monkeypa
 
     monkeypatch.setattr(cooling, "_check_archive", fake_check)
 
+    with pytest.raises(FailedRun, match="Extraction failed for day"):
+        cool_sessions_for_period(
+            from_date=date(2024, 11, 30),
+            to_date=date(2024, 11, 30),
+            environment=Environment.TEST,
+            if_exists=IfExistStrategy.CHECK,
+        )
     results = cool_sessions_for_period(
         from_date=date(2024, 11, 30),
         to_date=date(2024, 11, 30),
         environment=Environment.TEST,
         if_exists=IfExistStrategy.CHECK,
+        ignore_errors=True,
     )
     result = results[0]
     assert len(results) == 1
@@ -270,7 +304,7 @@ def test_cool_sessions_for_period_flow_archive_exists_check(clean_s3fs, monkeypa
 @pytest.mark.parametrize(
     "clean_s3fs", ["qualicharge-sessions"], indirect=["clean_s3fs"]
 )
-def test_daily_cool_sessions_flow_archive_exists_check(clean_s3fs):
+def test_daily_cool_sessions_flow(clean_s3fs):
     """Test the `daily_cool_sessions` flow."""
     with freeze_time("2025-01-22"):
         result = daily_cool_sessions(

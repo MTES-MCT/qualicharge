@@ -8,8 +8,9 @@ from typing import List, Tuple
 
 from data7.models import Dataset
 from data7.streamers import sql2parquet
-from prefect import task
+from prefect import flow, task
 from prefect.client.schemas.objects import State
+from prefect.exceptions import FailedRun
 from prefect.logging import get_run_logger
 from prefect.states import Completed, Failed
 from pyarrow import fs
@@ -172,7 +173,7 @@ def extract_data_for_day(  # noqa: PLR0913,PLR0911
     return Completed(message=f"{bucket} archive '{file_path}' created")
 
 
-@task
+@flow
 def extract_data_for_period(  # noqa: PLR0913
     from_date: date,
     to_date: date,
@@ -183,6 +184,7 @@ def extract_data_for_period(  # noqa: PLR0913
     check_query: Template,
     if_exists: IfExistStrategy = IfExistStrategy.FAIL,
     chunk_size: int = 5000,
+    ignore_errors: bool = False,
 ) -> List[State]:
     """Extract data to daily archives for a period.
 
@@ -203,5 +205,9 @@ def extract_data_for_period(  # noqa: PLR0913
             if_exists=if_exists,
             chunk_size=chunk_size,
         )
+        if not ignore_errors and state.is_failed():
+            raise FailedRun(
+                f"Extraction failed for day: {str(day)}. Reason: {state.message}"
+            )
         tasks_state.append(state)
     return tasks_state
