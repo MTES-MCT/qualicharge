@@ -18,11 +18,11 @@ from indicators.types import Environment
 
 SESSIONS_FOR_A_DAY_QUERY_TEMPLATE = Template("""
     SELECT
-        PointDeCharge.id_pdc_itinerance,
+        _PointDeCharge.id_pdc_itinerance,
         Session.*
     FROM
         Session
-    INNER JOIN PointDeCharge ON Session.point_de_charge_id = PointDeCharge.id
+    INNER JOIN _PointDeCharge ON Session.point_de_charge_id = _PointDeCharge.id
     WHERE
         start::DATE = '$date'
     """)
