@@ -18,11 +18,11 @@ from indicators.types import Environment
 
 STATUSES_FOR_A_DAY_QUERY_TEMPLATE = Template("""
     SELECT
-        PointDeCharge.id_pdc_itinerance,
+        _PointDeCharge.id_pdc_itinerance,
         Status.*
     FROM
         Status
-    INNER JOIN PointDeCharge ON Status.point_de_charge_id = PointDeCharge.id
+    INNER JOIN _PointDeCharge ON Status.point_de_charge_id = _PointDeCharge.id
     WHERE
         horodatage::DATE = '$date'
     """)
