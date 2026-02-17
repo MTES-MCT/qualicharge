@@ -6,6 +6,7 @@ from datetime import date, datetime, timezone
 from enum import StrEnum
 from typing import Optional
 
+from annotated_types import Len
 from pydantic import (
     AfterValidator,
     BaseModel,
@@ -122,15 +123,45 @@ def not_future(value: date):
 NotFutureDate = Annotated[date, AfterValidator(not_future)]
 
 
+# Siren field
+def check_siren(siren: str) -> str:
+    """Check SIREN validity given the Luhn algorithm."""
+    error_msg = f"{siren} is not a valid SIREN number"
+    blacklist = [
+        "000000000",
+    ]
+    assert siren not in blacklist, error_msg  # noqa: S101
+    assert all(c.isdigit() for c in siren), error_msg  # noqa: S101
+    assert (  # noqa: S101
+        sum(  # 3. sum all string chars
+            map(
+                int,
+                "".join(
+                    map(  # 2. make string from all numbers
+                        str,
+                        [  # 1. multiply by 2 pair positions (1-based ranking from end)
+                            s * 2 if i % 2 else s
+                            for i, s in enumerate(map(int, reversed(siren)))
+                        ],
+                    )
+                ),
+            )
+        )
+        % 10  # 4. the sum should be a 10-modulo
+        == 0
+    ), error_msg
+    return siren
+
+
+Siren = Annotated[str, Len(min_length=9, max_length=9), AfterValidator(check_siren)]
+
+
 class Statique(ModelSchemaMixin, BaseModel):
     """IRVE static model."""
 
     nom_amenageur: Annotated[str, StringConstraints(strip_whitespace=True)]
     siren_amenageur: Annotated[
-        str,
-        StringConstraints(
-            pattern=r"^\d{9}$",
-        ),
+        Siren,
         Field(
             examples=[
                 "853300010",
