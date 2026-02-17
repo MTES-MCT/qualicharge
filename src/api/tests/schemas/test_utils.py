@@ -363,7 +363,7 @@ def test_save_statiques_with_same_amenageur(db_session):
         StatiqueFactory.batch(
             2,
             nom_amenageur="ACME Inc.",
-            siren_amenageur="123456789",
+            siren_amenageur="256300146",
             contact_amenageur="john.doe@acme.com",
         ),
         key=lambda s: s.id_pdc_itinerance,
@@ -411,7 +411,7 @@ def test_save_statiques_with_same_amenageur_twice(db_session):
         StatiqueFactory.batch(
             2,
             nom_amenageur="ACME Inc.",
-            siren_amenageur="123456789",
+            siren_amenageur="842718512",
             contact_amenageur="john.doe@acme.com",
         ),
         key=lambda s: s.id_pdc_itinerance,

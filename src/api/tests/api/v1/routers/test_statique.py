@@ -795,6 +795,25 @@ def test_create_for_superuser(client_auth):
     assert json_response["items"][0] == id_pdc_itinerance
 
 
+@pytest.mark.parametrize(
+    "siren",
+    ["abc", 12, None, "000000000", "123456789", "abcdefghi"],
+)
+def test_create_with_invalid_siren(client_auth, db_session, siren):
+    """Test the /statique/ create endpoint with an invalid SIREN."""
+    id_pdc_itinerance = "FR911E1111ER1"
+    data = json.loads(
+        StatiqueFactory.build(id_pdc_itinerance=id_pdc_itinerance).model_dump_json()
+    )
+    data.update({"siren_amenageur": siren})
+
+    # Create the Statique with an invalid SIREN
+    response = client_auth.post("/statique/", json=data)
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    json_response = response.json()
+    assert json_response["detail"][0]["loc"][1] == "siren_amenageur"
+
+
 def test_create_without_amenageur_operateur_fields(client_auth, db_session):
     """Test the /statique/ create endpoint when legacy optional fields are missing."""
     id_pdc_itinerance = "FR911E1111ER1"
