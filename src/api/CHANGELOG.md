@@ -8,6 +8,10 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Changed 
+
+- Check SIREN validity (checksum) before ingestion
+
 #### Dependencies
 
 - Upgrade `alembic` to `1.18.1`

@@ -39,7 +39,7 @@ from tiruert.run import (
         "1234567890",  # too long
     ],
 )
-def test_siren_ckeck_invalid_length(value):
+def test_siren_check_invalid_length(value):
     """Test the `Siren` type validation."""
     siren = TypeAdapter(Siren)
     with pytest.raises(ValidationError, match="1 validation error"):
@@ -55,7 +55,7 @@ def test_siren_ckeck_invalid_length(value):
         "123456789",  # invalid
     ],
 )
-def test_siren_ckeck_invalid(value):
+def test_siren_check_invalid(value):
     """Test the `Siren` type validation."""
     siren = TypeAdapter(Siren)
     with pytest.raises(ValidationError, match=f"{value} is not a valid SIREN number"):
@@ -70,7 +70,7 @@ def test_siren_ckeck_invalid(value):
         "844192443",
     ],
 )
-def test_siren_ckeck_valid(value):
+def test_siren_check_valid(value):
     """Test the `Siren` custom type."""
     siren = TypeAdapter(Siren)
     assert siren.validate_python(value) == value

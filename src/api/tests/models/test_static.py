@@ -3,10 +3,11 @@
 from datetime import datetime, timedelta, timezone
 
 import pytest
+from pydantic import TypeAdapter, ValidationError
 from pydantic_extra_types.coordinate import Coordinate
 
 from qualicharge.factories.static import StatiqueFactory
-from qualicharge.models.static import Statique
+from qualicharge.models.static import Siren, Statique
 
 
 def test_statique_model_coordonneesXY():
@@ -61,6 +62,148 @@ def test_statique_model_french_phone_numbers(phone_number):
     """Test all french phone numbers formats."""
     statique = StatiqueFactory.build(telephone_operateur=phone_number)
     assert statique.telephone_operateur == "tel:+33-1-44-27-63-50"
+
+
+@pytest.mark.parametrize(
+    "value",
+    [
+        "",  # too short
+        "1",
+        "1234567890",  # too long
+    ],
+)
+def test_siren_check_invalid_length(value):
+    """Test the `Siren` type validation."""
+    siren = TypeAdapter(Siren)
+    with pytest.raises(ValidationError, match="1 validation error"):
+        siren.validate_python(value)
+
+
+@pytest.mark.parametrize(
+    "value",
+    [
+        "abcdefghi",  # not a number
+        "1234e6789",
+        "000000000",  # blacklist
+        "123456789",  # invalid
+    ],
+)
+def test_siren_check_invalid(value):
+    """Test the `Siren` type validation."""
+    siren = TypeAdapter(Siren)
+    with pytest.raises(ValidationError, match=f"{value} is not a valid SIREN number"):
+        siren.validate_python(value)
+
+
+@pytest.mark.parametrize(
+    "value",
+    [
+        "256300146",
+        "524335262",
+        "531680445",
+        "539188169",
+        "818943938",
+        "835124280",
+        "838436145",
+        "842718512",
+        "844192443",
+        "848778429",
+        "885354860",
+        "891118473",
+        "891624884",
+        "897849923",
+        "909073363",
+        "911482628",
+        "917546251",
+        "932449226",
+        "934419615",
+        "940861826",
+        "953900123",
+        "979758828",
+        "983504002",
+        "984586875",
+        "985330364",
+    ],
+)
+def test_siren_check_valid(value):
+    """Test the `Siren` custom type."""
+    siren = TypeAdapter(Siren)
+    assert siren.validate_python(value) == value
+
+
+@pytest.mark.parametrize(
+    "siren",
+    [None, 42],
+)
+def test_statique_amenageur_siren_invalid_type(siren):
+    """Test the statique model `siren_amenageur` field (type)."""
+    with pytest.raises(
+        ValueError,
+        match=("Input should be a valid string"),
+    ):
+        StatiqueFactory.build(siren_amenageur=siren)
+
+
+@pytest.mark.parametrize(
+    "siren",
+    ["", "abcdef", "0000"],
+)
+def test_statique_amenageur_siren_invalid_str(siren):
+    """Test the statique model `siren_amenageur` field (string length)."""
+    with pytest.raises(
+        ValueError,
+        match=("String should have at least 9 characters"),
+    ):
+        StatiqueFactory.build(siren_amenageur=siren)
+
+
+@pytest.mark.parametrize(
+    "siren",
+    ["000000000", "123456789", "abcdefghi"],
+)
+def test_statique_amenageur_siren_invalid(siren):
+    """Test the statique model `siren_amenageur` field (SIREN check)."""
+    with pytest.raises(
+        ValueError,
+        match=(f"{siren} is not a valid SIREN number"),
+    ):
+        StatiqueFactory.build(siren_amenageur=siren)
+
+
+@pytest.mark.parametrize(
+    "siren",
+    [
+        "256300146",
+        "524335262",
+        "531680445",
+        "539188169",
+        "818943938",
+        "835124280",
+        "838436145",
+        "842718512",
+        "844192443",
+        "848778429",
+        "885354860",
+        "891118473",
+        "891624884",
+        "897849923",
+        "909073363",
+        "911482628",
+        "917546251",
+        "932449226",
+        "934419615",
+        "940861826",
+        "953900123",
+        "979758828",
+        "983504002",
+        "984586875",
+        "985330364",
+    ],
+)
+def test_statique_amenageur_siren_valid(siren):
+    """Test the `Siren` custom type."""
+    statique = StatiqueFactory.build(siren_amenageur=siren)
+    assert statique.siren_amenageur == siren
 
 
 def test_statique_model_json_schema():

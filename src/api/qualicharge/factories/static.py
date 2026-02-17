@@ -35,6 +35,36 @@ class StatiqueFactory(ModelFactory[Statique]):
 
     contact_amenageur = Use(FrenchDataclassFactory.__faker__.ascii_company_email)
     contact_operateur = Use(FrenchDataclassFactory.__faker__.ascii_company_email)
+    siren_amenageur = Use(
+        DataclassFactory.__random__.choice,
+        [
+            "256300146",
+            "524335262",
+            "531680445",
+            "539188169",
+            "818943938",
+            "835124280",
+            "838436145",
+            "842718512",
+            "844192443",
+            "848778429",
+            "885354860",
+            "891118473",
+            "891624884",
+            "897849923",
+            "909073363",
+            "911482628",
+            "917546251",
+            "932449226",
+            "934419615",
+            "940861826",
+            "953900123",
+            "979758828",
+            "983504002",
+            "984586875",
+            "985330364",
+        ],
+    )
     # FIXME
     #
     # Faker phone number factory randomly generates invalid data (as evaluated by the
