@@ -236,7 +236,7 @@ class Statique(ModelSchemaMixin, BaseModel):
         str, StringConstraints(min_length=2, strip_whitespace=True)
     ]
     station_deux_roues: bool
-    raccordement: Optional[RaccordementEnum] = None
+    raccordement: RaccordementEnum
     num_pdl: Optional[
         Annotated[str, StringConstraints(strip_whitespace=True, max_length=64)]
     ]

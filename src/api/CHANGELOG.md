@@ -11,6 +11,7 @@ and this project adheres to
 ### Changed 
 
 - Check SIREN validity (checksum) before ingestion
+- Require the `Statique.raccordement` field to be filled
 
 #### Dependencies
 
