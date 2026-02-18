@@ -939,7 +939,6 @@ def test_create_with_required_fields_only(client_auth, db_session):
         "paiement_cb",
         "paiement_autre",
         "tarification",
-        "raccordement",
         "date_mise_en_service",
         "observations",
         "cable_t2_attache",
