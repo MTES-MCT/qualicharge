@@ -16,6 +16,7 @@ and this project adheres to
 - Ensure the `Statique.puissance_nominale` field is in [1.3 ; 4000]
 - Improve `Statique.id_pdc_itinerance` and `Statique.id_station_itinerance` fields 
   validation regex patterns
+- Ensure the `Session.energy` field is in [0 ; 1000]
 
 #### Dependencies
 
