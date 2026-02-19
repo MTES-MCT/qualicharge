@@ -117,7 +117,7 @@ class StatiqueFactory(ModelFactory[Statique]):
             prefix = id_pdc_itinerance[:5]
         else:
             prefix = DataclassFactory.__random__.choice(prefixes)
-        return prefix + FrenchDataclassFactory.__faker__.pystr_format("E######")
+        return prefix + FrenchDataclassFactory.__faker__.pystr_format("P######")
 
     @post_generated
     @classmethod

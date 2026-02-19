@@ -220,7 +220,7 @@ def test_statique_model_json_schema():
     assert schema["properties"]["coordonneesXY"]["examples"] == ["[12.3, 41.5]"]
 
 
-def test_statique_model_afirev_previx_check():
+def test_statique_model_afirev_prefix_check():
     """Test the id_pdc/station_itinerance consistency."""
     with pytest.raises(
         ValueError,
