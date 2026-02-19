@@ -1411,7 +1411,7 @@ def test_bulk_gzipped_request(client_auth):
 
 def test_bulk_for_unknown_operational_unit(client_auth, db_session):
     """Test the /statique/bulk create endpoint for unknown operational unit."""
-    id_pdc_itinerance = "FRFOOP0001"
+    id_pdc_itinerance = "FRFOOE0001"
     data = StatiqueFactory.batch(
         size=2,
     )

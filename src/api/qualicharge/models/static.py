@@ -177,7 +177,7 @@ class Statique(ModelSchemaMixin, BaseModel):
     id_station_itinerance: Annotated[
         str,
         StringConstraints(
-            pattern="(?:(?:^|,)(^[A-Z]{2}[A-Z0-9]{4,33}$|Non concerné))+$",
+            pattern="(^FR[A-Z0-9]{3}P[A-Z0-9]{1,29}$|Non concerné)",
             strip_whitespace=True,
         ),
     ]
@@ -198,11 +198,11 @@ class Statique(ModelSchemaMixin, BaseModel):
     id_pdc_itinerance: Annotated[
         str,
         StringConstraints(
-            pattern="(?:(?:^|,)(^[A-Z]{2}[A-Z0-9]{4,33}$|Non concerné))+$",
+            pattern="(^FR[A-Z0-9]{3}E[A-Z0-9]{1,29}$|Non concerné)",
             strip_whitespace=True,
         ),
         Field(
-            examples=["FR0NXEVSEXB9YG", "FRFASE3300405", "FR073012308585"],
+            examples=["FR0NXEVSEXB9YG", "FRFASE3300405", "FR073E012308585"],
         ),
     ]
     id_pdc_local: Optional[Annotated[str, StringConstraints(strip_whitespace=True)]] = (
