@@ -13,6 +13,7 @@ and this project adheres to
 - Check SIREN validity (checksum) before ingestion
 - Require the `Statique.raccordement` field to be filled
 - Require the `Statique.num_pdl` field to be filled for direct connections
+- Ensure the `Statique.puissance_nominale` field is in [1.3 ; 4000]
 
 #### Dependencies
 

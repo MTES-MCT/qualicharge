@@ -269,6 +269,23 @@ def test_statique_model_num_pdl():
         )
 
 
+def test_statique_model_puissance_nominale():
+    """Test statique model puissance_nominale values."""
+    statique = StatiqueFactory.build(puissance_nominale=200.0)
+    with pytest.raises(
+        ValueError, match="Input should be greater than or equal to 1.3"
+    ):
+        Statique(
+            puissance_nominale=1.0,
+            **json.loads(statique.model_dump_json(exclude={"puissance_nominale"})),
+        )
+    with pytest.raises(ValueError, match="Input should be less than or equal to 4000"):
+        Statique(
+            puissance_nominale=4001.0,
+            **json.loads(statique.model_dump_json(exclude={"puissance_nominale"})),
+        )
+
+
 def test_statique_model_date_maj():
     """Test statique model accepts only a `date_maj` not in the future."""
     today = datetime.now(timezone.utc).date()

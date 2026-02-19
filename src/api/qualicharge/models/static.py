@@ -6,7 +6,7 @@ from datetime import date, datetime, timezone
 from enum import StrEnum
 from typing import Optional
 
-from annotated_types import Len
+from annotated_types import Ge, Le, Len
 from pydantic import (
     AfterValidator,
     BaseModel,
@@ -14,7 +14,6 @@ from pydantic import (
     EmailStr,
     Field,
     PlainSerializer,
-    PositiveFloat,
     PositiveInt,
     StringConstraints,
     WithJsonSchema,
@@ -209,7 +208,7 @@ class Statique(ModelSchemaMixin, BaseModel):
     id_pdc_local: Optional[Annotated[str, StringConstraints(strip_whitespace=True)]] = (
         None
     )
-    puissance_nominale: PositiveFloat
+    puissance_nominale: Annotated[float, Ge(1.3), Le(4000.0)]
     prise_type_ef: bool
     prise_type_2: bool
     prise_type_combo_ccs: bool
