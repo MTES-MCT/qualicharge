@@ -111,6 +111,8 @@ class SessionBase(SQLModel):
         """Check start/end dates consistency."""
         if self.start > self.end:
             raise ValueError("A session cannot start after it has ended.")
+        if (self.end - self.start) > timedelta(weeks=1.0):
+            raise ValueError("A session cannot last more than a week.")
         return self
 
 
