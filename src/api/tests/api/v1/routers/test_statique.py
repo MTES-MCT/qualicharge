@@ -20,6 +20,7 @@ from qualicharge.auth.schemas import GroupOperationalUnit, ScopesEnum, User, Use
 from qualicharge.conf import settings
 from qualicharge.factories.dynamic import LatestStatusFactory
 from qualicharge.factories.static import StatiqueFactory
+from qualicharge.models.static import RaccordementEnum
 from qualicharge.schemas.core import (
     STATIQUE_MV_TABLE_NAME,
     LatestStatus,
@@ -921,6 +922,45 @@ def test_create_for_unknown_operational_unit(client_auth, db_session):
     assert n_pdc == 0
 
 
+def test_create_with_missing_pdl_for_direct_connection(client_auth, db_session):
+    """Test the /statique/ create endpoint.
+
+    Conditions:
+      - num_pdl: empty
+      - raccordement: Direct
+    """
+    n_pdc = db_session.exec(select(func.count(PointDeCharge.id))).one()
+    assert n_pdc == 0
+
+    data = StatiqueFactory.build(
+        raccordement=RaccordementEnum.DIRECT,
+    )
+    payload = json.loads(data.model_dump_json())
+    payload.update({"num_pdl": ""})
+
+    # Empty string
+    response = client_auth.post("/statique/", json=payload)
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    json_response = response.json()
+    assert (
+        json_response["detail"][0]["msg"]
+        == "Value error, A PDL number is required for direct connections."
+    )
+
+    # Null value
+    payload.update({"num_pdl": None})
+    response = client_auth.post("/statique/", json=payload)
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    json_response = response.json()
+    assert (
+        json_response["detail"][0]["msg"]
+        == "Value error, A PDL number is required for direct connections."
+    )
+
+    n_pdc = db_session.exec(select(func.count(PointDeCharge.id))).one()
+    assert n_pdc == 0
+
+
 def test_create_with_required_fields_only(client_auth, db_session):
     """Test the /statique/ create endpoint."""
     GroupFactory.__session__ = db_session
@@ -1018,6 +1058,32 @@ def test_update_for_superuser(client_auth, db_session):
     assert response.status_code == status.HTTP_200_OK
     json_response = response.json()
     assert json_response == json.loads(new_statique.model_dump_json())
+
+
+def test_update_with_missing_pdl_for_direct_connection(client_auth, db_session):
+    """Test the /statique/{id_pdc_itinerance} update endpoint.
+
+    Conditions:
+      - num_pdl: empty
+      - raccordement: Direct
+    """
+    id_pdc_itinerance = "FR911E1111ER1"
+    db_statique = save_statique(
+        db_session,
+        StatiqueFactory.build(
+            id_pdc_itinerance=id_pdc_itinerance, raccordement=RaccordementEnum.INDIRECT
+        ),
+    )
+    payload = json.loads(db_statique.model_dump_json())
+    payload.update({"raccordement": RaccordementEnum.DIRECT, "num_pdl": ""})
+
+    response = client_auth.put(f"/statique/{id_pdc_itinerance}", json=payload)
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    json_response = response.json()
+    assert (
+        json_response["detail"][0]["msg"]
+        == "Value error, A PDL number is required for direct connections."
+    )
 
 
 def test_update_for_inactive_pdc(client_auth, db_session):
@@ -1249,6 +1315,29 @@ def test_bulk_without_amenageur_operateur_fields(client_auth):
         assert {
             err["loc"][2] for err in json_response["detail"] if err["loc"][1] == idx
         } == exclude
+
+
+def test_bulk_with_missing_pdl_for_direct_connection(client_auth):
+    """Test the /statique/bulk create endpoint.
+
+    Conditions:
+      - num_pdl: empty
+      - raccordement: Direct
+    """
+    size = 4
+    data = StatiqueFactory.batch(size=size, raccordement=RaccordementEnum.DIRECT)
+    payload = [json.loads(d.model_dump_json()) for d in data]
+    invalid_index = 2
+    payload[invalid_index].update({"num_pdl": ""})
+
+    response = client_auth.post("/statique/bulk", json=payload)
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    json_response = response.json()
+    assert json_response["detail"][0]["loc"] == ["body", invalid_index]
+    assert (
+        json_response["detail"][0]["msg"]
+        == "Value error, A PDL number is required for direct connections."
+    )
 
 
 @pytest.mark.parametrize(

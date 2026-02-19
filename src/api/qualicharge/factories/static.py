@@ -10,7 +10,7 @@ from polyfactory.factories.pydantic_factory import ModelFactory
 from pydantic_extra_types.coordinate import Coordinate
 
 from ..fixtures.operational_units import prefixes
-from ..models.static import Statique
+from ..models.static import RaccordementEnum, Statique
 from ..schemas.core import (
     Amenageur,
     Enseigne,
@@ -118,6 +118,14 @@ class StatiqueFactory(ModelFactory[Statique]):
         else:
             prefix = DataclassFactory.__random__.choice(prefixes)
         return prefix + FrenchDataclassFactory.__faker__.pystr_format("E######")
+
+    @post_generated
+    @classmethod
+    def num_pdl(cls, raccordement: RaccordementEnum):
+        """Ensure num_pdl is filled in direct raccordement case."""
+        if raccordement == RaccordementEnum.DIRECT:
+            return DataclassFactory.__faker__.pystr(min_chars=10, max_chars=64)
+        return None
 
 
 class AmenageurFactory(AuditableSQLModelFactory[Amenageur]):

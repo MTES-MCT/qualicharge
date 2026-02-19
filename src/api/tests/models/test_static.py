@@ -1,5 +1,6 @@
 """QualiCharge static models tests."""
 
+import json
 from datetime import datetime, timedelta, timezone
 
 import pytest
@@ -7,7 +8,7 @@ from pydantic import TypeAdapter, ValidationError
 from pydantic_extra_types.coordinate import Coordinate
 
 from qualicharge.factories.static import StatiqueFactory
-from qualicharge.models.static import Siren, Statique
+from qualicharge.models.static import RaccordementEnum, Siren, Statique
 
 
 def test_statique_model_coordonneesXY():
@@ -251,6 +252,21 @@ def test_statique_model_num_pdl():
 
     with pytest.raises(ValueError, match="String should have at most 64 characters"):
         StatiqueFactory.build(num_pdl="a" * 65)
+
+    # num_pdl is required for direct connections
+    statique = StatiqueFactory.build(raccordement=RaccordementEnum.DIRECT)
+    with pytest.raises(
+        ValueError, match="A PDL number is required for direct connections."
+    ):
+        Statique(
+            num_pdl=None, **json.loads(statique.model_dump_json(exclude={"num_pdl"}))
+        )
+    with pytest.raises(
+        ValueError, match="A PDL number is required for direct connections."
+    ):
+        Statique(
+            num_pdl="", **json.loads(statique.model_dump_json(exclude={"num_pdl"}))
+        )
 
 
 def test_statique_model_date_maj():
