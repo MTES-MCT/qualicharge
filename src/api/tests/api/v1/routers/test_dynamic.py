@@ -2308,7 +2308,7 @@ def test_create_session_bulk_gzipped_request(db_session, client_auth):
 
 
 def test_create_session_bulk_with_outbound_sizes(db_session, client_auth):
-    """Test the /session/bulk create endpoint with a single or too many statuses."""
+    """Test the /session/bulk create endpoint with a single or too many sessions."""
     session = SessionCreateFactory.build()
 
     # Create point of charge
@@ -2323,7 +2323,7 @@ def test_create_session_bulk_with_outbound_sizes(db_session, client_auth):
     )
     assert response.status_code == status.HTTP_201_CREATED
 
-    # We expect at most settings.API_STATUS_BULK_CREATE_MAX_SIZE statuses for this
+    # We expect at most settings.API_SESSION_BULK_CREATE_MAX_SIZE sessions for this
     # endpoint
     response = client_auth.post(
         "/dynamique/session/bulk",
