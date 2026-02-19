@@ -12,6 +12,7 @@ from qualicharge.auth.schemas import ScopesEnum
 from qualicharge.factories.static import (
     StatiqueFactory,
 )
+from qualicharge.models.static import RaccordementEnum
 from qualicharge.schemas.core import (
     PointDeCharge,
     Station,
@@ -106,8 +107,16 @@ def test_stations_by_siren_with_no_pdl_declared(db_session, client_auth):
                 siren_amenageur="842718512",
                 num_pdl=StatiqueFactory.__faker__.pystr_format("##############"),
             ),
-            StatiqueFactory.build(siren_amenageur="842718512", num_pdl=None),
-            StatiqueFactory.build(siren_amenageur="842718512", num_pdl=""),
+            StatiqueFactory.build(
+                siren_amenageur="842718512",
+                raccordement=RaccordementEnum.INDIRECT,
+                num_pdl=None,
+            ),
+            StatiqueFactory.build(
+                siren_amenageur="842718512",
+                raccordement=RaccordementEnum.INDIRECT,
+                num_pdl="",
+            ),
         ],
     )
     db_stations = db_session.exec(select(Station)).all()
