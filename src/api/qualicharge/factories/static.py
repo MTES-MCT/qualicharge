@@ -88,8 +88,8 @@ class StatiqueFactory(ModelFactory[Statique]):
     puissance_nominale = Use(
         DataclassFactory.__faker__.pyfloat,
         right_digits=2,
-        min_value=2.0,
-        max_value=100.0,
+        min_value=1.3,
+        max_value=4000.0,
     )
     date_maj = Use(DataclassFactory.__faker__.past_date)
     date_mise_en_service = Use(DataclassFactory.__faker__.past_date)
