@@ -259,6 +259,13 @@ class Statique(ModelSchemaMixin, BaseModel):
             )
         return self
 
+    @model_validator(mode="after")
+    def ensure_raccordement_direct_num_pdl(self) -> Self:
+        """Ensure the `num_pdl` field is filled for direct connections."""
+        if self.raccordement == RaccordementEnum.DIRECT and not self.num_pdl:
+            raise ValueError("A PDL number is required for direct connections.")
+        return self
+
     model_config = {
         "json_schema_extra": {
             "examples": [
