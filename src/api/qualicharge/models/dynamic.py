@@ -5,7 +5,8 @@ from enum import StrEnum
 from typing import Annotated, Optional
 from zoneinfo import ZoneInfo
 
-from pydantic import AfterValidator, PositiveFloat, model_validator
+from annotated_types import Ge, Le
+from pydantic import AfterValidator, model_validator
 from pydantic.types import AwareDatetime, PastDatetime
 from sqlmodel import Field, SQLModel
 from typing_extensions import Self
@@ -103,13 +104,15 @@ class SessionBase(SQLModel):
 
     start: PastDatetime
     end: PastDatetime
-    energy: PositiveFloat
+    energy: Annotated[float, Ge(0.0), Le(1000.0)]
 
     @model_validator(mode="after")
     def check_session_dates(self) -> Self:
         """Check start/end dates consistency."""
         if self.start > self.end:
             raise ValueError("A session cannot start after it has ended.")
+        if (self.end - self.start) > timedelta(weeks=1.0):
+            raise ValueError("A session cannot last more than a week.")
         return self
 
 

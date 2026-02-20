@@ -30,6 +30,18 @@ def test_session_create_model_start_end_consistency():
         )
 
 
+def test_session_create_model_duration():
+    """Test the dynamic SessionCreate model: duration should not last more than 1w."""
+    now = datetime.now(tz=timezone.utc)
+    with pytest.raises(ValueError, match="A session cannot last more than a week."):
+        SessionCreate(
+            id_pdc_itinerance="FRFASE3300405",
+            start=now - timedelta(days=14),
+            end=now - timedelta(days=7, seconds=-1),
+            energy=12.0,
+        )
+
+
 def test_session_create_model_start_max_age():
     """Test the dynamic SessionCreate model: start max age."""
     now = datetime.now(tz=timezone.utc)

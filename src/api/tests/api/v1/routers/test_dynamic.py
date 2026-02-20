@@ -1764,6 +1764,31 @@ def test_create_session_for_superuser(db_session, client_auth):
     assert response.json() == {"id": str(db_qc_session.id)}
 
 
+def test_create_session_invalid_energy(db_session, client_auth):
+    """Test the /session/ create endpoint with invalid energies."""
+    id_pdc_itinerance = "FR911E1111ER1"
+    qc_session = SessionCreateFactory.build(id_pdc_itinerance=id_pdc_itinerance)
+    payload = json.loads(qc_session.model_dump_json())
+
+    # Create a new session with invalid energy (too high)
+    payload.update({"energy": 1001.0})
+    response = client_auth.post("/dynamique/session/", json=payload)
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert (
+        "Input should be less than or equal to 1000"
+        == response.json()["detail"][0]["msg"]
+    )
+
+    # Create a new session with invalid energy (too high)
+    payload.update({"energy": -0.5})
+    response = client_auth.post("/dynamique/session/", json=payload)
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert (
+        "Input should be greater than or equal to 0"
+        == response.json()["detail"][0]["msg"]
+    )
+
+
 def test_create_session_too_old(db_session, client_auth):
     """Test the /session/ create endpoint (for a session older than allowed)."""
     id_pdc_itinerance = "FR911E1111ER1"
@@ -2283,7 +2308,7 @@ def test_create_session_bulk_gzipped_request(db_session, client_auth):
 
 
 def test_create_session_bulk_with_outbound_sizes(db_session, client_auth):
-    """Test the /session/bulk create endpoint with a single or too many statuses."""
+    """Test the /session/bulk create endpoint with a single or too many sessions."""
     session = SessionCreateFactory.build()
 
     # Create point of charge
@@ -2298,7 +2323,7 @@ def test_create_session_bulk_with_outbound_sizes(db_session, client_auth):
     )
     assert response.status_code == status.HTTP_201_CREATED
 
-    # We expect at most settings.API_STATUS_BULK_CREATE_MAX_SIZE statuses for this
+    # We expect at most settings.API_SESSION_BULK_CREATE_MAX_SIZE sessions for this
     # endpoint
     response = client_auth.post(
         "/dynamique/session/bulk",

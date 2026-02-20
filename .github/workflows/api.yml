@@ -7,7 +7,6 @@ on:
   push:
     branches: ["main"]
   pull_request:
-    branches: ["main"]
     paths:
       - "src/api/**"
 
@@ -130,6 +129,7 @@ jobs:
       QUALICHARGE_STATIQUE_DATA_PATH: /home/runner/work/qualicharge/qualicharge/data/irve-statique.json.gz
       QUALICHARGE_API_ADMIN_USER: admin
       QUALICHARGE_API_ADMIN_PASSWORD: admin
+      QUALICHARGE_API_DATABASE_URL_NO_DRIVER: "postgresql://qualicharge:pass@localhost:5432/qualicharge-api"
       # This is a fake setting required to run the app
       QUALICHARGE_OIDC_PROVIDER_BASE_URL: http://localhost:8000/fake
       QUALICHARGE_OAUTH2_TOKEN_ENCODING_KEY: thisissupersecret
@@ -141,9 +141,9 @@ jobs:
           ref: ${{ github.head_ref }}
           persist-credentials: false
       - name: Create postgis extension
-        run: psql "postgresql://qualicharge:pass@localhost:5432/qualicharge-api" -c "create extension postgis;"
+        run: psql "${QUALICHARGE_API_DATABASE_URL_NO_DRIVER}" -c "create extension postgis;"
       - name: Create btree_gist extension
-        run: psql "postgresql://qualicharge:pass@localhost:5432/qualicharge-api" -c "create extension btree_gist;"
+        run: psql "${QUALICHARGE_API_DATABASE_URL_NO_DRIVER}" -c "create extension btree_gist;"
       - name: Install uv
         uses: astral-sh/setup-uv@eac588ad8def6316056a12d4907a9d4d84ff7a3b # v7.3.0
         with:
@@ -153,31 +153,11 @@ jobs:
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version-file: "./src/api/.python-version"
-      - name: Run database migrations
-        run: uv run alembic -c qualicharge/alembic.ini upgrade head
-      - name: Create API superuser
+      - name: Restore database dump
         run: |
-          uv run qcm users create \
-            admin \
-            --email admin@example.com \
-            --password admin \
-            --is-active \
-            --is-superuser \
-            --is-staff \
-            --force
-      - name: Seed API database
-        run: |
-          uv pip install qualicharge-client
-          uv run honcho start -f Procfile.dev &
-          sleep 10
-          zcat ../../data/irve-statique.json.gz | \
-            head -n 500 | \
-            uv run qcc static bulk --chunk-size 100
-          uv run qcm statics refresh
-        env:
-          QCC_API_LOGIN_USERNAME: admin
-          QCC_API_LOGIN_PASSWORD: admin
-          QCC_API_ROOT_URL: "http://localhost:8000/api/v1"
+          pg_restore -s -F c -d "${QUALICHARGE_API_DATABASE_URL_NO_DRIVER}" ../../data/qualicharge-api-schema.sql
+          pg_restore -a -F c -d "${QUALICHARGE_API_DATABASE_URL_NO_DRIVER}" ../../data/qualicharge-api-data.sql
+          psql "postgresql://qualicharge:pass@localhost:5432/qualicharge-api" -c "REFRESH MATERIALIZED VIEW Statique;"
       # API server is still running here
       - name: Run locust
         run: |

@@ -12,6 +12,7 @@ from qualicharge.auth.schemas import ScopesEnum
 from qualicharge.factories.static import (
     StatiqueFactory,
 )
+from qualicharge.models.static import RaccordementEnum
 from qualicharge.schemas.core import (
     PointDeCharge,
     Station,
@@ -48,12 +49,12 @@ def test_stations_by_siren_with_missing_scopes(client_auth):
 def test_stations_by_siren_for_user(db_session, client_auth):
     """Test the /manage/station/siren/ get endpoint (superuser case)."""
     # Station not found
-    response = client_auth.get("/manage/station/siren/123456789")
+    response = client_auth.get("/manage/station/siren/732829320")
     assert response.status_code == status.HTTP_404_NOT_FOUND
     assert response.json() == {"detail": "No station corresponds to your request"}
 
     # Create statique entries using two amenageurs and related stations
-    batches = ((3, "123456789"), (2, "012345678"))
+    batches = ((3, "732829320"), (2, "842718512"))
     for batch in batches:
         save_statiques(
             db_session,
@@ -94,7 +95,7 @@ def test_stations_by_siren_with_no_pdl_declared(db_session, client_auth):
         db_session,
         StatiqueFactory.batch(
             3,
-            siren_amenageur="123456789",
+            siren_amenageur="732829320",
             num_pdl=StatiqueFactory.__faker__.pystr_format("##############"),
         ),
     )
@@ -103,11 +104,19 @@ def test_stations_by_siren_with_no_pdl_declared(db_session, client_auth):
         db_session,
         [
             StatiqueFactory.build(
-                siren_amenageur="012345678",
+                siren_amenageur="842718512",
                 num_pdl=StatiqueFactory.__faker__.pystr_format("##############"),
             ),
-            StatiqueFactory.build(siren_amenageur="012345678", num_pdl=None),
-            StatiqueFactory.build(siren_amenageur="012345678", num_pdl=""),
+            StatiqueFactory.build(
+                siren_amenageur="842718512",
+                raccordement=RaccordementEnum.INDIRECT,
+                num_pdl=None,
+            ),
+            StatiqueFactory.build(
+                siren_amenageur="842718512",
+                raccordement=RaccordementEnum.INDIRECT,
+                num_pdl="",
+            ),
         ],
     )
     db_stations = db_session.exec(select(Station)).all()
@@ -116,7 +125,7 @@ def test_stations_by_siren_with_no_pdl_declared(db_session, client_auth):
 
     db_stations = db_session.exec(
         select(Station).where(
-            cast(SAColumn, Station.amenageur).has(siren_amenageur="012345678")
+            cast(SAColumn, Station.amenageur).has(siren_amenageur="842718512")
         )
     ).all()
     expected = 3
@@ -124,14 +133,14 @@ def test_stations_by_siren_with_no_pdl_declared(db_session, client_auth):
 
     db_station = db_session.exec(
         select(Station).where(
-            (cast(SAColumn, Station.amenageur).has(siren_amenageur="012345678"))
+            (cast(SAColumn, Station.amenageur).has(siren_amenageur="842718512"))
             & (Station.num_pdl != None)  # noqa: E711
             & (Station.num_pdl != "")
         )
     ).one()
 
     # API should only return stations without missing num_pdl
-    response = client_auth.get("/manage/station/siren/012345678")
+    response = client_auth.get("/manage/station/siren/842718512")
     assert response.status_code == status.HTTP_200_OK
     stations = [DashboardStation(**s) for s in response.json()]
     assert len(stations) == 1

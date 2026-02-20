@@ -10,7 +10,7 @@ from polyfactory.factories.pydantic_factory import ModelFactory
 from pydantic_extra_types.coordinate import Coordinate
 
 from ..fixtures.operational_units import prefixes
-from ..models.static import Statique
+from ..models.static import RaccordementEnum, Statique
 from ..schemas.core import (
     Amenageur,
     Enseigne,
@@ -35,6 +35,36 @@ class StatiqueFactory(ModelFactory[Statique]):
 
     contact_amenageur = Use(FrenchDataclassFactory.__faker__.ascii_company_email)
     contact_operateur = Use(FrenchDataclassFactory.__faker__.ascii_company_email)
+    siren_amenageur = Use(
+        DataclassFactory.__random__.choice,
+        [
+            "256300146",
+            "524335262",
+            "531680445",
+            "539188169",
+            "818943938",
+            "835124280",
+            "838436145",
+            "842718512",
+            "844192443",
+            "848778429",
+            "885354860",
+            "891118473",
+            "891624884",
+            "897849923",
+            "909073363",
+            "911482628",
+            "917546251",
+            "932449226",
+            "934419615",
+            "940861826",
+            "953900123",
+            "979758828",
+            "983504002",
+            "984586875",
+            "985330364",
+        ],
+    )
     # FIXME
     #
     # Faker phone number factory randomly generates invalid data (as evaluated by the
@@ -58,8 +88,8 @@ class StatiqueFactory(ModelFactory[Statique]):
     puissance_nominale = Use(
         DataclassFactory.__faker__.pyfloat,
         right_digits=2,
-        min_value=2.0,
-        max_value=100.0,
+        min_value=1.3,
+        max_value=4000.0,
     )
     date_maj = Use(DataclassFactory.__faker__.past_date)
     date_mise_en_service = Use(DataclassFactory.__faker__.past_date)
@@ -87,7 +117,15 @@ class StatiqueFactory(ModelFactory[Statique]):
             prefix = id_pdc_itinerance[:5]
         else:
             prefix = DataclassFactory.__random__.choice(prefixes)
-        return prefix + FrenchDataclassFactory.__faker__.pystr_format("E######")
+        return prefix + FrenchDataclassFactory.__faker__.pystr_format("P######")
+
+    @post_generated
+    @classmethod
+    def num_pdl(cls, raccordement: RaccordementEnum):
+        """Ensure num_pdl is filled in direct raccordement case."""
+        if raccordement == RaccordementEnum.DIRECT:
+            return DataclassFactory.__faker__.pystr(min_chars=10, max_chars=64)
+        return None
 
 
 class AmenageurFactory(AuditableSQLModelFactory[Amenageur]):

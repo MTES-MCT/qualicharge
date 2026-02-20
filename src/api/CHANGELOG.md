@@ -8,6 +8,17 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Changed 
+
+- Check SIREN validity (checksum) before ingestion
+- Require the `Statique.raccordement` field to be filled
+- Require the `Statique.num_pdl` field to be filled for direct connections
+- Ensure the `Statique.puissance_nominale` field is in [1.3 ; 4000]
+- Improve `Statique.id_pdc_itinerance` and `Statique.id_station_itinerance` 
+  fields validation regex patterns
+- Ensure the `Session.energy` field is in [0 ; 1000]
+- Ensure session do not last more than a week
+
 #### Dependencies
 
 - Upgrade `alembic` to `1.18.1`

@@ -6,6 +6,7 @@ from datetime import date, datetime, timezone
 from enum import StrEnum
 from typing import Optional
 
+from annotated_types import Ge, Le, Len
 from pydantic import (
     AfterValidator,
     BaseModel,
@@ -13,7 +14,6 @@ from pydantic import (
     EmailStr,
     Field,
     PlainSerializer,
-    PositiveFloat,
     PositiveInt,
     StringConstraints,
     WithJsonSchema,
@@ -122,15 +122,45 @@ def not_future(value: date):
 NotFutureDate = Annotated[date, AfterValidator(not_future)]
 
 
+# Siren field
+def check_siren(siren: str) -> str:
+    """Check SIREN validity given the Luhn algorithm."""
+    error_msg = f"{siren} is not a valid SIREN number"
+    blacklist = [
+        "000000000",
+    ]
+    assert siren not in blacklist, error_msg  # noqa: S101
+    assert all(c.isdigit() for c in siren), error_msg  # noqa: S101
+    assert (  # noqa: S101
+        sum(  # 3. sum all string chars
+            map(
+                int,
+                "".join(
+                    map(  # 2. make string from all numbers
+                        str,
+                        [  # 1. multiply by 2 pair positions (1-based ranking from end)
+                            s * 2 if i % 2 else s
+                            for i, s in enumerate(map(int, reversed(siren)))
+                        ],
+                    )
+                ),
+            )
+        )
+        % 10  # 4. the sum should be a 10-modulo
+        == 0
+    ), error_msg
+    return siren
+
+
+Siren = Annotated[str, Len(min_length=9, max_length=9), AfterValidator(check_siren)]
+
+
 class Statique(ModelSchemaMixin, BaseModel):
     """IRVE static model."""
 
     nom_amenageur: Annotated[str, StringConstraints(strip_whitespace=True)]
     siren_amenageur: Annotated[
-        str,
-        StringConstraints(
-            pattern=r"^\d{9}$",
-        ),
+        Siren,
         Field(
             examples=[
                 "853300010",
@@ -147,7 +177,7 @@ class Statique(ModelSchemaMixin, BaseModel):
     id_station_itinerance: Annotated[
         str,
         StringConstraints(
-            pattern="(?:(?:^|,)(^[A-Z]{2}[A-Z0-9]{4,33}$|Non concerné))+$",
+            pattern="(^FR[A-Z0-9]{3}P[A-Z0-9]{1,29}$|Non concerné)",
             strip_whitespace=True,
         ),
     ]
@@ -168,17 +198,17 @@ class Statique(ModelSchemaMixin, BaseModel):
     id_pdc_itinerance: Annotated[
         str,
         StringConstraints(
-            pattern="(?:(?:^|,)(^[A-Z]{2}[A-Z0-9]{4,33}$|Non concerné))+$",
+            pattern="(^FR[A-Z0-9]{3}E[A-Z0-9]{1,29}$|Non concerné)",
             strip_whitespace=True,
         ),
         Field(
-            examples=["FR0NXEVSEXB9YG", "FRFASE3300405", "FR073012308585"],
+            examples=["FR0NXEVSEXB9YG", "FRFASE3300405", "FR073E012308585"],
         ),
     ]
     id_pdc_local: Optional[Annotated[str, StringConstraints(strip_whitespace=True)]] = (
         None
     )
-    puissance_nominale: PositiveFloat
+    puissance_nominale: Annotated[float, Ge(1.3), Le(4000.0)]
     prise_type_ef: bool
     prise_type_2: bool
     prise_type_combo_ccs: bool
@@ -205,7 +235,7 @@ class Statique(ModelSchemaMixin, BaseModel):
         str, StringConstraints(min_length=2, strip_whitespace=True)
     ]
     station_deux_roues: bool
-    raccordement: Optional[RaccordementEnum] = None
+    raccordement: RaccordementEnum
     num_pdl: Optional[
         Annotated[str, StringConstraints(strip_whitespace=True, max_length=64)]
     ]
@@ -226,6 +256,13 @@ class Statique(ModelSchemaMixin, BaseModel):
                     "id_pdc_itinerance do not match"
                 )
             )
+        return self
+
+    @model_validator(mode="after")
+    def ensure_raccordement_direct_num_pdl(self) -> Self:
+        """Ensure the `num_pdl` field is filled for direct connections."""
+        if self.raccordement == RaccordementEnum.DIRECT and not self.num_pdl:
+            raise ValueError("A PDL number is required for direct connections.")
         return self
 
     model_config = {
