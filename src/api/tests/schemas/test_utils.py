@@ -131,7 +131,7 @@ def test_get_or_create_with_multiple_existing_entries(db_session):
 
 def test_get_or_create_for_localisation_coordinates(db_session):
     """Test the get_or_create utility using coordinates."""
-    coordonneesXY = Coordinate(-1.0, 1.0)
+    coordonneesXY = Coordinate(45.752979394655775, 3.043503589235943)
     localisation = LocalisationFactory.build(coordonneesXY=coordonneesXY)
 
     # Create the localisation
@@ -238,7 +238,7 @@ def test_update_statique(db_session):
         nom_amenageur="ACME Inc.",
         nom_operateur="ACME Inc.",
         nom_enseigne="ACME Inc.",
-        coordonneesXY=Coordinate(-1.0, 1.0),
+        coordonneesXY=Coordinate(45.752979394655775, 3.043503589235943),
         station_deux_roues=False,
         cable_t2_attache=False,
     )
@@ -257,7 +257,7 @@ def test_update_statique(db_session):
     statique.nom_amenageur = "Magma Corp."
     statique.nom_operateur = "Magma Corp."
     statique.nom_enseigne = "Magma Corp."
-    statique.coordonneesXY = Coordinate(1.0, 2.0)
+    statique.coordonneesXY = Coordinate(42.693466, 9.431763)
     statique.station_deux_roues = True
     statique.cable_t2_attache = True
 
@@ -266,7 +266,7 @@ def test_update_statique(db_session):
     assert db_statique.nom_amenageur == "Magma Corp."
     assert db_statique.nom_operateur == "Magma Corp."
     assert db_statique.nom_enseigne == "Magma Corp."
-    assert db_statique.coordonneesXY == Coordinate(1.0, 2.0)
+    assert db_statique.coordonneesXY == Coordinate(42.693466, 9.431763)
     assert db_statique.station_deux_roues
     assert db_statique.cable_t2_attache
 
@@ -292,8 +292,8 @@ def test_update_statique_localisation_unique_contraints(db_session):
     address = "42 Avenue du Dr Jones 75000 PARIS"
     id_pdc_itinerance_1 = "FR911E1111ER1"
     id_pdc_itinerance_2 = "FR911E1111ER2"
-    coordinates_1 = Coordinate(-1.0, 1.0)
-    coordinates_2 = Coordinate(1.0, 2.0)
+    coordinates_1 = Coordinate(45.752979, 3.043503)
+    coordinates_2 = Coordinate(42.693466, 9.431763)
 
     # Create a first statique
     statique_1 = StatiqueFactory.build(
@@ -317,11 +317,11 @@ def test_update_statique_localisation_unique_contraints(db_session):
     assert db_session.exec(select(func.count(Localisation.id))).one() == expected
 
     # Update statique fields
-    statique_1.coordonneesXY = Coordinate(1.0, 2.1)
+    statique_1.coordonneesXY = Coordinate(-20.881909, 55.409546)
     assert statique_1.adresse_station == "42 Avenue du Dr Jones 75000 PARIS"
 
     db_statique = update_statique(db_session, id_pdc_itinerance_1, statique_1)
-    assert db_statique.coordonneesXY == Coordinate(1.0, 2.1)
+    assert db_statique.coordonneesXY == Coordinate(-20.881909, 55.409546)
     assert db_statique.adresse_station == "42 Avenue du Dr Jones 75000 PARIS"
 
     # We expect to have created a new localisation as coordinates changed

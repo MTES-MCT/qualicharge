@@ -13,8 +13,8 @@ from qualicharge.models.static import RaccordementEnum, Siren, Statique
 
 def test_statique_model_coordonneesXY():
     """Test the Statique model coordonneesXY field."""
-    longitude = -12.3
-    latitude = 16.2
+    longitude = 3.043503589235943
+    latitude = 45.752979394655775
 
     # Expected raw input
     record = StatiqueFactory.build(
@@ -41,6 +41,58 @@ def test_statique_model_coordonneesXY():
     record = StatiqueFactory.build(
         coordonneesXY=f"POINT({longitude} {latitude})",
     )
+    assert record.coordonneesXY.longitude == longitude
+    assert record.coordonneesXY.latitude == latitude
+
+
+@pytest.mark.parametrize(
+    "location",
+    (
+        # Livourne
+        "[10.316162,43.547481]",
+        # Paramaribo
+        "[-55.200806,5.798897]",
+        # Port Louis
+        "[57.485962,-20.164255]",
+        # Moroni
+        "[43.257980,-11.710065]",
+    ),
+)
+def test_statique_model_coordonneesXY_location_invalid(location):
+    """Test the Statique model coordonneesXY field location (not in France)."""
+    with pytest.raises(
+        ValueError, match="Input coordinates are not within the french territory."
+    ):
+        StatiqueFactory.build(
+            coordonneesXY=location,
+        )
+
+
+@pytest.mark.parametrize(
+    "location",
+    (
+        # Bastia
+        "[9.431763,42.693466]",
+        # Marseille
+        "[5.366821,43.292129]",
+        # Kourou
+        "[-52.706909,5.153666]",
+        # Saint-Denis
+        "[55.409546,-20.881909]",
+        # Point a Pitre
+        "[-61.545410,16.235772]",
+        # Fort de France
+        "[-61.060638,14.606508]",
+        # Mamoudzou
+        "[45.227451,-12.781084]",
+    ),
+)
+def test_statique_model_coordonneesXY_location(location):
+    """Test the Statique model coordonneesXY field location (should be in France)."""
+    record = StatiqueFactory.build(
+        coordonneesXY=location,
+    )
+    longitude, latitude = json.loads(location)
     assert record.coordonneesXY.longitude == longitude
     assert record.coordonneesXY.latitude == latitude
 
