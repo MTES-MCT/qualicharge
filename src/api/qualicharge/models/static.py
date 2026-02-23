@@ -4,8 +4,9 @@ import json
 import re
 from datetime import date, datetime, timezone
 from enum import StrEnum
-from typing import Optional
+from typing import Any, Optional, Tuple
 
+import shapely
 from annotated_types import Ge, Le, Len
 from pydantic import (
     AfterValidator,
@@ -21,9 +22,90 @@ from pydantic import (
 )
 from pydantic_extra_types.coordinate import Coordinate
 from pydantic_extra_types.phone_numbers import PhoneNumber
+from shapely import Point, Polygon
 from typing_extensions import Annotated, Self
 
 from .utils import ModelSchemaMixin
+
+FRANCE_METROPOLITAN_SHAPE = Polygon(
+    [
+        (-5.369284924224935, 48.63883346764537),
+        (2.452980700775065, 51.500646243597934),
+        (9.022804919525065, 49.08693443628708),
+        (8.363625232025065, 43.71407420597216),
+        (3.243996325775065, 41.95798747209415),
+        (-2.249167736724935, 43.09148506970579),
+        (-5.369284924224935, 48.63883346764537),
+    ]
+)
+CORSE_SHAPE = Polygon(
+    [
+        [9.294434, 43.049908],
+        [9.637756, 43.007756],
+        [9.541626, 41.32684],
+        [8.940125, 41.33715],
+        [8.415527, 41.91595],
+        [8.522644, 42.586663],
+        [9.294434, 43.049908],
+    ]
+)
+GUYANE_SHAPE = Polygon(
+    [
+        [-53.97583, 6.241388],
+        [-51.026001, 4.529683],
+        [-52.69043, 1.814989],
+        [-54.876709, 1.990673],
+        [-54.810791, 5.033293],
+        [-53.97583, 6.241388],
+    ]
+)
+REUNION_SHAPE = Polygon(
+    [
+        [55.519409, -20.70217],
+        [56.052246, -21.197216],
+        [55.645752, -21.591043],
+        [55.019531, -21.089625],
+        [55.519409, -20.70217],
+    ]
+)
+MARTINIQUE_SHAPE = Polygon(
+    [
+        [-61.399841, 14.86516],
+        [-60.976868, 15.034991],
+        [-60.650024, 14.397439],
+        [-61.026306, 14.320276],
+        [-61.399841, 14.86516],
+    ]
+)
+GUADELOUPE_SHAPE = Polygon(
+    [
+        [-61.965637, 16.322775],
+        [-61.416321, 16.586185],
+        [-60.864258, 16.330683],
+        [-61.182861, 15.768466],
+        [-61.710205, 15.794896],
+        [-61.965637, 16.322775],
+    ]
+)
+MAYOTTE_SHAPE = Polygon(
+    [
+        [44.958115, -12.616887],
+        [45.093384, -13.108236],
+        [45.279465, -13.027973],
+        [45.334396, -12.73747],
+        [45.11467, -12.628948],
+        [44.958115, -12.616887],
+    ]
+)
+FRANCE_SHAPES = (
+    FRANCE_METROPOLITAN_SHAPE,
+    CORSE_SHAPE,
+    GUYANE_SHAPE,
+    REUNION_SHAPE,
+    MARTINIQUE_SHAPE,
+    GUADELOUPE_SHAPE,
+    MAYOTTE_SHAPE,
+)
 
 
 class ImplantationStationEnum(StrEnum):
@@ -65,7 +147,7 @@ class FrenchPhoneNumber(PhoneNumber):
     default_region_code = "FR"
 
 
-def to_coordinates_tuple(value):
+def to_coordinates_tuple(value: str | Any) -> Tuple[float, float] | Any:
     """Convert input string to a Coordinate tuple.
 
     Three string formats are supported:
@@ -85,6 +167,16 @@ def to_coordinates_tuple(value):
     ):
         return (m["latitude"], m["longitude"])
     return tuple(reversed(json.loads(value)))
+
+
+def within_france(value: Coordinate) -> Coordinate:
+    """Ensure coordinates are within France territory."""
+    if not any(
+        shapely.contains(shape, Point(value.longitude, value.latitude))
+        for shape in FRANCE_SHAPES
+    ):
+        raise ValueError("Input coordinates are not within the french territory.")
+    return value
 
 
 # A pivot type to handle DataGouv coordinates de/serialization.
@@ -108,6 +200,9 @@ DataGouvCoordinate = Annotated[
         },
     ),
 ]
+
+# DataGouv coordinates located in France
+FrenchCoordinate = Annotated[DataGouvCoordinate, AfterValidator(within_france)]
 
 
 def not_future(value: date):
@@ -193,7 +288,7 @@ class Statique(ModelSchemaMixin, BaseModel):
             pattern=r"^([013-9]\d|2[AB1-9])\d{3}$", strip_whitespace=True
         ),
     ]
-    coordonneesXY: DataGouvCoordinate
+    coordonneesXY: FrenchCoordinate
     nbre_pdc: PositiveInt
     id_pdc_itinerance: Annotated[
         str,

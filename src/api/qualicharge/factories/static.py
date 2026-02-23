@@ -29,6 +29,9 @@ from . import (
 
 T = TypeVar("T")
 
+FR_LONG_RANGE = (-0.538039379514057, 5.350632495485943)
+FR_LAT_RANGE = (44.6381928195837, 48.720704423128026)
+
 
 class StatiqueFactory(ModelFactory[Statique]):
     """Statique model factory."""
@@ -100,9 +103,9 @@ class StatiqueFactory(ModelFactory[Statique]):
     coordonneesXY = Use(
         lambda: (
             # longitude
-            f"[{round(DataclassFactory.__random__.uniform(-180, 180), 6)}, "
+            f"[{round(DataclassFactory.__random__.uniform(*FR_LONG_RANGE), 6)}, "
             # latitude
-            f"{round(DataclassFactory.__random__.uniform(-90, 90), 6)}]"
+            f"{round(DataclassFactory.__random__.uniform(*FR_LAT_RANGE), 6)}]"
         )
     )
 
