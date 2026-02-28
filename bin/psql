@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
 
-docker compose exec -T postgresql \
+docker compose exec postgresql \
   psql \
   "$@"
