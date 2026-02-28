@@ -19,6 +19,7 @@ and this project adheres to
 - Ensure the `Session.energy` field is in [0 ; 1000]
 - Ensure session do not last more than a week
 - Ensure `Statique.coordonneesXY` is located in France
+- Move `_Station.raccordement` database field null values to 'Direct'
 
 #### Dependencies
 
