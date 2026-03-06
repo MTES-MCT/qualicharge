@@ -8,6 +8,8 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.33.0] - 2026-02-06
+
 ### Changed 
 
 - Check SIREN validity (checksum) before ingestion
@@ -704,7 +706,8 @@ update` command
 
 - Implement base FastAPI app
 
-[unreleased]: https://github.com/MTES-MCT/qualicharge/compare/v0.32.0...main
+[unreleased]: https://github.com/MTES-MCT/qualicharge/compare/v0.33.0...main
+[0.33.0]: https://github.com/MTES-MCT/qualicharge/compare/v0.32.0...v0.33.0
 [0.32.0]: https://github.com/MTES-MCT/qualicharge/compare/v0.31.2...v0.32.0
 [0.31.2]: https://github.com/MTES-MCT/qualicharge/compare/v0.31.1...v0.31.2
 [0.31.1]: https://github.com/MTES-MCT/qualicharge/compare/v0.31.0...v0.31.1
