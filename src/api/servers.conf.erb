@@ -1,0 +1,38 @@
+server {
+    listen <%= ENV['PORT'] %>;
+    server_name localhost;
+    charset utf-8;
+
+    location / {
+      proxy_pass http://localhost:<%= ENV['QUALICHARGE_API_PORT'] %>;
+      proxy_set_header Host $host ;
+      proxy_set_header X-Real-IP $remote_addr ;
+      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for ;
+      proxy_redirect off;
+
+      #
+      # Per endpoint rate-limits
+      #
+      # -- auth --
+      location = /api/v1/auth/whoami {
+        limit_req zone=auth rate=1r/s burst=2 nodelay;
+      }
+      location = /api/v1/auth/token {
+        limit_req zone=auth rate=1r/s burst=2 nodelay;
+      }
+      # -- statique --
+      location = /api/v1/statique/ {
+        limit_req zone=statique rate=1r/s;
+      }
+      location = /api/v1/statique/bulk {
+        limit_req zone=statique:bulk rate=10r/m burst=10 nodelay;
+      }
+      # -- dynamique --
+      location = /api/v1/dynamique/status/bulk {
+        limit_req zone=dynamic:status:bulk rate=30r/m;
+      }
+      location = /api/v1/dynamique/session/bulk {
+        limit_req zone=dynamic:session:bulk rate=1r/m;
+      }
+    }
+}
