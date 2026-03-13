@@ -87,136 +87,141 @@ jobs:
       - name: Lint with MyPy
         run: uv run mypy ../bench
 
-  bench-api:
-    needs: build-api
-    runs-on: ubuntu-latest
-    services:
-      postgresql:
-        image: timescale/timescaledb-ha:pg15-ts2.19-oss
-        env:
-          POSTGRES_DB: qualicharge-api
-          POSTGRES_USER: qualicharge
-          POSTGRES_PASSWORD: pass
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
-    permissions:
-      pull-requests: write
-      contents: write
-    defaults:
-      run:
-        working-directory: ./src/api
-    env:
-      PORT: 8000
-      QUALICHARGE_DB_ENGINE: postgresql+psycopg
-      QUALICHARGE_DB_HOST: localhost
-      QUALICHARGE_DB_NAME: qualicharge-api
-      QUALICHARGE_DB_PASSWORD: pass
-      QUALICHARGE_DB_USER: qualicharge
-      QUALICHARGE_TEST_DB_NAME: test-qualicharge-api
-      QUALICHARGE_OIDC_IS_ENABLED: False
-      QUALICHARGE_ALLOWED_HOSTS: '["http://localhost:8000"]'
-      QUALICHARGE_API_STATIQUE_BULK_CREATE_MAX_SIZE: 1000
-      QUALICHARGE_DEBUG: 0
-      QUALICHARGE_PROFILING: 0
-      QUALICHARGE_UVICORN_WORKERS: 1
-      QUALICHARGE_DB_CONNECTION_MAX_OVERFLOW: 200
-      QUALICHARGE_DB_CONNECTION_POOL_SIZE: 50
-      QUALICHARGE_STATIQUE_DATA_PATH: /home/runner/work/qualicharge/qualicharge/data/irve-statique.json.gz
-      QUALICHARGE_API_ADMIN_USER: admin
-      QUALICHARGE_API_ADMIN_PASSWORD: admin
-      QUALICHARGE_API_DATABASE_URL_NO_DRIVER: "postgresql://qualicharge:pass@localhost:5432/qualicharge-api"
-      # This is a fake setting required to run the app
-      QUALICHARGE_OIDC_PROVIDER_BASE_URL: http://localhost:8000/fake
-      QUALICHARGE_OAUTH2_TOKEN_ENCODING_KEY: thisissupersecret
-      QUALICHARGE_OAUTH2_TOKEN_ISSUER: http://test:8000
-      QUALICHARGE_EXECUTION_ENVIRONMENT: ci
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          ref: ${{ github.head_ref }}
-          persist-credentials: false
-      - name: Create postgis extension
-        run: psql "${QUALICHARGE_API_DATABASE_URL_NO_DRIVER}" -c "create extension postgis;"
-      - name: Create btree_gist extension
-        run: psql "${QUALICHARGE_API_DATABASE_URL_NO_DRIVER}" -c "create extension btree_gist;"
-      - name: Install uv
-        uses: astral-sh/setup-uv@e06108dd0aef18192324c70427afc47652e63a82 # v7.5.0
-        with:
-          version: "0.10.9"
-          enable-cache: true
-      - name: Set up Python
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
-        with:
-          python-version-file: "./src/api/.python-version"
-      - name: Restore database dump
-        run: |
-          pg_restore -s -F c -d "${QUALICHARGE_API_DATABASE_URL_NO_DRIVER}" ../../data/qualicharge-api-schema.sql
-          pg_restore -a -F c -d "${QUALICHARGE_API_DATABASE_URL_NO_DRIVER}" ../../data/qualicharge-api-data.sql
-          psql "postgresql://qualicharge:pass@localhost:5432/qualicharge-api" -c "REFRESH MATERIALIZED VIEW Statique;"
-      # API server is still running here
-      - name: Run locust
-        run: |
-          uv run locust \
-            -f ../bench/locustfile.py \
-            --headless \
-            -u 30 \
-            -r 1 \
-            --run-time 30s \
-            -H "http://localhost:${PORT}/api/v1" \
-            --csv bench_admin \
-            --exit-code-on-error 0 \
-            APIAdminUser
-      - name: Add bench file metadata
-        run: |
-          uv run \
-            python ../bench/cli.py \
-              stamp bench_admin_stats.csv $(git rev-parse --short "${GITHUB_SHA}") \
-                > bench_admin_stats_stamped.csv
-      - name: Save bench CSV as artefact
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
-        with:
-          name: api-admin-benchmark
-          path: ./src/api/bench_admin_stats_stamped.csv
-      - name: Generate markdown table
-        # Only when in PR, not when merged to main
-        if: ${{ github.event_name == 'pull_request' }}
-        run: |
-          uv run csvlook -I ../../data/bench.csv
-          echo "===="
-          uv run csvlook -I bench_admin_stats_stamped.csv
-          echo "===="
-          echo -e "### Current benchmark\n\n" >> bench_admin_stats.md && \
-          uv run csvlook -I bench_admin_stats_stamped.csv >> bench_admin_stats.md && \
-          echo -e "\n### Comparison with the latest previous benchmark\n\n" >> bench_admin_stats.md && \
-          echo -e "> A lower (negative) value means the current version performs better than the previous one.\n\n" >> bench_admin_stats.md && \
-          uv run \
-            python ../bench/cli.py diff ../../data/bench.csv bench_admin_stats_stamped.csv | \
-            uv run \
-              csvlook -I >> bench_admin_stats.md
-          cat bench_admin_stats.md
-      - uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
-        # Only when in PR, not when merged to main
-        if: ${{ github.event_name == 'pull_request' }}
-        with:
-          script: |
-            const fs = require('node:fs');
-            fs.readFile('/home/runner/work/qualicharge/qualicharge/src/api/bench_admin_stats.md', 'utf8', (err, data) => {
-              if (err) {
-                console.error(err);
-                return;
-              }
-              github.rest.issues.createComment({
-                issue_number: context.issue.number,
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                body: data
-              });
-            });
+  # FIXME
+  # 
+  # We no longer use those numbers. It has been temporary commented before
+  # complete deletion. It was a good idea.
+  #
+  # bench-api:
+  #   needs: build-api
+  #   runs-on: ubuntu-latest
+  #   services:
+  #     postgresql:
+  #       image: timescale/timescaledb-ha:pg15-ts2.19-oss
+  #       env:
+  #         POSTGRES_DB: qualicharge-api
+  #         POSTGRES_USER: qualicharge
+  #         POSTGRES_PASSWORD: pass
+  #       options: >-
+  #         --health-cmd pg_isready
+  #         --health-interval 10s
+  #         --health-timeout 5s
+  #         --health-retries 5
+  #       ports:
+  #         - 5432:5432
+  #   permissions:
+  #     pull-requests: write
+  #     contents: write
+  #   defaults:
+  #     run:
+  #       working-directory: ./src/api
+  #   env:
+  #     PORT: 8000
+  #     QUALICHARGE_DB_ENGINE: postgresql+psycopg
+  #     QUALICHARGE_DB_HOST: localhost
+  #     QUALICHARGE_DB_NAME: qualicharge-api
+  #     QUALICHARGE_DB_PASSWORD: pass
+  #     QUALICHARGE_DB_USER: qualicharge
+  #     QUALICHARGE_TEST_DB_NAME: test-qualicharge-api
+  #     QUALICHARGE_OIDC_IS_ENABLED: False
+  #     QUALICHARGE_ALLOWED_HOSTS: '["http://localhost:8000"]'
+  #     QUALICHARGE_API_STATIQUE_BULK_CREATE_MAX_SIZE: 1000
+  #     QUALICHARGE_DEBUG: 0
+  #     QUALICHARGE_PROFILING: 0
+  #     QUALICHARGE_UVICORN_WORKERS: 1
+  #     QUALICHARGE_DB_CONNECTION_MAX_OVERFLOW: 200
+  #     QUALICHARGE_DB_CONNECTION_POOL_SIZE: 50
+  #     QUALICHARGE_STATIQUE_DATA_PATH: /home/runner/work/qualicharge/qualicharge/data/irve-statique.json.gz
+  #     QUALICHARGE_API_ADMIN_USER: admin
+  #     QUALICHARGE_API_ADMIN_PASSWORD: admin
+  #     QUALICHARGE_API_DATABASE_URL_NO_DRIVER: "postgresql://qualicharge:pass@localhost:5432/qualicharge-api"
+  #     # This is a fake setting required to run the app
+  #     QUALICHARGE_OIDC_PROVIDER_BASE_URL: http://localhost:8000/fake
+  #     QUALICHARGE_OAUTH2_TOKEN_ENCODING_KEY: thisissupersecret
+  #     QUALICHARGE_OAUTH2_TOKEN_ISSUER: http://test:8000
+  #     QUALICHARGE_EXECUTION_ENVIRONMENT: ci
+  #   steps:
+  #     - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+  #       with:
+  #         ref: ${{ github.head_ref }}
+  #         persist-credentials: false
+  #     - name: Create postgis extension
+  #       run: psql "${QUALICHARGE_API_DATABASE_URL_NO_DRIVER}" -c "create extension postgis;"
+  #     - name: Create btree_gist extension
+  #       run: psql "${QUALICHARGE_API_DATABASE_URL_NO_DRIVER}" -c "create extension btree_gist;"
+  #     - name: Install uv
+  #       uses: astral-sh/setup-uv@e06108dd0aef18192324c70427afc47652e63a82 # v7.5.0
+  #       with:
+  #         version: "0.10.9"
+  #         enable-cache: true
+  #     - name: Set up Python
+  #       uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+  #       with:
+  #         python-version-file: "./src/api/.python-version"
+  #     - name: Restore database dump
+  #       run: |
+  #         pg_restore -s -F c -d "${QUALICHARGE_API_DATABASE_URL_NO_DRIVER}" ../../data/qualicharge-api-schema.sql
+  #         pg_restore -a -F c -d "${QUALICHARGE_API_DATABASE_URL_NO_DRIVER}" ../../data/qualicharge-api-data.sql
+  #         psql "postgresql://qualicharge:pass@localhost:5432/qualicharge-api" -c "REFRESH MATERIALIZED VIEW Statique;"
+  #     # API server is still running here
+  #     - name: Run locust
+  #       run: |
+  #         uv run locust \
+  #           -f ../bench/locustfile.py \
+  #           --headless \
+  #           -u 30 \
+  #           -r 1 \
+  #           --run-time 30s \
+  #           -H "http://localhost:${PORT}/api/v1" \
+  #           --csv bench_admin \
+  #           --exit-code-on-error 0 \
+  #           APIAdminUser
+  #     - name: Add bench file metadata
+  #       run: |
+  #         uv run \
+  #           python ../bench/cli.py \
+  #             stamp bench_admin_stats.csv $(git rev-parse --short "${GITHUB_SHA}") \
+  #               > bench_admin_stats_stamped.csv
+  #     - name: Save bench CSV as artefact
+  #       uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+  #       with:
+  #         name: api-admin-benchmark
+  #         path: ./src/api/bench_admin_stats_stamped.csv
+  #     - name: Generate markdown table
+  #       # Only when in PR, not when merged to main
+  #       if: ${{ github.event_name == 'pull_request' }}
+  #       run: |
+  #         uv run csvlook -I ../../data/bench.csv
+  #         echo "===="
+  #         uv run csvlook -I bench_admin_stats_stamped.csv
+  #         echo "===="
+  #         echo -e "### Current benchmark\n\n" >> bench_admin_stats.md && \
+  #         uv run csvlook -I bench_admin_stats_stamped.csv >> bench_admin_stats.md && \
+  #         echo -e "\n### Comparison with the latest previous benchmark\n\n" >> bench_admin_stats.md && \
+  #         echo -e "> A lower (negative) value means the current version performs better than the previous one.\n\n" >> bench_admin_stats.md && \
+  #         uv run \
+  #           python ../bench/cli.py diff ../../data/bench.csv bench_admin_stats_stamped.csv | \
+  #           uv run \
+  #             csvlook -I >> bench_admin_stats.md
+  #         cat bench_admin_stats.md
+  #     - uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
+  #       # Only when in PR, not when merged to main
+  #       if: ${{ github.event_name == 'pull_request' }}
+  #       with:
+  #         script: |
+  #           const fs = require('node:fs');
+  #           fs.readFile('/home/runner/work/qualicharge/qualicharge/src/api/bench_admin_stats.md', 'utf8', (err, data) => {
+  #             if (err) {
+  #               console.error(err);
+  #               return;
+  #             }
+  #             github.rest.issues.createComment({
+  #               issue_number: context.issue.number,
+  #               owner: context.repo.owner,
+  #               repo: context.repo.repo,
+  #               body: data
+  #             });
+  #           });
 
   # Only when a PR is merged
   #
