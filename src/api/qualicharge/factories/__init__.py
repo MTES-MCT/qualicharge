@@ -17,6 +17,7 @@ class FrenchDataclassFactory(Generic[T], DataclassFactory[T]):
 
     __faker__ = Faker(locale="fr_FR")
     __is_base_factory__ = True
+    __set_relationships__ = False
 
 
 class TimestampedSQLModelFactory(Generic[T], SQLAlchemyFactory[T]):
@@ -30,6 +31,7 @@ class TimestampedSQLModelFactory(Generic[T], SQLAlchemyFactory[T]):
     """
 
     __is_base_factory__ = True
+    __set_relationships__ = False
 
     id = Use(uuid4)
     created_at = Use(lambda: datetime.now(timezone.utc) - timedelta(hours=1))
@@ -49,6 +51,7 @@ class AuditableSQLModelFactory(Generic[T], SQLAlchemyFactory[T]):
     """
 
     __is_base_factory__ = True
+    __set_relationships__ = False
 
     id = Use(uuid4)
     created_at = Use(lambda: datetime.now(timezone.utc) - timedelta(hours=1))

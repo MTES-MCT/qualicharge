@@ -121,9 +121,6 @@ def save_indicators(environment: Environment, indicators: pd.DataFrame):
     # Add identifiers
     df["id"] = df.apply(lambda _: uuid4(), axis=1)  # type: ignore[call-overload]
 
-    # Replace IndicatorPeriod enums by their value
-    df["period"] = df["period"].apply(lambda x: x.value)
-
     # Data types
     dtype = {
         c.name: c.type

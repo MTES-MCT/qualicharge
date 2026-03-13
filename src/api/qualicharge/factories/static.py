@@ -156,7 +156,7 @@ class LocalisationFactory(AuditableSQLModelFactory[Localisation]):
         """Add support for Geometry fields."""
         types = super().get_sqlalchemy_types()
         return {
-            Geometry: lambda: CoordinateFactory.build(),
+            Geometry: CoordinateFactory.build,
             **types,
         }
 
