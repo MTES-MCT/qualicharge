@@ -8,6 +8,20 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Changed 
+
+#### Dependencies
+
+- Upgrade `alembic` to `1.18.4`
+- Upgrade `pandas` to `3.0.1`
+- Upgrade `psycopg` to `3.3.3`
+- Upgrade `pyarrow` to `23.0.1`
+- Upgrade `pydantic-settings` to `2.13.1`
+- Upgrade `PyJWT` to `2.11.0`
+- Upgrade `sentry-sdk` to `2.54.00`
+- Upgrade `sqlmodel` to `0.0.37`
+- Upgrade `typer` to `0.24.1`
+
 ## [0.33.0] - 2026-02-06
 
 ### Changed 
