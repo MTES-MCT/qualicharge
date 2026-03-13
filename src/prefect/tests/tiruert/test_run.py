@@ -358,7 +358,7 @@ def test_flow_daily_tiruert(db_connection, indicators_db_engine, monkeypatch):
     """Test the `daily_tiruert` flow."""
     target = datetime.datetime(2024, 12, 27) - datetime.timedelta(days=21)
 
-    monkeypatch.setattr(tiruert.run, "_get_daily_tiruert_day", lambda: target.date())
+    monkeypatch.setattr(tiruert.run, "_get_daily_tiruert_day", target.date)
 
     daily_tiruert(Environment.TEST)
 
