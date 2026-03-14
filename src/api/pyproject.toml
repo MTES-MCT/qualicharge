@@ -20,7 +20,7 @@ dependencies = [
     "pydantic-extra-types[all]==2.11.0",
     "pydantic-settings==2.13.1",
     "pyinstrument==5.1.2",
-    "pyjwt==2.11.0",
+    "pyjwt==2.12.0",
     "python-multipart==0.0.22",
     "questionary==2.1.1",
     "sentry-sdk[fastapi]==2.54.0",
