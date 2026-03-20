@@ -376,7 +376,7 @@ async def recommission(
 
     # Should we also recommission the station?
     station = poc.station
-    if all(p.deleted_at is None for p in station.points_de_charge):
+    if any(p.deleted_at is None for p in station.points_de_charge):
         station.deleted_at = None
         session.add(station)
 
