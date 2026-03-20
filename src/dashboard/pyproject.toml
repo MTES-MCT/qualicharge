@@ -42,7 +42,7 @@ dev = [
   "pytest-django==4.12.0",
   "pytest-httpx==0.36.0",
   "responses==0.26.0",
-  "ruff==0.15.5",
+  "ruff==0.15.6",
   "types-mock==5.2.0.20250924",
   "types-python-dateutil==2.9.0.20260305",
   "types-requests==2.32.4.20260107",

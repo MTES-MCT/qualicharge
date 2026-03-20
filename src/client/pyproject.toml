@@ -30,7 +30,7 @@ dev = [
   "pytest==9.0.2",
   "pytest-cov==7.0.0",
   "pytest-httpx==0.36.0",
-  "ruff==0.15.5",
+  "ruff==0.15.6",
 ]
 
 [tool.uv]
