@@ -26,6 +26,11 @@ and this project adheres to
 - Upgrade `sqlmodel` to `0.0.37`
 - Upgrade `typer` to `0.24.1`
 
+### Fixed 
+
+- Recommission a station when at least one related charge point is 
+  recommissioned
+
 ## [0.33.0] - 2026-02-06
 
 ### Changed 

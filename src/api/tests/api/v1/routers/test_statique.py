@@ -733,12 +733,16 @@ def test_recommission_for_superuser(client_auth, db_session):
     assert response.status_code == status.HTTP_204_NO_CONTENT
     assert poc.deleted_at is None
 
-    # Decommission the first charge point
-    poc.deleted_at = now
+    # The station should have been recommissioned
+    assert station.deleted_at is None
+
+    # Decommission the first charge point (and related station)
+    poc.deleted_at = station.deleted_at = now
     db_session.add(poc)
+    db_session.add(station)
+    assert station.deleted_at is not None
 
     # Recommission all station charge points
-    assert station.deleted_at is not None
     for poc in station.points_de_charge:
         assert poc.deleted_at is not None
         response = client_auth.post(f"/statique/{poc.id_pdc_itinerance}/up")
