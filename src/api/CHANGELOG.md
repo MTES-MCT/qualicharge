@@ -13,6 +13,8 @@ and this project adheres to
 - Improve statique list/read endpoints response with explicit error messages
   when serialization fails
 
+- Decommission orphan stations instead of hard-deleting them
+
 #### Dependencies
 
 - Upgrade `alembic` to `1.18.4`

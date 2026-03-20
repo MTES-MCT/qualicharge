@@ -1,5 +1,6 @@
-DELETE
-FROM _Station
+UPDATE _Station
+SET
+  deleted_at = NOW()
 WHERE id IN (
     SELECT
       _Station.id
@@ -8,6 +9,7 @@ WHERE id IN (
       LEFT JOIN _PointDeCharge ON station_id = _Station.id
     WHERE
       _PointDeCharge.station_id ISNULL
+      AND _Station.deleted_at ISNULL
 );
 
 DELETE
