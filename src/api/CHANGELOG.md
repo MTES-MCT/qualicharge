@@ -13,6 +13,7 @@ and this project adheres to
 #### Dependencies
 
 - Upgrade `alembic` to `1.18.4`
+- Upgrade `geopandas` to `1.1.3`
 - Upgrade `pandas` to `3.0.1`
 - Upgrade `psycopg` to `3.3.3`
 - Upgrade `pyarrow` to `23.0.1`
