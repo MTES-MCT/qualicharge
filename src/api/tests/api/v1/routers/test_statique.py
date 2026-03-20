@@ -62,9 +62,38 @@ def test_list_invalid_statique_data(client_auth, db_session):
     response = client_auth.get("/statique/")
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
     json_response = response.json()
-    assert json_response == {
-        "detail": "Statique data is no longer valid, please update those first"
+    detail = json_response["detail"]
+    assert len(detail) == n_statiques
+    assert {d["id_pdc_itinerance"] for d in detail} == {
+        s.id_pdc_itinerance for s in statiques
     }
+    assert all(d["errors"][0]["loc"][0] == "telephone_operateur" for d in detail)
+
+
+def test_list_invalid_statique_data_with_multiple_errors(client_auth, db_session):
+    """Test the /statique/ list endpoint (when db rows are invalid).
+
+    Multiple errors case.
+    """
+    # Create invalid statique entries
+    n_statiques = 3
+    statiques = StatiqueFactory.batch(n_statiques)
+    for statique in statiques:
+        statique.telephone_operateur = None
+        statique.siren_amenageur = "123456789"
+    save_statiques(db_session, statiques)
+    refresh_materialized_view(db_session, STATIQUE_MV_TABLE_NAME)
+
+    response = client_auth.get("/statique/")
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    json_response = response.json()
+    detail = json_response["detail"]
+    assert len(detail) == n_statiques
+    assert {d["id_pdc_itinerance"] for d in detail} == {
+        s.id_pdc_itinerance for s in statiques
+    }
+    assert all(d["errors"][0]["loc"][0] == "siren_amenageur" for d in detail)
+    assert all(d["errors"][1]["loc"][0] == "telephone_operateur" for d in detail)
 
 
 def test_list_for_superuser(client_auth, db_session):
@@ -371,9 +400,29 @@ def test_read_invalid_statique_data(client_auth, db_session):
     response = client_auth.get(f"/statique/{id_pdc_itinerance}")
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
     json_response = response.json()
-    assert json_response == {
-        "detail": "Statique data is no longer valid, please update it first"
-    }
+    detail = json_response["detail"]
+    assert detail[0]["loc"][0] == "telephone_operateur"
+
+
+def test_read_invalid_statique_data_with_multiple_errors(client_auth, db_session):
+    """Test the /statique/{id_pdc_itinerance} endpoint (when db rows are invalid).
+
+    Multiple errors case.
+    """
+    # Create invalid statique entry
+    id_pdc_itinerance = "FR911E1111ER1"
+    statique = StatiqueFactory.build(id_pdc_itinerance=id_pdc_itinerance)
+    statique.telephone_operateur = None
+    statique.siren_amenageur = "123456789"
+    save_statiques(db_session, [statique])
+    refresh_materialized_view(db_session, STATIQUE_MV_TABLE_NAME)
+
+    response = client_auth.get(f"/statique/{id_pdc_itinerance}")
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    json_response = response.json()
+    detail = json_response["detail"]
+    assert detail[0]["loc"][0] == "siren_amenageur"
+    assert detail[1]["loc"][0] == "telephone_operateur"
 
 
 def test_read_for_superuser(client_auth, db_session):
