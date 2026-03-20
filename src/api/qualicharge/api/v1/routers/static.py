@@ -1,6 +1,7 @@
 """QualiCharge API v1 statique router."""
 
 import datetime
+import json
 import logging
 from io import BytesIO
 from typing import Annotated, List, Optional, cast
@@ -149,16 +150,23 @@ async def list(
     statement = (
         statement.order_by(StatiqueMV.id_pdc_itinerance).offset(offset).limit(limit)
     )
-    try:
-        statiques = [
-            Statique(**s.model_dump(exclude={"pdc_id", "pdc_updated_at"}))
-            for s in session.exec(statement).all()
-        ]
-    except ValidationError as err:
-        raise HTTPException(
-            status_code=422,
-            detail="Statique data is no longer valid, please update those first",
-        ) from err
+    # Provide detailled errors for each record in this page
+    statiques = []
+    errors = []
+    for s in session.exec(statement).all():
+        try:
+            statiques.append(
+                Statique(**s.model_dump(exclude={"pdc_id", "pdc_updated_at"}))
+            )
+        except ValidationError as err:
+            errors.append(
+                {
+                    "id_pdc_itinerance": s.id_pdc_itinerance,
+                    "errors": json.loads(err.json()),
+                }
+            )
+    if errors:
+        raise HTTPException(status_code=422, detail=errors)
 
     previous_offset = offset - limit if offset > limit else 0
     if offset:
@@ -214,10 +222,7 @@ async def read(
     try:
         return Statique(**statique_mv.model_dump(exclude={"pdc_id", "pdc_updated_at"}))
     except ValidationError as err:
-        raise HTTPException(
-            status_code=422,
-            detail="Statique data is no longer valid, please update it first",
-        ) from err
+        raise HTTPException(status_code=422, detail=json.loads(err.json())) from err
 
 
 @router.put("/{id_pdc_itinerance}", status_code=status.HTTP_200_OK)

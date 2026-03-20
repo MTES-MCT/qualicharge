@@ -8,7 +8,10 @@ and this project adheres to
 
 ## [Unreleased]
 
-### Changed 
+### Changed
+
+- Improve statique list/read endpoints response with explicit error messages
+  when serialization fails
 
 #### Dependencies
 
