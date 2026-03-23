@@ -697,7 +697,7 @@ wheels = [
 
 [[package]]
 name = "great-expectations"
-version = "1.15.0"
+version = "1.15.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "altair" },
@@ -719,9 +719,9 @@ dependencies = [
     { name = "typing-extensions" },
     { name = "tzlocal" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/99/17/33da22c0cd814ef31a71906f44ea9551f1313929358d5688f55b32cd62b9/great_expectations-1.15.0.tar.gz", hash = "sha256:b4e873428735ff1d1ee42c9f326804736ab4be68a9112017614669065a439be5", size = 36316980, upload-time = "2026-03-11T22:27:09.012Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/70/38/cec7e057e5b4ecc863180b559e809af114d4985b775e09452f3520c3fc07/great_expectations-1.15.1.tar.gz", hash = "sha256:f150bff394722ce4a36602bcc224067d3ae512b254af0aedb90b0edf1e9e2057", size = 36316960, upload-time = "2026-03-13T17:23:14.984Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/46/05/edad77879e5e26ac2d67aca3e232cc9608f5c162a3d3fab3704bf8aba9d6/great_expectations-1.15.0-py3-none-any.whl", hash = "sha256:4fe9ea972f8bad5a13d8636d573c7b27db01b36a0acc8161688569fc1cd92b4b", size = 4953025, upload-time = "2026-03-11T22:27:05.195Z" },
+    { url = "https://files.pythonhosted.org/packages/87/12/905d69dd881441593639e626d50f7dc5f762f00444d2ba91f9d41fda0176/great_expectations-1.15.1-py3-none-any.whl", hash = "sha256:7e3b7da10e08cade6bbbefd77867ea55cf4c4edbe432710e7cc4a95faa4d4755", size = 4953093, upload-time = "2026-03-13T17:23:11.692Z" },
 ]
 
 [package.optional-dependencies]
@@ -1892,7 +1892,7 @@ requires-dist = [
     { name = "email-validator", specifier = ">=2.3.0" },
     { name = "geoalchemy2", extras = ["shapely"], specifier = "==0.18.4" },
     { name = "geopandas", specifier = "==1.1.3" },
-    { name = "great-expectations", extras = ["postgresql"], specifier = "==1.15.0" },
+    { name = "great-expectations", extras = ["postgresql"], specifier = "==1.15.1" },
     { name = "pandas", specifier = "==3.0.1" },
     { name = "prefect", specifier = "==3.6.22" },
     { name = "psycopg", extras = ["pool", "binary"], specifier = "==3.3.3" },
