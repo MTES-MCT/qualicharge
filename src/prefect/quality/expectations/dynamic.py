@@ -635,9 +635,8 @@ WITH
       SESSION
       INNER JOIN f_statique on session.point_de_charge_id = f_statique.pdc_id
 	WHERE
-    (SESSION.start > $start AND SESSION.start < $end)
-    OR (SESSION.end > $start AND SESSION.end < $end)
-    OR (SESSION.start < $start AND SESSION.end > $end)
+    SESSION.start > $start
+    AND SESSION.start < $end
   GROUP BY
       session_pdc_id,
       date_session
