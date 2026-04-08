@@ -31,6 +31,11 @@ PARAM_FLOW = [
         "SELECT COUNT(*) FROM Region",
         ["11", "84", "75"],
     ),
+    (
+        Level.OPERATIONALUNIT,
+        "SELECT COUNT(*) FROM OperationalUnit",
+        ["FRATL", "FRELC", "FRTSL"],
+    ),
 ]
 
 PARAM_VALUE = [
@@ -49,5 +54,9 @@ PARAM_VALUE = [
     (
         Level.REGION,
         "SELECT id FROM Region WHERE code IN ('11', '84', '75')",
+    ),
+    (
+        Level.OPERATIONALUNIT,
+        "SELECT id FROM OperationalUnit WHERE code IN ('FRATL', 'FRELC', 'FRTSL')",
     ),
 ]

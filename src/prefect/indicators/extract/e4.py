@@ -30,20 +30,17 @@ from indicators.utils import (
 HISTORY_STRATEGY_FIELD: str = "mean"
 LIST_POCS_FOR_LEVEL_QUERY_TEMPLATE = """
 SELECT
-    id_pdc_itinerance,
+    statique.id_pdc_itinerance,
     $level_id AS level_id
 FROM
     SESSION
-    INNER JOIN PointDeCharge ON point_de_charge_id = PointDeCharge.id
-    LEFT JOIN station ON station_id = station.id
-    LEFT JOIN localisation ON localisation_id = localisation.id
-    LEFT JOIN city ON city.code = code_insee_commune
+    INNER JOIN statique ON point_de_charge_id = pdc_id
     $join_extras
 WHERE
     $level_id IN ($indexes)
     AND $timespan
 GROUP BY
-    id_pdc_itinerance,
+    statique.id_pdc_itinerance,
     $level_id
 """
 QUERY_NATIONAL_TEMPLATE = """

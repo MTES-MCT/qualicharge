@@ -48,8 +48,8 @@ from tests.parameters import (
     PARAMETERS_CHUNK,
 )
 
-# expected result for level [city, epci, dpt, reg]
-N_LEVEL = [8, 204, 373, 1078]
+# expected result for level [city, epci, dpt, reg, operationalunit]
+N_LEVEL = [8, 204, 373, 1078, 606]
 N_LEVEL_NATIONAL = 2487
 N_DPTS = 109
 
@@ -107,6 +107,7 @@ def test_flow_u11(db_connection):
         Level.DEPARTMENT,
         Level.CITY,
         Level.EPCI,
+        Level.OPERATIONALUNIT,
     ]
     indicators = u11.u11(
         Environment.TEST,

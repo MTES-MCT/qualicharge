@@ -30,11 +30,10 @@ from indicators.utils import (
 HISTORY_STRATEGY_FIELD: str = "mean"
 NUM_POCS_FOR_LEVEL_QUERY_TEMPLATE = """
 SELECT
-    COUNT(DISTINCT id_pdc_itinerance) AS value,
+    COUNT(DISTINCT statique.id_pdc_itinerance) AS value,
     $level_id AS level_id
 FROM
     Statique
-    INNER JOIN City ON code_insee_commune = City.code
     $join_extras
 WHERE $level_id IN ($indexes)
 GROUP BY $level_id

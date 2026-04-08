@@ -17,6 +17,7 @@ PARAMETERS_GET_TARGETS = [
     (Level.DEPARTMENT, 109),
     (Level.EPCI, 1255),
     (Level.REGION, 26),
+    (Level.OPERATIONALUNIT, 519),
 ]
 
 

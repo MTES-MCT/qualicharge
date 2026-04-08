@@ -228,7 +228,7 @@ def test_flow_up_persistence(indicators_db_engine):
     """Test the `up` flow."""
     indicators = i1.i1(
         Environment.TEST,
-        levels=[Level.NATIONAL, Level.REGION],
+        levels=[Level.NATIONAL, Level.REGION, Level.OPERATIONALUNIT],
         start=TIMESPAN.start,
         period=IndicatorPeriod.DAY,
         create_artifact=True,
@@ -236,7 +236,7 @@ def test_flow_up_persistence(indicators_db_engine):
     )
     e4.e4(
         Environment.TEST,
-        levels=[Level.NATIONAL, Level.REGION],
+        levels=[Level.NATIONAL, Level.REGION, Level.OPERATIONALUNIT],
         start=TIMESPAN.start,
         period=IndicatorPeriod.DAY,
         create_artifact=False,

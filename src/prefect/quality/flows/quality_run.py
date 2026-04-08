@@ -221,7 +221,7 @@ def run_api_db_checkpoint_by_unit(  # noqa: PLR0913
                     if value > 0:
                         indicators.loc[len(indicators)] = {
                             "value": value,
-                            "level": Level.OU,
+                            "level": Level.OPERATIONALUNIT,
                             "target": unit,
                             "category": code,
                             "code": "qua",

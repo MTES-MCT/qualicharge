@@ -16,7 +16,7 @@ deployments:
         active: true
     parameters:
       environment: production
-      levels: [0, 1, 2, 3]
+      levels: [0, 1, 2, 3, 5]
       period: d
       create_artifact: true
       persist: true
@@ -33,7 +33,7 @@ deployments:
         active: true
     parameters:
       environment: production
-      levels: [0, 1, 2, 3]
+      levels: [0, 1, 2, 3, 5]
       period: d
       create_artifact: true
       persist: true
@@ -50,7 +50,7 @@ deployments:
         active: true
     parameters:
       environment: production
-      levels: [0, 1, 2, 3]
+      levels: [0, 1, 2, 3, 5]
       period: d
       create_artifact: true
       persist: true
@@ -67,7 +67,7 @@ deployments:
         active: true
     parameters:
       environment: production
-      levels: [0, 1, 2, 3]
+      levels: [0, 1, 2, 3, 5]
       period: d
       create_artifact: true
       persist: true
@@ -135,7 +135,7 @@ deployments:
         active: true
     parameters:
       environment: production
-      levels: [0, 1]
+      levels: [0, 1, 5]
       period: d
       create_artifact: true
       persist: true
@@ -152,7 +152,7 @@ deployments:
         active: true
     parameters:
       environment: production
-      levels: [0, 1]
+      levels: [0, 1, 5]
       period: d
       create_artifact: true
       persist: true
@@ -186,7 +186,7 @@ deployments:
         active: true
     parameters:
       environment: production
-      levels: [0, 1]
+      levels: [0, 1, 5]
       period: d
       create_artifact: true
       persist: true
@@ -211,6 +211,23 @@ deployments:
       name: indicators
       work_queue_name: default
   
+  - name: u14-daily
+    entrypoint: indicators/usage/u14.py:u14
+    concurrency_limit: 10
+    schedules:
+      - cron: "36 5 * * *"
+        timezone: "Europe/Paris"
+        active: true
+    parameters:
+      environment: production
+      levels: [0, 1, 5]
+      period: d
+      create_artifact: true
+      persist: true
+    work_pool:
+      name: indicators
+      work_queue_name: default
+
   # offset (default -1): 0 -> init period = start value 
   - name: up-monthly
     entrypoint: indicators/historicize/up.py:up
