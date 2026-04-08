@@ -31,12 +31,11 @@ NUM_POCS_BY_POWER_RANGE_FOR_LEVEL_QUERY_TEMPLATE = """
 WITH
     $power_range
 SELECT
-    COUNT(DISTINCT id_pdc_itinerance) AS value,
+    COUNT(DISTINCT Statique.id_pdc_itinerance) AS value,
     category,
     $level_id AS level_id
 FROM
     Statique
-    INNER JOIN City ON code_insee_commune = City.code
     LEFT JOIN puissance ON puissance_nominale::numeric <@ category
     $join_extras
 WHERE
@@ -51,7 +50,7 @@ QUERY_NATIONAL_TEMPLATE = """
 WITH
     $power_range
 SELECT
-    COUNT(DISTINCT id_pdc_itinerance) AS value,
+    COUNT(DISTINCT Statique.id_pdc_itinerance) AS value,
     category
 FROM
     Statique

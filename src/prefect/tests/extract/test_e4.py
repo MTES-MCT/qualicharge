@@ -18,10 +18,10 @@ from tests.parameters import (
 )
 
 # expected result
-N_LEVEL = [9, 452, 797, 2417]
+N_LEVEL = [9, 452, 797, 2417, 1307]
 N_LEVEL_NATIONAL = 5782
 N_DPTS = 109
-N_NAT_REG_DPT_EPCI_CITY = 36465
+N_NAT_REG_DPT_EPCI_CITY_OU = 36984
 
 TIMESPAN = IndicatorTimeSpan(start=datetime(2024, 12, 28), period=IndicatorPeriod.DAY)
 TIMESPAN_QUERY = IndicatorTimeSpan(
@@ -86,6 +86,7 @@ def test_flow_e4():
         Level.DEPARTMENT,
         Level.CITY,
         Level.EPCI,
+        Level.OPERATIONALUNIT,
     ]
     indicators = e4.e4(
         Environment.TEST,

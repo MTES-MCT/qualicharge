@@ -34,7 +34,6 @@ SELECT
 FROM
     SESSION
     INNER JOIN statique ON point_de_charge_id = pdc_id
-    LEFT JOIN City ON City.code = code_insee_commune
     $join_extras
 WHERE
     $timespan

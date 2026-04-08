@@ -19,10 +19,10 @@ from ..parameters import (
     PARAMETERS_CHUNK,
 )
 
-# expected result for level [city, epci, dpt, reg]
-N_LEVEL = [56, 2484, 4242, 12147]
+# expected result for level [city, epci, dpt, reg, ou]
+N_LEVEL = [56, 2484, 4242, 12147, 6501]
 N_DPTS = 109
-N_NAT_REG_DPT_EPCI_CITY = 36465
+N_NAT_REG_DPT_EPCI_CITY_OU = 36984
 
 TIMESPAN = IndicatorTimeSpan(start=datetime.now(), period=IndicatorPeriod.DAY)
 PARAMETERS_FLOW = [prm + (lvl,) for prm, lvl in zip(PARAM_FLOW, N_LEVEL, strict=True)]
@@ -74,13 +74,14 @@ def test_flow_i1_national(db_connection):
 
 def test_flow_i1():
     """Test the `i1` flow."""
-    expected = N_NAT_REG_DPT_EPCI_CITY
+    expected = N_NAT_REG_DPT_EPCI_CITY_OU
     all_levels = [
         Level.NATIONAL,
         Level.REGION,
         Level.DEPARTMENT,
         Level.CITY,
         Level.EPCI,
+        Level.OPERATIONALUNIT,
     ]
     indicators = i1.i1(
         Environment.TEST,

@@ -27,6 +27,34 @@ POWER_RANGE_CTE: dict = {"power_range": """
             (numrange(150, 350.0), 5),
             (numrange(350, NULL), 6)
     )"""}
+IS_VALID_PDL: dict = {"is_valid_pdl": """
+    NOT (
+        num_pdl IS NULL
+        OR num_pdl LIKE '%% %%'
+        OR num_pdl LIKE '%%123456789%%'
+        OR num_pdl LIKE '000%%'
+        OR num_pdl IN ('', '11111111111111', '99999999999999')
+        OR num_pdl !~ '[0-9]'
+    )"""}
+IS_DC: dict = {"is_dc": """
+    max(
+      (
+        puissance_nominale >= 50
+        OR prise_type_combo_ccs
+        OR prise_type_chademo
+      ) :: int
+    ) :: bool
+"""}
+ALIMENTATION: dict = {"alimentation": """
+    CASE
+      WHEN is_dc AND is_direct AND is_valid_pdl THEN 'DC_direct_valid'
+      WHEN is_dc AND is_direct AND not is_valid_pdl THEN 'DC_direct_invalid'
+      WHEN is_dc AND not is_direct THEN 'DC_indirect'
+      WHEN NOT is_dc AND is_direct AND is_valid_pdl THEN 'AC_direct_valid'
+      WHEN NOT is_dc AND is_direct AND not is_valid_pdl THEN 'AC_direct_invalid'
+      ELSE 'AC_indirect'
+    END
+"""}
 
 
 def get_period_start_from_pit(  # noqa: PLR0911
@@ -74,16 +102,22 @@ def get_num_for_level_query_params(level: Level):
     """Get level_id and join_extras query parameters."""
     match level:
         case Level.CITY:
-            return {"level_id": "City.id", "join_extras": ""}
+            return {
+                "level_id": "City.id",
+                "join_extras": "INNER JOIN City ON code_insee_commune = City.code",
+            }
         case Level.EPCI:
             return {
                 "level_id": "EPCI.id",
-                "join_extras": "INNER JOIN EPCI ON City.epci_id = EPCI.id",
+                "join_extras": """
+                    INNER JOIN City ON code_insee_commune = City.code
+                    INNER JOIN EPCI ON City.epci_id = EPCI.id""",
             }
         case Level.DEPARTMENT:
             return {
                 "level_id": "Department.id",
                 "join_extras": """
+                    INNER JOIN City ON code_insee_commune = City.code
                     INNER JOIN Department ON City.department_id = Department.id
                     """,
             }
@@ -91,19 +125,29 @@ def get_num_for_level_query_params(level: Level):
             return {
                 "level_id": "Region.id",
                 "join_extras": """
+                    INNER JOIN City ON code_insee_commune = City.code
                     INNER JOIN Department ON City.department_id = Department.id
                     INNER JOIN Region ON Department.region_id = Region.id
                     """,
             }
+        case Level.OPERATIONALUNIT:
+            return {
+                "level_id": "Operationalunit.id",
+                "join_extras": """
+                    INNER JOIN Pointdecharge ON Pointdecharge.id = pdc_id
+                    INNER JOIN Station ON station.id = station_id
+                    INNER JOIN Operationalunit ON Station.operational_unit_id = Operationalunit.id
+                    """,  # noqa: E501
+            }
         case _:
-            raise NotImplementedError("Unsupported level %d", level)
+            raise NotImplementedError(f"Unsupported level {level}")
 
 
 @task(task_run_name="targets-for-level-{level:02d}")
 def get_targets_for_level(level: Level, environment: Environment) -> pd.DataFrame:
     """Get registered targets for level from QualiCharge database."""
     if level == Level.NATIONAL:
-        raise NotImplementedError("Unsupported level %d", level)
+        raise NotImplementedError(f"Unsupported level {level}")
     with Session(get_api_db_engine(environment)) as session:
         return pd.read_sql_table(level.name.lower(), con=session.connection())
 

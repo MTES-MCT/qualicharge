@@ -41,12 +41,11 @@ WITH
             point_de_charge_id
     )
 SELECT
-    sum(puissance_nominale) AS value,
+    sum(statique.puissance_nominale) AS value,
     $level_id AS level_id
 FROM
     fitered_status
     INNER JOIN statique ON point_de_charge_id = pdc_id
-    LEFT JOIN City ON City.code = code_insee_commune
     $join_extras
 WHERE
     $level_id IN ($indexes)

@@ -17,8 +17,8 @@ from tests.parameters import (
     PARAMETERS_CHUNK,
 )
 
-# expected result for level [city, epci, dpt, reg]
-N_LEVEL = [289, 6634, 12505, 36838]
+# expected result for level [city, epci, dpt, reg, ou]
+N_LEVEL = [289, 6634, 12505, 36838, 19627]
 N_LEVEL_NATIONAL = 83363
 
 TIMESPAN = IndicatorTimeSpan(start=datetime(2024, 12, 24), period=IndicatorPeriod.DAY)
@@ -79,6 +79,7 @@ def test_flow_u9(db_connection):
         Level.DEPARTMENT,
         Level.CITY,
         Level.EPCI,
+        Level.OPERATIONALUNIT,
     ]
     indicators = u9.u9(
         Environment.TEST,

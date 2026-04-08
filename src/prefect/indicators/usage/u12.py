@@ -48,7 +48,6 @@ SELECT
 FROM
     filtered_status
     INNER JOIN statique ON point_de_charge_id = pdc_id
-    LEFT JOIN City ON City.code = code_insee_commune
     LEFT JOIN puissance ON puissance_nominale::numeric <@ category
     $join_extras
 WHERE

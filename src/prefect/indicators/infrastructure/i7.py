@@ -30,11 +30,10 @@ from indicators.utils import (
 HISTORY_STRATEGY_FIELD: str = "mean"
 SUM_POWER_FOR_LEVEL_QUERY_TEMPLATE = """
 SELECT
-    sum(puissance_nominale) AS value,
+    sum(statique.puissance_nominale) AS value,
     $level_id AS level_id
 FROM
     statique
-    INNER JOIN city on city.code = code_insee_commune
     $join_extras
 WHERE $level_id IN ($indexes)
 GROUP BY $level_id

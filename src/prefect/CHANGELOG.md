@@ -16,6 +16,7 @@ and this project adheres to
 - Implement extract indicators (e4)
 - Implement historicization (up)
 - Implement usage indicators (u5, u6, u9, u10, u11, u12, u13)
+- Add usage indicator u14
 
 #### Quality
 
@@ -55,5 +56,6 @@ and this project adheres to
   - ENEA : add power threshold
   - LONS : extend threshold to 7 days
   - ERRT : add 'inconnu' statuses
+- Add OperationalUnit level for infrastructure and usage indicators
 
 [unreleased]: https://github.com/MTES-MCT/qualicharge/
