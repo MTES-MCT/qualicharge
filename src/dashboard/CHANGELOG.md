@@ -17,14 +17,15 @@ and this project adheres to
 
 - Upgrade `Django` to `6.0.4`
 - Upgrade `django-anymail` to `14.0`
-- Upgrade `django-dsfr` to `3.3.1`
+- Upgrade `django-dsfr` to `3.4.1`
 - Upgrade `django-environ` to `0.13.0`
-- Upgrade `gunicorn` to `25.1.0`
+- Upgrade `django-stubs` to `6.0.2`
+- Upgrade `gunicorn` to `25.3.0`
 - Upgrade `jsonschema` to `4.26.0`
 - Upgrade `mozilla-django-oidc` to `5.0.2`
 - Upgrade `psycopg` to `3.3.3`
-- Upgrade `requests` to `2.33.0`
-- Upgrade `sentry-sdk` to `2.54.0`
+- Upgrade `requests` to `2.33.1`
+- Upgrade `sentry-sdk` to `2.57.0`
 - Upgrade `whitenoise` to `6.12.0`
 
 ### Fixed
