@@ -8,6 +8,20 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Changed
+
+#### Dependencies
+
+- Upgrade `cachetools` to `7.0.5`
+- Upgrade `fastapi` to `0.135.3`
+- Upgrade `pandas` to `3.0.2`
+- Upgrade `pydantic` to `2.12.5`
+- Upgrade `pydantic-extra-types` to `2.11.1`
+- Upgrade `PyJWT` to `2.12.1`
+- Upgrade `python-multipart` to `0.0.24`
+- Upgrade `sentry-sdk` to `2.57.0`
+- Upgrade `sqlmodel` to `0.0.38`
+
 ## [0.33.1] - 2026-03-23
 
 ### Changed

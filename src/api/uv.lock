@@ -472,15 +472,15 @@ wheels = [
 
 [[package]]
 name = "geoalchemy2"
-version = "0.18.4"
+version = "0.17.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "packaging" },
     { name = "sqlalchemy" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/ec/9d/02d54b0d61a2f331044ea7b4216ee1c98a8ad3a69906dfc3967c51501623/geoalchemy2-0.18.4.tar.gz", hash = "sha256:5719e2bb040d5c406d5d03425fec87997ce9351843b053ca11373a0f5a31971b", size = 239766, upload-time = "2026-03-02T14:48:48.43Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/46/52/60214c086a57a7e3ea82241bab94e09827f2b7f7c2084fe6fc280c099b23/geoalchemy2-0.17.1.tar.gz", hash = "sha256:ff5bbe0db5a4ff979f321c8aa1a7556f444ea30cda5146189b1a177ae5bec69d", size = 231566, upload-time = "2025-02-17T09:41:04.72Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/56/92/60ee150773376aa9b542dcd44660e4ae9f5f14e690c8795be476156de598/geoalchemy2-0.18.4-py3-none-any.whl", hash = "sha256:89e6680dcbb6b8d8c784dcaa889e48ab2783aa42487ee5730fdbd7a7c7ddf6ec", size = 81097, upload-time = "2026-03-02T14:48:47.456Z" },
+    { url = "https://files.pythonhosted.org/packages/f5/82/e83e0f74cba8bbff9c12b2dea4693adb0cf89204012da48433ebd8e8c4d8/GeoAlchemy2-0.17.1-py3-none-any.whl", hash = "sha256:29f41b67d3a52df47821b695d31dec8600747c6ef4de62ee69811bde481dd2ae", size = 77791, upload-time = "2025-02-17T09:41:02.7Z" },
 ]
 
 [package.optional-dependencies]
@@ -1591,7 +1591,7 @@ requires-dist = [
     { name = "cachetools", specifier = "==7.0.5" },
     { name = "email-validator", specifier = "==2.3.0" },
     { name = "fastapi", specifier = "==0.135.3" },
-    { name = "geoalchemy2", extras = ["shapely"], specifier = "==0.18.4" },
+    { name = "geoalchemy2", extras = ["shapely"], specifier = "==0.17.1" },
     { name = "geopandas", specifier = "==1.1.3" },
     { name = "httpx", extras = ["cli"], specifier = "==0.28.1" },
     { name = "pandas", specifier = "==3.0.2" },
@@ -1627,7 +1627,7 @@ dev = [
     { name = "pytest-cov", specifier = "==7.1.0" },
     { name = "pytest-httpx", specifier = "==0.36.0" },
     { name = "ruff", specifier = "==0.15.9" },
-    { name = "types-cachetools", specifier = "==6.2.0.20260317" },
+    { name = "types-cachetools", specifier = "==6.2.0.20250827" },
     { name = "types-passlib", specifier = "==1.7.7.20260211" },
     { name = "types-python-jose", specifier = "==3.5.0.20260402" },
     { name = "types-requests", specifier = "==2.33.0.20260402" },
@@ -1890,11 +1890,11 @@ wheels = [
 
 [[package]]
 name = "types-cachetools"
-version = "6.2.0.20260317"
+version = "6.2.0.20250827"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/8b/7f/16a4d8344c28193a5a74358028c2d2f753f0d9658dd98b9e1967c50045a2/types_cachetools-6.2.0.20260317.tar.gz", hash = "sha256:6d91855bcc944665897c125e720aa3c80aace929b77a64e796343701df4f61c6", size = 9812, upload-time = "2026-03-17T04:06:32.007Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/31/f2/e14f51330093fd640fd11663863dc7dd80e5894ef9d2eb39325cc61ba3cf/types_cachetools-6.2.0.20250827.tar.gz", hash = "sha256:f27febfd1b5e517e3cb1ca6daf38ad6ddb4eeb1e29bdbd81a082971ba30c0d8e", size = 9128, upload-time = "2025-08-27T02:56:50.593Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/17/9a/b00b23054934c4d569c19f7278c4fb32746cd36a64a175a216d3073a4713/types_cachetools-6.2.0.20260317-py3-none-any.whl", hash = "sha256:92fa9bc50e4629e31fca67ceb3fb1de71791e314fa16c0a0d2728724dc222c8b", size = 9346, upload-time = "2026-03-17T04:06:31.184Z" },
+    { url = "https://files.pythonhosted.org/packages/80/9c/be9d24c246ff825385b4a139409ae7e2d36ea2294f12681951a6b9f905f7/types_cachetools-6.2.0.20250827-py3-none-any.whl", hash = "sha256:96ae5abcb5ea1e1f1faf811a2ff8b2ce7e6d820fc42c4fcb4b332b2da485de16", size = 8940, upload-time = "2025-08-27T02:56:49.645Z" },
 ]
 
 [[package]]
