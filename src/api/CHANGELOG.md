@@ -22,6 +22,10 @@ and this project adheres to
 - Upgrade `sentry-sdk` to `2.57.0`
 - Upgrade `sqlmodel` to `0.0.38`
 
+### Removed
+
+- Remove API requests user cache and related configuration
+
 ## [0.33.1] - 2026-03-23
 
 ### Changed
