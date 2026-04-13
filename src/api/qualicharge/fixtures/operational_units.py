@@ -1,5 +1,15 @@
 r"""QualiCharge operational units fixture.
 
+=== DEPRECATED: 2026-04-13 ===
+
+This fixture is no longer used to define operational units as a fixture we can import
+in the code. Now that the AVERE has developed an API that can be used to automate
+operational units updates, we now develop a daily run script that query this API and
+updates database operational units.
+
+==============================
+
+
 Initial release: 2024/05/17
 
 Fixture generated from AFIREV's official CSV file available at:

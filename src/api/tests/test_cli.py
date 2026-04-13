@@ -1,5 +1,6 @@
 """Tests for QualiCharge CLI."""
 
+import copy
 from io import StringIO
 from typing import cast
 
@@ -9,6 +10,12 @@ from sqlalchemy import Column as SAColumn
 from sqlalchemy import func
 from sqlmodel import select
 
+from qualicharge.afirev.client import AfirevClient
+from qualicharge.afirev.models import (
+    AfirevPrefix,
+    AfirevPrefixStatusEnum,
+    AfirevPrefixTypeEnum,
+)
 from qualicharge.auth.factories import GroupFactory, UserFactory
 from qualicharge.auth.schemas import Group, GroupOperationalUnit, User, UserGroup
 from qualicharge.cli import app
@@ -19,6 +26,8 @@ from qualicharge.schemas.core import (
     Localisation,
     Operateur,
     OperationalUnit,
+    OperationalUnitStatusEnum,
+    OperationalUnitTypeEnum,
     PointDeCharge,
     Station,
     StatiqueMV,
@@ -581,6 +590,166 @@ def test_ou_list(runner, db_session):
     assert "ACME,Foo" in result.stdout
     assert "FRFAS" in result.stdout
     assert "Bar" in result.stdout
+
+
+def test_ou_update(runner, db_session, monkeypatch, afirev_prefixes):
+    """Test the `ou update` command."""
+    operational_units_count = db_session.exec(
+        select(func.count(OperationalUnit.id))
+    ).one()
+    new_prefixes = afirev_prefixes + [
+        AfirevPrefix(
+            prefixId="FRFOO",
+            name="foo",
+            amenageurName="Foo Inc.",
+            exploitantName="Foo Volt",
+            type=AfirevPrefixTypeEnum.BOTH,
+            status=AfirevPrefixStatusEnum.ACTIVE,
+        ),
+        AfirevPrefix(
+            prefixId="FRBAR",
+            name="bar",
+            amenageurName="Bar Inc.",
+            exploitantName="Bar Volt",
+            type=AfirevPrefixTypeEnum.CHARGE,
+            status=AfirevPrefixStatusEnum.ACTIVE,
+        ),
+        AfirevPrefix(
+            prefixId="FRXXX",
+            name="xxx",
+            amenageurName="xxx Inc.",
+            exploitantName="xxx Volt",
+            type=AfirevPrefixTypeEnum.MOBILITY,
+            status=AfirevPrefixStatusEnum.INACTIVE,
+        ),
+    ]
+    monkeypatch.setattr(AfirevClient, "prefixes", lambda _: new_prefixes)
+
+    # Dry run (default)
+    result = runner.invoke(app, ["ou", "update"], obj=db_session)
+    assert "Creations: ['FRBAR', 'FRFOO', 'FRXXX']" in result.stdout
+    assert (
+        db_session.exec(select(func.count(OperationalUnit.id))).one()
+        == operational_units_count
+    )
+
+    # No dry run: do not proceed
+    result = runner.invoke(
+        app, ["ou", "update", "--no-dry-run"], obj=db_session, input="N"
+    )
+    assert "Creations: ['FRBAR', 'FRFOO', 'FRXXX']" in result.stdout
+    assert db_session.exec(select(func.count(OperationalUnit.id))).one() == (
+        operational_units_count
+    )
+
+    # No dry run: proceed
+    result = runner.invoke(
+        app, ["ou", "update", "--no-dry-run"], obj=db_session, input="y"
+    )
+    assert "Creations: ['FRBAR', 'FRFOO', 'FRXXX']" in result.stdout
+    assert db_session.exec(select(func.count(OperationalUnit.id))).one() == len(
+        new_prefixes
+    )
+
+    # Running it twice: nothing should have changed
+    result = runner.invoke(
+        app, ["ou", "update", "--no-dry-run", "--force"], obj=db_session
+    )
+    assert "Nothing has changed." in result.stdout
+    assert db_session.exec(select(func.count(OperationalUnit.id))).one() == len(
+        new_prefixes
+    )
+
+
+def test_ou_update_inactivates_missing_codes(
+    runner, db_session, monkeypatch, afirev_prefixes
+):
+    """Test the `ou update` command inactivates AFIREV missing codes."""
+    operational_units = db_session.exec(select(OperationalUnit)).all()
+
+    # Force all operational units to be active
+    for operational_unit in operational_units:
+        operational_unit.status = OperationalUnitStatusEnum.ACTIVE
+    db_session.add_all(operational_units)
+
+    # Remove an operational unit from AFIREV response
+    new_prefixes = copy.copy(afirev_prefixes)
+    missing = new_prefixes.pop()
+    monkeypatch.setattr(AfirevClient, "prefixes", lambda _: new_prefixes)
+
+    # For now no operational unit should be inactive
+    inactive_operational_units_count = db_session.exec(
+        select(func.count(OperationalUnit.id)).where(
+            OperationalUnit.status == OperationalUnitStatusEnum.INACTIVE
+        )
+    ).one()
+    assert inactive_operational_units_count == 0
+
+    # Update operational unit
+    result = runner.invoke(
+        app, ["ou", "update", "--no-dry-run", "--force"], obj=db_session
+    )
+    assert f"Inactivations: ['{missing.prefixId}']" in result.stdout
+    assert db_session.exec(select(func.count(OperationalUnit.id))).one() == len(
+        operational_units
+    )
+    inactive_operational_units_count = db_session.exec(
+        select(func.count(OperationalUnit.id)).where(
+            OperationalUnit.status == OperationalUnitStatusEnum.INACTIVE
+        )
+    ).one()
+    assert inactive_operational_units_count == 1
+
+
+def test_ou_update_update_existing(runner, db_session, monkeypatch, afirev_prefixes):
+    """Test the `ou update` command updates existing operational units."""
+    operational_units = db_session.exec(select(OperationalUnit)).all()
+    operational_units_count = len(operational_units)
+
+    # Force all operational units to be active
+    for operational_unit in operational_units:
+        operational_unit.status = OperationalUnitStatusEnum.ACTIVE
+    db_session.add_all(operational_units)
+
+    # Update Tesla AFIREV Prefix
+    tesla_index = [
+        idx for idx, prefix in enumerate(afirev_prefixes) if prefix.prefixId == "FRTSL"
+    ][0]
+    tesla_prefix = afirev_prefixes[tesla_index]
+    tesla_prefix.name = "Tesla"
+    tesla_prefix.amenageurName = "Tesla Inc."
+    tesla_prefix.exploitantName = "Tesla Inc."
+    tesla_prefix.type = AfirevPrefixTypeEnum.CHARGE
+    tesla_prefix.status = AfirevPrefixStatusEnum.INACTIVE
+    monkeypatch.setattr(AfirevClient, "prefixes", lambda _: afirev_prefixes)
+
+    # Original state
+    tesla_operational_unit = db_session.exec(
+        select(OperationalUnit).where(OperationalUnit.code == "FRTSL")
+    ).one()
+    assert tesla_operational_unit.type == OperationalUnitTypeEnum.CHARGING
+    assert tesla_operational_unit.status == OperationalUnitStatusEnum.ACTIVE
+    assert tesla_operational_unit.amenageur is None
+    assert tesla_operational_unit.exploitant is None
+
+    # Update operational unit
+    result = runner.invoke(
+        app, ["ou", "update", "--no-dry-run", "--force"], obj=db_session
+    )
+    assert "Updates: ['FRTSL']" in result.stdout
+    assert (
+        db_session.exec(select(func.count(OperationalUnit.id))).one()
+        == operational_units_count
+    )
+
+    # Updated state
+    tesla_operational_unit = db_session.exec(
+        select(OperationalUnit).where(OperationalUnit.code == "FRTSL")
+    ).one()
+    assert tesla_operational_unit.type == OperationalUnitTypeEnum.CHARGING
+    assert tesla_operational_unit.status == OperationalUnitStatusEnum.INACTIVE
+    assert tesla_operational_unit.amenageur == "Tesla Inc."
+    assert tesla_operational_unit.exploitant == "Tesla Inc."
 
 
 def test_import_static(runner, db_session):
