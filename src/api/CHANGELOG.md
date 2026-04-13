@@ -8,6 +8,10 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Added 
+
+- CLI: add a new `qcm ou update` command
+
 ### Changed
 
 #### Dependencies
