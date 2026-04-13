@@ -589,6 +589,10 @@ def test_read_status_get_pdc_id_cache(db_session, client_auth):
     expected = 4
     assert counter.count == expected
 
+    # With activated cache, we expect the following db request:
+    #   1. get_user injection
+    #   2. latest db status query
+    expected = 2
     for hit in range(1, 10):
         # Count queries while getting the latest status
         with SAQueryCounter(db_session.connection()) as counter:
@@ -596,7 +600,7 @@ def test_read_status_get_pdc_id_cache(db_session, client_auth):
         cache_info = get_pdc_id.cache_info()  # type: ignore[attr-defined]
         assert cache_info.hits == hit
         assert cache_info.currsize == 1
-        assert counter.count == 1
+        assert counter.count == expected
 
 
 @pytest.mark.parametrize(

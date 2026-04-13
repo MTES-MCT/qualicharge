@@ -2,12 +2,10 @@
 
 import logging
 from functools import lru_cache
-from threading import Lock
 from typing import Annotated, Dict, Union
 
 import httpx
 import jwt
-from cachetools import TTLCache, cached
 from fastapi import Depends
 from fastapi.security import (
     HTTPAuthorizationCredentials,
@@ -151,15 +149,6 @@ def get_token(
     return IDToken(**decoded_token)
 
 
-@cached(
-    TTLCache(
-        maxsize=settings.API_GET_USER_CACHE_MAXSIZE,
-        ttl=settings.API_GET_USER_CACHE_TTL,
-    ),
-    lock=Lock(),
-    key=lambda email, session: email,
-    info=settings.API_GET_USER_CACHE_INFO,
-)
 def get_user_from_db(
     email: str,
     session: Annotated[
