@@ -23,6 +23,7 @@ and this project adheres to
 - Upgrade `jsonschema` to `4.26.0`
 - Upgrade `mozilla-django-oidc` to `5.0.2`
 - Upgrade `psycopg` to `3.3.3`
+- Upgrade `requests` to `2.33.0`
 - Upgrade `sentry-sdk` to `2.54.0`
 - Upgrade `whitenoise` to `6.12.0`
 
