@@ -68,6 +68,16 @@ class OperationalUnitTypeEnum(IntEnum):
 
     CHARGING = 1
     MOBILITY = 2
+    BOTH = 3
+
+
+class OperationalUnitStatusEnum(IntEnum):
+    """Operational unit statuses (according to the AFIREV)."""
+
+    ACTIVE = 1
+    AWAITING_PAYMENT = 2
+    INACTIVE = 3
+    SUSPENDED = 4
 
 
 # Enum definition for database: we want to store Enum values instead of keys (this is
@@ -275,7 +285,10 @@ class OperationalUnit(BaseTimestampedSQLModel, table=True):
         unique=True,
     )
     name: str
+    amenageur: str | None = None
+    exploitant: str | None = None
     type: OperationalUnitTypeEnum
+    status: OperationalUnitStatusEnum | None = None
 
     # Relationships
     stations: List["Station"] = Relationship(back_populates="operational_unit")
