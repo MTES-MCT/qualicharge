@@ -21,7 +21,7 @@ dependencies = [
     "pydantic-settings==2.13.1",
     "pyinstrument==5.1.2",
     "pyjwt==2.12.1",
-    "python-multipart==0.0.24",
+    "python-multipart==0.0.26",
     "questionary==2.1.1",
     "sentry-sdk[fastapi]==2.57.0",
     "sqlalchemy-timescaledb==0.4.1",
