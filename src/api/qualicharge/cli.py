@@ -18,13 +18,16 @@ from sqlmodel import Session as SMSession
 from sqlmodel import select
 
 from .afirev.client import AfirevClient
-from .afirev.models import AfirevPrefixStatusEnum
 from .auth.models import UserCreate
 from .auth.schemas import Group, ScopesEnum, User
 from .conf import settings
 from .db import get_session
 from .exceptions import IntegrityError as QCIntegrityError
-from .schemas.core import STATIQUE_MV_TABLE_NAME, OperationalUnit
+from .schemas.core import (
+    STATIQUE_MV_TABLE_NAME,
+    OperationalUnit,
+    OperationalUnitStatusEnum,
+)
 from .schemas.sql import StatiqueImporter
 
 logging.basicConfig(
@@ -570,11 +573,11 @@ def update_operational_units(
     deleted_codes = existing_codes - fetched_codes
     stmt = select(OperationalUnit).filter(
         cast(SAColumn, OperationalUnit.code).in_(deleted_codes),
-        OperationalUnit.status != AfirevPrefixStatusEnum.INACTIVE,
+        OperationalUnit.status != OperationalUnitStatusEnum.INACTIVE,
     )
     operational_units_to_inactivate = session.exec(stmt).all()
     for operational_unit in operational_units_to_inactivate:
-        operational_unit.status = AfirevPrefixStatusEnum.INACTIVE
+        operational_unit.status = OperationalUnitStatusEnum.INACTIVE
     session.add_all(operational_units_to_inactivate)
     console.log(
         f"Inactivations: {[ou.code for ou in operational_units_to_inactivate] or None}"
