@@ -146,5 +146,8 @@ class Settings(BaseSettings):
     PROFILING: bool = False
     PROFILING_INTERVAL: float = 0.001
 
+    # AFIREV API
+    AFIREV_API_ROOL_URL: HttpUrl = HttpUrl("https://api.afirev.fr/public/")
+
 
 settings = Settings()

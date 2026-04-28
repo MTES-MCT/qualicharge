@@ -17,13 +17,17 @@ from sqlalchemy_utils import refresh_materialized_view
 from sqlmodel import Session as SMSession
 from sqlmodel import select
 
+from .afirev.client import AfirevClient
 from .auth.models import UserCreate
 from .auth.schemas import Group, ScopesEnum, User
 from .conf import settings
 from .db import get_session
 from .exceptions import IntegrityError as QCIntegrityError
-from .fixtures.operational_units import prefixes
-from .schemas.core import STATIQUE_MV_TABLE_NAME, OperationalUnit
+from .schemas.core import (
+    STATIQUE_MV_TABLE_NAME,
+    OperationalUnit,
+    OperationalUnitStatusEnum,
+)
 from .schemas.sql import StatiqueImporter
 
 logging.basicConfig(
@@ -81,6 +85,7 @@ def create_group(
     selected_operational_units = []
     if operational_units is None:
         if not force:
+            prefixes = session.exec(select(OperationalUnit.code).distinct()).all()
             selected_operational_units = questionary.checkbox(
                 "Select group operational unit(s)", choices=prefixes
             ).ask()
@@ -529,6 +534,116 @@ def list_operational_units(
             ",".join(sorted(group.name for group in groups)),
         )
     console.print(table)
+
+
+@operational_units_app.command("update")
+def update_operational_units(
+    ctx: typer.Context, force: bool = False, dry_run: bool = True
+):
+    """Update active operational units from AFIREV reference."""
+    session: SMSession = ctx.obj
+
+    # Do we have detected changes during this run?
+    has_changed = False
+
+    # Fetch Afirev operational units
+    console.log("Fetching prefixes from the AFIREV API…")
+    client = AfirevClient()
+    prefixes = client.prefixes()
+    fetched_codes = {p.prefixId for p in prefixes}
+
+    # Get operational units from database
+    console.log("Getting existing operational units from database…")
+    stmt = select(OperationalUnit.code)
+    existing_codes = set(session.exec(stmt).all())
+
+    # Create new operational units
+    new_codes = fetched_codes - existing_codes
+    session.add_all(
+        [
+            prefix.to_operational_unit()
+            for prefix in prefixes
+            if prefix.prefixId in new_codes
+        ]
+    )
+    console.log(f"Creations: {new_codes or None}")
+    has_changed = len(new_codes) > 0 or has_changed
+
+    # Some codes may have been deleted: inactivate them
+    deleted_codes = existing_codes - fetched_codes
+    stmt = select(OperationalUnit).filter(
+        cast(SAColumn, OperationalUnit.code).in_(deleted_codes),
+        OperationalUnit.status != OperationalUnitStatusEnum.INACTIVE,
+    )
+    operational_units_to_inactivate = session.exec(stmt).all()
+    for operational_unit in operational_units_to_inactivate:
+        operational_unit.status = OperationalUnitStatusEnum.INACTIVE
+    session.add_all(operational_units_to_inactivate)
+    console.log(
+        f"Inactivations: {[ou.code for ou in operational_units_to_inactivate] or None}"
+    )
+    has_changed = len(operational_units_to_inactivate) > 0 or has_changed
+
+    # Select for update existing operational units
+    update_codes = existing_codes - new_codes - deleted_codes
+    stmt = (
+        select(OperationalUnit)
+        .filter(cast(SAColumn, OperationalUnit.code).in_(update_codes))
+        .order_by(OperationalUnit.code)
+    )
+    operational_units_to_update = session.exec(stmt).all()
+
+    # Get sorted prefixes used for update
+    updates = sorted(
+        [
+            prefix.to_operational_unit()
+            for prefix in prefixes
+            if prefix.prefixId in [ou.code for ou in operational_units_to_update]
+        ],
+        key=lambda ou: ou.code,
+    )
+
+    excluded_fields = {"updated_at", "created_at", "id"}
+    changed_operational_unit_codes = []
+    for operational_unit, update in zip(
+        operational_units_to_update, updates, strict=True
+    ):
+        # Nothing changed
+        if update.model_dump(exclude=excluded_fields) == operational_unit.model_dump(
+            exclude=excluded_fields
+        ):
+            continue
+
+        for k, v in update.model_dump(exclude=excluded_fields).items():
+            setattr(operational_unit, k, v)
+        session.add(operational_unit)
+        changed_operational_unit_codes.append(operational_unit.code)
+
+    console.log(f"Updates: {changed_operational_unit_codes or None}")
+    has_changed = len(changed_operational_unit_codes) > 0 or has_changed
+
+    if not has_changed:
+        session.rollback()
+        console.log("Nothing has changed.")
+        raise typer.Exit(0)
+
+    if dry_run and not force:
+        session.rollback()
+        console.log("Dry run mode activated, nothing has been updated.")
+        raise typer.Exit(0)
+
+    # Ask before committing the transaction
+    if not force:
+        ret = typer.confirm(
+            "Do you want to apply operational unit updates?", abort=False
+        )
+        if not ret:
+            session.rollback()
+            console.log("Abort! Changes have been rolled back.")
+            raise typer.Exit(1)
+
+    session.commit()
+    console.log("Operational units have been successfully updated.")
 
 
 @statics_app.command("import")
