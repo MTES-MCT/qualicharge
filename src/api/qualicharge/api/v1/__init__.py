@@ -13,7 +13,7 @@ from qualicharge.exceptions import (
     PermissionDenied,
 )
 
-from .routers import auth, dynamic, manage, static
+from .routers import auth, dynamic, manage, static, tariff
 
 logger = logging.getLogger(__name__)
 
@@ -50,3 +50,4 @@ app.include_router(auth.router)
 app.include_router(manage.router)
 app.include_router(static.router)
 app.include_router(dynamic.router)
+app.include_router(tariff.router)

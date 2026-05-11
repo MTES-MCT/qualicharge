@@ -70,3 +70,6 @@ provisioning/terraform.tfstate*
 
 # -- static
 src/dashboard/staticfiles/
+
+# 
+.vscode
