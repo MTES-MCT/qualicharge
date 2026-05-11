@@ -29,6 +29,7 @@ from qualicharge.schemas.core import (  # noqa: F401
     Status,
 )
 from qualicharge.schemas.geo import Region, Department, EPCI, City  # noqa: F401
+from qualicharge.schemas.tariff import PointDeChargeTariff, Tariff  # noqa: F401
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

@@ -41,6 +41,10 @@ every object. Instead API permissions follow two simple rules:
 | `all:read`       | update all type of data (static and dynamic)   | :white_check_mark: |
 | `all:update`     | update all type of data (static and dynamic)   | :white_check_mark: |
 | `all:delete`     | update all type of data (static and dynamic)   | :x:                |
+| `tariff:create`  | create tariff data                             | :white_check_mark: |
+| `tariff:read`    | read tariff data                               | :white_check_mark: |
+| `tariff:update`  | update tariff associations or metadata         | :white_check_mark: |
+| `tariff:delete`  | delete tariff data                             | :x:                |
 
 > :bulb: Some scopes are not used yet as no endpoint requiring those have been
 > implemented yet.
