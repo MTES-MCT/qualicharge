@@ -373,12 +373,10 @@ async def list_tariffs(  # noqa: PLR0913
             ).in_([ou.id for ou in user.operational_units])
         )
 
-    total = session.exec(
-        stmt.with_only_columns(func.count(func.distinct(cast(SAColumn, Tariff.id))))
-        .order_by(None)
-        .limit(None)
-        .offset(None)
-    ).one()
+    total_statement = select(func.count()).select_from(
+        stmt.with_only_columns(cast(SAColumn, Tariff.id)).distinct().subquery()
+    )
+    total = session.exec(total_statement).one()
     tariffs = session.exec(
         stmt.distinct()
         .order_by(cast(SAColumn, Tariff.created_at))

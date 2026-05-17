@@ -1,6 +1,7 @@
 """QualiCharge tariff factories."""
 
 from datetime import datetime, timedelta, timezone
+from typing import Any
 
 from polyfactory import Use
 from polyfactory.decorators import post_generated
@@ -64,25 +65,33 @@ class TariffObjectFactory(ModelFactory[TariffObject]):
         return start_date_time + timedelta(days=2)
 
     @classmethod
-    def build(cls, **kwargs) -> TariffObject:
+    def build(
+        cls,
+        factory_use_construct: bool = False,
+        **kwargs: Any,
+    ) -> TariffObject:
         """Build a tariff object accepting the model field name as a convenience."""
         if "tariff_id" in kwargs:
             kwargs["id"] = kwargs.pop("tariff_id")
-        return super().build(**kwargs)
+        return super().build(factory_use_construct=factory_use_construct, **kwargs)
 
 
 class TariffCreateFactory(ModelFactory[TariffCreate]):
     """Tariff creation payload factory."""
 
     tariff = Use(TariffObjectFactory.build)
-    targets = []
+    targets: list[str] = []
 
     @classmethod
-    def build(cls, **kwargs) -> TariffCreate:
+    def build(
+        cls,
+        factory_use_construct: bool = False,
+        **kwargs: Any,
+    ) -> TariffCreate:
         """Build a payload accepting the model field name as a convenience."""
         if "id_pdc_itinerance" in kwargs:
             kwargs["targets"] = kwargs.pop("id_pdc_itinerance")
-        return super().build(**kwargs)
+        return super().build(factory_use_construct=factory_use_construct, **kwargs)
 
 
 class PointDeChargeTariffCreateFactory(ModelFactory[PointDeChargeTariffCreate]):
