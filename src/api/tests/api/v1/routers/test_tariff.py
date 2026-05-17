@@ -1,6 +1,7 @@
 """Tests for the QualiCharge API tariff router."""
 
 from datetime import datetime, timedelta, timezone
+from urllib.parse import parse_qs, urlparse
 from uuid import UUID, uuid4
 
 import pytest
@@ -105,6 +106,110 @@ def test_tariff_api_workflow(db_session, client_auth):
         params={"at": datetime.now(timezone.utc).isoformat()},
     )
     assert response.status_code == status.HTTP_404_NOT_FOUND
+
+
+def test_list_tariffs_pagination(db_session, client_auth):
+    """Test the /statique/tariff/ list endpoint results pagination."""
+    save_statiques(db_session, StatiqueFactory.batch(1))
+    pdc = db_session.exec(select(PointDeCharge)).one()
+    now = datetime.now(timezone.utc).replace(microsecond=0)
+    total_tariffs = 3
+    limit = 2
+    second_page_offset = 2
+
+    tariff_ids = []
+    for index in range(total_tariffs):
+        response = client_auth.post(
+            "/statique/tariff/",
+            json=_tariff_payload(
+                f"tariff-{index}",
+                now + timedelta(days=index),
+                now + timedelta(days=index + 1),
+                [pdc.id_pdc_itinerance],
+            ),
+        )
+        assert response.status_code == status.HTTP_201_CREATED
+        tariff_ids.append(response.json()["id"])
+
+    response = client_auth.get(f"/statique/tariff/?offset=0&limit={limit}")
+    assert response.status_code == status.HTTP_200_OK
+    json_response = response.json()
+    assert json_response["total"] == total_tariffs
+    assert json_response["offset"] == 0
+    assert json_response["limit"] == limit
+    assert json_response["size"] == limit
+    assert [tariff["id"] for tariff in json_response["items"]] == tariff_ids[:limit]
+    assert json_response["previous"] is None
+    next_query = parse_qs(urlparse(json_response["next"]).query)
+    assert next_query == {"limit": ["2"], "offset": ["2"]}
+
+    response = client_auth.get(
+        f"/statique/tariff/?offset={second_page_offset}&limit={limit}"
+    )
+    assert response.status_code == status.HTTP_200_OK
+    json_response = response.json()
+    assert json_response["total"] == total_tariffs
+    assert json_response["offset"] == second_page_offset
+    assert json_response["limit"] == limit
+    assert json_response["size"] == 1
+    assert [tariff["id"] for tariff in json_response["items"]] == tariff_ids[
+        second_page_offset:
+    ]
+    previous_query = parse_qs(urlparse(json_response["previous"]).query)
+    assert previous_query == {"limit": ["2"], "offset": ["0"]}
+    assert json_response["next"] is None
+
+
+def test_list_tariffs_filters_by_application_dates(db_session, client_auth):
+    """Test tariff list filters by application dates."""
+    save_statiques(db_session, StatiqueFactory.batch(1))
+    pdc = db_session.exec(select(PointDeCharge)).one()
+    now = datetime.now(timezone.utc).replace(microsecond=0)
+
+    expected = {
+        "past": (
+            now - timedelta(days=4),
+            now - timedelta(days=3),
+        ),
+        "current": (
+            now - timedelta(days=1),
+            now + timedelta(days=1),
+        ),
+        "future": (
+            now + timedelta(days=3),
+            now + timedelta(days=4),
+        ),
+    }
+    tariff_ids = {}
+    for original_id, (start, end) in expected.items():
+        response = client_auth.post(
+            "/statique/tariff/",
+            json=_tariff_payload(original_id, start, end, [pdc.id_pdc_itinerance]),
+        )
+        assert response.status_code == status.HTTP_201_CREATED
+        tariff_ids[original_id] = response.json()["id"]
+
+    response = client_auth.get("/statique/tariff/", params={"current": True})
+    assert response.status_code == status.HTTP_200_OK
+    assert [tariff["id"] for tariff in response.json()["items"]] == [
+        tariff_ids["current"]
+    ]
+
+    response = client_auth.get(
+        "/statique/tariff/",
+        params={"from": (now + timedelta(days=2)).isoformat()},
+    )
+    assert response.status_code == status.HTTP_200_OK
+    assert [tariff["id"] for tariff in response.json()["items"]] == [
+        tariff_ids["future"]
+    ]
+
+    response = client_auth.get(
+        "/statique/tariff/",
+        params={"to": (now - timedelta(days=2)).isoformat()},
+    )
+    assert response.status_code == status.HTTP_200_OK
+    assert [tariff["id"] for tariff in response.json()["items"]] == [tariff_ids["past"]]
 
 
 def test_create_tariff_conflict(db_session, client_auth):
