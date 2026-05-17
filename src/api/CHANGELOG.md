@@ -8,6 +8,10 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Added
+
+- Add tariff API endpoints, database models, migrations, and tests
+
 ### Changed
 
 #### Dependencies
