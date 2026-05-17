@@ -54,6 +54,7 @@ def test_cli_tariff_read(runner, qcc, httpx_mock):
     assert result.exit_code == QCCExitCodes.OK
     assert json.loads(result.stdout) == {"id": tariff_id}
 
+
 def test_cli_tariff_applicable(runner, qcc, httpx_mock):
     """Test the `tariff applicable` command."""
     id_pdc_itinerance = "FRS63E0001"

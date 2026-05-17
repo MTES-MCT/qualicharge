@@ -13,6 +13,9 @@ from ..models.dynamic import SessionCreate, StatusCreate
 from ..schemas.core import LatestStatus, Session, Status
 from . import FrenchDataclassFactory, TimestampedSQLModelFactory
 
+SESSION_START_MIN_AGE_SECONDS = 30 * 24 * 60 * 60
+SESSION_START_MAX_AGE_SECONDS = SESSION_START_MIN_AGE_SECONDS - 3600
+
 
 class SessionCreateFactory(ModelFactory[SessionCreate]):
     """Session model factory."""
@@ -23,8 +26,8 @@ class SessionCreateFactory(ModelFactory[SessionCreate]):
     )
     start = Use(
         lambda: DataclassFactory.__faker__.date_time_between(
-            start_date=f"-{settings.API_MAX_SESSION_AGE}s",
-            end_date=f"-{settings.API_MAX_SESSION_AGE - 3600}s",
+            start_date=f"-{SESSION_START_MIN_AGE_SECONDS}s",
+            end_date=f"-{SESSION_START_MAX_AGE_SECONDS}s",
             tzinfo=timezone.utc,
         )
     )

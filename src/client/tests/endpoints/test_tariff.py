@@ -78,6 +78,7 @@ async def test_tariff_read(client, httpx_mock):
     )
     assert await tariff.read(tariff_id) == {"id": tariff_id}
 
+
 @pytest.mark.anyio
 async def test_tariff_applicable(client, httpx_mock):
     """Test the /statique/{id_pdc_itinerance}/tariff endpoint call."""
@@ -102,4 +103,3 @@ async def test_tariff_applicable(client, httpx_mock):
         id_pdc_itinerance,
         at=datetime(2026, 2, 23, 10),
     ) == {"id_pdc_itinerance": id_pdc_itinerance}
-

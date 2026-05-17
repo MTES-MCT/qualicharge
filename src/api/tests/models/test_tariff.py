@@ -35,7 +35,7 @@ def test_tariff_create_factory():
     payload = TariffCreateFactory.build()
 
     assert payload.tariff.tariff_id
-    assert payload.id_pdc_itinerance == []
+    assert payload.targets == []
 
 
 def test_point_de_charge_tariff_create_factory():

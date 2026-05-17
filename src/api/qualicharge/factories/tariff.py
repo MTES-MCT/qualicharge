@@ -82,17 +82,6 @@ class TariffCreateFactory(ModelFactory[TariffCreate]):
     tariff = Use(TariffObjectFactory.build)
     targets: list[str] = []
 
-    @classmethod
-    def build(
-        cls,
-        factory_use_construct: bool = False,
-        **kwargs: Any,
-    ) -> TariffCreate:
-        """Build a payload accepting the model field name as a convenience."""
-        if "id_pdc_itinerance" in kwargs:
-            kwargs["targets"] = kwargs.pop("id_pdc_itinerance")
-        return super().build(factory_use_construct=factory_use_construct, **kwargs)
-
 
 class PointDeChargeTariffCreateFactory(ModelFactory[PointDeChargeTariffCreate]):
     """Point de charge tariff association payload factory."""
