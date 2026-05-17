@@ -145,8 +145,8 @@ class TariffObject(BaseModel):
 class TariffCreate(SQLModel):
     """Tariff creation payload."""
 
-    tariff: TariffObject = Field(alias="raw")
-    id_pdc_itinerance: List[str] = Field(default_factory=list)
+    targets: List[str] = Field(default_factory=list)
+    tariff: TariffObject
 
 
 class TariffRead(SQLModel):

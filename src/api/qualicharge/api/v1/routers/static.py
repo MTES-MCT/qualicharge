@@ -4,7 +4,8 @@ import datetime
 import json
 import logging
 from io import BytesIO
-from typing import Annotated, List, Optional, cast
+from typing import Annotated, Generic, List, Optional, TypeVar, cast
+from uuid import UUID
 
 import pandas as pd
 from annotated_types import Len
@@ -22,12 +23,14 @@ from pydantic import AnyHttpUrl, BaseModel, ValidationError, computed_field
 from sqlalchemy import any_, func
 from sqlalchemy.dialects.postgresql import array
 from sqlalchemy.exc import (
+    IntegrityError,
     NoResultFound,
 )
 from sqlalchemy.schema import Column as SAColumn
 from sqlmodel import Session, select
 
 from qualicharge.api.utils import GzipRoute
+from qualicharge.api.v1.routers.dynamic import get_pdc_id
 from qualicharge.auth.oidc import get_user
 from qualicharge.auth.schemas import ScopesEnum, User
 from qualicharge.conf import settings
@@ -40,8 +43,24 @@ from qualicharge.exceptions import (
     PermissionDenied,
 )
 from qualicharge.models.static import Statique
-from qualicharge.schemas.core import LatestStatus, PointDeCharge, StatiqueMV
+from qualicharge.models.tariff import TariffCreate, TariffRead
+from qualicharge.schemas.core import (
+    ActivePointsDeChargeView,
+    ActiveStationsView,
+    LatestStatus,
+    PointDeCharge,
+    StatiqueMV,
+)
 from qualicharge.schemas.sql import StatiqueImporter
+from qualicharge.schemas.tariff import PointDeChargeTariff, Tariff
+from qualicharge.schemas.tariff_utils import (
+    get_applicable_tariff,
+    get_tariff_by_original,
+    is_tariff_allowed_for_user,
+    tariff_fields_from_object,
+    tariff_to_read,
+    to_db_datetime,
+)
 from qualicharge.schemas.utils import (
     are_pdcs_allowed_for_user,
     is_pdc_allowed_for_user,
@@ -57,6 +76,8 @@ router = APIRouter(
     tags=["IRVE Statique"],
     route_class=GzipRoute,
 )
+
+T = TypeVar("T")
 
 
 class StatiqueItemsCreatedResponse(BaseModel):
@@ -84,26 +105,113 @@ class StatiqueItemsCreatedResponse(BaseModel):
     }
 
 
-class PaginatedStatiqueListResponse(BaseModel):
-    """Paginated statique list response."""
+class PaginatedListResponse(BaseModel, Generic[T]):
+    """Paginated list response."""
 
     limit: int
     offset: int
     total: int
     previous: Optional[AnyHttpUrl]
     next: Optional[AnyHttpUrl]
-    items: List[Statique]
+    items: List[T]
 
     @computed_field  # type: ignore[misc]
     @property
     def size(self) -> int:
-        """The number of items created."""
+        """The number of items returned."""
         return len(self.items)
+
+
+class PaginatedStatiqueListResponse(PaginatedListResponse[Statique]):
+    """Paginated statique list response."""
+
+
+class PaginatedTariffListResponse(PaginatedListResponse[TariffRead]):
+    """Paginated tariff list response."""
 
 
 BulkStatiqueList = Annotated[
     List[Statique], Len(1, settings.API_STATIQUE_BULK_CREATE_MAX_SIZE)
 ]
+
+
+def build_pagination_urls(
+    request: Request,
+    offset: int,
+    limit: int,
+    total: int,
+    count: int,
+) -> tuple[str | None, str | None]:
+    """Build previous and next pagination URLs for a paginated response."""
+    previous_url = next_url = None
+    current_url = request.url
+
+    previous_offset = offset - limit if offset > limit else 0
+    if offset:
+        previous_url = str(current_url.include_query_params(offset=previous_offset))
+
+    if limit and count == limit and total > offset + limit:
+        next_url = str(current_url.include_query_params(offset=offset + limit))
+
+    return previous_url, next_url
+
+
+def _get_tariff_or_404(
+    tariff_id: UUID,
+    session: Session,
+    include_deleted: bool = False,
+) -> Tariff:
+    """Get a tariff by id or raise a 404 error."""
+    stmt = select(Tariff).where(Tariff.id == tariff_id)
+    if not include_deleted:
+        stmt = stmt.where(cast(SAColumn, Tariff.deleted_at).is_(None))
+    tariff = session.exec(stmt).one_or_none()
+    if tariff is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Tariff does not exist",
+        )
+    return tariff
+
+
+def _ensure_tariff_allowed(tariff: Tariff, user: User, session: Session) -> None:
+    """Raise if a user cannot access a tariff."""
+    if not is_tariff_allowed_for_user(session, tariff.id, user):
+        raise PermissionDenied("You cannot access this tariff")
+
+
+def _add_tariff_associations(
+    tariff: Tariff,
+    ids_pdc_itinerance: set[str],
+    user: User,
+    session: Session,
+) -> None:
+    """Associate a tariff with charge points."""
+    if not ids_pdc_itinerance:
+        return
+
+    if not are_pdcs_allowed_for_user(ids_pdc_itinerance, user):
+        raise PermissionDenied("You cannot associate tariff with these charge points")
+
+    for id_pdc_itinerance in ids_pdc_itinerance:
+        pdc_id = get_pdc_id(id_pdc_itinerance, session)
+        association = session.exec(
+            select(PointDeChargeTariff).where(
+                PointDeChargeTariff.point_de_charge_id == pdc_id,
+                PointDeChargeTariff.tariff_id == tariff.id,
+            )
+        ).one_or_none()
+        if association is not None:
+            continue
+
+        session.add(
+            PointDeChargeTariff(
+                point_de_charge_id=pdc_id,
+                tariff_id=tariff.id,
+                created_by_id=user.id,
+                updated_by_id=user.id,
+            )
+        )
 
 
 @router.get("/")
@@ -126,9 +234,6 @@ async def list(
     Note that it can take up to 10 minutes for a created Statique item to appear in
     this endpoint response.
     """
-    current_url = request.url
-    previous_url = next_url = None
-
     total_statement = select(func.count(cast(SAColumn, StatiqueMV.pdc_id)))
 
     ou_filter: array | None = None
@@ -168,12 +273,13 @@ async def list(
     if errors:
         raise HTTPException(status_code=422, detail=errors)
 
-    previous_offset = offset - limit if offset > limit else 0
-    if offset:
-        previous_url = str(current_url.include_query_params(offset=previous_offset))
-
-    if not limit > len(statiques) and total != offset + limit:
-        next_url = str(current_url.include_query_params(offset=offset + limit))
+    previous_url, next_url = build_pagination_urls(
+        request,
+        offset,
+        limit,
+        total,
+        len(statiques),
+    )
 
     return PaginatedStatiqueListResponse(
         total=total,
@@ -183,6 +289,205 @@ async def list(
         next=next_url,
         items=statiques,
     )
+
+
+@router.get("/tariff/", response_model=PaginatedTariffListResponse)
+async def list_tariffs(  # noqa: PLR0913
+    user: Annotated[User, Security(get_user, scopes=[ScopesEnum.TARIFF_READ.value])],
+    request: Request,
+    from_: Annotated[
+        Optional[datetime.datetime],
+        Query(alias="from", title="Application date from"),
+    ] = None,
+    to: Annotated[
+        Optional[datetime.datetime],
+        Query(title="Application date to"),
+    ] = None,
+    pdc: Annotated[
+        Optional[List[str]],
+        Query(
+            title="Point de charge",
+            description=(
+                "Filter tariffs by `id_pdc_itinerance` "
+                "(can be provided multiple times)"
+            ),
+        ),
+    ] = None,
+    current: Annotated[
+        Optional[bool],
+        Query(description="Return only tariffs applicable at the current date"),
+    ] = None,
+    offset: int = Query(default=0, ge=0),
+    limit: int = Query(default=settings.API_STATIQUE_PAGE_SIZE, ge=0, le=1000),
+    session: Session = Depends(get_session),
+) -> PaginatedTariffListResponse:
+    """List tariffs accessible to the current user."""
+    stmt = select(Tariff).where(cast(SAColumn, Tariff.deleted_at).is_(None))
+
+    from_ = to_db_datetime(from_)
+    to = to_db_datetime(to)
+    if current:
+        now = to_db_datetime(datetime.datetime.now(datetime.timezone.utc))
+        from_ = now
+        to = now
+
+    if from_ is not None:
+        stmt = stmt.where(
+            cast(SAColumn, Tariff.end).is_(None) | (cast(SAColumn, Tariff.end) > from_)
+        )
+    if to is not None:
+        stmt = stmt.where(
+            cast(SAColumn, Tariff.start).is_(None)
+            | (cast(SAColumn, Tariff.start) <= to)
+        )
+
+    should_join_pdc = bool(pdc) or not user.is_superuser
+    if should_join_pdc:
+        stmt = stmt.join(
+            PointDeChargeTariff,
+            cast(SAColumn, PointDeChargeTariff.tariff_id) == cast(SAColumn, Tariff.id),
+        ).join(
+            ActivePointsDeChargeView,
+            cast(SAColumn, PointDeChargeTariff.point_de_charge_id)
+            == cast(SAColumn, ActivePointsDeChargeView.id),  # type: ignore[attr-defined]
+        )
+
+    if pdc:
+        stmt = stmt.where(
+            cast(
+                SAColumn,
+                ActivePointsDeChargeView.id_pdc_itinerance,  # type: ignore[attr-defined]
+            ).in_(pdc)
+        )
+
+    if not user.is_superuser:
+        stmt = stmt.join(
+            ActiveStationsView,
+            ActivePointsDeChargeView.station_id  # type: ignore[attr-defined]
+            == ActiveStationsView.id,  # type: ignore[attr-defined]
+        )
+        stmt = stmt.where(
+            cast(
+                SAColumn,
+                ActiveStationsView.operational_unit_id,  # type: ignore[attr-defined]
+            ).in_([ou.id for ou in user.operational_units])
+        )
+
+    total = session.exec(
+        stmt.with_only_columns(func.count(func.distinct(cast(SAColumn, Tariff.id))))
+        .order_by(None)
+        .limit(None)
+        .offset(None)
+    ).one()
+    tariffs = session.exec(
+        stmt.distinct()
+        .order_by(cast(SAColumn, Tariff.created_at))
+        .offset(offset)
+        .limit(limit)
+    ).all()
+    items = [tariff_to_read(session, tariff) for tariff in tariffs]
+
+    previous_url, next_url = build_pagination_urls(
+        request,
+        offset,
+        limit,
+        total,
+        len(items),
+    )
+
+    return PaginatedTariffListResponse(
+        total=total,
+        limit=limit,
+        offset=offset,
+        previous=previous_url,
+        next=next_url,
+        items=items,
+    )
+
+
+@router.post(
+    "/tariff/",
+    status_code=status.HTTP_201_CREATED,
+    response_model=TariffRead,
+)
+async def create_tariff(
+    user: Annotated[User, Security(get_user, scopes=[ScopesEnum.TARIFF_CREATE.value])],
+    payload: TariffCreate,
+    session: Session = Depends(get_session),
+) -> TariffRead:
+    """Create a tariff and optionally associate it with charge points."""
+    targets = set(payload.targets)
+    if get_tariff_by_original(
+        session,
+        payload.tariff.tariff_id,
+        payload.tariff.last_updated,
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Tariff with same original id and last update already exists",
+        )
+
+    tariff = Tariff(
+        **tariff_fields_from_object(payload.tariff),
+        created_by_id=user.id,
+        updated_by_id=user.id,
+    )
+    transaction = session.begin_nested()
+    try:
+        session.add(tariff)
+        session.flush()
+        _add_tariff_associations(tariff, targets, user, session)
+    except IntegrityError as err:
+        transaction.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Tariff already exists or cannot be associated",
+        ) from err
+
+    session.commit()
+    session.refresh(tariff)
+    return tariff_to_read(session, tariff)
+
+
+@router.get("/tariff/{id}", response_model=TariffRead)
+async def read_tariff(
+    user: Annotated[User, Security(get_user, scopes=[ScopesEnum.TARIFF_READ.value])],
+    id: UUID,
+    session: Session = Depends(get_session),
+) -> TariffRead:
+    """Read a tariff by its QualiCharge UUID."""
+    tariff = _get_tariff_or_404(id, session)
+    _ensure_tariff_allowed(tariff, user, session)
+    return tariff_to_read(session, tariff)
+
+
+@router.get("/{id_pdc_itinerance}/tariff", response_model=TariffRead)
+async def read_applicable_tariff(
+    user: Annotated[User, Security(get_user, scopes=[ScopesEnum.TARIFF_READ.value])],
+    id_pdc_itinerance: Annotated[str, Path()],
+    at: Optional[datetime.datetime] = Query(default=None),
+    session: Session = Depends(get_session),
+) -> TariffRead:
+    """Read applicable tariff for a charge point."""
+    if not is_pdc_allowed_for_user(id_pdc_itinerance, user):
+        raise PermissionDenied("You cannot read tariff for this point of charge")
+
+    pdc_id = get_pdc_id(id_pdc_itinerance, session)
+    if at is None:
+        at = datetime.datetime.now(datetime.timezone.utc)
+    at = to_db_datetime(at)
+    if at is None:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Invalid tariff application datetime",
+        )
+    tariff = get_applicable_tariff(session, pdc_id, at)
+    if tariff is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Selected point of charge does not have tariff record yet",
+        )
+    return tariff_to_read(session, tariff)
 
 
 @router.get("/{id_pdc_itinerance}")

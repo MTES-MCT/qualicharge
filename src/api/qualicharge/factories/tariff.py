@@ -74,14 +74,14 @@ class TariffObjectFactory(ModelFactory[TariffObject]):
 class TariffCreateFactory(ModelFactory[TariffCreate]):
     """Tariff creation payload factory."""
 
-    raw = Use(TariffObjectFactory.build)
-    id_pdc_itinerance = []
+    tariff = Use(TariffObjectFactory.build)
+    targets = []
 
     @classmethod
     def build(cls, **kwargs) -> TariffCreate:
         """Build a payload accepting the model field name as a convenience."""
-        if "tariff" in kwargs:
-            kwargs["raw"] = kwargs.pop("tariff")
+        if "id_pdc_itinerance" in kwargs:
+            kwargs["targets"] = kwargs.pop("id_pdc_itinerance")
         return super().build(**kwargs)
 
 

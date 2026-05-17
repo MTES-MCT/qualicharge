@@ -230,4 +230,3 @@ def test_is_tariff_allowed_for_user(db_session):
     )
     allowed = UserFactory.create_sync(is_superuser=False, groups=[group])
     assert is_tariff_allowed_for_user(db_session, tariff.id, allowed) is True
-

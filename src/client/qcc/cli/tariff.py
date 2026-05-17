@@ -20,12 +20,18 @@ def list(
     from_: Annotated[Optional[datetime], typer.Option("--from")] = None,
     to: Optional[datetime] = None,
     pdc: Optional[List[str]] = None,
+    current: Optional[bool] = None,
 ):
     """List tariffs."""
     client: QCC = ctx.obj
 
     async def tariffs():
-        async for tariff in client.tariff.list(from_=from_, to=to, pdc=pdc):
+        async for tariff in client.tariff.list(
+            from_=from_,
+            to=to,
+            pdc=pdc,
+            current=current,
+        ):
             typer.echo(json.dumps(tariff))
 
     async_run_api_query(tariffs)
@@ -57,15 +63,6 @@ def read(ctx: typer.Context, id_: str):
 
 
 @app.command()
-def delete(ctx: typer.Context, id_: str):
-    """Delete a tariff by its QualiCharge UUID."""
-    client: QCC = ctx.obj
-
-    async_run_api_query(client.tariff.delete, id_)
-    print(f"[green]Deleted tariff {id_} successfully.[/green]")
-
-
-@app.command()
 def applicable(
     ctx: typer.Context,
     id_pdc_itinerance: str,
@@ -76,19 +73,3 @@ def applicable(
 
     tariff = async_run_api_query(client.tariff.applicable, id_pdc_itinerance, at)
     typer.echo(json.dumps(tariff))
-
-
-@app.command()
-def associate(
-    ctx: typer.Context,
-    association: Optional[str] = None,
-    interactive: Annotated[
-        bool, typer.Option(help="Read association from standard input (JSON string)")
-    ] = True,
-):
-    """Associate an existing tariff with charge points."""
-    client: QCC = ctx.obj
-    data = parse_json_parameter("association", association, interactive)  # type: ignore[arg-type]
-    associated = async_run_api_query(client.tariff.associate, data)
-    print("[green]Associated tariff successfully.[/green]")
-    print(associated)
