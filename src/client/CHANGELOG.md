@@ -8,6 +8,10 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Added
+
+- Add tariff API client endpoint and CLI commands
+
 ### Changed
 
 #### Dependencies

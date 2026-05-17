@@ -13,7 +13,7 @@ from qualicharge.auth.schemas import Group, User
 from qualicharge.conf import settings
 from qualicharge.db import get_session
 from qualicharge.fixtures.operational_units import operational_units
-from qualicharge.schemas import core
+from qualicharge.schemas import core, tariff
 
 
 @pytest.fixture(scope="session")
@@ -55,6 +55,8 @@ def db_engine(versioning_manager):
             core.Station,
             core.PointDeCharge,
             core.Session,
+            tariff.Tariff,
+            tariff.PointDeChargeTariff,
         ]
         for cls in versioned_model_classes:
             connection.execute(
