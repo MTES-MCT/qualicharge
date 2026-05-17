@@ -113,4 +113,3 @@ def test_point_de_charge_tariff_create_requires_pdc():
     """Test tariff association payload requires at least one point of charge."""
     with pytest.raises(ValidationError, match="List should have at least 1 item"):
         PointDeChargeTariffCreate(original_id="tariff-1", id_pdc_itinerance=[])
-
