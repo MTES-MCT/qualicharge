@@ -27,7 +27,7 @@ def _tariff_payload(id_: str, start: datetime, end: datetime, pdcs: list[str]) -
     )
     return TariffCreateFactory.build(
         tariff=raw,
-        id_pdc_itinerance=pdcs,
+        targets=pdcs,
     ).model_dump(by_alias=True, mode="json")
 
 
