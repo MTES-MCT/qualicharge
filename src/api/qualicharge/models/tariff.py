@@ -141,7 +141,7 @@ class TariffObject(BaseModel):
 
     country_code: Annotated[str, StringConstraints(min_length=2, max_length=2)]
     party_id: Annotated[str, StringConstraints(min_length=3, max_length=3)]
-    id: str = Field(max_length=36)
+    id: Annotated[str, StringConstraints(max_length=36)]
     type: Optional[TariffTypeEnum] = None
     currency: Optional[
         Annotated[str, StringConstraints(min_length=3, max_length=3)]
