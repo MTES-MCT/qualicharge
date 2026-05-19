@@ -13,7 +13,7 @@ from qualicharge.auth.schemas import GroupOperationalUnit, ScopesEnum, User
 from qualicharge.factories.static import StatiqueFactory
 from qualicharge.factories.tariff import TariffCreateFactory, TariffObjectFactory
 from qualicharge.schemas.core import OperationalUnit, PointDeCharge
-from qualicharge.schemas.tariff import Tariff
+from qualicharge.schemas.tariff import PointDeChargeTariff, Tariff
 from qualicharge.schemas.utils import save_statiques
 
 
@@ -62,6 +62,10 @@ def test_tariff_api_missing_scopes(client_auth):
         client_auth.get(f"/statique/tariff/{tariff_id}").status_code
         == status.HTTP_403_FORBIDDEN
     )
+    assert (
+        client_auth.put(f"/statique/FRS63E0001/tariff/{tariff_id}").status_code
+        == status.HTTP_403_FORBIDDEN
+    )
 
 
 def test_tariff_api_workflow(db_session, client_auth):
@@ -106,6 +110,32 @@ def test_tariff_api_workflow(db_session, client_auth):
         params={"at": datetime.now(timezone.utc).isoformat()},
     )
     assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    response = client_auth.put(
+        f"/statique/{pdcs[1].id_pdc_itinerance}/tariff/{tariff_id}",
+    )
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json()["id"] == str(tariff_id)
+    assert set(response.json()["id_pdc_itinerance"]) == {
+        pdcs[0].id_pdc_itinerance,
+        pdcs[1].id_pdc_itinerance,
+    }
+
+    response = client_auth.get(
+        f"/statique/{pdcs[1].id_pdc_itinerance}/tariff",
+        params={"at": datetime.now(timezone.utc).isoformat()},
+    )
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json()["id"] == str(tariff_id)
+
+    response = client_auth.put(
+        f"/statique/{pdcs[1].id_pdc_itinerance}/tariff/{tariff_id}",
+    )
+    assert response.status_code == status.HTTP_200_OK
+    associations = db_session.exec(
+        select(PointDeChargeTariff).where(PointDeChargeTariff.tariff_id == tariff_id)
+    ).all()
+    assert len(associations) == n_pdcs
 
 
 def test_list_tariffs_pagination(db_session, client_auth):
@@ -329,3 +359,8 @@ def test_tariff_api_for_user_with_operational_unit(db_session, client_auth):
     )
     assert response.status_code == status.HTTP_200_OK
     assert response.json()["items"] == []
+
+    response = client_auth.put(
+        f"/statique/{forbidden_pdc.id_pdc_itinerance}/tariff/{tariff_id}",
+    )
+    assert response.status_code == status.HTTP_403_FORBIDDEN

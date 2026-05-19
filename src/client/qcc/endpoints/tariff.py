@@ -62,3 +62,15 @@ class Tariff(BaseEndpoint):
             raise APIRequestError(response.json()) from err
 
         return response.json()
+
+    async def apply(self, id_pdc_itinerance: str, tariff_id: str) -> dict:
+        """Apply an existing tariff to a point of charge."""
+        response = await self.client.put(
+            f"/statique/{id_pdc_itinerance}/tariff/{tariff_id}",
+        )
+        try:
+            response.raise_for_status()
+        except httpx.HTTPStatusError as err:
+            raise APIRequestError(response.json()) from err
+
+        return response.json()

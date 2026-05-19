@@ -103,3 +103,21 @@ async def test_tariff_applicable(client, httpx_mock):
         id_pdc_itinerance,
         at=datetime(2026, 2, 23, 10),
     ) == {"id_pdc_itinerance": id_pdc_itinerance}
+
+
+@pytest.mark.anyio
+async def test_tariff_apply(client, httpx_mock):
+    """Test the /statique/{id_pdc_itinerance}/tariff/{tariff_id} endpoint call."""
+    tariff = Tariff(client)
+    id_pdc_itinerance = "FRS63E0001"
+    tariff_id = "4db7b976-faf4-4833-9728-a0bbf3bdf5fe"
+
+    httpx_mock.add_response(
+        method="PUT",
+        url=f"http://example.com/api/v1/statique/{id_pdc_itinerance}/tariff/{tariff_id}",
+        json={"id": tariff_id, "id_pdc_itinerance": [id_pdc_itinerance]},
+    )
+    assert await tariff.apply(id_pdc_itinerance, tariff_id) == {
+        "id": tariff_id,
+        "id_pdc_itinerance": [id_pdc_itinerance],
+    }
