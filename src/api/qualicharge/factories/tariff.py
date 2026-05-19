@@ -1,7 +1,6 @@
 """QualiCharge tariff factories."""
 
 from datetime import datetime, timedelta, timezone
-from typing import Any
 
 from polyfactory import Use
 from polyfactory.decorators import post_generated
@@ -11,7 +10,7 @@ from polyfactory.factories.sqlalchemy_factory import SQLAlchemyFactory
 
 from ..models.tariff import (
     PointDeChargeTariffCreate,
-    PriceComponentTypeEnum,
+    TariffDimensionTypeEnum,
     TariffCreate,
     TariffElement,
     TariffObject,
@@ -26,7 +25,7 @@ class TariffElementFactory(ModelFactory[TariffElement]):
     price_components = Use(
         lambda: [
             {
-                "type": PriceComponentTypeEnum.ENERGY,
+                "type": TariffDimensionTypeEnum.ENERGY,
                 "price": DataclassFactory.__faker__.pyfloat(
                     right_digits=2,
                     min_value=0.01,
@@ -45,9 +44,11 @@ class TariffObjectFactory(ModelFactory[TariffObject]):
     country_code = "FR"
     party_id = "QCH"
     id = Use(DataclassFactory.__faker__.uuid4)
+    type = "AD_HOC_PAYMENT"
     currency = "EUR"
     elements = Use(lambda: [TariffElementFactory.build()])
     tariff_alt_text = Use(lambda: [{"language": "fr", "text": "Tarif simple"}])
+    tariff_alt_url = None
     start_date_time = Use(
         lambda: datetime.now(timezone.utc).replace(microsecond=0) - timedelta(days=1)
     )
@@ -64,17 +65,6 @@ class TariffObjectFactory(ModelFactory[TariffObject]):
         """Ensure application dates are consistent."""
         return start_date_time + timedelta(days=2)
 
-    @classmethod
-    def build(
-        cls,
-        factory_use_construct: bool = False,
-        **kwargs: Any,
-    ) -> TariffObject:
-        """Build a tariff object accepting the model field name as a convenience."""
-        if "tariff_id" in kwargs:
-            kwargs["id"] = kwargs.pop("tariff_id")
-        return super().build(factory_use_construct=factory_use_construct, **kwargs)
-
 
 class TariffCreateFactory(ModelFactory[TariffCreate]):
     """Tariff creation payload factory."""
@@ -86,7 +76,7 @@ class TariffCreateFactory(ModelFactory[TariffCreate]):
 class PointDeChargeTariffCreateFactory(ModelFactory[PointDeChargeTariffCreate]):
     """Point de charge tariff association payload factory."""
 
-    original_id = Use(DataclassFactory.__faker__.uuid4)
+    original_id = Use(lambda: f"FRQCH{DataclassFactory.__faker__.uuid4()}")
     original_last_updated = Use(
         lambda: datetime.now(timezone.utc).replace(microsecond=0) - timedelta(hours=1)
     )
@@ -96,7 +86,7 @@ class PointDeChargeTariffCreateFactory(ModelFactory[PointDeChargeTariffCreate]):
 class TariffFactory(SoftDeleteFactoryMixin, AuditableSQLModelFactory[Tariff]):
     """Tariff schema factory."""
 
-    original_id = Use(DataclassFactory.__faker__.uuid4)
+    original_id = Use(lambda: f"FRQCH{DataclassFactory.__faker__.uuid4()}")
     original_last_updated = Use(
         lambda: datetime.now(timezone.utc).replace(microsecond=0) - timedelta(hours=1)
     )
@@ -118,7 +108,7 @@ class TariffFactory(SoftDeleteFactoryMixin, AuditableSQLModelFactory[Tariff]):
     ):
         """Keep indexed fields and the raw tariff object aligned."""
         return TariffObjectFactory.build(
-            tariff_id=original_id,
+            id=original_id.removeprefix("FRQCH"),
             last_updated=original_last_updated,
             start_date_time=start,
             end_date_time=end,

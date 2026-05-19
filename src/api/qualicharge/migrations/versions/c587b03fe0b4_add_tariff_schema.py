@@ -41,9 +41,9 @@ def upgrade() -> None:
         sa.Column("deleted_by_id", sa.Uuid(), nullable=True),
         sa.Column("id", sa.Uuid(), nullable=False),
         sa.Column("original_id", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
-        sa.Column("original_last_updated", sa.DateTime(), nullable=True),
+        sa.Column("original_last_updated", sa.DateTime(), nullable=False),
         sa.Column("raw", postgresql.JSONB(astext_type=sa.Text()), nullable=False),
-        sa.Column("start", sa.DateTime(), nullable=True),
+        sa.Column("start", sa.DateTime(), nullable=False),
         sa.Column("end", sa.DateTime(), nullable=True),
         sa.CheckConstraint("created_at <= updated_at", name="pre-creation-update"),
         sa.ForeignKeyConstraint(

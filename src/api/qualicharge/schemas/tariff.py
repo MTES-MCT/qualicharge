@@ -39,9 +39,9 @@ class Tariff(SoftDeleteMixin, BaseAuditableSQLModel, table=True):
 
     id: UUID = Field(default_factory=uuid4, primary_key=True)
     original_id: str = Field(index=True)
-    original_last_updated: Optional[datetime] = Field(default=None, index=True)
+    original_last_updated: datetime = Field(index=True)
     raw: dict = Field(sa_column=SAColumn(JSONB, nullable=False))
-    start: Optional[datetime] = Field(default=None, index=True)
+    start: datetime = Field(index=True)
     end: Optional[datetime] = Field(default=None, index=True)
 
     points_de_charge: List[PointDeCharge] = Relationship(

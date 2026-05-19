@@ -20,7 +20,7 @@ from qualicharge.schemas.utils import save_statiques
 def _tariff_payload(id_: str, start: datetime, end: datetime, pdcs: list[str]) -> dict:
     """Build a tariff creation payload."""
     raw = TariffObjectFactory.build(
-        tariff_id=id_,
+        id=id_,
         last_updated=start,
         start_date_time=start,
         end_date_time=end,
@@ -83,7 +83,7 @@ def test_tariff_api_workflow(db_session, client_auth):
     assert response.status_code == status.HTTP_201_CREATED
     created = response.json()
     tariff_id = UUID(created["id"])
-    assert created["original_id"] == "tariff-1"
+    assert created["original_id"] == "FRQCHtariff-1"
     assert created["id_pdc_itinerance"] == [pdcs[0].id_pdc_itinerance]
 
     db_tariff = db_session.get(Tariff, tariff_id)
