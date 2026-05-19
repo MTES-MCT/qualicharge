@@ -22,6 +22,9 @@ from .utils import PaginatedListResponse
 
 # https://github.com/loco-philippe/IRVE/blob/main/OCPI/source/schema.json
 
+MAX_TVA_PERCENTAGE = 100.0
+MIN_TVA_PERCENTAGE = 0.0
+
 
 class TariffDimensionTypeEnum(StrEnum):
     """Tariff price component dimensions."""
@@ -103,7 +106,7 @@ class PriceComponent(BaseModel):
     @classmethod
     def check_vat_percentage(cls, vat: Optional[float]) -> Optional[float]:
         """Ensure VAT is a valid percentage when provided."""
-        if vat is not None and not 0 <= vat <= 100:
+        if vat is not None and not MIN_TVA_PERCENTAGE <= vat <= MAX_TVA_PERCENTAGE:
             raise ValueError("VAT must be between 0 and 100.")
         return vat
 

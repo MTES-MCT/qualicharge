@@ -16,6 +16,9 @@ and this project adheres to
 
 ### Changed
 
+- Move tariff endpoints from `/statique` to the dedicated `/tariff` router
+- Treat the latest tariff association as superseding older tariffs
+
 #### Dependencies
 
 - Upgrade `cachetools` to `7.0.5`
