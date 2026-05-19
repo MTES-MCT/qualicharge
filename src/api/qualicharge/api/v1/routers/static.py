@@ -488,6 +488,37 @@ async def read_applicable_tariff(
     return tariff_to_read(session, tariff)
 
 
+@router.put("/{id_pdc_itinerance}/tariff/{tariff_id}", response_model=TariffRead)
+async def apply_tariff(
+    user: Annotated[User, Security(get_user, scopes=[ScopesEnum.TARIFF_UPDATE.value])],
+    id_pdc_itinerance: Annotated[str, Path()],
+    tariff_id: UUID,
+    session: Session = Depends(get_session),
+) -> TariffRead:
+    """Apply an existing tariff to a charge point."""
+    tariff = _get_tariff_or_404(tariff_id, session)
+
+    transaction = session.begin_nested()
+    try:
+        _add_tariff_associations(tariff, {id_pdc_itinerance}, user, session)
+    except ObjectDoesNotExist as err:
+        transaction.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(err),
+        ) from err
+    except IntegrityError as err:
+        transaction.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Tariff cannot be associated",
+        ) from err
+
+    session.commit()
+    session.refresh(tariff)
+    return tariff_to_read(session, tariff)
+
+
 @router.get("/{id_pdc_itinerance}")
 async def read(
     user: Annotated[User, Security(get_user, scopes=[ScopesEnum.STATIC_READ.value])],

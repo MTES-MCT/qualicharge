@@ -73,3 +73,12 @@ def applicable(
 
     tariff = async_run_api_query(client.tariff.applicable, id_pdc_itinerance, at)
     typer.echo(json.dumps(tariff))
+
+
+@app.command()
+def apply(ctx: typer.Context, id_pdc_itinerance: str, tariff_id: str):
+    """Apply a tariff to a charge point."""
+    client: QCC = ctx.obj
+
+    tariff = async_run_api_query(client.tariff.apply, id_pdc_itinerance, tariff_id)
+    typer.echo(json.dumps(tariff))
