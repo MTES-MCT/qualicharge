@@ -153,7 +153,7 @@ class TariffObject(BaseModel):
     end_date_time: Optional[AwareDatetime] = None
     last_updated: AwareDatetime
     tax_included: Optional[TaxIncludedEnum] = None
-    min_price: Optional[Union[Annotated[float, Ge(0.0)], PriceLimit]] = None
+    min_price: Optional[Union[Price, PriceLimit]] = None
     max_price: Optional[Union[Price, PriceLimit]] = None
 
     @property
