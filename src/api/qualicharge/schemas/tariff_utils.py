@@ -31,7 +31,7 @@ def tariff_fields_from_object(raw: TariffObject) -> dict:
         "original_id": raw.tariff_id,
         "original_last_updated": to_db_datetime(raw.last_updated),
         "raw": raw.model_dump(by_alias=True, mode="json"),
-        "start": to_db_datetime(raw.start_date_time),
+        "start": to_db_datetime(raw.tariff_application_date),
         "end": to_db_datetime(raw.end_date_time),
     }
 
@@ -61,20 +61,15 @@ def tariff_to_read(session: Session, tariff: Tariff) -> TariffRead:
 def get_tariff_by_original(
     session: Session,
     original_id: str,
-    original_last_updated: Optional[datetime],
+    original_last_updated: datetime,
 ) -> Optional[Tariff]:
     """Get an active tariff from its operator identifier."""
     original_last_updated = to_db_datetime(original_last_updated)
     stmt = select(Tariff).where(
         Tariff.original_id == original_id,
         cast(SAColumn, Tariff.deleted_at).is_(None),
+        cast(SAColumn, Tariff.original_last_updated) == original_last_updated,
     )
-    if original_last_updated is None:
-        stmt = stmt.where(cast(SAColumn, Tariff.original_last_updated).is_(None))
-    else:
-        stmt = stmt.where(
-            cast(SAColumn, Tariff.original_last_updated) == original_last_updated
-        )
     return session.exec(stmt).one_or_none()
 
 
@@ -134,13 +129,9 @@ def get_applicable_tariff(
         )
         .where(PointDeChargeTariff.point_de_charge_id == point_de_charge_id)
         .where(cast(SAColumn, Tariff.deleted_at).is_(None))
-        .where(
-            cast(SAColumn, Tariff.start).is_(None)
-            | (cast(SAColumn, Tariff.start) <= at)
-        )
+        .where(cast(SAColumn, Tariff.start) <= at)
         .where(cast(SAColumn, Tariff.end).is_(None) | (cast(SAColumn, Tariff.end) > at))
         .order_by(
-            desc(cast(SAColumn, Tariff.start).is_not(None)),
             desc(cast(SAColumn, Tariff.start)),
             desc(cast(SAColumn, Tariff.original_last_updated)),
             desc(cast(SAColumn, Tariff.created_at)),

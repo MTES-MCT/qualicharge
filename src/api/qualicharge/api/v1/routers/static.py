@@ -336,10 +336,7 @@ async def list_tariffs(  # noqa: PLR0913
             cast(SAColumn, Tariff.end).is_(None) | (cast(SAColumn, Tariff.end) > from_)
         )
     if to is not None:
-        stmt = stmt.where(
-            cast(SAColumn, Tariff.start).is_(None)
-            | (cast(SAColumn, Tariff.start) <= to)
-        )
+        stmt = stmt.where(cast(SAColumn, Tariff.start) <= to)
 
     should_join_pdc = bool(pdc) or not user.is_superuser
     if should_join_pdc:

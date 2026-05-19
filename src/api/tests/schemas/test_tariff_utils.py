@@ -67,7 +67,7 @@ def test_tariff_fields_from_object():
     end = start + timedelta(hours=2)
     last_updated = start - timedelta(hours=1)
     raw = TariffObjectFactory.build(
-        tariff_id="tariff-1",
+        id="tariff-1",
         last_updated=last_updated,
         start_date_time=start,
         end_date_time=end,
@@ -75,11 +75,27 @@ def test_tariff_fields_from_object():
 
     fields = tariff_fields_from_object(raw)
 
-    assert fields["original_id"] == "tariff-1"
+    assert fields["original_id"] == "FRQCHtariff-1"
     assert fields["original_last_updated"] == datetime(2026, 2, 23, 9)
     assert fields["start"] == datetime(2026, 2, 23, 10)
     assert fields["end"] == datetime(2026, 2, 23, 12)
     assert fields["raw"]["id"] == "tariff-1"
+    assert "tariff_id" not in fields["raw"]
+
+
+def test_tariff_fields_from_object_uses_application_date_for_start():
+    """Test tariff database start uses the computed application date."""
+    last_updated = datetime(2026, 2, 23, 10, tzinfo=timezone.utc)
+    raw = TariffObjectFactory.build(
+        id="tariff-1",
+        last_updated=last_updated,
+        start_date_time=last_updated - timedelta(hours=1),
+        end_date_time=last_updated + timedelta(hours=1),
+    )
+
+    fields = tariff_fields_from_object(raw)
+
+    assert fields["start"] == datetime(2026, 2, 23, 10)
 
 
 def test_tariff_to_read(db_session):
@@ -87,15 +103,16 @@ def test_tariff_to_read(db_session):
     statiques = StatiqueFactory.batch(2)
     save_statiques(db_session, statiques)
     pdcs = db_session.exec(select(PointDeCharge)).all()
-    raw = TariffObjectFactory.build(tariff_id="tariff-1")
+    raw = TariffObjectFactory.build(id="tariff-1")
     tariff = _save_tariff(db_session, raw)
     _associate(db_session, tariff, pdcs[0])
 
     read = tariff_to_read(db_session, tariff)
 
     assert read.id == str(tariff.id)
-    assert read.original_id == "tariff-1"
-    assert read.raw.tariff_id == "tariff-1"
+    assert read.original_id == "FRQCHtariff-1"
+    assert read.raw.id == "tariff-1"
+    assert read.raw.tariff_id == "FRQCHtariff-1"
     assert read.id_pdc_itinerance == [pdcs[0].id_pdc_itinerance]
 
 
@@ -103,33 +120,17 @@ def test_get_tariff_by_original(db_session):
     """Test tariff lookup by original id and last update."""
     last_updated = datetime(2026, 2, 23, 10, tzinfo=timezone.utc)
     raw = TariffObjectFactory.build(
-        tariff_id="tariff-1",
+        id="tariff-1",
         last_updated=last_updated,
     )
     tariff = _save_tariff(db_session, raw)
 
-    assert get_tariff_by_original(db_session, "tariff-1", last_updated) == tariff
-    assert get_tariff_by_original(db_session, "tariff-1", None) is None
+    assert get_tariff_by_original(db_session, "FRQCHtariff-1", last_updated) == tariff
 
     tariff.deleted_at = datetime.now(timezone.utc)
     db_session.add(tariff)
     db_session.flush()
-    assert get_tariff_by_original(db_session, "tariff-1", last_updated) is None
-
-
-def test_get_tariff_by_original_without_last_updated(db_session):
-    """Test tariff lookup when original_last_updated is not provided."""
-    raw = TariffObjectFactory.build(tariff_id="tariff-1")
-    tariff = Tariff(
-        **{
-            **tariff_fields_from_object(raw),
-            "original_last_updated": None,
-        }
-    )
-    db_session.add(tariff)
-    db_session.flush()
-
-    assert get_tariff_by_original(db_session, "tariff-1", None) == tariff
+    assert get_tariff_by_original(db_session, "FRQCHtariff-1", last_updated) is None
 
 
 def test_get_applicable_tariff(db_session):
@@ -147,7 +148,7 @@ def test_get_applicable_tariff(db_session):
     old = _save_tariff(
         db_session,
         TariffObjectFactory.build(
-            tariff_id="old",
+            id="old",
             start_date_time=now - timedelta(days=2),
             end_date_time=now + timedelta(days=2),
             last_updated=now - timedelta(hours=2),
@@ -156,7 +157,7 @@ def test_get_applicable_tariff(db_session):
     selected = _save_tariff(
         db_session,
         TariffObjectFactory.build(
-            tariff_id="selected",
+            id="selected",
             start_date_time=now - timedelta(hours=1),
             end_date_time=now + timedelta(days=2),
             last_updated=now - timedelta(hours=1),
@@ -165,7 +166,7 @@ def test_get_applicable_tariff(db_session):
     future = _save_tariff(
         db_session,
         TariffObjectFactory.build(
-            tariff_id="future",
+            id="future",
             start_date_time=now + timedelta(hours=1),
             end_date_time=now + timedelta(days=2),
             last_updated=now,
@@ -174,7 +175,7 @@ def test_get_applicable_tariff(db_session):
     deleted = _save_tariff(
         db_session,
         TariffObjectFactory.build(
-            tariff_id="deleted",
+            id="deleted",
             start_date_time=now,
             end_date_time=now + timedelta(days=2),
             last_updated=now,
@@ -186,6 +187,39 @@ def test_get_applicable_tariff(db_session):
         _associate(db_session, tariff, pdc)
 
     assert get_applicable_tariff(db_session, pdc.id, to_db_datetime(now)) == selected
+
+
+def test_get_applicable_tariff_uses_application_date(db_session):
+    """Test tariff lookup does not apply a tariff before its last update."""
+    now = datetime.now(timezone.utc).replace(microsecond=0)
+    save_statique(
+        db_session,
+        StatiqueFactory.build(
+            id_pdc_itinerance="FRS63E0001",
+            id_station_itinerance="FRS63P0001",
+        ),
+    )
+    pdc = db_session.exec(select(PointDeCharge)).one()
+    tariff = _save_tariff(
+        db_session,
+        TariffObjectFactory.build(
+            id="future-update",
+            start_date_time=now - timedelta(days=1),
+            last_updated=now + timedelta(hours=1),
+            end_date_time=now + timedelta(days=1),
+        ),
+    )
+    _associate(db_session, tariff, pdc)
+
+    assert get_applicable_tariff(db_session, pdc.id, to_db_datetime(now)) is None
+    assert (
+        get_applicable_tariff(
+            db_session,
+            pdc.id,
+            to_db_datetime(now + timedelta(hours=1)),
+        )
+        == tariff
+    )
 
 
 def test_is_tariff_allowed_for_user(db_session):
@@ -201,7 +235,7 @@ def test_is_tariff_allowed_for_user(db_session):
         ),
     )
     pdc = db_session.exec(select(PointDeCharge)).one()
-    tariff = _save_tariff(db_session, TariffObjectFactory.build(tariff_id="tariff-1"))
+    tariff = _save_tariff(db_session, TariffObjectFactory.build(id="tariff-1"))
     _associate(db_session, tariff, pdc)
 
     superuser = UserFactory.create_sync(is_superuser=True)
@@ -210,7 +244,7 @@ def test_is_tariff_allowed_for_user(db_session):
     owner = UserFactory.create_sync(is_superuser=False)
     owned_tariff = _save_tariff(
         db_session,
-        TariffObjectFactory.build(tariff_id="owned"),
+        TariffObjectFactory.build(id="owned"),
         created_by_id=owner.id,
     )
     assert is_tariff_allowed_for_user(db_session, owned_tariff.id, owner) is True
