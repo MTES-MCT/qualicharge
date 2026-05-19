@@ -10,8 +10,8 @@ from polyfactory.factories.sqlalchemy_factory import SQLAlchemyFactory
 
 from ..models.tariff import (
     PointDeChargeTariffCreate,
-    TariffDimensionTypeEnum,
     TariffCreate,
+    TariffDimensionTypeEnum,
     TariffElement,
     TariffObject,
 )

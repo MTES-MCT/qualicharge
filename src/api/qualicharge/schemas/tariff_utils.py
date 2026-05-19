@@ -64,11 +64,13 @@ def get_tariff_by_original(
     original_last_updated: datetime,
 ) -> Optional[Tariff]:
     """Get an active tariff from its operator identifier."""
-    original_last_updated = to_db_datetime(original_last_updated)
+    db_original_last_updated = to_db_datetime(original_last_updated)
+    if db_original_last_updated is None:
+        raise ValueError("original_last_updated is required.")
     stmt = select(Tariff).where(
         Tariff.original_id == original_id,
         cast(SAColumn, Tariff.deleted_at).is_(None),
-        cast(SAColumn, Tariff.original_last_updated) == original_last_updated,
+        cast(SAColumn, Tariff.original_last_updated) == db_original_last_updated,
     )
     return session.exec(stmt).one_or_none()
 

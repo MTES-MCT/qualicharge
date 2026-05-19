@@ -14,6 +14,9 @@ and this project adheres to
 
 ### Changed
 
+- Align tariff models and persistence with OCPI identifiers and tariff
+  application dates
+
 #### Dependencies
 
 - Upgrade `cachetools` to `7.0.5`
