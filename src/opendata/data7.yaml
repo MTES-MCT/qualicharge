@@ -18,6 +18,44 @@ default:
           etat_prise_type_ef
         FROM
           LatestStatus
+    - basename: tariffs
+      query: >-
+        SELECT
+          tariff.id::text AS id,
+          tariff.original_id,
+          tariff.original_last_updated,
+          tariff.raw::text AS raw,
+          tariff.start,
+          tariff."end",
+          COALESCE(
+            jsonb_agg(
+              pointdecharge.id_pdc_itinerance
+              ORDER BY pointdecharge.id_pdc_itinerance
+            ) FILTER (
+              WHERE pointdecharge.id_pdc_itinerance IS NOT NULL
+            ),
+            '[]'::jsonb
+          )::text AS id_pdc_itinerance
+        FROM
+          tariff
+        LEFT JOIN
+          pointdechargetariff
+          ON pointdechargetariff.tariff_id = tariff.id
+        LEFT JOIN
+          pointdecharge
+          ON pointdecharge.id = pointdechargetariff.point_de_charge_id
+        WHERE
+          tariff.deleted_at IS NULL
+        GROUP BY
+          tariff.id,
+          tariff.original_id,
+          tariff.original_last_updated,
+          tariff.raw,
+          tariff.start,
+          tariff."end",
+          tariff.created_at
+        ORDER BY
+          tariff.created_at
     - basename: statiques
       query: >-
         SELECT
