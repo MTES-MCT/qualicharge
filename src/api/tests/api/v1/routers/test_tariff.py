@@ -78,6 +78,11 @@ def test_tariff_api_workflow(db_session, client_auth):
     start = datetime.now(timezone.utc) - timedelta(days=1)
     end = datetime.now(timezone.utc) + timedelta(days=1)
     payload = _tariff_payload("tariff-1", start, end, [pdcs[0].id_pdc_itinerance])
+    payload["tariff"]["unknown_top_level"] = "kept"
+    payload["tariff"]["elements"][0]["unknown_element"] = "kept"
+    payload["tariff"]["elements"][0]["price_components"][0]["unknown_component"] = (
+        "kept"
+    )
 
     response = client_auth.post("/statique/tariff/", json=payload)
     assert response.status_code == status.HTTP_201_CREATED
@@ -85,10 +90,18 @@ def test_tariff_api_workflow(db_session, client_auth):
     tariff_id = UUID(created["id"])
     assert created["original_id"] == "FRQCHtariff-1"
     assert created["id_pdc_itinerance"] == [pdcs[0].id_pdc_itinerance]
+    assert created["raw"]["unknown_top_level"] == "kept"
+    assert created["raw"]["elements"][0]["unknown_element"] == "kept"
+    assert (
+        created["raw"]["elements"][0]["price_components"][0]["unknown_component"]
+        == "kept"
+    )
 
     db_tariff = db_session.get(Tariff, tariff_id)
     assert db_tariff is not None
     assert db_tariff.deleted_at is None
+    assert "unknown_top_level" not in db_tariff.raw
+    assert db_tariff.original_raw["unknown_top_level"] == "kept"
 
     response = client_auth.get("/statique/tariff/")
     assert response.status_code == status.HTTP_200_OK
@@ -97,6 +110,7 @@ def test_tariff_api_workflow(db_session, client_auth):
     response = client_auth.get(f"/statique/tariff/{tariff_id}")
     assert response.status_code == status.HTTP_200_OK
     assert response.json()["id"] == str(tariff_id)
+    assert response.json()["raw"]["unknown_top_level"] == "kept"
 
     response = client_auth.get(
         f"/statique/{pdcs[0].id_pdc_itinerance}/tariff",

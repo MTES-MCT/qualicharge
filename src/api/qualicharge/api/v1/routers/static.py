@@ -407,11 +407,17 @@ async def list_tariffs(  # noqa: PLR0913
 )
 async def create_tariff(
     user: Annotated[User, Security(get_user, scopes=[ScopesEnum.TARIFF_CREATE.value])],
+    request: Request,
     payload: TariffCreate,
     session: Session = Depends(get_session),
 ) -> TariffRead:
     """Create a tariff and optionally associate it with charge points."""
     targets = set(payload.targets)
+    request_body = await request.json()
+    original_raw = request_body.get("tariff")
+    if not isinstance(original_raw, dict):
+        original_raw = payload.tariff.model_dump(by_alias=True, mode="json")
+
     if get_tariff_by_original(
         session,
         payload.tariff.tariff_id,
@@ -423,7 +429,7 @@ async def create_tariff(
         )
 
     tariff = Tariff(
-        **tariff_fields_from_object(payload.tariff),
+        **tariff_fields_from_object(payload.tariff, original_raw=original_raw),
         created_by_id=user.id,
         updated_by_id=user.id,
     )

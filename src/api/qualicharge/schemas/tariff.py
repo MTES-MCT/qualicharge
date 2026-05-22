@@ -41,6 +41,7 @@ class Tariff(SoftDeleteMixin, BaseAuditableSQLModel, table=True):
     original_id: str = Field(index=True)
     original_last_updated: datetime = Field(index=True)
     raw: dict = Field(sa_column=SAColumn(JSONB, nullable=False))
+    original_raw: dict = Field(sa_column=SAColumn(JSONB, nullable=False))
     start: datetime = Field(index=True)
     end: Optional[datetime] = Field(default=None, index=True)
 

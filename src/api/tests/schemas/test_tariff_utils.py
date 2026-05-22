@@ -81,6 +81,7 @@ def test_tariff_fields_from_object():
     assert fields["end"] == datetime(2026, 2, 23, 12)
     assert fields["raw"]["id"] == "tariff-1"
     assert "tariff_id" not in fields["raw"]
+    assert fields["original_raw"] == fields["raw"]
 
 
 def test_tariff_fields_from_object_uses_application_date_for_start():
@@ -111,8 +112,7 @@ def test_tariff_to_read(db_session):
 
     assert read.id == str(tariff.id)
     assert read.original_id == "FRQCHtariff-1"
-    assert read.raw.id == "tariff-1"
-    assert read.raw.tariff_id == "FRQCHtariff-1"
+    assert read.raw["id"] == "tariff-1"
     assert read.id_pdc_itinerance == [pdcs[0].id_pdc_itinerance]
 
 

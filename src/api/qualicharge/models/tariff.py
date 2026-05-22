@@ -2,7 +2,7 @@
 
 from datetime import date, datetime, time
 from enum import StrEnum
-from typing import Annotated, List, Optional, Union
+from typing import Annotated, Any, List, Optional, Union
 
 from annotated_types import Ge, MaxLen
 from pydantic import (
@@ -223,7 +223,7 @@ class TariffRead(SQLModel):
     id: str
     original_id: str
     original_last_updated: datetime
-    raw: TariffObject
+    raw: dict[str, Any]
     start: datetime
     end: Optional[datetime]
     id_pdc_itinerance: List[IdPdcItinerance] = Field(default_factory=list)

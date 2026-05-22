@@ -1,7 +1,7 @@
 """Tariff persistence and mapping helpers."""
 
 from datetime import datetime, timezone
-from typing import Optional, cast
+from typing import Any, Optional, cast
 from uuid import UUID
 
 from sqlalchemy import desc
@@ -25,12 +25,17 @@ def to_db_datetime(value: Optional[datetime]) -> Optional[datetime]:
     return value.astimezone(timezone.utc).replace(tzinfo=None)
 
 
-def tariff_fields_from_object(raw: TariffObject) -> dict:
+def tariff_fields_from_object(
+    raw: TariffObject,
+    original_raw: Optional[dict[str, Any]] = None,
+) -> dict:
     """Extract indexed database fields from a tariff object."""
+    normalized_raw = raw.model_dump(by_alias=True, mode="json")
     return {
         "original_id": raw.tariff_id,
         "original_last_updated": to_db_datetime(raw.last_updated),
-        "raw": raw.model_dump(by_alias=True, mode="json"),
+        "raw": normalized_raw,
+        "original_raw": original_raw if original_raw is not None else normalized_raw,
         "start": to_db_datetime(raw.tariff_application_date),
         "end": to_db_datetime(raw.end_date_time),
     }
@@ -51,7 +56,7 @@ def tariff_to_read(session: Session, tariff: Tariff) -> TariffRead:
         id=str(tariff.id),
         original_id=tariff.original_id,
         original_last_updated=tariff.original_last_updated,
-        raw=TariffObject.model_validate(tariff.raw),
+        raw=tariff.original_raw,
         start=tariff.start,
         end=tariff.end,
         id_pdc_itinerance=list(pdc_ids),
