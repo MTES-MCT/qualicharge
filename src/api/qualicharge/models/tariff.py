@@ -22,8 +22,8 @@ from .utils import PaginatedListResponse
 
 # https://github.com/loco-philippe/IRVE/blob/main/OCPI/source/schema.json
 
-MAX_TVA_PERCENTAGE = 100.0
-MIN_TVA_PERCENTAGE = 0.0
+MAX_TVA_PERCENTAGE = 20
+MIN_TVA_PERCENTAGE = 20
 
 
 class TariffDimensionTypeEnum(StrEnum):
