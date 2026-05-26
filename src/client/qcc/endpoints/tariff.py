@@ -11,9 +11,9 @@ from ..exceptions import APIRequestError
 
 
 class Tariff(BaseEndpoint):
-    """/statique/tariff endpoints."""
+    """/tariff endpoints."""
 
-    endpoint: str = "/statique/tariff"
+    endpoint: str = "/tariff"
 
     async def list(
         self,
@@ -22,7 +22,7 @@ class Tariff(BaseEndpoint):
         pdc: Optional[List[str]] = None,
         current: Optional[bool] = None,
     ) -> AsyncIterator[dict]:
-        """Query the /statique/tariff endpoint (GET)."""
+        """Query the /tariff endpoint (GET)."""
         from_str = from_.isoformat() if from_ else None
         to_str = to.isoformat() if to else None
         params = dict(
@@ -50,10 +50,10 @@ class Tariff(BaseEndpoint):
         id_pdc_itinerance: str,
         at: Optional[datetime] = None,
     ) -> dict:
-        """Query the /statique/{id_pdc_itinerance}/tariff endpoint."""
+        """Query the /tariff/{id_pdc_itinerance}/applicable endpoint."""
         params = {"at": at.isoformat()} if at else {}
         response = await self.client.get(
-            f"/statique/{id_pdc_itinerance}/tariff",
+            f"{self.endpoint}/{id_pdc_itinerance}/applicable",
             params=params,
         )
         try:
@@ -66,7 +66,8 @@ class Tariff(BaseEndpoint):
     async def apply(self, id_pdc_itinerance: str, tariff_id: str) -> dict:
         """Apply an existing tariff to a point of charge."""
         response = await self.client.put(
-            f"/statique/{id_pdc_itinerance}/tariff/{tariff_id}",
+            f"{self.endpoint}/chargepoint/{id_pdc_itinerance}",
+            json={"tariff_id": tariff_id},
         )
         try:
             response.raise_for_status()

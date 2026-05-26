@@ -53,17 +53,18 @@ def test_tariff_api_missing_scopes(client_auth):
     """Test tariff endpoints scopes."""
     tariff_id = uuid4()
 
-    assert client_auth.get("/statique/tariff/").status_code == status.HTTP_403_FORBIDDEN
+    assert client_auth.get("/tariff/").status_code == status.HTTP_403_FORBIDDEN
     assert (
-        client_auth.post("/statique/tariff/", json={}).status_code
-        == status.HTTP_403_FORBIDDEN
+        client_auth.post("/tariff/", json={}).status_code == status.HTTP_403_FORBIDDEN
     )
     assert (
-        client_auth.get(f"/statique/tariff/{tariff_id}").status_code
-        == status.HTTP_403_FORBIDDEN
+        client_auth.get(f"/tariff/{tariff_id}").status_code == status.HTTP_403_FORBIDDEN
     )
     assert (
-        client_auth.put(f"/statique/FRS63E0001/tariff/{tariff_id}").status_code
+        client_auth.put(
+            "/tariff/chargepoint/FRS63E0001",
+            json={"tariff_id": str(tariff_id)},
+        ).status_code
         == status.HTTP_403_FORBIDDEN
     )
 
@@ -78,55 +79,42 @@ def test_tariff_api_workflow(db_session, client_auth):
     start = datetime.now(timezone.utc) - timedelta(days=1)
     end = datetime.now(timezone.utc) + timedelta(days=1)
     payload = _tariff_payload("tariff-1", start, end, [pdcs[0].id_pdc_itinerance])
-    payload["tariff"]["unknown_top_level"] = "kept"
-    payload["tariff"]["elements"][0]["unknown_element"] = "kept"
-    payload["tariff"]["elements"][0]["price_components"][0]["unknown_component"] = (
-        "kept"
-    )
 
-    response = client_auth.post("/statique/tariff/", json=payload)
+    response = client_auth.post("/tariff/", json=payload)
     assert response.status_code == status.HTTP_201_CREATED
     created = response.json()
     tariff_id = UUID(created["id"])
     assert created["original_id"] == "FRQCHtariff-1"
     assert created["id_pdc_itinerance"] == [pdcs[0].id_pdc_itinerance]
-    assert created["raw"]["unknown_top_level"] == "kept"
-    assert created["raw"]["elements"][0]["unknown_element"] == "kept"
-    assert (
-        created["raw"]["elements"][0]["price_components"][0]["unknown_component"]
-        == "kept"
-    )
 
     db_tariff = db_session.get(Tariff, tariff_id)
     assert db_tariff is not None
     assert db_tariff.deleted_at is None
-    assert "unknown_top_level" not in db_tariff.raw
-    assert db_tariff.original_raw["unknown_top_level"] == "kept"
 
-    response = client_auth.get("/statique/tariff/")
+    response = client_auth.get("/tariff/")
     assert response.status_code == status.HTTP_200_OK
     assert [tariff["id"] for tariff in response.json()["items"]] == [str(tariff_id)]
 
-    response = client_auth.get(f"/statique/tariff/{tariff_id}")
+    response = client_auth.get(f"/tariff/{tariff_id}")
     assert response.status_code == status.HTTP_200_OK
     assert response.json()["id"] == str(tariff_id)
-    assert response.json()["raw"]["unknown_top_level"] == "kept"
 
     response = client_auth.get(
-        f"/statique/{pdcs[0].id_pdc_itinerance}/tariff",
+        f"/tariff/{pdcs[0].id_pdc_itinerance}/applicable",
         params={"at": datetime.now(timezone.utc).isoformat()},
     )
     assert response.status_code == status.HTTP_200_OK
     assert response.json()["id"] == str(tariff_id)
 
     response = client_auth.get(
-        f"/statique/{pdcs[1].id_pdc_itinerance}/tariff",
+        f"/tariff/{pdcs[1].id_pdc_itinerance}/applicable",
         params={"at": datetime.now(timezone.utc).isoformat()},
     )
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
     response = client_auth.put(
-        f"/statique/{pdcs[1].id_pdc_itinerance}/tariff/{tariff_id}",
+        f"/tariff/chargepoint/{pdcs[1].id_pdc_itinerance}",
+        json={"tariff_id": str(tariff_id)},
     )
     assert response.status_code == status.HTTP_200_OK
     assert response.json()["id"] == str(tariff_id)
@@ -136,14 +124,15 @@ def test_tariff_api_workflow(db_session, client_auth):
     }
 
     response = client_auth.get(
-        f"/statique/{pdcs[1].id_pdc_itinerance}/tariff",
+        f"/tariff/{pdcs[1].id_pdc_itinerance}/applicable",
         params={"at": datetime.now(timezone.utc).isoformat()},
     )
     assert response.status_code == status.HTTP_200_OK
     assert response.json()["id"] == str(tariff_id)
 
     response = client_auth.put(
-        f"/statique/{pdcs[1].id_pdc_itinerance}/tariff/{tariff_id}",
+        f"/tariff/chargepoint/{pdcs[1].id_pdc_itinerance}",
+        json={"tariff_id": str(tariff_id)},
     )
     assert response.status_code == status.HTTP_200_OK
     associations = db_session.exec(
@@ -153,7 +142,7 @@ def test_tariff_api_workflow(db_session, client_auth):
 
 
 def test_list_tariffs_pagination(db_session, client_auth):
-    """Test the /statique/tariff/ list endpoint results pagination."""
+    """Test the /tariff/ list endpoint results pagination."""
     save_statiques(db_session, StatiqueFactory.batch(1))
     pdc = db_session.exec(select(PointDeCharge)).one()
     now = datetime.now(timezone.utc).replace(microsecond=0)
@@ -164,7 +153,7 @@ def test_list_tariffs_pagination(db_session, client_auth):
     tariff_ids = []
     for index in range(total_tariffs):
         response = client_auth.post(
-            "/statique/tariff/",
+            "/tariff/",
             json=_tariff_payload(
                 f"tariff-{index}",
                 now + timedelta(days=index),
@@ -175,7 +164,7 @@ def test_list_tariffs_pagination(db_session, client_auth):
         assert response.status_code == status.HTTP_201_CREATED
         tariff_ids.append(response.json()["id"])
 
-    response = client_auth.get(f"/statique/tariff/?offset=0&limit={limit}")
+    response = client_auth.get(f"/tariff/?offset=0&limit={limit}")
     assert response.status_code == status.HTTP_200_OK
     json_response = response.json()
     assert json_response["total"] == total_tariffs
@@ -187,9 +176,7 @@ def test_list_tariffs_pagination(db_session, client_auth):
     next_query = parse_qs(urlparse(json_response["next"]).query)
     assert next_query == {"limit": ["2"], "offset": ["2"]}
 
-    response = client_auth.get(
-        f"/statique/tariff/?offset={second_page_offset}&limit={limit}"
-    )
+    response = client_auth.get(f"/tariff/?offset={second_page_offset}&limit={limit}")
     assert response.status_code == status.HTTP_200_OK
     json_response = response.json()
     assert json_response["total"] == total_tariffs
@@ -202,6 +189,35 @@ def test_list_tariffs_pagination(db_session, client_auth):
     previous_query = parse_qs(urlparse(json_response["previous"]).query)
     assert previous_query == {"limit": ["2"], "offset": ["0"]}
     assert json_response["next"] is None
+
+
+def test_create_tariff_with_multiple_targets(db_session, client_auth):
+    """Test tariff creation resolves several charge points at once."""
+    n_pdcs = 2
+    save_statiques(db_session, StatiqueFactory.batch(n_pdcs))
+    pdcs = db_session.exec(select(PointDeCharge)).all()
+    start = datetime.now(timezone.utc) - timedelta(days=1)
+    end = datetime.now(timezone.utc) + timedelta(days=1)
+
+    response = client_auth.post(
+        "/tariff/",
+        json=_tariff_payload(
+            "tariff-1",
+            start,
+            end,
+            [pdc.id_pdc_itinerance for pdc in pdcs],
+        ),
+    )
+
+    assert response.status_code == status.HTTP_201_CREATED
+    tariff_id = UUID(response.json()["id"])
+    assert set(response.json()["id_pdc_itinerance"]) == {
+        pdc.id_pdc_itinerance for pdc in pdcs
+    }
+    associations = db_session.exec(
+        select(PointDeChargeTariff).where(PointDeChargeTariff.tariff_id == tariff_id)
+    ).all()
+    assert len(associations) == n_pdcs
 
 
 def test_list_tariffs_filters_by_application_dates(db_session, client_auth):
@@ -227,20 +243,20 @@ def test_list_tariffs_filters_by_application_dates(db_session, client_auth):
     tariff_ids = {}
     for original_id, (start, end) in expected.items():
         response = client_auth.post(
-            "/statique/tariff/",
+            "/tariff/",
             json=_tariff_payload(original_id, start, end, [pdc.id_pdc_itinerance]),
         )
         assert response.status_code == status.HTTP_201_CREATED
         tariff_ids[original_id] = response.json()["id"]
 
-    response = client_auth.get("/statique/tariff/", params={"current": True})
+    response = client_auth.get("/tariff/", params={"current": True})
     assert response.status_code == status.HTTP_200_OK
     assert [tariff["id"] for tariff in response.json()["items"]] == [
         tariff_ids["current"]
     ]
 
     response = client_auth.get(
-        "/statique/tariff/",
+        "/tariff/",
         params={"from": (now + timedelta(days=2)).isoformat()},
     )
     assert response.status_code == status.HTTP_200_OK
@@ -249,11 +265,101 @@ def test_list_tariffs_filters_by_application_dates(db_session, client_auth):
     ]
 
     response = client_auth.get(
-        "/statique/tariff/",
+        "/tariff/",
         params={"to": (now - timedelta(days=2)).isoformat()},
     )
     assert response.status_code == status.HTTP_200_OK
     assert [tariff["id"] for tariff in response.json()["items"]] == [tariff_ids["past"]]
+
+    response = client_auth.get(
+        "/tariff/",
+        params={"original_id": "FRQCHcurrent"},
+    )
+    assert response.status_code == status.HTTP_200_OK
+    assert [tariff["id"] for tariff in response.json()["items"]] == [
+        tariff_ids["current"]
+    ]
+
+    response = client_auth.get(
+        "/tariff/",
+        params={"original_id": "FRQCHunknown"},
+    )
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json()["items"] == []
+
+
+def test_list_tariffs_rejects_naive_application_dates(client_auth):
+    """Test tariff list date filters require timezone-aware datetimes."""
+    response = client_auth.get(
+        "/tariff/",
+        params={"from": datetime(2026, 1, 1, 12).isoformat()},
+    )
+
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+
+
+def test_applicable_tariff_does_not_fallback_to_older_tariff(db_session, client_auth):
+    """Test an expired recent tariff supersedes older overlapping tariffs."""
+    save_statiques(
+        db_session,
+        [
+            StatiqueFactory.build(
+                id_pdc_itinerance="FRS63E0001",
+                id_station_itinerance="FRS63P0001",
+            )
+        ],
+    )
+    pdc = db_session.exec(select(PointDeCharge)).one()
+
+    date_a = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    date_b = datetime(2026, 1, 2, tzinfo=timezone.utc)
+    date_c = datetime(2026, 1, 3, tzinfo=timezone.utc)
+    date_d = datetime(2026, 1, 4, tzinfo=timezone.utc)
+    date_e = datetime(2026, 1, 5, tzinfo=timezone.utc)
+
+    response = client_auth.post(
+        "/tariff/",
+        json=_tariff_payload("tariff-1", date_a, date_e, [pdc.id_pdc_itinerance]),
+    )
+    assert response.status_code == status.HTTP_201_CREATED
+    tariff_1_id = response.json()["id"]
+
+    response = client_auth.post(
+        "/tariff/",
+        json=_tariff_payload("tariff-2", date_b, date_c, [pdc.id_pdc_itinerance]),
+    )
+    assert response.status_code == status.HTTP_201_CREATED
+    tariff_2_id = response.json()["id"]
+
+    response = client_auth.get(
+        f"/tariff/{pdc.id_pdc_itinerance}/applicable",
+        params={"at": (date_a + timedelta(hours=1)).isoformat()},
+    )
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json()["id"] == tariff_1_id
+
+    response = client_auth.get(
+        f"/tariff/{pdc.id_pdc_itinerance}/applicable",
+        params={"at": (date_b + timedelta(hours=1)).isoformat()},
+    )
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json()["id"] == tariff_2_id
+
+    response = client_auth.get(
+        f"/tariff/{pdc.id_pdc_itinerance}/applicable",
+        params={"at": date_d.isoformat()},
+    )
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+
+
+def test_read_applicable_tariff_rejects_naive_application_date(client_auth):
+    """Test applicable tariff lookup requires a timezone-aware datetime."""
+    response = client_auth.get(
+        "/tariff/FRS63E0001/applicable",
+        params={"at": datetime(2026, 1, 1, 12).isoformat()},
+    )
+
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
 
 def test_create_tariff_conflict(db_session, client_auth):
@@ -264,14 +370,12 @@ def test_create_tariff_conflict(db_session, client_auth):
     end = datetime.now(timezone.utc) + timedelta(days=1)
     payload = _tariff_payload("tariff-1", start, end, [pdc.id_pdc_itinerance])
 
-    response = client_auth.post("/statique/tariff/", json=payload)
+    response = client_auth.post("/tariff/", json=payload)
     assert response.status_code == status.HTTP_201_CREATED
 
-    response = client_auth.post("/statique/tariff/", json=payload)
+    response = client_auth.post("/tariff/", json=payload)
     assert response.status_code == status.HTTP_409_CONFLICT
-    assert response.json()["detail"] == (
-        "Tariff with same original id and last update already exists"
-    )
+    assert response.json()["detail"] == "Tariff already exists or cannot be associated"
 
 
 @pytest.mark.parametrize(
@@ -296,7 +400,7 @@ def test_create_tariff_for_user_with_forbidden_pdc(db_session, client_auth):
     end = datetime.now(timezone.utc) + timedelta(days=1)
 
     response = client_auth.post(
-        "/statique/tariff/",
+        "/tariff/",
         json=_tariff_payload("tariff-1", start, end, [pdc.id_pdc_itinerance]),
     )
 
@@ -357,24 +461,25 @@ def test_tariff_api_for_user_with_operational_unit(db_session, client_auth):
     end = datetime.now(timezone.utc) + timedelta(days=1)
 
     response = client_auth.post(
-        "/statique/tariff/",
+        "/tariff/",
         json=_tariff_payload("tariff-1", start, end, [allowed_pdc.id_pdc_itinerance]),
     )
     assert response.status_code == status.HTTP_201_CREATED
     tariff_id = response.json()["id"]
 
-    response = client_auth.get("/statique/tariff/")
+    response = client_auth.get("/tariff/")
     assert response.status_code == status.HTTP_200_OK
     assert [tariff["id"] for tariff in response.json()["items"]] == [tariff_id]
 
     response = client_auth.get(
-        "/statique/tariff/",
+        "/tariff/",
         params={"pdc": forbidden_pdc.id_pdc_itinerance},
     )
     assert response.status_code == status.HTTP_200_OK
     assert response.json()["items"] == []
 
     response = client_auth.put(
-        f"/statique/{forbidden_pdc.id_pdc_itinerance}/tariff/{tariff_id}",
+        f"/tariff/chargepoint/{forbidden_pdc.id_pdc_itinerance}",
+        json={"tariff_id": tariff_id},
     )
     assert response.status_code == status.HTTP_403_FORBIDDEN

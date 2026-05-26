@@ -10,7 +10,7 @@ def test_cli_tariff_list(runner, qcc, httpx_mock):
     """Test the `tariff list` command."""
     httpx_mock.add_response(
         method="GET",
-        url="http://example.com/api/v1/statique/tariff/",
+        url="http://example.com/api/v1/tariff/",
         json={"items": [{"id": "tariff-id"}]},
     )
     result = runner.invoke(app, ["list"], obj=qcc)
@@ -34,7 +34,7 @@ def test_cli_tariff_create(runner, qcc, httpx_mock):
     tariff_json = json.dumps(tariff)
     httpx_mock.add_response(
         method="POST",
-        url="http://example.com/api/v1/statique/tariff/",
+        url="http://example.com/api/v1/tariff/",
         json={"id": "tariff-id"},
     )
     result = runner.invoke(app, ["create", "--tariff", tariff_json], obj=qcc)
@@ -47,7 +47,7 @@ def test_cli_tariff_read(runner, qcc, httpx_mock):
     tariff_id = "4db7b976-faf4-4833-9728-a0bbf3bdf5fe"
     httpx_mock.add_response(
         method="GET",
-        url=f"http://example.com/api/v1/statique/tariff/{tariff_id}",
+        url=f"http://example.com/api/v1/tariff/{tariff_id}",
         json={"id": tariff_id},
     )
     result = runner.invoke(app, ["read", tariff_id], obj=qcc)
@@ -60,7 +60,7 @@ def test_cli_tariff_applicable(runner, qcc, httpx_mock):
     id_pdc_itinerance = "FRS63E0001"
     httpx_mock.add_response(
         method="GET",
-        url=f"http://example.com/api/v1/statique/{id_pdc_itinerance}/tariff",
+        url=f"http://example.com/api/v1/tariff/{id_pdc_itinerance}/applicable",
         json={"id": "tariff-id"},
     )
     result = runner.invoke(app, ["applicable", id_pdc_itinerance], obj=qcc)
@@ -74,7 +74,7 @@ def test_cli_tariff_apply(runner, qcc, httpx_mock):
     tariff_id = "4db7b976-faf4-4833-9728-a0bbf3bdf5fe"
     httpx_mock.add_response(
         method="PUT",
-        url=f"http://example.com/api/v1/statique/{id_pdc_itinerance}/tariff/{tariff_id}",
+        url=f"http://example.com/api/v1/tariff/chargepoint/{id_pdc_itinerance}",
         json={"id": tariff_id},
     )
     result = runner.invoke(app, ["apply", id_pdc_itinerance, tariff_id], obj=qcc)

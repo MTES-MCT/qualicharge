@@ -1,13 +1,17 @@
 """QualiCharge tariff SQL schemas."""
 
-from datetime import datetime
 from typing import List, Optional
 from uuid import UUID, uuid4
 
+from pydantic.types import AwareDatetime
 from sqlalchemy import UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.schema import Column as SAColumn
+from sqlalchemy.types import DateTime
 from sqlmodel import Field, Relationship
+
+from qualicharge.models.fields import IdPdcItinerance
+from qualicharge.models.tariff import TariffRead
 
 from . import BaseAuditableSQLModel, SoftDeleteMixin
 from .core import PointDeCharge
@@ -39,12 +43,29 @@ class Tariff(SoftDeleteMixin, BaseAuditableSQLModel, table=True):
 
     id: UUID = Field(default_factory=uuid4, primary_key=True)
     original_id: str = Field(index=True)
-    original_last_updated: datetime = Field(index=True)
+    original_last_updated: AwareDatetime = Field(
+        sa_column=SAColumn(DateTime(timezone=True), index=True, nullable=False),
+    )
     raw: dict = Field(sa_column=SAColumn(JSONB, nullable=False))
-    original_raw: dict = Field(sa_column=SAColumn(JSONB, nullable=False))
-    start: datetime = Field(index=True)
-    end: Optional[datetime] = Field(default=None, index=True)
+    start: AwareDatetime = Field(
+        sa_column=SAColumn(DateTime(timezone=True), index=True, nullable=False),
+    )
+    end: Optional[AwareDatetime] = Field(
+        sa_column=SAColumn(DateTime(timezone=True), index=True, nullable=True),
+    )
 
     points_de_charge: List[PointDeCharge] = Relationship(
         link_model=PointDeChargeTariff,
     )
+
+    def to_read(self, ids_pdc_itinerance: list[IdPdcItinerance]) -> TariffRead:
+        """Convert this tariff to an API response using it's list of IdPdcItinerance."""
+        return TariffRead(
+            id=str(self.id),
+            original_id=self.original_id,
+            original_last_updated=self.original_last_updated,
+            raw=self.raw,
+            start=self.start,
+            end=self.end,
+            id_pdc_itinerance=ids_pdc_itinerance,
+        )

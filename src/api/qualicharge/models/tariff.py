@@ -1,12 +1,14 @@
 """QualiCharge tariff models."""
 
-from datetime import date, datetime, time
+from datetime import date, time
 from enum import StrEnum
 from typing import Annotated, Any, List, Optional, Union
+from uuid import UUID
 
 from annotated_types import Ge, MaxLen
 from pydantic import (
     BaseModel,
+    ConfigDict,
     Field,
     HttpUrl,
     StringConstraints,
@@ -17,9 +19,11 @@ from pydantic.types import AwareDatetime
 from sqlmodel import SQLModel
 from typing_extensions import Self
 
-from .identifiers import IdPdcItinerance
+from .fields import IdPdcItinerance
 from .utils import PaginatedListResponse
 
+# Current models implement the following specification:
+#
 # https://github.com/loco-philippe/IRVE/blob/main/OCPI/source/schema.json
 
 MAX_TVA_PERCENTAGE = 20
@@ -107,7 +111,7 @@ class PriceComponent(BaseModel):
     def check_vat_percentage(cls, vat: Optional[float]) -> Optional[float]:
         """Ensure VAT is a valid percentage when provided."""
         if vat is not None and not MIN_TVA_PERCENTAGE <= vat <= MAX_TVA_PERCENTAGE:
-            raise ValueError("VAT must be between 0 and 100.")
+            raise ValueError("VAT must be 20 when provided.")
         return vat
 
 
@@ -141,6 +145,8 @@ class TariffElement(BaseModel):
 
 class TariffObject(BaseModel):
     """Internal tariff object compatible with a subset of OCPI."""
+
+    model_config = ConfigDict(extra="forbid")
 
     country_code: Annotated[str, StringConstraints(min_length=2, max_length=2)]
     party_id: Annotated[str, StringConstraints(min_length=3, max_length=3)]
@@ -222,16 +228,24 @@ class TariffRead(SQLModel):
 
     id: str
     original_id: str
-    original_last_updated: datetime
+    original_last_updated: AwareDatetime
     raw: dict[str, Any]
-    start: datetime
-    end: Optional[datetime]
+    start: AwareDatetime
+    end: Optional[AwareDatetime]
     id_pdc_itinerance: List[IdPdcItinerance] = Field(default_factory=list)
+
+
+PaginatedTariffListResponse = PaginatedListResponse[TariffRead]
+
+class TariffChargePointUpdate(BaseModel):
+    """Payload to apply a tariff to a charge point."""
+
+    tariff_id: UUID
 
 
 class PointDeChargeTariffCreate(SQLModel):
     """Associate a tariff with charge points."""
 
     original_id: str
-    original_last_updated: datetime
+    original_last_updated: AwareDatetime
     id_pdc_itinerance: List[IdPdcItinerance] = Field(min_length=1)

@@ -16,19 +16,19 @@ def test_tariff_initialization(client):
 
 @pytest.mark.anyio
 async def test_tariff_list(client, httpx_mock):
-    """Test the /statique/tariff/ endpoint call."""
+    """Test the /tariff/ endpoint call."""
     tariff = Tariff(client)
 
     httpx_mock.add_response(
         method="GET",
-        url="http://example.com/api/v1/statique/tariff/",
+        url="http://example.com/api/v1/tariff/",
         json={"items": list(range(0, 10))},
     )
     assert [item async for item in tariff.list()] == list(range(0, 10))
 
     httpx_mock.add_response(
         method="GET",
-        url="http://example.com/api/v1/statique/tariff/?from=2026-02-23T10%3A00%3A00&to=2026-02-24T10%3A00%3A00&pdc=FRS63E0001&current=true",
+        url="http://example.com/api/v1/tariff/?from=2026-02-23T10%3A00%3A00&to=2026-02-24T10%3A00%3A00&pdc=FRS63E0001&current=true",
         json={"items": list(range(0, 2))},
     )
     assert [
@@ -43,7 +43,7 @@ async def test_tariff_list(client, httpx_mock):
 
     httpx_mock.add_response(
         method="GET",
-        url="http://example.com/api/v1/statique/tariff/",
+        url="http://example.com/api/v1/tariff/",
         status_code=500,
         json={"message": "An unknown error occured."},
     )
@@ -53,13 +53,13 @@ async def test_tariff_list(client, httpx_mock):
 
 @pytest.mark.anyio
 async def test_tariff_create(client, httpx_mock):
-    """Test the /statique/tariff/ create endpoint call."""
+    """Test the /tariff/ create endpoint call."""
     tariff = Tariff(client)
     data = {"targets": [], "tariff": {"id": "t1", "elements": []}}
 
     httpx_mock.add_response(
         method="POST",
-        url="http://example.com/api/v1/statique/tariff/",
+        url="http://example.com/api/v1/tariff/",
         json={"id": "tariff-id"},
     )
     assert await tariff.create(data) == {"id": "tariff-id"}
@@ -67,13 +67,13 @@ async def test_tariff_create(client, httpx_mock):
 
 @pytest.mark.anyio
 async def test_tariff_read(client, httpx_mock):
-    """Test the /statique/tariff/{id} endpoint call."""
+    """Test the /tariff/{id} endpoint call."""
     tariff = Tariff(client)
     tariff_id = "4db7b976-faf4-4833-9728-a0bbf3bdf5fe"
 
     httpx_mock.add_response(
         method="GET",
-        url=f"http://example.com/api/v1/statique/tariff/{tariff_id}",
+        url=f"http://example.com/api/v1/tariff/{tariff_id}",
         json={"id": tariff_id},
     )
     assert await tariff.read(tariff_id) == {"id": tariff_id}
@@ -81,13 +81,13 @@ async def test_tariff_read(client, httpx_mock):
 
 @pytest.mark.anyio
 async def test_tariff_applicable(client, httpx_mock):
-    """Test the /statique/{id_pdc_itinerance}/tariff endpoint call."""
+    """Test the /tariff/{id_pdc_itinerance}/applicable endpoint call."""
     tariff = Tariff(client)
     id_pdc_itinerance = "FRS63E0001"
 
     httpx_mock.add_response(
         method="GET",
-        url=f"http://example.com/api/v1/statique/{id_pdc_itinerance}/tariff",
+        url=f"http://example.com/api/v1/tariff/{id_pdc_itinerance}/applicable",
         json={"id_pdc_itinerance": id_pdc_itinerance},
     )
     assert await tariff.applicable(id_pdc_itinerance) == {
@@ -96,7 +96,7 @@ async def test_tariff_applicable(client, httpx_mock):
 
     httpx_mock.add_response(
         method="GET",
-        url=f"http://example.com/api/v1/statique/{id_pdc_itinerance}/tariff?at=2026-02-23T10%3A00%3A00",
+        url=f"http://example.com/api/v1/tariff/{id_pdc_itinerance}/applicable?at=2026-02-23T10%3A00%3A00",
         json={"id_pdc_itinerance": id_pdc_itinerance},
     )
     assert await tariff.applicable(
@@ -107,14 +107,14 @@ async def test_tariff_applicable(client, httpx_mock):
 
 @pytest.mark.anyio
 async def test_tariff_apply(client, httpx_mock):
-    """Test the /statique/{id_pdc_itinerance}/tariff/{tariff_id} endpoint call."""
+    """Test the /tariff/chargepoint/{id_pdc_itinerance} endpoint call."""
     tariff = Tariff(client)
     id_pdc_itinerance = "FRS63E0001"
     tariff_id = "4db7b976-faf4-4833-9728-a0bbf3bdf5fe"
 
     httpx_mock.add_response(
         method="PUT",
-        url=f"http://example.com/api/v1/statique/{id_pdc_itinerance}/tariff/{tariff_id}",
+        url=f"http://example.com/api/v1/tariff/chargepoint/{id_pdc_itinerance}",
         json={"id": tariff_id, "id_pdc_itinerance": [id_pdc_itinerance]},
     )
     assert await tariff.apply(id_pdc_itinerance, tariff_id) == {

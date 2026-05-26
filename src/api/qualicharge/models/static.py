@@ -25,7 +25,7 @@ from pydantic_extra_types.phone_numbers import PhoneNumber
 from shapely import Point, Polygon
 from typing_extensions import Annotated, Self
 
-from .identifiers import IdPdcItinerance, IdStationItinerance
+from .fields import IdPdcItinerance, IdStationItinerance
 from .utils import ModelSchemaMixin
 
 FRANCE_METROPOLITAN_SHAPE = Polygon(

@@ -64,6 +64,19 @@ def test_tariff_object_alias():
     assert tariff.model_dump(by_alias=True, mode="json")["id"] == "tariff-1"
 
 
+def test_tariff_object_rejects_extra_fields():
+    """Test tariff object rejects unsupported fields."""
+    with pytest.raises(ValidationError, match="Extra inputs are not permitted"):
+        TariffObject(
+            country_code="FR",
+            party_id="QCH",
+            id="tariff-1",
+            last_updated=datetime.now(timezone.utc),
+            elements=[{"price_components": [{"type": "ENERGY", "price": 0.3}]}],
+            unsupported_field="ignored-no-more",
+        )
+
+
 @pytest.mark.parametrize("field", ["country_code", "party_id"])
 def test_tariff_object_requires_ocpi_identifiers(field):
     """Test tariff object requires OCPI ownership identifiers."""
@@ -244,18 +257,18 @@ def test_price_component_price_positive(value):
         PriceComponent(type="ENERGY", price=value)
 
 
-@pytest.mark.parametrize("vat", [None, 0.0, 20.0, 100.0])
+@pytest.mark.parametrize("vat", [None, 20.0])
 def test_price_component_vat_is_valid_percentage(vat):
-    """Test price component VAT can be omitted or set to a valid percentage."""
+    """Test price component VAT can be omitted or set to the valid value."""
     component = PriceComponent(type="ENERGY", price=0.3, vat=vat)
 
     assert component.vat == vat
 
 
-@pytest.mark.parametrize("vat", [-0.01, 100.01])
+@pytest.mark.parametrize("vat", [-0.01, 0.0, 19.99, 20.01, 100.0, 100.01])
 def test_price_component_vat_must_be_valid_percentage(vat):
-    """Test price component VAT should be between 0 and 100."""
-    with pytest.raises(ValidationError, match="VAT must be between 0 and 100."):
+    """Test price component VAT should be 20 when provided."""
+    with pytest.raises(ValidationError, match="VAT must be 20 when provided."):
         PriceComponent(type="ENERGY", price=0.3, vat=vat)
 
 
@@ -272,4 +285,14 @@ def test_point_de_charge_tariff_create_requires_pdc():
             original_id="FRQCHtariff-1",
             original_last_updated=datetime.now(timezone.utc),
             id_pdc_itinerance=[],
+        )
+
+
+def test_point_de_charge_tariff_create_datetime_is_timezone_aware():
+    """Test tariff association payload last update should be aware."""
+    with pytest.raises(ValidationError, match="Input should have timezone info"):
+        PointDeChargeTariffCreate(
+            original_id="FRQCHtariff-1",
+            original_last_updated=datetime.now(),
+            id_pdc_itinerance=["FRS63E0001"],
         )

@@ -1,66 +1,50 @@
 """Tariff persistence and mapping helpers."""
 
-from datetime import datetime, timezone
-from typing import Any, Optional, cast
+from collections import defaultdict
+from datetime import datetime
+from typing import Optional, Sequence, cast
 from uuid import UUID
 
-from sqlalchemy import desc
+from sqlalchemy import and_, desc, nullslast
 from sqlalchemy.schema import Column as SAColumn
 from sqlmodel import Session, select
 
 from qualicharge.auth.schemas import User
-from qualicharge.models.tariff import TariffObject, TariffRead
-from qualicharge.schemas.core import (
-    ActivePointsDeChargeView,
-    ActiveStationsView,
-    PointDeCharge,
-)
+from qualicharge.models.fields import IdPdcItinerance
+from qualicharge.schemas.core import ActivePointsDeChargeView, PointDeCharge
 from qualicharge.schemas.tariff import PointDeChargeTariff, Tariff
+from qualicharge.schemas.utils import is_pdc_allowed_for_user
 
 
-def to_db_datetime(value: Optional[datetime]) -> Optional[datetime]:
-    """Convert an aware datetime to naive UTC for tariff SQL columns."""
-    if value is None or value.tzinfo is None:
-        return value
-    return value.astimezone(timezone.utc).replace(tzinfo=None)
+def get_tariffs_pdc_ids(
+    session: Session,
+    tariff_ids: Sequence[UUID],
+) -> dict[UUID, list[IdPdcItinerance]]:
+    """Return API charge point identifiers grouped by tariff id."""
+    if not tariff_ids:
+        return {}
 
-
-def tariff_fields_from_object(
-    raw: TariffObject,
-    original_raw: Optional[dict[str, Any]] = None,
-) -> dict:
-    """Extract indexed database fields from a tariff object."""
-    normalized_raw = raw.model_dump(by_alias=True, mode="json")
-    return {
-        "original_id": raw.tariff_id,
-        "original_last_updated": to_db_datetime(raw.last_updated),
-        "raw": normalized_raw,
-        "original_raw": original_raw if original_raw is not None else normalized_raw,
-        "start": to_db_datetime(raw.tariff_application_date),
-        "end": to_db_datetime(raw.end_date_time),
-    }
-
-
-def tariff_to_read(session: Session, tariff: Tariff) -> TariffRead:
-    """Convert a database tariff to API output."""
-    pdc_ids = session.exec(
-        select(PointDeCharge.id_pdc_itinerance)
+    stmt = (
+        select(PointDeChargeTariff.tariff_id, PointDeCharge.id_pdc_itinerance)
         .join(
-            PointDeChargeTariff,
+            PointDeCharge,
             cast(SAColumn, PointDeCharge.id)
             == cast(SAColumn, PointDeChargeTariff.point_de_charge_id),
         )
-        .where(cast(SAColumn, PointDeChargeTariff.tariff_id) == tariff.id)
-    ).all()
-    return TariffRead(
-        id=str(tariff.id),
-        original_id=tariff.original_id,
-        original_last_updated=tariff.original_last_updated,
-        raw=tariff.original_raw,
-        start=tariff.start,
-        end=tariff.end,
-        id_pdc_itinerance=list(pdc_ids),
+        .where(cast(SAColumn, PointDeChargeTariff.tariff_id).in_(tariff_ids))
     )
+    pdc_ids_by_tariff_id: dict[UUID, list[IdPdcItinerance]] = defaultdict(list)
+    for tariff_id, id_pdc_itinerance in session.exec(stmt).all():
+        pdc_ids_by_tariff_id[tariff_id].append(id_pdc_itinerance)
+    return dict(pdc_ids_by_tariff_id)
+
+
+def get_tariff_pdc_ids(
+    session: Session,
+    tariff: Tariff,
+) -> list[IdPdcItinerance]:
+    """Return API charge point identifiers associated with a tariff."""
+    return get_tariffs_pdc_ids(session, [tariff.id]).get(tariff.id, [])
 
 
 def get_tariff_by_original(
@@ -69,79 +53,81 @@ def get_tariff_by_original(
     original_last_updated: datetime,
 ) -> Optional[Tariff]:
     """Get an active tariff from its operator identifier."""
-    db_original_last_updated = to_db_datetime(original_last_updated)
-    if db_original_last_updated is None:
-        raise ValueError("original_last_updated is required.")
     stmt = select(Tariff).where(
         Tariff.original_id == original_id,
         cast(SAColumn, Tariff.deleted_at).is_(None),
-        cast(SAColumn, Tariff.original_last_updated) == db_original_last_updated,
+        cast(SAColumn, Tariff.original_last_updated) == original_last_updated,
     )
     return session.exec(stmt).one_or_none()
 
 
 def is_tariff_allowed_for_user(
-    session: Session,
-    tariff_id: UUID,
+    tariff: Tariff,
+    ids_pdc_itinerance: Sequence[IdPdcItinerance],
     user: User,
 ) -> bool:
     """Return whether a user can access a tariff."""
     if user.is_superuser:
         return True
 
-    if (
-        session.exec(
-            select(Tariff.created_by_id).where(
-                Tariff.id == tariff_id,
-                Tariff.created_by_id == user.id,
-            )
-        ).one_or_none()
-        is not None
-    ):
+    if tariff.created_by_id == user.id:
         return True
 
-    stmt = (
-        select(PointDeChargeTariff.tariff_id)
-        .join(
-            ActivePointsDeChargeView,
-            cast(SAColumn, PointDeChargeTariff.point_de_charge_id)
-            == cast(SAColumn, ActivePointsDeChargeView.id),  # type: ignore[attr-defined]
-        )
-        .join(
-            ActiveStationsView,
-            cast(SAColumn, ActivePointsDeChargeView.station_id)  # type: ignore[attr-defined]
-            == cast(SAColumn, ActiveStationsView.id),  # type: ignore[attr-defined]
-        )
-        .where(PointDeChargeTariff.tariff_id == tariff_id)
-        .where(
-            cast(SAColumn, ActiveStationsView.operational_unit_id).in_(  # type: ignore[attr-defined]
-                [ou.id for ou in user.operational_units]
-            )
-        )
+    return any(
+        is_pdc_allowed_for_user(id_pdc_itinerance, user)
+        for id_pdc_itinerance in ids_pdc_itinerance
     )
-    return session.exec(stmt).first() is not None
 
 
-def get_applicable_tariff(
+def get_applicable_tariff_for_pdc(
     session: Session,
-    point_de_charge_id,
+    id_pdc_itinerance: IdPdcItinerance,
     at: datetime,
-) -> Optional[Tariff]:
-    """Get applicable tariff for a charge point at a given datetime."""
+) -> tuple[bool, Optional[Tariff]]:
+    """Return the applicable tariff for an active charge point.
+
+    The boolean indicates whether the charge point exists, so callers can keep
+    separate error messages for unknown charge points and charge points without
+    tariffs. The newest started tariff wins, even if it is expired; in that case
+    no older tariff is returned.
+    """
     stmt = (
-        select(Tariff)
-        .join(
+        select(ActivePointsDeChargeView.id, Tariff)  # type: ignore[attr-defined]
+        .outerjoin(
             PointDeChargeTariff,
-            cast(SAColumn, PointDeChargeTariff.tariff_id) == cast(SAColumn, Tariff.id),
+            cast(SAColumn, PointDeChargeTariff.point_de_charge_id)
+            == cast(
+                SAColumn,
+                ActivePointsDeChargeView.id,  # type: ignore[attr-defined]
+            ),
         )
-        .where(PointDeChargeTariff.point_de_charge_id == point_de_charge_id)
-        .where(cast(SAColumn, Tariff.deleted_at).is_(None))
-        .where(cast(SAColumn, Tariff.start) <= at)
-        .where(cast(SAColumn, Tariff.end).is_(None) | (cast(SAColumn, Tariff.end) > at))
+        .outerjoin(
+            Tariff,
+            and_(
+                cast(SAColumn, Tariff.id)
+                == cast(SAColumn, PointDeChargeTariff.tariff_id),
+                cast(SAColumn, Tariff.deleted_at).is_(None),
+                cast(SAColumn, Tariff.start) <= at,
+            ),
+        )
+        .where(
+            ActivePointsDeChargeView.id_pdc_itinerance  # type: ignore[attr-defined]
+            == id_pdc_itinerance
+        )
         .order_by(
-            desc(cast(SAColumn, Tariff.start)),
-            desc(cast(SAColumn, Tariff.original_last_updated)),
-            desc(cast(SAColumn, Tariff.created_at)),
+            nullslast(desc(cast(SAColumn, Tariff.start))),
+            nullslast(desc(cast(SAColumn, Tariff.original_last_updated))),
+            nullslast(desc(cast(SAColumn, Tariff.created_at))),
         )
     )
-    return session.exec(stmt).first()
+    row = session.exec(stmt).first()
+    if row is None:
+        return False, None
+
+    tariff = row[1]
+
+    # No tariff exists for this charge point or it is outdated
+    if tariff is None or (tariff.end is not None and tariff.end <= at):
+        return True, None
+
+    return True, tariff

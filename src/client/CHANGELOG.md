@@ -12,8 +12,6 @@ and this project adheres to
 
 - Add tariff API client endpoint and CLI commands
 
-### Changed
-
 #### Dependencies
 
 - Upgrade `anyio` to `4.13.0`
