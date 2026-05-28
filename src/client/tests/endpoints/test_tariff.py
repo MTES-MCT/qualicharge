@@ -28,7 +28,7 @@ async def test_tariff_list(client, httpx_mock):
 
     httpx_mock.add_response(
         method="GET",
-        url="http://example.com/api/v1/tariff/?from=2026-02-23T10%3A00%3A00&to=2026-02-24T10%3A00%3A00&pdc=FRS63E0001&current=true",
+        url="http://example.com/api/v1/tariff/?from=2026-02-23T10%3A00%3A00&to=2026-02-24T10%3A00%3A00&pdc=FRS63E0001&original_id=FRQCHtariff-1&current=true",
         json={"items": list(range(0, 2))},
     )
     assert [
@@ -37,6 +37,7 @@ async def test_tariff_list(client, httpx_mock):
             from_=datetime(2026, 2, 23, 10),
             to=datetime(2026, 2, 24, 10),
             pdc=["FRS63E0001"],
+            original_id="FRQCHtariff-1",
             current=True,
         )
     ] == list(range(0, 2))

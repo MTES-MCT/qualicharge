@@ -20,6 +20,7 @@ class Tariff(BaseEndpoint):
         from_: Optional[datetime] = None,
         to: Optional[datetime] = None,
         pdc: Optional[List[str]] = None,
+        original_id: Optional[str] = None,
         current: Optional[bool] = None,
     ) -> AsyncIterator[dict]:
         """Query the /tariff endpoint (GET)."""
@@ -31,6 +32,7 @@ class Tariff(BaseEndpoint):
                 ("from", from_str),
                 ("to", to_str),
                 ("pdc", pdc),
+                ("original_id", original_id),
                 ("current", current),
             )
             if p[1] is not None

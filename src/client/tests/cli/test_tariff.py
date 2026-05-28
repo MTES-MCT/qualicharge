@@ -17,6 +17,19 @@ def test_cli_tariff_list(runner, qcc, httpx_mock):
     assert result.exit_code == QCCExitCodes.OK
     assert json.loads(result.stdout) == {"id": "tariff-id"}
 
+    httpx_mock.add_response(
+        method="GET",
+        url="http://example.com/api/v1/tariff/?original_id=FRQCHtariff-1",
+        json={"items": [{"id": "tariff-id"}]},
+    )
+    result = runner.invoke(
+        app,
+        ["list", "--original-id", "FRQCHtariff-1"],
+        obj=qcc,
+    )
+    assert result.exit_code == QCCExitCodes.OK
+    assert json.loads(result.stdout) == {"id": "tariff-id"}
+
 
 def test_cli_tariff_create(runner, qcc, httpx_mock):
     """Test the `tariff create` command."""

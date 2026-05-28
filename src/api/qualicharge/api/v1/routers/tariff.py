@@ -208,6 +208,10 @@ async def list_tariffs(  # noqa: PLR0913
             ),
         ),
     ] = None,
+    original_id: Annotated[
+        Optional[str],
+        Query(description="Filter tariffs by original OCPI identifier"),
+    ] = None,
     current: Annotated[
         Optional[bool],
         Query(description="Return only tariffs applicable at the current date"),
@@ -230,6 +234,9 @@ async def list_tariffs(  # noqa: PLR0913
         )
     if to is not None:
         stmt = stmt.where(cast(SAColumn, Tariff.start) <= to)
+
+    if original_id is not None:
+        stmt = stmt.where(Tariff.original_id == original_id)
 
     ou_filter: array | None = None
     if not user.is_superuser:

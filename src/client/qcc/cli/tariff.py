@@ -15,11 +15,12 @@ app = typer.Typer(name="tariff", no_args_is_help=True)
 
 
 @app.command()
-def list(
+def list(  # noqa: PLR0913
     ctx: typer.Context,
     from_: Annotated[Optional[datetime], typer.Option("--from")] = None,
     to: Optional[datetime] = None,
     pdc: Optional[List[str]] = None,
+    original_id: Optional[str] = None,
     current: Optional[bool] = None,
 ):
     """List tariffs."""
@@ -30,6 +31,7 @@ def list(
             from_=from_,
             to=to,
             pdc=pdc,
+            original_id=original_id,
             current=current,
         ):
             typer.echo(json.dumps(tariff))

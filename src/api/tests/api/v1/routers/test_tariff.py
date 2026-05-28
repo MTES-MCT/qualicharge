@@ -351,6 +351,7 @@ def test_applicable_tariff_does_not_fallback_to_older_tariff(db_session, client_
     )
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
+<<<<<<< HEAD
 
 def test_read_applicable_tariff_rejects_naive_application_date(client_auth):
     """Test applicable tariff lookup requires a timezone-aware datetime."""
@@ -361,6 +362,8 @@ def test_read_applicable_tariff_rejects_naive_application_date(client_auth):
 
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
+=======
+>>>>>>> 5ff9ab5 (✨(tariff) filter by original id and update applicability rule)
 
 def test_create_tariff_conflict(db_session, client_auth):
     """Test tariff creation conflict on original id and last update."""
