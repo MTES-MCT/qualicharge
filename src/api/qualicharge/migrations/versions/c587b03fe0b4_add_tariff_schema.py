@@ -1,7 +1,7 @@
 """add tariff schema.
 
 Revision ID: c587b03fe0b4
-Revises: 61de84df9030
+Revises: 2b6539a6fc40
 Create Date: 2026-05-04 12:21:16.606243
 
 """
@@ -16,7 +16,7 @@ from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision: str = "c587b03fe0b4"
-down_revision: Union[str, None] = "61de84df9030"
+down_revision: Union[str, None] = "2b6539a6fc40"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

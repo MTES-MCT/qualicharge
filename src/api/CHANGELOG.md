@@ -8,11 +8,10 @@ and this project adheres to
 
 ## [Unreleased]
 
-## [0.34.0] - 2026-05-29
+### Added
 
-### Added 
-
-- CLI: add a new `qcm ou update` command
+- Add tariffs support
+- Add `original_id` filtering to the tariff list endpoint
 
 ### Changed
 
@@ -759,8 +758,7 @@ update` command
 
 - Implement base FastAPI app
 
-[unreleased]: https://github.com/MTES-MCT/qualicharge/compare/v0.34.0...main
-[0.34.0]: https://github.com/MTES-MCT/qualicharge/compare/v0.33.1...v0.34.0
+[unreleased]: https://github.com/MTES-MCT/qualicharge/compare/v0.33.1...main
 [0.33.1]: https://github.com/MTES-MCT/qualicharge/compare/v0.33.0...v0.33.1
 [0.33.0]: https://github.com/MTES-MCT/qualicharge/compare/v0.32.0...v0.33.0
 [0.32.0]: https://github.com/MTES-MCT/qualicharge/compare/v0.31.2...v0.32.0

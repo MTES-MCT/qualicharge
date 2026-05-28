@@ -124,8 +124,6 @@ def test_get_tariff_by_original(db_session):
     assert get_tariff_by_original(db_session, "FRQCHtariff-1", last_updated) == tariff
 
     tariff.deleted_at = datetime.now(timezone.utc)
-    db_session.add(tariff)
-    db_session.flush()
     assert get_tariff_by_original(db_session, "FRQCHtariff-1", last_updated) is None
 
 
@@ -250,62 +248,6 @@ def test_get_applicable_tariff_does_not_fallback_to_older_tariff(db_session):
     )
     assert pdc_exists
     assert applicable_tariff is None
-
-
-def test_get_applicable_tariff_does_not_fallback_to_older_tariff(db_session):
-    """Test an expired recent tariff supersedes older overlapping tariffs."""
-    save_statique(
-        db_session,
-        StatiqueFactory.build(
-            id_pdc_itinerance="FRS63E0001",
-            id_station_itinerance="FRS63P0001",
-        ),
-    )
-    pdc = db_session.exec(select(PointDeCharge)).one()
-    date_a = datetime(2026, 1, 1, tzinfo=timezone.utc)
-    date_b = datetime(2026, 1, 2, tzinfo=timezone.utc)
-    date_c = datetime(2026, 1, 3, tzinfo=timezone.utc)
-    date_d = datetime(2026, 1, 4, tzinfo=timezone.utc)
-    date_e = datetime(2026, 1, 5, tzinfo=timezone.utc)
-
-    old = _save_tariff(
-        db_session,
-        TariffObjectFactory.build(
-            id="old",
-            start_date_time=date_a,
-            end_date_time=date_e,
-            last_updated=date_a,
-        ),
-    )
-    recent = _save_tariff(
-        db_session,
-        TariffObjectFactory.build(
-            id="recent",
-            start_date_time=date_b,
-            end_date_time=date_c,
-            last_updated=date_b,
-        ),
-    )
-    _associate(db_session, old, pdc)
-    _associate(db_session, recent, pdc)
-
-    assert (
-        get_applicable_tariff(
-            db_session,
-            pdc.id,
-            to_db_datetime(date_a + timedelta(hours=1)),
-        )
-        == old
-    )
-    assert (
-        get_applicable_tariff(
-            db_session,
-            pdc.id,
-            to_db_datetime(date_b + timedelta(hours=1)),
-        )
-        == recent
-    )
-    assert get_applicable_tariff(db_session, pdc.id, to_db_datetime(date_d)) is None
 
 
 def test_get_applicable_tariff_uses_application_date(db_session):
