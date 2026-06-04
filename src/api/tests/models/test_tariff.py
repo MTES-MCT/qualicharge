@@ -156,8 +156,8 @@ def test_tariff_object_can_have_no_end_date_after_last_updated():
 def test_tariff_object_restricts_type_to_ad_hoc_payment():
     """Test tariff object type should be AD_HOC_PAYMENT when provided."""
     with pytest.raises(
-        ValueError,
-        match="Tariff FRQCHtariff-1 type must be 'AD_HOC_PAYMENT'.",
+        ValidationError,
+        match="Input should be <TariffTypeEnum.AD_HOC_PAYMENT: 'AD_HOC_PAYMENT'>",
     ):
         TariffObjectFactory.build(id="tariff-1", type="REGULAR")
 
@@ -165,8 +165,8 @@ def test_tariff_object_restricts_type_to_ad_hoc_payment():
 def test_tariff_object_restricts_currency_to_eur():
     """Test tariff object currency should be EUR when provided."""
     with pytest.raises(
-        ValueError,
-        match="Tariff FRQCHtariff-1 currency must be 'EUR'.",
+        ValidationError,
+        match="Input should be 'EUR'",
     ):
         TariffObjectFactory.build(id="tariff-1", currency="USD")
 
@@ -174,8 +174,11 @@ def test_tariff_object_restricts_currency_to_eur():
 def test_tariff_object_rejects_tax_included_na():
     """Test tariff object tax_included should not be N/A when provided."""
     with pytest.raises(
-        ValueError,
-        match="Tariff FRQCHtariff-1 tax_included must not be 'NA'.",
+        ValidationError,
+        match=(
+            "Input should be <TaxIncludedEnum.YES: 'YES'> "
+            "or <TaxIncludedEnum.NO: 'NO'>"
+        ),
     ):
         TariffObjectFactory.build(id="tariff-1", tax_included="N/A")
 
@@ -268,7 +271,7 @@ def test_price_component_vat_is_valid_percentage(vat):
 @pytest.mark.parametrize("vat", [-0.01, 0.0, 19.99, 20.01, 100.0, 100.01])
 def test_price_component_vat_must_be_valid_percentage(vat):
     """Test price component VAT should be 20 when provided."""
-    with pytest.raises(ValidationError, match="VAT must be 20 when provided."):
+    with pytest.raises(ValidationError, match="Input should be 20"):
         PriceComponent(type="ENERGY", price=0.3, vat=vat)
 
 

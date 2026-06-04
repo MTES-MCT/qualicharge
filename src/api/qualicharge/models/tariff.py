@@ -2,7 +2,7 @@
 
 from datetime import date, time
 from enum import StrEnum
-from typing import Annotated, Any, List, Optional, Union
+from typing import Annotated, Any, List, Literal, Optional, Union
 from uuid import UUID
 
 from annotated_types import Ge, MaxLen
@@ -12,7 +12,6 @@ from pydantic import (
     Field,
     HttpUrl,
     StringConstraints,
-    field_validator,
     model_validator,
 )
 from pydantic.types import AwareDatetime
@@ -25,10 +24,6 @@ from .utils import PaginatedListResponse
 # Current models implement the following specification:
 #
 # https://github.com/loco-philippe/IRVE/blob/main/OCPI/source/schema.json
-
-MAX_TVA_PERCENTAGE = 20
-MIN_TVA_PERCENTAGE = 20
-
 
 class TariffDimensionTypeEnum(StrEnum):
     """Tariff price component dimensions."""
@@ -103,16 +98,8 @@ class PriceComponent(BaseModel):
 
     type: TariffDimensionTypeEnum
     price: Annotated[float, Ge(0.0)]
-    vat: Optional[float] = None
+    vat: Optional[Literal[20]] = None
     step_size: Optional[Annotated[int, Ge(1)]] = None
-
-    @field_validator("vat")
-    @classmethod
-    def check_vat_percentage(cls, vat: Optional[float]) -> Optional[float]:
-        """Ensure VAT is a valid percentage when provided."""
-        if vat is not None and not MIN_TVA_PERCENTAGE <= vat <= MAX_TVA_PERCENTAGE:
-            raise ValueError("VAT must be 20 when provided.")
-        return vat
 
 
 class TariffRestrictions(BaseModel):
@@ -151,17 +138,15 @@ class TariffObject(BaseModel):
     country_code: Annotated[str, StringConstraints(min_length=2, max_length=2)]
     party_id: Annotated[str, StringConstraints(min_length=3, max_length=3)]
     id: Annotated[str, StringConstraints(max_length=36)]
-    type: Optional[TariffTypeEnum] = None
-    currency: Optional[
-        Annotated[str, StringConstraints(min_length=3, max_length=3)]
-    ] = None
+    type: Optional[Literal[TariffTypeEnum.AD_HOC_PAYMENT]] = None
+    currency: Optional[Literal["EUR"]] = None
     elements: List[TariffElement] = Field(min_length=1)
     tariff_alt_text: Optional[List[TariffAltText]] = None
     tariff_alt_url: Optional[Annotated[HttpUrl, MaxLen(255)]] = None
     start_date_time: Optional[AwareDatetime] = None
     end_date_time: Optional[AwareDatetime] = None
     last_updated: AwareDatetime
-    tax_included: Optional[TaxIncludedEnum] = None
+    tax_included: Optional[Literal[TaxIncludedEnum.YES, TaxIncludedEnum.NO]] = None
     min_price: Optional[Union[Price, PriceLimit]] = None
     max_price: Optional[Union[Price, PriceLimit]] = None
 
@@ -202,17 +187,6 @@ class TariffObject(BaseModel):
             raise ValueError(
                 f"Tariff {self.tariff_id} cannot end before his last updated time."
             )
-        return self
-
-    @model_validator(mode="after")
-    def check_valid_enums(self) -> Self:
-        """Ensure tariff enum-like business fields use supported values."""
-        if self.type is not None and self.type != TariffTypeEnum.AD_HOC_PAYMENT:
-            raise ValueError(f"Tariff {self.tariff_id} type must be 'AD_HOC_PAYMENT'.")
-        if self.currency is not None and self.currency != "EUR":
-            raise ValueError(f"Tariff {self.tariff_id} currency must be 'EUR'.")
-        if self.tax_included is not None and self.tax_included == TaxIncludedEnum.NA:
-            raise ValueError(f"Tariff {self.tariff_id} tax_included must not be 'NA'.")
         return self
 
 
