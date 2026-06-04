@@ -12,12 +12,15 @@ from qualicharge.auth.factories import GroupFactory
 from qualicharge.auth.schemas import GroupOperationalUnit, ScopesEnum, User
 from qualicharge.factories.static import StatiqueFactory
 from qualicharge.factories.tariff import TariffCreateFactory, TariffObjectFactory
+from qualicharge.models.fields import IdPdcItinerance
 from qualicharge.schemas.core import OperationalUnit, PointDeCharge
 from qualicharge.schemas.tariff import PointDeChargeTariff, Tariff
 from qualicharge.schemas.utils import save_statiques
 
 
-def _tariff_payload(id_: str, start: datetime, end: datetime, pdcs: list[str]) -> dict:
+def _tariff_payload(
+    id_: str, start: datetime, end: datetime | None, pdcs: list[IdPdcItinerance]
+) -> dict:
     """Build a tariff creation payload."""
     raw = TariffObjectFactory.build(
         id=id_,
@@ -29,6 +32,41 @@ def _tariff_payload(id_: str, start: datetime, end: datetime, pdcs: list[str]) -
         tariff=raw,
         targets=pdcs,
     ).model_dump(by_alias=True, mode="json")
+
+
+def _save_tariff(
+    db_session,
+    id_: str,
+    start: datetime,
+    end: datetime | None,
+    pdcs: list[PointDeCharge] | None = None,
+) -> Tariff:
+    """Save a tariff and optional charge point associations."""
+    raw = TariffObjectFactory.build(
+        id=id_,
+        last_updated=start,
+        start_date_time=start,
+        end_date_time=end,
+    )
+    tariff = Tariff(
+        original_id=raw.tariff_id,
+        original_last_updated=raw.last_updated,
+        raw=raw.model_dump(by_alias=True, mode="json"),
+        start=raw.tariff_application_date,
+        end=raw.end_date_time,
+    )
+    db_session.add(tariff)
+    db_session.flush()
+
+    for pdc in pdcs or []:
+        db_session.add(
+            PointDeChargeTariff(
+                point_de_charge_id=pdc.id,
+                tariff_id=tariff.id,
+            )
+        )
+    db_session.flush()
+    return tariff
 
 
 @pytest.mark.parametrize(
@@ -141,6 +179,87 @@ def test_tariff_api_workflow(db_session, client_auth):
     assert len(associations) == n_pdcs
 
 
+def test_create_tariff_without_targets(db_session, client_auth):
+    """Test tariff creation without associated charge points."""
+    start = datetime.now(timezone.utc) - timedelta(days=1)
+    end = datetime.now(timezone.utc) + timedelta(days=1)
+
+    response = client_auth.post(
+        "/tariff/",
+        json=_tariff_payload("tariff-1", start, end, []),
+    )
+
+    assert response.status_code == status.HTTP_201_CREATED
+    created = response.json()
+    tariff_id = UUID(created["id"])
+    assert created["id_pdc_itinerance"] == []
+    assert db_session.get(Tariff, tariff_id) is not None
+    assert (
+        db_session.exec(
+            select(PointDeChargeTariff).where(
+                PointDeChargeTariff.tariff_id == tariff_id
+            )
+        ).all()
+        == []
+    )
+
+    response = client_auth.get(f"/tariff/{tariff_id}")
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json()["id_pdc_itinerance"] == []
+
+
+def test_create_tariff_with_unknown_pdc_rolls_back(db_session, client_auth):
+    """Test tariff creation fails and rolls back when a target is unknown."""
+    start = datetime.now(timezone.utc) - timedelta(days=1)
+    end = datetime.now(timezone.utc) + timedelta(days=1)
+
+    response = client_auth.post(
+        "/tariff/",
+        json=_tariff_payload("tariff-1", start, end, ["FRS63E404"]),
+    )
+
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+    assert response.json()["detail"] == "Point of charge does not exist"
+    assert (
+        db_session.exec(
+            select(Tariff).where(Tariff.original_id == "FRQCHtariff-1")
+        ).one_or_none()
+        is None
+    )
+
+
+def test_create_tariff_with_duplicate_targets(db_session, client_auth):
+    """Test duplicate targets create a single association."""
+    save_statiques(db_session, StatiqueFactory.batch(1))
+    pdc = db_session.exec(select(PointDeCharge)).one()
+    start = datetime.now(timezone.utc) - timedelta(days=1)
+    end = datetime.now(timezone.utc) + timedelta(days=1)
+
+    response = client_auth.post(
+        "/tariff/",
+        json=_tariff_payload(
+            "tariff-1",
+            start,
+            end,
+            [pdc.id_pdc_itinerance, pdc.id_pdc_itinerance],
+        ),
+    )
+
+    assert response.status_code == status.HTTP_201_CREATED
+    tariff_id = UUID(response.json()["id"])
+    assert response.json()["id_pdc_itinerance"] == [pdc.id_pdc_itinerance]
+    assert (
+        len(
+            db_session.exec(
+                select(PointDeChargeTariff).where(
+                    PointDeChargeTariff.tariff_id == tariff_id
+                )
+            ).all()
+        )
+        == 1
+    )
+
+
 def test_list_tariffs_pagination(db_session, client_auth):
     """Test the /tariff/ list endpoint results pagination."""
     save_statiques(db_session, StatiqueFactory.batch(1))
@@ -189,6 +308,53 @@ def test_list_tariffs_pagination(db_session, client_auth):
     previous_query = parse_qs(urlparse(json_response["previous"]).query)
     assert previous_query == {"limit": ["2"], "offset": ["0"]}
     assert json_response["next"] is None
+
+
+def test_list_tariffs_filters_by_multiple_pdcs_without_duplicates(
+    db_session,
+    client_auth,
+):
+    """Test PDC filtering keeps one tariff row when several targets match."""
+    n_pdcs = 2
+    save_statiques(db_session, StatiqueFactory.batch(n_pdcs))
+    pdcs = db_session.exec(select(PointDeCharge)).all()
+    start = datetime.now(timezone.utc) - timedelta(days=1)
+    end = datetime.now(timezone.utc) + timedelta(days=1)
+
+    response = client_auth.post(
+        "/tariff/",
+        json=_tariff_payload(
+            "tariff-1",
+            start,
+            end,
+            [pdc.id_pdc_itinerance for pdc in pdcs],
+        ),
+    )
+    assert response.status_code == status.HTTP_201_CREATED
+    tariff_id = response.json()["id"]
+
+    response = client_auth.get(
+        "/tariff/",
+        params=[("pdc", pdc.id_pdc_itinerance) for pdc in pdcs],
+    )
+
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json()["total"] == 1
+    assert [tariff["id"] for tariff in response.json()["items"]] == [tariff_id]
+
+
+@pytest.mark.parametrize(
+    "params",
+    [
+        {"offset": -1},
+        {"limit": 1001},
+    ],
+)
+def test_list_tariffs_rejects_invalid_pagination(client_auth, params):
+    """Test tariff list pagination bounds."""
+    response = client_auth.get("/tariff/", params=params)
+
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
 
 def test_create_tariff_with_multiple_targets(db_session, client_auth):
@@ -288,6 +454,32 @@ def test_list_tariffs_filters_by_application_dates(db_session, client_auth):
     assert response.json()["items"] == []
 
 
+def test_open_ended_tariff_is_current_and_applicable(db_session, client_auth):
+    """Test tariffs without end date stay current and applicable."""
+    save_statiques(db_session, StatiqueFactory.batch(1))
+    pdc = db_session.exec(select(PointDeCharge)).one()
+    start = datetime.now(timezone.utc).replace(microsecond=0) - timedelta(days=1)
+
+    response = client_auth.post(
+        "/tariff/",
+        json=_tariff_payload("tariff-1", start, None, [pdc.id_pdc_itinerance]),
+    )
+    assert response.status_code == status.HTTP_201_CREATED
+    tariff_id = response.json()["id"]
+    assert response.json()["end"] is None
+
+    response = client_auth.get("/tariff/", params={"current": True})
+    assert response.status_code == status.HTTP_200_OK
+    assert [tariff["id"] for tariff in response.json()["items"]] == [tariff_id]
+
+    response = client_auth.get(
+        f"/tariff/{pdc.id_pdc_itinerance}/applicable",
+        params={"at": (start + timedelta(days=30)).isoformat()},
+    )
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json()["id"] == tariff_id
+
+
 def test_list_tariffs_rejects_naive_application_dates(client_auth):
     """Test tariff list date filters require timezone-aware datetimes."""
     response = client_auth.get(
@@ -360,6 +552,269 @@ def test_read_applicable_tariff_rejects_naive_application_date(client_auth):
     )
 
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+
+
+def test_read_applicable_tariff_uses_current_time_by_default(db_session, client_auth):
+    """Test applicable tariff lookup defaults to the current time."""
+    save_statiques(db_session, StatiqueFactory.batch(1))
+    pdc = db_session.exec(select(PointDeCharge)).one()
+    start = datetime.now(timezone.utc).replace(microsecond=0) - timedelta(days=1)
+    end = datetime.now(timezone.utc).replace(microsecond=0) + timedelta(days=1)
+
+    response = client_auth.post(
+        "/tariff/",
+        json=_tariff_payload("tariff-1", start, end, [pdc.id_pdc_itinerance]),
+    )
+    assert response.status_code == status.HTTP_201_CREATED
+    tariff_id = response.json()["id"]
+
+    response = client_auth.get(f"/tariff/{pdc.id_pdc_itinerance}/applicable")
+
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json()["id"] == tariff_id
+
+
+def test_read_missing_tariff(client_auth):
+    """Test reading an unknown tariff returns a 404."""
+    response = client_auth.get(f"/tariff/{uuid4()}")
+
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+    assert response.json()["detail"] == "Tariff does not exist"
+
+
+@pytest.mark.parametrize(
+    "client_auth",
+    (
+        (
+            True,
+            {
+                "is_superuser": False,
+                "email": "jane@doe.com",
+                "scopes": [ScopesEnum.TARIFF_READ],
+            },
+        ),
+    ),
+    indirect=True,
+)
+def test_read_tariff_forbidden_for_user(db_session, client_auth):
+    """Test users cannot read tariffs outside their operational units."""
+    save_statiques(
+        db_session,
+        [
+            StatiqueFactory.build(
+                id_pdc_itinerance="FRS63E0001",
+                id_station_itinerance="FRS63P0001",
+            )
+        ],
+    )
+    pdc = db_session.exec(select(PointDeCharge)).one()
+    start = datetime.now(timezone.utc) - timedelta(days=1)
+    end = datetime.now(timezone.utc) + timedelta(days=1)
+    tariff = _save_tariff(db_session, "tariff-1", start, end, [pdc])
+
+    response = client_auth.get(f"/tariff/{tariff.id}")
+
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+    assert response.json()["message"] == (
+        "Unsufficient permissions: You cannot access this tariff"
+    )
+
+
+def test_read_applicable_tariff_for_unknown_pdc(client_auth):
+    """Test applicable tariff lookup keeps unknown PDC errors explicit."""
+    response = client_auth.get(
+        "/tariff/FRS63E404/applicable",
+        params={"at": datetime.now(timezone.utc).isoformat()},
+    )
+
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+    assert response.json()["detail"] == "Point of charge does not exist"
+
+
+@pytest.mark.parametrize(
+    "client_auth",
+    (
+        (
+            True,
+            {
+                "is_superuser": False,
+                "email": "jane@doe.com",
+                "scopes": [ScopesEnum.TARIFF_READ],
+            },
+        ),
+    ),
+    indirect=True,
+)
+def test_read_applicable_tariff_forbidden_for_user(db_session, client_auth):
+    """Test users cannot read applicable tariff for forbidden charge points."""
+    save_statiques(
+        db_session,
+        [
+            StatiqueFactory.build(
+                id_pdc_itinerance="FRS63E0001",
+                id_station_itinerance="FRS63P0001",
+            )
+        ],
+    )
+    pdc = db_session.exec(select(PointDeCharge)).one()
+
+    response = client_auth.get(
+        f"/tariff/{pdc.id_pdc_itinerance}/applicable",
+        params={"at": datetime.now(timezone.utc).isoformat()},
+    )
+
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+    assert response.json()["message"] == (
+        "Unsufficient permissions: You cannot read tariff for this point of charge"
+    )
+
+
+def test_apply_tariff_with_unknown_tariff(db_session, client_auth):
+    """Test applying an unknown tariff returns a 404."""
+    save_statiques(db_session, StatiqueFactory.batch(1))
+    pdc = db_session.exec(select(PointDeCharge)).one()
+
+    response = client_auth.put(
+        f"/tariff/chargepoint/{pdc.id_pdc_itinerance}",
+        json={"tariff_id": str(uuid4())},
+    )
+
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+    assert response.json()["detail"] == "Tariff does not exist"
+
+
+@pytest.mark.parametrize(
+    "client_auth",
+    (
+        (
+            True,
+            {
+                "is_superuser": False,
+                "email": "jane@doe.com",
+                "scopes": [ScopesEnum.TARIFF_UPDATE],
+            },
+        ),
+    ),
+    indirect=True,
+)
+def test_apply_tariff_with_forbidden_tariff_for_user(db_session, client_auth):
+    """Test users cannot apply tariffs they cannot access."""
+    GroupFactory.__session__ = db_session
+    save_statiques(
+        db_session,
+        [
+            StatiqueFactory.build(
+                id_pdc_itinerance="FRS63E0001",
+                id_station_itinerance="FRS63P0001",
+            ),
+            StatiqueFactory.build(
+                id_pdc_itinerance="FRS72E0001",
+                id_station_itinerance="FRS72P0001",
+            ),
+        ],
+    )
+    user = db_session.exec(select(User).where(User.email == "jane@doe.com")).one()
+    group = GroupFactory.create_sync()
+    operational_unit = db_session.exec(
+        select(OperationalUnit).where(OperationalUnit.code == "FRS63")
+    ).one()
+    db_session.add(
+        GroupOperationalUnit(
+            group_id=group.id,
+            operational_unit_id=operational_unit.id,
+        )
+    )
+    user.groups.append(group)
+
+    pdcs = db_session.exec(select(PointDeCharge)).all()
+    allowed_pdc = next(pdc for pdc in pdcs if pdc.id_pdc_itinerance == "FRS63E0001")
+    forbidden_pdc = next(pdc for pdc in pdcs if pdc.id_pdc_itinerance == "FRS72E0001")
+    start = datetime.now(timezone.utc) - timedelta(days=1)
+    end = datetime.now(timezone.utc) + timedelta(days=1)
+    tariff = _save_tariff(db_session, "tariff-1", start, end, [forbidden_pdc])
+
+    response = client_auth.put(
+        f"/tariff/chargepoint/{allowed_pdc.id_pdc_itinerance}",
+        json={"tariff_id": str(tariff.id)},
+    )
+
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+    assert response.json()["message"] == (
+        "Unsufficient permissions: You cannot access this tariff"
+    )
+    associations = db_session.exec(
+        select(PointDeChargeTariff).where(PointDeChargeTariff.tariff_id == tariff.id)
+    ).all()
+    assert {association.point_de_charge_id for association in associations} == {
+        forbidden_pdc.id
+    }
+
+
+def test_apply_tariff_with_unknown_pdc_rolls_back(db_session, client_auth):
+    """Test applying a tariff to an unknown PDC returns a 404."""
+    start = datetime.now(timezone.utc) - timedelta(days=1)
+    end = datetime.now(timezone.utc) + timedelta(days=1)
+    response = client_auth.post(
+        "/tariff/",
+        json=_tariff_payload("tariff-1", start, end, []),
+    )
+    assert response.status_code == status.HTTP_201_CREATED
+    tariff_id = UUID(response.json()["id"])
+
+    response = client_auth.put(
+        "/tariff/chargepoint/FRS63E404",
+        json={"tariff_id": str(tariff_id)},
+    )
+
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+    assert response.json()["detail"] == "Point of charge does not exist"
+    assert (
+        db_session.exec(
+            select(PointDeChargeTariff).where(
+                PointDeChargeTariff.tariff_id == tariff_id
+            )
+        ).all()
+        == []
+    )
+
+
+def test_deleted_tariff_is_hidden(db_session, client_auth):
+    """Test soft-deleted tariffs cannot be listed, read or applied."""
+    save_statiques(db_session, StatiqueFactory.batch(1))
+    pdc = db_session.exec(select(PointDeCharge)).one()
+    start = datetime.now(timezone.utc) - timedelta(days=1)
+    end = datetime.now(timezone.utc) + timedelta(days=1)
+
+    response = client_auth.post(
+        "/tariff/",
+        json=_tariff_payload("tariff-1", start, end, [pdc.id_pdc_itinerance]),
+    )
+    assert response.status_code == status.HTTP_201_CREATED
+    tariff_id = UUID(response.json()["id"])
+    tariff = db_session.get(Tariff, tariff_id)
+    assert tariff is not None
+    tariff.deleted_at = datetime.now(timezone.utc)
+    db_session.add(tariff)
+    db_session.commit()
+
+    response = client_auth.get("/tariff/")
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json()["items"] == []
+
+    response = client_auth.get(f"/tariff/{tariff_id}")
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    response = client_auth.get(
+        f"/tariff/{pdc.id_pdc_itinerance}/applicable",
+        params={"at": datetime.now(timezone.utc).isoformat()},
+    )
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    response = client_auth.put(
+        f"/tariff/chargepoint/{pdc.id_pdc_itinerance}",
+        json={"tariff_id": str(tariff_id)},
+    )
+    assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
 def test_create_tariff_conflict(db_session, client_auth):
