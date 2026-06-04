@@ -83,24 +83,6 @@ def _get_pdc_ids(
     return pdc_db_ids_by_itinerance_id
 
 
-def _get_tariff_or_404(
-    tariff_id: UUID,
-    session: Session,
-    include_deleted: bool = False,
-) -> Tariff:
-    """Get a tariff by id or raise a 404 error."""
-    stmt = select(Tariff).where(Tariff.id == tariff_id)
-    if not include_deleted:
-        stmt = stmt.where(cast(SAColumn, Tariff.deleted_at).is_(None))
-    tariff = session.exec(stmt).one_or_none()
-    if tariff is None:
-        raise HTTPException(
-            status_code=fa_status.HTTP_404_NOT_FOUND,
-            detail="Tariff does not exist",
-        )
-    return tariff
-
-
 def _get_tariff_or_404_for_user(
     tariff_id: UUID,
     user: User,
@@ -404,7 +386,7 @@ async def apply_tariff(
     session: Session = Depends(get_session),
 ) -> TariffRead:
     """Apply an existing tariff to a charge point."""
-    tariff = _get_tariff_or_404(payload.tariff_id, session)
+    tariff, _ = _get_tariff_or_404_for_user(payload.tariff_id, user, session)
 
     try:
         with session.begin_nested():
