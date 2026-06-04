@@ -25,6 +25,7 @@ from .utils import PaginatedListResponse
 #
 # https://github.com/loco-philippe/IRVE/blob/main/OCPI/source/schema.json
 
+
 class TariffDimensionTypeEnum(StrEnum):
     """Tariff price component dimensions."""
 
@@ -210,6 +211,7 @@ class TariffRead(SQLModel):
 
 
 PaginatedTariffListResponse = PaginatedListResponse[TariffRead]
+
 
 class TariffChargePointUpdate(BaseModel):
     """Payload to apply a tariff to a charge point."""
