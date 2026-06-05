@@ -32,15 +32,13 @@ from qualicharge.schemas.core import (
     PointDeCharge,
 )
 from qualicharge.schemas.tariff import PointDeChargeTariff, Tariff
-from qualicharge.schemas.tariff_utils import (
+from qualicharge.schemas.utils import (
+    are_pdcs_allowed_for_user,
     get_applicable_tariff_for_pdc,
     get_tariff_pdc_ids,
     get_tariffs_pdc_ids,
-    is_tariff_allowed_for_user,
-)
-from qualicharge.schemas.utils import (
-    are_pdcs_allowed_for_user,
     is_pdc_allowed_for_user,
+    is_tariff_allowed_for_user,
 )
 
 logger = logging.getLogger(__name__)

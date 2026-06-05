@@ -14,13 +14,13 @@ from qualicharge.factories.tariff import (
 )
 from qualicharge.schemas.core import OperationalUnit, PointDeCharge
 from qualicharge.schemas.tariff import Tariff
-from qualicharge.schemas.tariff_utils import (
+from qualicharge.schemas.utils import (
     get_applicable_tariff_for_pdc,
     get_tariff_by_original,
     get_tariffs_pdc_ids,
     is_tariff_allowed_for_user,
+    save_statique,
 )
-from qualicharge.schemas.utils import save_statique
 
 
 def _save_tariff(db_session, raw, created_by_id=None) -> Tariff:
