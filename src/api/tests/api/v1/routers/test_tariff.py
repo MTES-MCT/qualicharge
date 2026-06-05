@@ -208,6 +208,41 @@ def test_create_tariff_without_targets(db_session, client_auth):
     assert response.json()["id_pdc_itinerance"] == []
 
 
+def test_create_tariff_stores_extra_raw_fields(db_session, client_auth):
+    """Test tariff creation stores validated payload with extra fields."""
+    start = datetime.now(timezone.utc) - timedelta(days=1)
+    end = datetime.now(timezone.utc) + timedelta(days=1)
+    payload = _tariff_payload("tariff-1", start, end, [])
+    payload["tariff"]["custom_tariff"] = {"source": "operator"}
+    payload["tariff"]["elements"][0]["custom_element"] = "element-extra"
+    payload["tariff"]["elements"][0]["price_components"][0]["billing_unit"] = "kWh"
+
+    response = client_auth.post("/tariff/", json=payload)
+
+    assert response.status_code == status.HTTP_201_CREATED
+    tariff_id = UUID(response.json()["id"])
+    db_tariff = db_session.get(Tariff, tariff_id)
+    assert db_tariff is not None
+    assert db_tariff.raw["custom_tariff"] == {"source": "operator"}
+    assert db_tariff.raw["elements"][0]["custom_element"] == "element-extra"
+    assert db_tariff.raw["elements"][0]["price_components"][0]["billing_unit"] == (
+        "kWh"
+    )
+    assert response.json()["raw"] == db_tariff.raw
+
+
+def test_create_tariff_rejects_invalid_known_field(client_auth):
+    """Test tariff creation still validates known tariff fields."""
+    start = datetime.now(timezone.utc) - timedelta(days=1)
+    end = datetime.now(timezone.utc) + timedelta(days=1)
+    payload = _tariff_payload("tariff-1", start, end, [])
+    payload["tariff"]["currency"] = "USD"
+
+    response = client_auth.post("/tariff/", json=payload)
+
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+
+
 def test_create_tariff_with_unknown_pdc_rolls_back(db_session, client_auth):
     """Test tariff creation fails and rolls back when a target is unknown."""
     start = datetime.now(timezone.utc) - timedelta(days=1)

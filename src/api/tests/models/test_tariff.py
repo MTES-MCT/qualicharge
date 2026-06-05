@@ -64,17 +64,33 @@ def test_tariff_object_alias():
     assert tariff.model_dump(by_alias=True, mode="json")["id"] == "tariff-1"
 
 
-def test_tariff_object_rejects_extra_fields():
-    """Test tariff object rejects unsupported fields."""
-    with pytest.raises(ValidationError, match="Extra inputs are not permitted"):
-        TariffObject(
-            country_code="FR",
-            party_id="QCH",
-            id="tariff-1",
-            last_updated=datetime.now(timezone.utc),
-            elements=[{"price_components": [{"type": "ENERGY", "price": 0.3}]}],
-            unsupported_field="ignored-no-more",
-        )
+def test_tariff_object_preserves_extra_fields():
+    """Test tariff object stores unsupported fields in serialized output."""
+    tariff = TariffObject(
+        country_code="FR",
+        party_id="QCH",
+        id="tariff-1",
+        last_updated=datetime.now(timezone.utc),
+        elements=[
+            {
+                "price_components": [
+                    {
+                        "type": "ENERGY",
+                        "price": 0.3,
+                        "billing_unit": "kWh",
+                    }
+                ],
+                "custom_element": "element-extra",
+            }
+        ],
+        custom_tariff="tariff-extra",
+    )
+
+    serialized = tariff.model_dump(by_alias=True, mode="json")
+
+    assert serialized["custom_tariff"] == "tariff-extra"
+    assert serialized["elements"][0]["custom_element"] == "element-extra"
+    assert serialized["elements"][0]["price_components"][0]["billing_unit"] == "kWh"
 
 
 @pytest.mark.parametrize("field", ["country_code", "party_id"])

@@ -1,6 +1,6 @@
 """QualiCharge tariff SQL schemas."""
 
-from typing import List, Optional
+from typing import Any, List, Optional
 from uuid import UUID, uuid4
 
 from pydantic.types import AwareDatetime
@@ -46,7 +46,7 @@ class Tariff(SoftDeleteMixin, BaseAuditableSQLModel, table=True):
     original_last_updated: AwareDatetime = Field(
         sa_column=SAColumn(DateTime(timezone=True), index=True, nullable=False),
     )
-    raw: dict = Field(sa_column=SAColumn(JSONB, nullable=False))
+    raw: dict[str, Any] = Field(sa_column=SAColumn(JSONB, nullable=False))
     start: AwareDatetime = Field(
         sa_column=SAColumn(DateTime(timezone=True), index=True, nullable=False),
     )

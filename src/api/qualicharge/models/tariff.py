@@ -26,6 +26,12 @@ from .utils import PaginatedListResponse
 # https://github.com/loco-philippe/IRVE/blob/main/OCPI/source/schema.json
 
 
+class TariffPayloadModel(BaseModel):
+    """Base model for tariff payload fragments."""
+
+    model_config = ConfigDict(extra="allow")
+
+
 class TariffDimensionTypeEnum(StrEnum):
     """Tariff price component dimensions."""
 
@@ -73,28 +79,28 @@ class TariffTypeEnum(StrEnum):
     REGULAR = "REGULAR"
 
 
-class TariffAltText(BaseModel):
+class TariffAltText(TariffPayloadModel):
     """Localized tariff display text."""
 
     language: str
     text: str
 
 
-class PriceLimit(BaseModel):
+class PriceLimit(TariffPayloadModel):
     """OCPI 2.3 display price."""
 
     before_taxes: float
     after_taxes: Optional[float] = None
 
 
-class Price(BaseModel):
+class Price(TariffPayloadModel):
     """OCPI 2.2 price with VAT split."""
 
     excl_vat: float
     incl_vat: Optional[float] = None
 
 
-class PriceComponent(BaseModel):
+class PriceComponent(TariffPayloadModel):
     """A tariff price component."""
 
     type: TariffDimensionTypeEnum
@@ -103,7 +109,7 @@ class PriceComponent(BaseModel):
     step_size: Optional[Annotated[int, Ge(1)]] = None
 
 
-class TariffRestrictions(BaseModel):
+class TariffRestrictions(TariffPayloadModel):
     """Restrictions that control when a tariff element applies."""
 
     start_time: Optional[time] = None
@@ -124,17 +130,15 @@ class TariffRestrictions(BaseModel):
     min_congestion_threshold: Optional[Annotated[int, Ge(0)]] = None
 
 
-class TariffElement(BaseModel):
+class TariffElement(TariffPayloadModel):
     """A tariff element, composed of prices and optional restrictions."""
 
     price_components: List[PriceComponent] = Field(min_length=1)
     restrictions: Optional[TariffRestrictions] = None
 
 
-class TariffObject(BaseModel):
+class TariffObject(TariffPayloadModel):
     """Internal tariff object compatible with a subset of OCPI."""
-
-    model_config = ConfigDict(extra="forbid")
 
     country_code: Annotated[str, StringConstraints(min_length=2, max_length=2)]
     party_id: Annotated[str, StringConstraints(min_length=3, max_length=3)]
