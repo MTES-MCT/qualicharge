@@ -6,7 +6,6 @@ from qcc.client import QCC
 from qcc.endpoints.auth import Auth
 from qcc.endpoints.dynamic import Session, Status
 from qcc.endpoints.static import Static
-from qcc.endpoints.tariff import Tariff
 from qcc.exceptions import ConfigurationError
 from qcc.http import HTTPClient
 
@@ -40,5 +39,3 @@ def test_client_initialization():
     assert qcc.status.client == qcc.client
     assert isinstance(qcc.session, Session)
     assert qcc.session.client == qcc.client
-    assert isinstance(qcc.tariff, Tariff)
-    assert qcc.tariff.client == qcc.client
