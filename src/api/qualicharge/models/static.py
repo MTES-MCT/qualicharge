@@ -25,6 +25,7 @@ from pydantic_extra_types.phone_numbers import PhoneNumber
 from shapely import Point, Polygon
 from typing_extensions import Annotated, Self
 
+from .fields import IdPdcItinerance, IdStationItinerance
 from .utils import ModelSchemaMixin
 
 FRANCE_METROPOLITAN_SHAPE = Polygon(
@@ -269,13 +270,7 @@ class Statique(ModelSchemaMixin, BaseModel):
         FrenchPhoneNumber, StringConstraints(strip_whitespace=True)
     ]
     nom_enseigne: Annotated[str, StringConstraints(strip_whitespace=True)]
-    id_station_itinerance: Annotated[
-        str,
-        StringConstraints(
-            pattern="(^FR[A-Z0-9]{3}P[A-Z0-9]{1,29}$|Non concerné)",
-            strip_whitespace=True,
-        ),
-    ]
+    id_station_itinerance: IdStationItinerance
     id_station_local: Optional[
         Annotated[str, StringConstraints(strip_whitespace=True)]
     ] = None
@@ -290,16 +285,7 @@ class Statique(ModelSchemaMixin, BaseModel):
     ]
     coordonneesXY: FrenchCoordinate
     nbre_pdc: PositiveInt
-    id_pdc_itinerance: Annotated[
-        str,
-        StringConstraints(
-            pattern="(^FR[A-Z0-9]{3}E[A-Z0-9]{1,29}$|Non concerné)",
-            strip_whitespace=True,
-        ),
-        Field(
-            examples=["FR0NXEVSEXB9YG", "FRFASE3300405", "FR073E012308585"],
-        ),
-    ]
+    id_pdc_itinerance: IdPdcItinerance
     id_pdc_local: Optional[Annotated[str, StringConstraints(strip_whitespace=True)]] = (
         None
     )

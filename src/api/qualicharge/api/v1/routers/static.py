@@ -4,7 +4,7 @@ import datetime
 import json
 import logging
 from io import BytesIO
-from typing import Annotated, List, Optional, cast
+from typing import Annotated, List, cast
 
 import pandas as pd
 from annotated_types import Len
@@ -18,7 +18,7 @@ from fastapi import (
     Security,
     status,
 )
-from pydantic import AnyHttpUrl, BaseModel, ValidationError, computed_field
+from pydantic import BaseModel, ValidationError, computed_field
 from sqlalchemy import any_, func
 from sqlalchemy.dialects.postgresql import array
 from sqlalchemy.exc import (
@@ -27,7 +27,7 @@ from sqlalchemy.exc import (
 from sqlalchemy.schema import Column as SAColumn
 from sqlmodel import Session, select
 
-from qualicharge.api.utils import GzipRoute
+from qualicharge.api.utils import GzipRoute, build_pagination_urls
 from qualicharge.auth.oidc import get_user
 from qualicharge.auth.schemas import ScopesEnum, User
 from qualicharge.conf import settings
@@ -40,7 +40,12 @@ from qualicharge.exceptions import (
     PermissionDenied,
 )
 from qualicharge.models.static import Statique
-from qualicharge.schemas.core import LatestStatus, PointDeCharge, StatiqueMV
+from qualicharge.models.utils import PaginatedListResponse
+from qualicharge.schemas.core import (
+    LatestStatus,
+    PointDeCharge,
+    StatiqueMV,
+)
 from qualicharge.schemas.sql import StatiqueImporter
 from qualicharge.schemas.utils import (
     are_pdcs_allowed_for_user,
@@ -84,22 +89,7 @@ class StatiqueItemsCreatedResponse(BaseModel):
     }
 
 
-class PaginatedStatiqueListResponse(BaseModel):
-    """Paginated statique list response."""
-
-    limit: int
-    offset: int
-    total: int
-    previous: Optional[AnyHttpUrl]
-    next: Optional[AnyHttpUrl]
-    items: List[Statique]
-
-    @computed_field  # type: ignore[misc]
-    @property
-    def size(self) -> int:
-        """The number of items created."""
-        return len(self.items)
-
+PaginatedStatiqueListResponse = PaginatedListResponse[Statique]
 
 BulkStatiqueList = Annotated[
     List[Statique], Len(1, settings.API_STATIQUE_BULK_CREATE_MAX_SIZE)
@@ -126,9 +116,6 @@ async def list(
     Note that it can take up to 10 minutes for a created Statique item to appear in
     this endpoint response.
     """
-    current_url = request.url
-    previous_url = next_url = None
-
     total_statement = select(func.count(cast(SAColumn, StatiqueMV.pdc_id)))
 
     ou_filter: array | None = None
@@ -168,12 +155,13 @@ async def list(
     if errors:
         raise HTTPException(status_code=422, detail=errors)
 
-    previous_offset = offset - limit if offset > limit else 0
-    if offset:
-        previous_url = str(current_url.include_query_params(offset=previous_offset))
-
-    if not limit > len(statiques) and total != offset + limit:
-        next_url = str(current_url.include_query_params(offset=offset + limit))
+    previous_url, next_url = build_pagination_urls(
+        request,
+        offset,
+        limit,
+        total,
+        len(statiques),
+    )
 
     return PaginatedStatiqueListResponse(
         total=total,
