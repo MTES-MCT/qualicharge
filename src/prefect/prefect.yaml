@@ -91,7 +91,24 @@ deployments:
     work_pool:
       name: indicators
       work_queue_name: default
-  
+
+  - name: e5-daily
+    entrypoint: indicators/extract/e5.py:e5
+    concurrency_limit: 10
+    schedules:
+      - cron: "39 5 * * *"
+        timezone: "Europe/Paris"
+        active: true
+    parameters:
+      environment: production
+      levels: [0]
+      period: d
+      create_artifact: false
+      persist: true
+    work_pool:
+      name: indicators
+      work_queue_name: default
+
   - name: u5-daily
     entrypoint: indicators/usage/u5.py:u5
     concurrency_limit: 10
