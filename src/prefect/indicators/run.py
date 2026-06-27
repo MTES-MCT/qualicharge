@@ -4,6 +4,7 @@
 
 # extract
 from .extract.e4 import e4
+from .extract.e5 import e5
 
 # historicize
 from .historicize.up import up
