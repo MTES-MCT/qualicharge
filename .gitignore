@@ -35,6 +35,7 @@ MANIFEST
 
 # Directories
 data
+!src/prefect/data/
 
 # -- Environments
 .env

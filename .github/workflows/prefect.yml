@@ -60,7 +60,7 @@ jobs:
       - name: Lint with Ruff
         run: uv run ruff check $(ls -d -- */)
       - name: Lint with MyPy
-        run: uv run mypy $(ls -d -- */)
+        run: uv run mypy $(ls -d -- */ | grep -v '^data/')
 
   test-prefect:
     needs: build-prefect

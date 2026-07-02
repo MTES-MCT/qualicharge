@@ -4,8 +4,10 @@ Common indicators functions and constants.
 """
 
 from datetime import datetime
+from pathlib import Path
 from string import Template
 
+import geopandas as gpd  # type: ignore
 import pandas as pd  # type: ignore
 from dateutil.relativedelta import MO, relativedelta
 from prefect import task
@@ -55,6 +57,12 @@ ALIMENTATION: dict = {"alimentation": """
       ELSE 'AC_indirect'
     END
 """}
+POOLS_FILE: Path = Path("./data/aires_dmr_2026-07-08.geojson")
+
+
+def init_pools(file_path: Path) -> gpd.GeoDataFrame:
+    """Initialize a GeoDataFrame for pools."""
+    return gpd.read_file(file_path).rename(columns={"id_aire": "id_pool"})
 
 
 def get_period_start_from_pit(  # noqa: PLR0911
