@@ -75,6 +75,21 @@ deployments:
       name: indicators
       work_queue_name: default
 
+  - name: e1-daily
+    entrypoint: indicators/extract/e1.py:e1
+    concurrency_limit: 10
+    schedules:
+      - cron: "42 5 * * *"
+        timezone: "Europe/Paris"
+        active: true
+    parameters:
+      environment: production
+      create_artifact: false
+      persist: true
+    work_pool:
+      name: indicators
+      work_queue_name: default
+
   - name: e4-daily
     entrypoint: indicators/extract/e4.py:e4
     concurrency_limit: 10
@@ -97,7 +112,7 @@ deployments:
     entrypoint: indicators/extract/e5.py:e5
     concurrency_limit: 10
     schedules:
-      - cron: "39 5 * * *"
+      - cron: "57 4 * * *"
         timezone: "Europe/Paris"
         active: true
     parameters:

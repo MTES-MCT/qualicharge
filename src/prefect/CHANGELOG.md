@@ -18,6 +18,7 @@ and this project adheres to
 - Implement usage indicators (u5, u6, u9, u10, u11, u12, u13)
 - Add usage indicator u14
 - Add extract indicator e5
+- Add extract indicator e1
 
 #### Quality
 

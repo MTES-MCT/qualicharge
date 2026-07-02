@@ -10,7 +10,7 @@ import pytest  # type: ignore
 from indicators.infrastructure import i1
 from indicators.models import IndicatorPeriod, Level
 from indicators.types import Environment
-from indicators.utils import get_period_start_from_pit
+from indicators.utils import POOLS_FILE, get_period_start_from_pit, init_pools
 
 PARAMETERS_GET_TARGETS = [
     (Level.CITY, 35074),
@@ -79,3 +79,10 @@ def test_get_period_start_from_pit():
     assert get_period_start_from_pit(tst, -2, IndicatorPeriod.WEEK) == datetime(
         2023, 12, 25
     )
+
+
+def test_init_pools():
+    """Test the `init_pools` function."""
+    pools_gdf = init_pools(POOLS_FILE)
+    assert not pools_gdf.empty
+    assert "geometry" in set(pools_gdf.columns)
