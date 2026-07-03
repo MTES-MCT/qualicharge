@@ -58,5 +58,6 @@ and this project adheres to
   - LONS : extend threshold to 7 days
   - ERRT : add 'inconnu' statuses
 - Add OperationalUnit level for infrastructure and usage indicators
+- Add a 15-day offset for session indicators (u5, u6, u9, u10, u11, u14, e4)
 
 [unreleased]: https://github.com/MTES-MCT/qualicharge/
