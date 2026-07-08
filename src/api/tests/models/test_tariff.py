@@ -1,5 +1,6 @@
 """QualiCharge tariff models tests."""
 
+import re
 from datetime import datetime, timedelta, timezone
 
 import pytest
@@ -36,7 +37,8 @@ def test_tariff_create_factory():
     payload = TariffCreateFactory.build()
 
     assert payload.tariff.tariff_id
-    assert payload.targets == []
+    assert payload.targets
+    assert re.fullmatch(r"FR[A-Z0-9]{3}E[0-9]{6}", payload.targets[0])
 
 
 def test_point_de_charge_tariff_create_factory():
@@ -45,7 +47,8 @@ def test_point_de_charge_tariff_create_factory():
 
     assert payload.original_id
     assert payload.original_last_updated is not None
-    assert payload.id_pdc_itinerance == ["FRS63E0001"]
+    assert payload.id_pdc_itinerance
+    assert re.fullmatch(r"FR[A-Z0-9]{3}E[0-9]{6}", payload.id_pdc_itinerance[0])
 
 
 def test_tariff_object_alias():

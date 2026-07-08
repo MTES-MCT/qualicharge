@@ -179,40 +179,59 @@ def test_tariff_api_workflow(db_session, client_auth):
     assert len(associations) == n_pdcs
 
 
-def test_create_tariff_without_targets(db_session, client_auth):
-    """Test tariff creation without associated charge points."""
+@pytest.mark.parametrize(
+    ("target_data", "error_type", "error_message"),
+    (
+        pytest.param({}, "missing", "Field required", id="missing"),
+        pytest.param(
+            {"targets": []},
+            "too_short",
+            "List should have at least 1 item after validation, not 0",
+            id="empty",
+        ),
+        pytest.param(
+            {"targets": None},
+            "list_type",
+            "Input should be a valid list",
+            id="null",
+        ),
+    ),
+)
+def test_create_tariff_rejects_missing_empty_or_null_targets(
+    db_session,
+    client_auth,
+    target_data,
+    error_type,
+    error_message,
+):
+    """Test tariff creation rejects payloads without associated charge points."""
     start = datetime.now(timezone.utc) - timedelta(days=1)
     end = datetime.now(timezone.utc) + timedelta(days=1)
+    payload = _tariff_payload("tariff-1", start, end, ["FRS63E0001"])
+    del payload["targets"]
+    payload.update(target_data)
 
     response = client_auth.post(
         "/tariff/",
-        json=_tariff_payload("tariff-1", start, end, []),
+        json=payload,
     )
 
-    assert response.status_code == status.HTTP_201_CREATED
-    created = response.json()
-    tariff_id = UUID(created["id"])
-    assert created["id_pdc_itinerance"] == []
-    assert db_session.get(Tariff, tariff_id) is not None
-    assert (
-        db_session.exec(
-            select(PointDeChargeTariff).where(
-                PointDeChargeTariff.tariff_id == tariff_id
-            )
-        ).all()
-        == []
-    )
-
-    response = client_auth.get(f"/tariff/{tariff_id}")
-    assert response.status_code == status.HTTP_200_OK
-    assert response.json()["id_pdc_itinerance"] == []
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    errors = response.json()["detail"]
+    assert len(errors) == 1
+    assert errors[0]["loc"] == ["body", "targets"]
+    assert errors[0]["type"] == error_type
+    assert errors[0]["msg"] == error_message
+    assert db_session.exec(select(Tariff)).all() == []
 
 
 def test_create_tariff_stores_extra_raw_fields(db_session, client_auth):
     """Test tariff creation stores validated payload with extra fields."""
+    save_statiques(db_session, StatiqueFactory.batch(1))
+    pdc = db_session.exec(select(PointDeCharge)).one()
     start = datetime.now(timezone.utc) - timedelta(days=1)
     end = datetime.now(timezone.utc) + timedelta(days=1)
-    payload = _tariff_payload("tariff-1", start, end, [])
+    payload = _tariff_payload("tariff-1", start, end, [pdc.id_pdc_itinerance])
     payload["tariff"]["custom_tariff"] = {"source": "operator"}
     payload["tariff"]["elements"][0]["custom_element"] = "element-extra"
     payload["tariff"]["elements"][0]["price_components"][0]["billing_unit"] = "kWh"
@@ -235,12 +254,17 @@ def test_create_tariff_rejects_invalid_known_field(client_auth):
     """Test tariff creation still validates known tariff fields."""
     start = datetime.now(timezone.utc) - timedelta(days=1)
     end = datetime.now(timezone.utc) + timedelta(days=1)
-    payload = _tariff_payload("tariff-1", start, end, [])
+    payload = _tariff_payload("tariff-1", start, end, ["FRS63E0001"])
     payload["tariff"]["currency"] = "USD"
 
     response = client_auth.post("/tariff/", json=payload)
 
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    errors = response.json()["detail"]
+    assert len(errors) == 1
+    assert errors[0]["loc"] == ["body", "tariff", "currency"]
+    assert errors[0]["type"] == "literal_error"
+    assert errors[0]["msg"] == "Input should be 'EUR'"
 
 
 def test_create_tariff_with_unknown_pdc_rolls_back(db_session, client_auth):
@@ -787,11 +811,13 @@ def test_apply_tariff_with_forbidden_tariff_for_user(db_session, client_auth):
 
 def test_apply_tariff_with_unknown_pdc_rolls_back(db_session, client_auth):
     """Test applying a tariff to an unknown PDC returns a 404."""
+    save_statiques(db_session, StatiqueFactory.batch(1))
+    pdc = db_session.exec(select(PointDeCharge)).one()
     start = datetime.now(timezone.utc) - timedelta(days=1)
     end = datetime.now(timezone.utc) + timedelta(days=1)
     response = client_auth.post(
         "/tariff/",
-        json=_tariff_payload("tariff-1", start, end, []),
+        json=_tariff_payload("tariff-1", start, end, [pdc.id_pdc_itinerance]),
     )
     assert response.status_code == status.HTTP_201_CREATED
     tariff_id = UUID(response.json()["id"])
@@ -803,14 +829,11 @@ def test_apply_tariff_with_unknown_pdc_rolls_back(db_session, client_auth):
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
     assert response.json()["detail"] == "Point of charge does not exist"
-    assert (
-        db_session.exec(
-            select(PointDeChargeTariff).where(
-                PointDeChargeTariff.tariff_id == tariff_id
-            )
-        ).all()
-        == []
-    )
+    associations = db_session.exec(
+        select(PointDeChargeTariff).where(PointDeChargeTariff.tariff_id == tariff_id)
+    ).all()
+    assert len(associations) == 1
+    assert associations[0].point_de_charge_id == pdc.id
 
 
 def test_deleted_tariff_is_hidden(db_session, client_auth):

@@ -8,6 +8,7 @@ from polyfactory.factories.dataclass_factory import DataclassFactory
 from polyfactory.factories.pydantic_factory import ModelFactory
 from polyfactory.factories.sqlalchemy_factory import SQLAlchemyFactory
 
+from ..fixtures.operational_units import prefixes
 from ..models.tariff import (
     PointDeChargeTariffCreate,
     TariffCreate,
@@ -16,7 +17,14 @@ from ..models.tariff import (
     TariffObject,
 )
 from ..schemas.tariff import PointDeChargeTariff, Tariff
-from . import AuditableSQLModelFactory, SoftDeleteFactoryMixin
+from . import AuditableSQLModelFactory, FrenchDataclassFactory, SoftDeleteFactoryMixin
+
+
+def _generate_id_pdc_itinerance() -> str:
+    """Generate a point of charge roaming identifier."""
+    prefix = DataclassFactory.__random__.choice(prefixes)
+    suffix = FrenchDataclassFactory.__faker__.pystr_format("E######")
+    return f"{prefix}{suffix}"
 
 
 class TariffElementFactory(ModelFactory[TariffElement]):
@@ -70,7 +78,7 @@ class TariffCreateFactory(ModelFactory[TariffCreate]):
     """Tariff creation payload factory."""
 
     tariff = Use(TariffObjectFactory.build)
-    targets: list[str] = []
+    targets = Use(lambda: [_generate_id_pdc_itinerance()])
 
 
 class PointDeChargeTariffCreateFactory(ModelFactory[PointDeChargeTariffCreate]):
@@ -80,7 +88,7 @@ class PointDeChargeTariffCreateFactory(ModelFactory[PointDeChargeTariffCreate]):
     original_last_updated = Use(
         lambda: datetime.now(timezone.utc).replace(microsecond=0) - timedelta(hours=1)
     )
-    id_pdc_itinerance = Use(lambda: ["FRS63E0001"])
+    id_pdc_itinerance = Use(lambda: [_generate_id_pdc_itinerance()])
 
 
 class TariffFactory(SoftDeleteFactoryMixin, AuditableSQLModelFactory[Tariff]):
