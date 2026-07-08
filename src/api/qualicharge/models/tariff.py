@@ -198,7 +198,7 @@ class TariffObject(TariffPayloadModel):
 class TariffCreate(SQLModel):
     """Tariff creation payload."""
 
-    targets: List[IdPdcItinerance] = Field(default_factory=list)
+    targets: List[IdPdcItinerance] = Field(min_length=1)
     tariff: TariffObject
 
 
