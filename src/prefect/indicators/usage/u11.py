@@ -33,7 +33,9 @@ SELECT
     $level_id AS level_id
 FROM
     SESSION
-    INNER JOIN statique ON point_de_charge_id = pdc_id
+    INNER JOIN _Pointdecharge ON _Pointdecharge.id = point_de_charge_id
+    INNER JOIN _Station ON _Station.id = station_id
+    INNER JOIN localisation ON localisation.id = _Station.localisation_id
     $join_extras
 WHERE
     $timespan
@@ -65,7 +67,7 @@ def get_values_for_targets(
     """Fetch sessions given input level, timestamp and target index."""
     query_template = Template(NUM_SUCCESSFUL_SESSIONS_FOR_LEVEL_QUERY_TEMPLATE)
     query_params = {"indexes": ",".join(f"'{i}'" for i in map(str, indexes))}
-    query_params |= get_num_for_level_query_params(level)
+    query_params |= get_num_for_level_query_params(level, use_statique=False)
     query_params |= get_timespan_filter_query_params(timespan, session=True)
     with Session(get_api_db_engine(environment)) as session:
         return pd.read_sql_query(

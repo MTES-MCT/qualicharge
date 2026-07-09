@@ -34,18 +34,18 @@ ENERGY_BY_DELIVERY_TEMPLATE = """
 WITH
   Stations AS (
     SELECT
-      Station.id,
+      _Station.id,
       operational_unit_id,
       code_insee_commune,
       raccordement = 'Direct' AS is_direct,
       $is_valid_pdl AS is_valid_pdl,
       $is_dc AS is_dc
     FROM
-      Pointdecharge
-      LEFT JOIN Station ON Station.id = station_id
+      _Pointdecharge
+      LEFT JOIN _Station ON _Station.id = station_id
       LEFT JOIN Localisation ON Localisation.id = localisation_id
     GROUP BY
-      station.id,
+      _station.id,
       code_insee_commune,
       operational_unit_id,
       is_direct,
@@ -55,11 +55,12 @@ WITH
     SELECT
       code,
       $alimentation AS alimentation,
-      Pointdecharge.id AS pdc_id,
+      _Pointdecharge.id AS pdc_id,
       code_insee_commune,
-      puissance_nominale
+      puissance_nominale,
+      operational_unit_id
     FROM
-      Pointdecharge
+      _Pointdecharge
       LEFT JOIN Stations ON stations.id = station_id
       LEFT JOIN Operationalunit ON operational_unit_id = Operationalunit.id
   ),
@@ -99,7 +100,7 @@ QUERY_NATIONAL_TEMPLATE = """
 WITH
   Stations AS (
     SELECT
-      Station.id,
+      _Station.id,
       id_station_itinerance,
       operational_unit_id,
       code_insee_commune,
@@ -107,11 +108,11 @@ WITH
       $is_valid_pdl AS is_valid_pdl,
       $is_dc AS is_dc
     FROM
-      Pointdecharge
-      LEFT JOIN Station ON Station.id = station_id
+      _Pointdecharge
+      LEFT JOIN _Station ON _Station.id = station_id
       LEFT JOIN Localisation ON Localisation.id = localisation_id
     GROUP BY
-      Station.id,
+      _Station.id,
       id_station_itinerance,
       code_insee_commune,
       operational_unit_id,
@@ -121,11 +122,11 @@ WITH
   Statiques AS (
     SELECT
       $alimentation AS alimentation,
-      Pointdecharge.id AS pdc_id,
+      _Pointdecharge.id AS pdc_id,
       station_id,
       puissance_nominale
     FROM
-      Pointdecharge
+      _Pointdecharge
       LEFT JOIN Stations ON stations.id = station_id
   ),
   Sessions_uniques AS (
@@ -167,7 +168,7 @@ def get_values_for_targets(
     query_template = Template(ENERGY_BY_DELIVERY_TEMPLATE)
     query_params = {"indexes": ",".join(f"'{i}'" for i in map(str, indexes))}
     query_params |= IS_VALID_PDL | IS_DC | ALIMENTATION
-    query_params |= get_num_for_level_query_params(level)
+    query_params |= get_num_for_level_query_params(level, use_statique=False)
     query_params |= get_timespan_filter_query_params(timespan, session=True)
     with Session(get_api_db_engine(environment)) as session:
         return pd.read_sql_query(

@@ -106,22 +106,28 @@ def get_timespan_filter_query_params(timespan: IndicatorTimeSpan, session: bool 
     }
 
 
-def get_num_for_level_query_params(level: Level):
-    """Get level_id and join_extras query parameters."""
-    match level:
-        case Level.CITY:
+def get_num_for_level_query_params(level: Level, use_statique: bool = True) -> dict:
+    """Get level_id and join_extras query parameters.
+
+    Args:
+        level: the Level enum value for which to get query parameters.
+        use_statique: True for queries with `statique`,
+                      False for queries with `_pointdecharge` (default: True).
+    """
+    match (level, use_statique):
+        case (Level.CITY, _):
             return {
                 "level_id": "City.id",
                 "join_extras": "INNER JOIN City ON code_insee_commune = City.code",
             }
-        case Level.EPCI:
+        case (Level.EPCI, _):
             return {
                 "level_id": "EPCI.id",
                 "join_extras": """
                     INNER JOIN City ON code_insee_commune = City.code
                     INNER JOIN EPCI ON City.epci_id = EPCI.id""",
             }
-        case Level.DEPARTMENT:
+        case (Level.DEPARTMENT, _):
             return {
                 "level_id": "Department.id",
                 "join_extras": """
@@ -129,7 +135,7 @@ def get_num_for_level_query_params(level: Level):
                     INNER JOIN Department ON City.department_id = Department.id
                     """,
             }
-        case Level.REGION:
+        case (Level.REGION, _):
             return {
                 "level_id": "Region.id",
                 "join_extras": """
@@ -138,13 +144,20 @@ def get_num_for_level_query_params(level: Level):
                     INNER JOIN Region ON Department.region_id = Region.id
                     """,
             }
-        case Level.OPERATIONALUNIT:
+        case (Level.OPERATIONALUNIT, True):
             return {
                 "level_id": "Operationalunit.id",
                 "join_extras": """
                     INNER JOIN Pointdecharge ON Pointdecharge.id = pdc_id
                     INNER JOIN Station ON station.id = station_id
                     INNER JOIN Operationalunit ON Station.operational_unit_id = Operationalunit.id
+                    """,  # noqa: E501
+            }
+        case (Level.OPERATIONALUNIT, False):
+            return {
+                "level_id": "Operationalunit.id",
+                "join_extras": """
+                    INNER JOIN Operationalunit ON operational_unit_id = Operationalunit.id
                     """,  # noqa: E501
             }
         case _:

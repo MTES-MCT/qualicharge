@@ -48,7 +48,9 @@ SELECT
     $level_id AS level_id
 FROM
     fitered_session
-    INNER JOIN statique ON point_de_charge_id = pdc_id
+    INNER JOIN _Pointdecharge ON _Pointdecharge.id = point_de_charge_id
+    INNER JOIN _Station ON _Station.id = station_id
+    INNER JOIN localisation ON localisation.id = _Station.localisation_id
     LEFT JOIN puissance ON puissance_nominale::numeric <@ category
     $join_extras
 WHERE
@@ -77,7 +79,8 @@ SELECT
     category
 FROM
     fitered_session
-    INNER JOIN statique ON point_de_charge_id = pdc_id
+    INNER JOIN _Pointdecharge ON _Pointdecharge.id = point_de_charge_id
+    INNER JOIN _Station ON _Station.id = station_id
     LEFT JOIN puissance ON puissance_nominale::numeric <@ category
 GROUP BY
     category
@@ -95,7 +98,7 @@ def get_values_for_targets(
     query_template = Template(ENERGY_FOR_LEVEL_QUERY_TEMPLATE)
     query_params = {"indexes": ",".join(f"'{i}'" for i in map(str, indexes))}
     query_params |= POWER_RANGE_CTE
-    query_params |= get_num_for_level_query_params(level)
+    query_params |= get_num_for_level_query_params(level, use_statique=False)
     query_params |= get_timespan_filter_query_params(timespan, session=True)
     with Session(get_api_db_engine(environment)) as session:
         return pd.read_sql_query(
