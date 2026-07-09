@@ -60,5 +60,6 @@ and this project adheres to
   - ERRT : add 'inconnu' statuses
 - Add OperationalUnit level for infrastructure and usage indicators
 - Add a 15-day offset for session indicators (u5, u6, u9, u10, u11, u14, e4)
+- Replace `statique` by `_pointdecharge` + `_station` for usage indicators u5, u6, u9, u10, u11, u14
 
 [unreleased]: https://github.com/MTES-MCT/qualicharge/
