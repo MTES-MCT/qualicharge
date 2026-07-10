@@ -24,6 +24,7 @@ and this project adheres to
 - Upgrade `psycopg` to `3.3.4`
 - Upgrade `pyarrow` to `24.0.0`
 - Upgrade `pydantic` to `2.13.4`
+- Upgrade `pydantic-settings` to `2.14.2`
 - Upgrade `PyJWT` to `2.12.1`
 - Upgrade `python-multipart` to `0.0.31`
 - Upgrade `sentry-sdk` to `2.64.0`
