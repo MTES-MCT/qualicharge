@@ -13,7 +13,7 @@ dependencies = [
     "httpx[cli]==0.28.1",
     "pandas==3.0.3",
     "passlib[bcrypt]==1.7.4",
-    "postgresql-audit==0.18.0",
+    "postgresql-audit==0.17.1",
     "psycopg[pool, binary]==3.3.4",
     "pyarrow==24.0.0",
     "pydantic==2.13.4",

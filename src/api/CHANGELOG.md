@@ -21,7 +21,6 @@ and this project adheres to
 - Upgrade `fastapi` to `0.139.0`
 - Upgrade `geopandas` to `1.1.4`
 - Upgrade `pandas` to `3.0.3`
-- Upgrade `postgresql-audit` to `0.18.0`
 - Upgrade `psycopg` to `3.3.4`
 - Upgrade `pyarrow` to `24.0.0`
 - Upgrade `pydantic` to `2.13.4`

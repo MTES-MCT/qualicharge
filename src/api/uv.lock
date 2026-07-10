@@ -1055,15 +1055,15 @@ wheels = [
 
 [[package]]
 name = "postgresql-audit"
-version = "0.18.0"
+version = "0.17.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "sqlalchemy" },
     { name = "sqlalchemy-utils" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/c6/fe/9b5c05dc058e7e6d91768343973e788e4784dd1b12b8cca2c302ad8c463d/postgresql_audit-0.18.0.tar.gz", hash = "sha256:f3725092df5b7003d3da68b21e57d37f8e15e001d9242108e8c5b8e4fe27ad93", size = 28592, upload-time = "2026-04-15T05:41:05.054Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/af/e8/4aa7c0d8388a230545144d9e0880714c2236702d1e712321bfa7ea68b343/postgresql_audit-0.17.1.tar.gz", hash = "sha256:7816def8826ecd2f6d4b720762829512a00ab4fdd6d3cac266eca7cef5865832", size = 28458, upload-time = "2023-11-06T12:55:00.33Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/97/76/805845b993f692d6f32a8ca74b13dedfd320aa07f48e973302d0797e87d8/postgresql_audit-0.18.0-py3-none-any.whl", hash = "sha256:7ce76d8af1402e336112c6539333c538e25972346d04f624a60dfd5a8163b95b", size = 15606, upload-time = "2026-04-15T05:41:03.76Z" },
+    { url = "https://files.pythonhosted.org/packages/fb/0d/6d19ac0335644a862830dfc7f9b224b2ca84b82b4f346763d3f75d24fd43/postgresql_audit-0.17.1-py3-none-any.whl", hash = "sha256:499952dc028b5bb7baaa0262b98c0b26a07fc3e2929ab47a54149d1d333afd7f", size = 15634, upload-time = "2023-11-06T12:54:58.45Z" },
 ]
 
 [[package]]
@@ -1628,7 +1628,7 @@ requires-dist = [
     { name = "httpx", extras = ["cli"], specifier = "==0.28.1" },
     { name = "pandas", specifier = "==3.0.3" },
     { name = "passlib", extras = ["bcrypt"], specifier = "==1.7.4" },
-    { name = "postgresql-audit", specifier = "==0.18.0" },
+    { name = "postgresql-audit", specifier = "==0.17.1" },
     { name = "psycopg", extras = ["pool", "binary"], specifier = "==3.3.4" },
     { name = "pyarrow", specifier = "==24.0.0" },
     { name = "pydantic", specifier = "==2.13.4" },
