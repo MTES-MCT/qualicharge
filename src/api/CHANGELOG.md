@@ -8,10 +8,6 @@ and this project adheres to
 
 ## [Unreleased]
 
-### Added
-
-- Add tariffs support
-
 ### Changed 
 
 #### Dependencies
@@ -33,7 +29,7 @@ and this project adheres to
 
 ## [0.34.0] - 2026-05-29
 
-### Added
+### Added 
 
 - CLI: add a new `qcm ou update` command
 

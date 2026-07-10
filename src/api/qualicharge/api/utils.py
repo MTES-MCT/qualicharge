@@ -32,24 +32,3 @@ class GzipRoute(APIRoute):
             return await original_route_handler(request)
 
         return custom_route_handler
-
-
-def build_pagination_urls(
-    request: Request,
-    offset: int,
-    limit: int,
-    total: int,
-    count: int,
-) -> tuple[str | None, str | None]:
-    """Build previous and next pagination URLs for a paginated response."""
-    previous_url = next_url = None
-    current_url = request.url
-
-    previous_offset = offset - limit if offset > limit else 0
-    if offset:
-        previous_url = str(current_url.include_query_params(offset=previous_offset))
-
-    if limit and count == limit and total > offset + limit:
-        next_url = str(current_url.include_query_params(offset=offset + limit))
-
-    return previous_url, next_url

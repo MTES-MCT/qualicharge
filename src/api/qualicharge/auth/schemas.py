@@ -54,12 +54,6 @@ class ScopesEnum(StrEnum):
     # Management
     MANAGE_READ = "manage:read"
 
-    # Tariff
-    TARIFF_CREATE = "tariff:create"
-    TARIFF_READ = "tariff:read"
-    TARIFF_UPDATE = "tariff:update"
-    TARIFF_DELETE = "tariff:delete"
-
 
 # -- Core schemas
 class User(BaseAuditableSQLModel, table=True):

@@ -592,10 +592,7 @@ def test_are_pdcs_allowed_for_user(db_session):
     assert are_pdcs_allowed_for_user(["FRFASE001", "FRS63E0001"], user) is False
 
     # Create groups linked to Operational Units
-    groups = [
-        GroupFactory.create_sync(name=f"test-allowed-pdcs-{index}")
-        for index in range(3)
-    ]
+    groups = GroupFactory.create_batch_sync(3)
     operational_units = db_session.exec(select(OperationalUnit).limit(3)).all()
     for group, operational_unit in zip(groups, operational_units, strict=True):
         db_session.add(
