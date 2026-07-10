@@ -12,7 +12,7 @@ dependencies = [
   "anyio[trio]==4.14.1",
   "httpx==0.28.1",
   "pydantic==2.13.4",
-  "pydantic-settings==2.13.1",
+  "pydantic-settings==2.14.2",
   "typer==0.26.8",
 ]
 
