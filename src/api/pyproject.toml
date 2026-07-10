@@ -51,7 +51,7 @@ dev = [
     "pytest-cov==7.1.0",
     "pytest-httpx==0.36.2",
     "ruff==0.15.20",
-    "types-cachetools==7.0.0.20260518",
+    "types-cachetools==6.2.0.20250827",
     "types-passlib==1.7.7.20260211",
     "types-python-jose==3.5.0.20260408",
     "types-requests==2.33.0.20260518",

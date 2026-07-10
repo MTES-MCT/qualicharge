@@ -1,6 +1,7 @@
 """Tests for QualiCharge CLI."""
 
 import copy
+from contextlib import chdir
 from io import StringIO
 from typing import cast
 
@@ -752,7 +753,7 @@ def test_ou_update_update_existing(runner, db_session, monkeypatch, afirev_prefi
     assert tesla_operational_unit.exploitant == "Tesla Inc."
 
 
-def test_import_static(runner, db_session):
+def test_import_static(runner, db_session, tmp_path):
     """Test the `statics import` command."""
     # Create statique data to import
     size = 5
@@ -773,7 +774,7 @@ def test_import_static(runner, db_session):
 
     # Write parquet file to import
     file_path = "test.parquet"
-    with runner.isolated_filesystem():
+    with chdir(tmp_path):
         df.to_parquet(file_path)
         result = runner.invoke(app, ["statics", "import", file_path], obj=db_session)
     assert result.exit_code == 0
@@ -787,7 +788,7 @@ def test_import_static(runner, db_session):
     assert db_session.exec(select(func.count(Station.id))).one() == size
 
 
-def test_import_static_with_integrity_exception(runner, db_session):
+def test_import_static_with_integrity_exception(runner, db_session, tmp_path):
     """Test the `statics import` command with integrity exception."""
     # Create statique data to import
     statiques = StatiqueFactory.batch(size=5)
@@ -809,7 +810,7 @@ def test_import_static_with_integrity_exception(runner, db_session):
 
     # Write parquet file to import
     file_path = "test.parquet"
-    with runner.isolated_filesystem():
+    with chdir(tmp_path):
         df.to_parquet(file_path)
         result = runner.invoke(app, ["statics", "import", file_path], obj=db_session)
     assert result.exit_code == 1

@@ -12,6 +12,24 @@ and this project adheres to
 
 - Add tariffs support
 
+### Changed 
+
+#### Dependencies
+
+- Upgrade `alembic` to `1.18.5`
+- Upgrade `cachetools` to `7.1.4`
+- Upgrade `fastapi` to `0.139.0`
+- Upgrade `geoalchemy2` to `0.20.0`
+- Upgrade `geopandas` to `1.1.4`
+- Upgrade `pandas` to `3.0.3`
+- Upgrade `postgresql-audit` to `0.18.0`
+- Upgrade `psycopg` to `3.3.4`
+- Upgrade `pyarrow` to `24.0.0`
+- Upgrade `pydantic` to `2.13.4`
+- Upgrade `sentry-sdk` to `2.64.0`
+- Upgrade `sqlmodel` to `0.0.39`
+- Upgrade `typer` to `0.26.8`
+
 ## [0.34.0] - 2026-05-29
 
 ### Added
