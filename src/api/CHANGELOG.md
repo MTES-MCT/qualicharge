@@ -25,6 +25,7 @@ and this project adheres to
 - Upgrade `pyarrow` to `24.0.0`
 - Upgrade `pydantic` to `2.13.4`
 - Upgrade `PyJWT` to `2.12.1`
+- Upgrade `python-multipart` to `0.0.31`
 - Upgrade `sentry-sdk` to `2.64.0`
 - Upgrade `sqlmodel` to `0.0.39`
 - Upgrade `typer` to `0.26.8`
