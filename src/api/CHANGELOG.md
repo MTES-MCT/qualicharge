@@ -8,6 +8,8 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.34.1] - 2026-07-10
+
 ### Changed 
 
 #### Dependencies
@@ -775,7 +777,8 @@ update` command
 
 - Implement base FastAPI app
 
-[unreleased]: https://github.com/MTES-MCT/qualicharge/compare/v0.34.0...main
+[unreleased]: https://github.com/MTES-MCT/qualicharge/compare/v0.34.1...main
+[0.34.1]: https://github.com/MTES-MCT/qualicharge/compare/v0.34.0...v0.34.1
 [0.34.0]: https://github.com/MTES-MCT/qualicharge/compare/v0.33.1...v0.34.0
 [0.33.1]: https://github.com/MTES-MCT/qualicharge/compare/v0.33.0...v0.33.1
 [0.33.0]: https://github.com/MTES-MCT/qualicharge/compare/v0.32.0...v0.33.0
