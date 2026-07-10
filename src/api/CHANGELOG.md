@@ -19,7 +19,6 @@ and this project adheres to
 - Upgrade `alembic` to `1.18.5`
 - Upgrade `cachetools` to `7.1.4`
 - Upgrade `fastapi` to `0.139.0`
-- Upgrade `geoalchemy2` to `0.20.0`
 - Upgrade `geopandas` to `1.1.4`
 - Upgrade `pandas` to `3.0.3`
 - Upgrade `postgresql-audit` to `0.18.0`
