@@ -18,16 +18,13 @@ from tests.parameters import (
 )
 
 # expected result
-N_LEVEL = [7, 378, 696, 1940, 1064]
-N_LEVEL_NATIONAL = 4593
+N_LEVEL = [13, 715, 1254, 3638, 1944]
+N_LEVEL_NATIONAL = 8667
 N_DPTS = 109
 N_NAT_REG_DPT_EPCI_CITY_OU = 36984
 
 TIMESPAN = IndicatorTimeSpan(start=datetime(2024, 12, 28), period=IndicatorPeriod.DAY)
-TIMESPAN_QUERY = IndicatorTimeSpan(
-    start=TIMESPAN.start - PeriodDuration.MONTH.value,
-    period=IndicatorPeriod.MONTH,
-)
+START = TIMESPAN.start - PeriodDuration.MONTH.value
 PARAMETERS_FLOW = [prm + (lvl,) for prm, lvl in zip(PARAM_FLOW, N_LEVEL, strict=True)]
 PARAMETERS_VALUE = [prm + (lvl,) for prm, lvl in zip(PARAM_VALUE, N_LEVEL, strict=True)]
 
@@ -37,16 +34,14 @@ def test_task_get_values_for_target(db_connection, level, query, expected):
     """Test the `get_values_for_target` task."""
     result = db_connection.execute(text(query))
     indexes = list(result.scalars().all())
-    poc_extract = e5.get_values_for_targets.fn(
-        level, TIMESPAN, indexes, Environment.TEST
-    )
+    poc_extract = e5.get_values_for_targets.fn(level, START, indexes, Environment.TEST)
     assert len(set(poc_extract["level_id"])) == len(indexes)
 
 
 def test_task_get_values_for_target_unexpected_level():
     """Test the `get_values_for_target` task (unknown level)."""
     with pytest.raises(NotImplementedError, match="Unsupported level"):
-        e5.get_values_for_targets.fn(Level.NATIONAL, TIMESPAN, [], Environment.TEST)
+        e5.get_values_for_targets.fn(Level.NATIONAL, START, [], Environment.TEST)
 
 
 @pytest.mark.parametrize("level,query,targets,expected", PARAMETERS_FLOW)
@@ -74,7 +69,7 @@ def test_flow_e5_for_level_with_various_chunk_sizes(chunk_size):
 
 def test_flow_e5_national():
     """Test the `e5_national` flow."""
-    indicators = e5.e5_national(TIMESPAN, TIMESPAN_QUERY, Environment.TEST)
+    indicators = e5.e5_national(TIMESPAN, START, Environment.TEST)
     assert int(indicators["value"].sum()) == N_LEVEL_NATIONAL
 
 
