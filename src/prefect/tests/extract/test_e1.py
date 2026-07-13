@@ -12,7 +12,7 @@ from indicators.models import IndicatorPeriod, IndicatorTimeSpan, Level
 from indicators.types import Environment
 
 # expected result
-N_POOLS_STATIONS = 363
+N_POOLS_STATIONS = 403
 
 TIMESPAN = IndicatorTimeSpan(start=datetime(2025, 1, 1), period=IndicatorPeriod.DAY)
 

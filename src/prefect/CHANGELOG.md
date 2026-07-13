@@ -62,4 +62,8 @@ and this project adheres to
 - Add a 15-day offset for session indicators (u5, u6, u9, u10, u11, u14, e4)
 - Replace `statique` by `_pointdecharge` + `_station` for usage indicators u5, u6, u9, u10, u11, u14
 
+### Fixed
+
+- Define a correct time range for queries using `lateststatus`
+
 [unreleased]: https://github.com/MTES-MCT/qualicharge/

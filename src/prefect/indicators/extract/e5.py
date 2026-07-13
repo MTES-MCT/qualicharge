@@ -26,7 +26,6 @@ from indicators.utils import (
     get_num_for_level_query_params,
     get_period_start_from_pit,
     get_targets_for_level,
-    get_timespan_filter_query_params,
 )
 
 HISTORY_STRATEGY_FIELD: str = "mean"
@@ -44,7 +43,8 @@ FROM
     $join_extras
 WHERE
     $level_id IN ($indexes)
-    AND $timespan
+    AND horodatage >= timestamp $start
+
 GROUP BY
     statique.id_pdc_itinerance,
     statique.id_station_itinerance,
@@ -64,7 +64,7 @@ FROM
     lateststatus
     INNER JOIN statique ON lateststatus.id_pdc_itinerance = statique.id_pdc_itinerance
 WHERE
-    $timespan
+    horodatage >= timestamp $start
 GROUP BY
     statique.id_pdc_itinerance,
     statique.id_station_itinerance,
@@ -77,7 +77,7 @@ GROUP BY
 @task(task_run_name="values-for-target-{level:02d}", cache_policy=NONE)
 def get_values_for_targets(
     level: Level,
-    timespan: IndicatorTimeSpan,
+    start: datetime,
     indexes: List[UUID],
     environment: Environment,
 ) -> pd.DataFrame:
@@ -85,7 +85,7 @@ def get_values_for_targets(
     query_template = Template(LIST_POCS_FOR_LEVEL_QUERY_TEMPLATE)
     query_params: dict = {"indexes": ",".join(f"'{i}'" for i in map(str, indexes))}
     query_params |= get_num_for_level_query_params(level)
-    query_params |= get_timespan_filter_query_params(timespan, session=False)
+    query_params |= {"start": f"'{start.isoformat(sep=' ')}'"}
     with Session(get_api_db_engine(environment)) as session:
         return pd.read_sql_query(
             query_template.substitute(query_params), con=session.connection()
@@ -102,12 +102,9 @@ def e5_for_level(
     chunk_size: int = settings.DEFAULT_CHUNK_SIZE,
 ) -> pd.DataFrame:
     """Calculate e5 for a level."""
-    timespan_query = IndicatorTimeSpan(
-        start=timespan.start - PeriodDuration.MONTH.value,
-        period=IndicatorPeriod.MONTH,
-    )
+    start_lateststatus = timespan.start - PeriodDuration.MONTH.value
     if level == Level.NATIONAL:
-        return e5_national(timespan, timespan_query, environment)
+        return e5_national(timespan, start_lateststatus, environment)
     targets = get_targets_for_level(level, environment)
     ids = targets["id"]
     chunks = (
@@ -116,7 +113,7 @@ def e5_for_level(
         else [ids.to_numpy()]
     )
     futures = [
-        get_values_for_targets.submit(level, timespan_query, chunk, environment)  # type: ignore[call-overload]
+        get_values_for_targets.submit(level, start_lateststatus, chunk, environment)  # type: ignore[call-overload]
         for chunk in chunks
     ]
     wait(futures)
@@ -175,12 +172,12 @@ def e5_for_level(
 )
 def e5_national(
     timespan: IndicatorTimeSpan,
-    timespan_query: IndicatorTimeSpan,
+    start: datetime,
     environment: Environment,
 ) -> pd.DataFrame:
     """Calculate e5 at the national level."""
     query_template = Template(QUERY_NATIONAL_TEMPLATE)
-    query_params = get_timespan_filter_query_params(timespan_query, session=False)
+    query_params = {"start": f"'{start.isoformat(sep=' ')}'"}
     with Session(get_api_db_engine(environment)) as session:
         result = pd.read_sql_query(
             query_template.substitute(query_params), con=session.connection()
