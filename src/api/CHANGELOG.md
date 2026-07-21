@@ -16,6 +16,10 @@ and this project adheres to
 
 - Require at least one target when creating a tariff
 
+### Fixed
+
+- Preserve submitted tariff payloads in raw tariff data
+
 ## [0.34.1] - 2026-07-10
 
 ### Changed 

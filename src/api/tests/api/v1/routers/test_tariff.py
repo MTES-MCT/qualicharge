@@ -242,12 +242,60 @@ def test_create_tariff_stores_extra_raw_fields(db_session, client_auth):
     tariff_id = UUID(response.json()["id"])
     db_tariff = db_session.get(Tariff, tariff_id)
     assert db_tariff is not None
+    assert db_tariff.raw == payload["tariff"]
     assert db_tariff.raw["custom_tariff"] == {"source": "operator"}
     assert db_tariff.raw["elements"][0]["custom_element"] == "element-extra"
     assert db_tariff.raw["elements"][0]["price_components"][0]["billing_unit"] == (
         "kWh"
     )
     assert response.json()["raw"] == db_tariff.raw
+
+
+def test_create_tariff_stores_submitted_raw_payload(db_session, client_auth):
+    """Test tariff creation stores the submitted tariff payload as raw data."""
+    save_statiques(db_session, StatiqueFactory.batch(1))
+    pdc = db_session.exec(select(PointDeCharge)).one()
+    payload = {
+        "targets": [pdc.id_pdc_itinerance],
+        "tariff": {
+            "country_code": "FR",
+            "party_id": "QCH",
+            "id": "tariff-1",
+            "last_updated": "2026-01-01T12:00:00Z",
+            "elements": [
+                {
+                    "price_components": [
+                        {
+                            "type": "ENERGY",
+                            "price": 0.3,
+                        }
+                    ],
+                    "restrictions": {
+                        "start_time": "06:00",
+                        "end_time": "18:30",
+                        "start_date": "2026-01-01",
+                        "end_date": "2026-12-31",
+                    },
+                }
+            ],
+            "custom_tariff": {"source": "operator"},
+        },
+    }
+
+    response = client_auth.post("/tariff/", json=payload)
+
+    assert response.status_code == status.HTTP_201_CREATED
+    tariff_id = UUID(response.json()["id"])
+    db_tariff = db_session.get(Tariff, tariff_id)
+    assert db_tariff is not None
+    assert db_tariff.raw == payload["tariff"]
+    assert response.json()["raw"] == payload["tariff"]
+    assert "currency" not in db_tariff.raw
+    assert "tax_included" not in db_tariff.raw
+    assert "start_date_time" not in db_tariff.raw
+    assert "end_date_time" not in db_tariff.raw
+    assert db_tariff.raw["elements"][0]["restrictions"]["start_time"] == "06:00"
+    assert db_tariff.raw["elements"][0]["restrictions"]["end_time"] == "18:30"
 
 
 def test_create_tariff_rejects_invalid_known_field(client_auth):

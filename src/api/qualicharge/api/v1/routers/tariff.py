@@ -293,6 +293,7 @@ async def list_(  # noqa: PLR0913
 )
 async def create(
     user: Annotated[User, Security(get_user, scopes=[ScopesEnum.TARIFF_CREATE.value])],
+    request: Request,
     tariff: TariffCreate,
     session: Session = Depends(get_session),
 ) -> TariffRead:
@@ -301,7 +302,8 @@ async def create(
     ids_pdc_itinerance: list[IdPdcItinerance]
     try:
         with session.begin_nested():
-            raw = tariff.tariff.model_dump(by_alias=True, mode="json")
+            body = await request.json()
+            raw = body["tariff"]
             created_tariff = Tariff(
                 original_id=tariff.tariff.tariff_id,
                 original_last_updated=tariff.tariff.last_updated,
