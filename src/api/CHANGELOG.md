@@ -15,10 +15,11 @@ and this project adheres to
 ### Changed
 
 - Require at least one target when creating a tariff
+- Store only raw tariff non-null fields
 
 ## [0.34.1] - 2026-07-10
 
-### Changed 
+### Changed
 
 #### Dependencies
 
@@ -82,20 +83,20 @@ and this project adheres to
 - Upgrade `sqlmodel` to `0.0.37`
 - Upgrade `typer` to `0.24.1`
 
-### Fixed 
+### Fixed
 
-- Recommission a station when at least one related charge point is 
+- Recommission a station when at least one related charge point is
   recommissioned
 
 ## [0.33.0] - 2026-02-06
 
-### Changed 
+### Changed
 
 - Check SIREN validity (checksum) before ingestion
 - Require the `Statique.raccordement` field to be filled
 - Require the `Statique.num_pdl` field to be filled for direct connections
 - Ensure the `Statique.puissance_nominale` field is in [1.3 ; 4000]
-- Improve `Statique.id_pdc_itinerance` and `Statique.id_station_itinerance` 
+- Improve `Statique.id_pdc_itinerance` and `Statique.id_station_itinerance`
   fields validation regex patterns
 - Ensure the `Session.energy` field is in [0 ; 1000]
 - Ensure session do not last more than a week
@@ -223,11 +224,11 @@ and this project adheres to
 ### Changed
 
 - mark the following static fields as required:
-    - `nom_amenageur`
-    - `siren_amenageur`
-    - `contact_amenageur`
-    - `nom_operateur`
-    - `telephone_operateur`
+  - `nom_amenageur`
+  - `siren_amenageur`
+  - `contact_amenageur`
+  - `nom_operateur`
+  - `telephone_operateur`
 
 #### Dependencies
 
@@ -280,9 +281,9 @@ update` command
 
 - Add a configurable retention policy for `Status` and `Session` data
 - Create new database indexes:
-    - `ix_pointdecharge_station_id`
-    - `ix_station_amenageur_id`
-    - `ix_station_operateur_id`
+  - `ix_pointdecharge_station_id`
+  - `ix_station_amenageur_id`
+  - `ix_station_operateur_id`
 
 ### Changed
 
@@ -301,10 +302,10 @@ update` command
 ### Removed
 
 - Drop database indexes:
-    - `status_horodatage_idx`
-    - `ix_status_horodatage_pdc_id`
-    - `session_start_idx`
-    - `ix_session_start_pdc_id`
+  - `status_horodatage_idx`
+  - `ix_status_horodatage_pdc_id`
+  - `session_start_idx`
+  - `ix_session_start_pdc_id`
 
 ## [0.24.0] - 2025-06-11
 
@@ -340,8 +341,8 @@ update` command
 ### Added
 
 - Introduce two new database connection settings:
-    - `DB_CONNECTION_POOL_CHECK`
-    - `DB_CONNECTION_POOL_RECYCLE`
+  - `DB_CONNECTION_POOL_CHECK`
+  - `DB_CONNECTION_POOL_RECYCLE`
 
 ### Changed
 

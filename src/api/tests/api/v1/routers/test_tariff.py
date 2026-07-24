@@ -250,6 +250,28 @@ def test_create_tariff_stores_extra_raw_fields(db_session, client_auth):
     assert response.json()["raw"] == db_tariff.raw
 
 
+def test_create_tariff_stores_raw_without_null_fields(db_session, client_auth):
+    """Test tariff creation stores validated payload without null fields."""
+    save_statiques(db_session, StatiqueFactory.batch(1))
+    pdc = db_session.exec(select(PointDeCharge)).one()
+    start = datetime.now(timezone.utc) - timedelta(days=1)
+    end = datetime.now(timezone.utc) + timedelta(days=1)
+    payload = _tariff_payload("tariff-1", start, end, [pdc.id_pdc_itinerance])
+    payload["tariff"]["min_price"] = None
+    payload["tariff"]["max_price"] = None
+
+    response = client_auth.post("/tariff/", json=payload)
+
+    assert response.status_code == status.HTTP_201_CREATED
+    tariff_id = UUID(response.json()["id"])
+    db_tariff = db_session.get(Tariff, tariff_id)
+    assert db_tariff is not None
+    assert "min_price" not in db_tariff.raw
+    assert "max_price" not in db_tariff.raw
+
+    assert response.json()["raw"] == db_tariff.raw
+
+
 def test_create_tariff_rejects_invalid_known_field(client_auth):
     """Test tariff creation still validates known tariff fields."""
     start = datetime.now(timezone.utc) - timedelta(days=1)
