@@ -183,8 +183,7 @@ async def list_(  # noqa: PLR0913
         Query(
             title="Point de charge",
             description=(
-                "Filter tariffs by `id_pdc_itinerance` "
-                "(can be provided multiple times)"
+                "Filter tariffs by `id_pdc_itinerance` (can be provided multiple times)"
             ),
         ),
     ] = None,
@@ -297,20 +296,20 @@ async def create(
     session: Session = Depends(get_session),
 ) -> TariffRead:
     """Create a tariff and optionally associate it with charge points."""
-    created_tariff: Tariff
-    ids_pdc_itinerance: list[IdPdcItinerance]
+    raw = tariff.tariff.model_dump(
+        mode="json", by_alias=True, exclude_none=True, exclude_computed_fields=True
+    )
+    created_tariff = Tariff(
+        original_id=tariff.tariff.tariff_id,
+        original_last_updated=tariff.tariff.last_updated,
+        raw=raw,
+        start=tariff.tariff.tariff_application_date,
+        end=tariff.tariff.end_date_time,
+        created_by_id=user.id,
+        updated_by_id=user.id,
+    )
     try:
         with session.begin_nested():
-            raw = tariff.tariff.model_dump(by_alias=True, mode="json")
-            created_tariff = Tariff(
-                original_id=tariff.tariff.tariff_id,
-                original_last_updated=tariff.tariff.last_updated,
-                raw=raw,
-                start=tariff.tariff.tariff_application_date,
-                end=tariff.tariff.end_date_time,
-                created_by_id=user.id,
-                updated_by_id=user.id,
-            )
             session.add(created_tariff)
             session.flush()
             ids_pdc_itinerance = _add_tariff_associations(
