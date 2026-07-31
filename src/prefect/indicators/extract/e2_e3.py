@@ -5,7 +5,7 @@ E3: daily states of stations in activity.
 """
 
 import os
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
 import pandas as pd
 from prefect import flow, runtime, task
@@ -39,6 +39,7 @@ ID_POC: str = "id_pdc_itinerance"
 ID_STATION: str = "id_station_itinerance"
 SATURATION_RATIO = 0.1
 OVERLOAD_RATIO = 0.2
+MAX_SESSION_DURATION_HOURS: float = 10
 
 
 def read_s3_data(day: date, environment: str, bucket: str) -> pd.DataFrame:
@@ -80,15 +81,18 @@ def get_sampled_state_poc(
     statuses: pd.DataFrame,
 ) -> pd.DataFrame:
     """Extract complete POC with sessions and statuses."""
+    min_duration = timedelta(minutes=24 * 60 / samples_per_day)
+    max_duration = timedelta(hours=MAX_SESSION_DURATION_HOURS)
     timestamp = pd.Timestamp(day.isoformat() + "T00:00:00+00:00")
     pocs_with_sessions = sessions[ID_POC].unique()
     pocs_with_statuses = statuses[ID_POC].unique()
 
     attributes_statuses = [ID_POC, "horodatage", "etat_pdc"]
-    statuses = statuses[attributes_statuses]
+    statuses = statuses[attributes_statuses].copy()
+    statuses["horodatage"] = statuses["horodatage"].astype("datetime64[s, UTC]")
 
     attributes_sessions = [ID_POC, "start", "end"]
-    sessions = sessions[attributes_sessions]
+    sessions = sessions[attributes_sessions].copy()
     sessions["start"] = sessions["start"].astype("datetime64[s, UTC]")
     sessions["end"] = sessions["end"].astype("datetime64[s, UTC]")
 
@@ -99,8 +103,9 @@ def get_sampled_state_poc(
             "id_pdc_itinerance": pocs_with_statuses,
         }
     )
+    init_statuses["horodatage"] = pd.to_datetime(init_statuses["horodatage"], utc=True)
     sampled_statuses = to_sampled_statuses(
-        statuses, init_statuses, timestamp, samples_per_day
+        statuses, init_statuses, timestamp, samples_per_day, min_duration=min_duration
     )
 
     init_sessions = pd.DataFrame(
@@ -111,7 +116,12 @@ def get_sampled_state_poc(
         }
     )
     sampled_sessions = to_sampled_sessions(
-        sessions, init_sessions, timestamp, samples_per_day
+        sessions,
+        init_sessions,
+        timestamp,
+        samples_per_day,
+        min_duration=min_duration,
+        max_duration=max_duration,
     )
 
     return to_sampled_state_poc(sampled_sessions, sampled_statuses)
@@ -139,7 +149,7 @@ def get_sampled_state_poc_for_chunk(
 
 
 @flow(
-    flow_run_name="meta-d-{start:%y-%m-%d}",
+    flow_run_name="meta-e2e3-d",
 )
 def e2_e3(  # noqa: PLR0913
     environment: Environment,

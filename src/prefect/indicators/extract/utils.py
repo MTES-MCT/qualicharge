@@ -55,6 +55,7 @@ def to_sampled_statuses(
     init_data: pd.DataFrame,
     timestamp: pd.Timestamp,
     samples_per_day: int,
+    min_duration: timedelta = timedelta(),
 ) -> pd.DataFrame:
     """Generate sampled statuses for a given date.
 
@@ -78,8 +79,21 @@ def to_sampled_statuses(
     state["f_id_pdc_itinerance"] = list(state["id_pdc_itinerance"])[1 : len(state)] + [
         "aucun"
     ]
+    # remove statuses with short duration
+    state["duration"] = state["f_horodatage"] - state["horodatage"]
+    filtered_state = state[
+        (state["duration"] > min_duration)
+        | (state["id_pdc_itinerance"] != state["f_id_pdc_itinerance"])
+    ].copy()
+    filtered_state["f_horodatage"] = list(filtered_state["horodatage"])[
+        1 : len(filtered_state)
+    ] + [samples[samples_per_day]]
+    filtered_state["f_id_pdc_itinerance"] = list(filtered_state["id_pdc_itinerance"])[
+        1 : len(filtered_state)
+    ] + ["aucun"]
 
-    crossed = pd.merge(state, periode, how="cross")
+    # create sampled statuses
+    crossed = pd.merge(filtered_state, periode, how="cross")
     sampled = crossed[
         (
             (crossed["id_pdc_itinerance"].eq(crossed["f_id_pdc_itinerance"]))
@@ -98,11 +112,13 @@ def to_sampled_statuses(
     )
 
 
-def to_sampled_sessions(
+def to_sampled_sessions(  # noqa: PLR0913
     data: pd.DataFrame,
     init_data: pd.DataFrame,
     timestamp: pd.Timestamp,
     samples_per_day: int,
+    min_duration: timedelta = timedelta(),
+    max_duration: timedelta = timedelta(hours=24),
 ) -> pd.DataFrame:
     """Generate sampled sessions for a given date.
 
@@ -120,9 +136,21 @@ def to_sampled_sessions(
     sessions = pd.concat([data, init_data]).sort_values(
         by=["id_pdc_itinerance", "start"]
     )
-    sessions["occupation_pdc"] = "occupe"
+    # remove invalid sessions : duplicates, short duration, long duration
+    unic = ["start", "end", "id_pdc_itinerance"]
+    sessions["duration"] = sessions["end"] - sessions["start"]
+    filtered_sessions = (
+        sessions[
+            (sessions["duration"] > min_duration)
+            & (sessions["duration"] < max_duration)
+        ]
+        .copy()
+        .drop_duplicates(subset=unic)
+    )
 
-    crossed = pd.merge(sessions, periode, how="cross")
+    # create sampled sessions
+    filtered_sessions["occupation_pdc"] = "occupe"
+    crossed = pd.merge(filtered_sessions, periode, how="cross")
     sampled = crossed[
         (
             (crossed["periode"] >= crossed["start"])
@@ -288,11 +316,12 @@ def to_state_grp_h(
     sampled["periode_h"] = sampled["periode"].dt.hour
     sampled["periode"] = sampled["periode"].dt.date
 
-    sampled_h = sampled.groupby([group_name, "periode", "periode_h"]).agg("sum")
+    sampled_h = sampled.groupby([group_name, "nb_pdc", "periode", "periode_h"]).agg(
+        "sum"
+    )
     sampled_h = sampled_h / nb_ech_hour
     for etat in ["hs", "inactif", "sature", "surcharge", "actif"]:
         sampled_h[etat] = sampled_h[etat] * 60
-    sampled_h["nb_pdc"] = sampled_h["nb_pdc"].astype("int")
 
     sampled_h["sature_h"] = (sampled_h["sature"] + sampled_h["hs"]) >= duree_etat_min
     sampled_h["surcharge_h"] = ~sampled_h["sature_h"] & (
