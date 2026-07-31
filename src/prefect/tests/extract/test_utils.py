@@ -1,6 +1,6 @@
 """QualiCharge prefect indicators tests: extract.utils."""
 
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
 import pandas as pd
 from pandas import NamedAgg
@@ -12,6 +12,7 @@ from indicators.types import Environment
 DATE = datetime(2025, 1, 1)
 SATURATION_RATIO = 0.1
 OVERLOAD_RATIO = 0.2
+LEN_RES = 48
 
 
 def test_get_pdc_station_for_day():
@@ -51,14 +52,39 @@ def test_to_sampled_sessions() -> None:
     pdc = test["id_pdc_itinerance"].unique()
     init = pd.DataFrame(
         {
-            "start": [timestamp + pd.Timedelta(days=-1)] * len(pdc),
-            "end": [timestamp + pd.Timedelta(hours=-1)] * len(pdc),
+            "start": [timestamp + pd.Timedelta(hours=-1)] * len(pdc),
+            "end": [timestamp + pd.Timedelta(hours=0.5)] * len(pdc),
             "id_pdc_itinerance": pdc,
         }
     )
     res = utils.to_sampled_sessions(test, init, timestamp, samples_per_day)
-
+    assert res.iloc[0]["occupation_pdc"] == "occupe"
+    assert res.iloc[1]["occupation_pdc"] == "occupe"
     assert res.iloc[5]["occupation_pdc"] == "f_libre"
+    assert res.iloc[6]["occupation_pdc"] == "occupe"
+    assert res.iloc[34]["occupation_pdc"] == "occupe"
+
+    res_min = utils.to_sampled_sessions(
+        test, init, timestamp, samples_per_day, min_duration=timedelta(hours=1.2)
+    )
+    assert res_min.iloc[1]["occupation_pdc"] == "f_libre"
+
+    res_max = utils.to_sampled_sessions(
+        test, init, timestamp, samples_per_day, max_duration=timedelta(hours=3)
+    )
+    assert res_max.iloc[34]["occupation_pdc"] == "f_libre"  # !!
+
+    end = [6.1, 2.7, 5, 7.5, 12.1, 15.1, 22.6]
+    test = pd.DataFrame(
+        {
+            "start": [timestamp + pd.Timedelta(hours=val) for val in start],
+            "end": [timestamp + pd.Timedelta(hours=val) for val in end],
+            "id_pdc_itinerance": ["p1", "p2", "p2", "p1", "p2", "p1", "p2"],
+        }
+    )
+    res = utils.to_sampled_sessions(test, init, timestamp, samples_per_day)
+
+    assert res.iloc[5]["occupation_pdc"] == "occupe"
     assert res.iloc[6]["occupation_pdc"] == "occupe"
 
 
@@ -92,9 +118,16 @@ def test_to_sampled_statuses() -> None:
         }
     )
     res = utils.to_sampled_statuses(test, init, timestamp, samples_per_day)
-
+    assert len(res) == LEN_RES
     assert res.iloc[25]["etat_pdc"] == "en_service"
     assert res.iloc[26]["etat_pdc"] == "hors_service"
+
+    res = utils.to_sampled_statuses(
+        test, init, timestamp, samples_per_day, timedelta(hours=1.9)
+    )
+    assert len(res) == LEN_RES
+    assert res.iloc[25]["etat_pdc"] == "en_service"
+    assert res.iloc[26]["etat_pdc"] == "en_service"
 
 
 def test_to_sampled_state_poc_and_to_state_poc_d() -> None:
