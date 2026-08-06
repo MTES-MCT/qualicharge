@@ -38,9 +38,6 @@ default:
             pointdechargetariff.tariff_id
         )
         SELECT
-          tariff.id::text AS id,
-          tariff.original_id,
-          tariff.original_last_updated,
           tariff.raw::text AS raw,
           tariff.start,
           tariff."end",
@@ -55,9 +52,6 @@ default:
           ON tariff_charge_points.tariff_id = tariff.id
         WHERE
           tariff.deleted_at IS NULL
-        ORDER BY
-          tariff.created_at,
-          tariff.id
     - basename: statiques
       query: >-
         SELECT
