@@ -31,7 +31,7 @@ from indicators.utils import (
 
 HISTORY_STRATEGY_FIELD: str = "mean"
 PERIOD = IndicatorPeriod.DAY
-CHUNK_SIZE: int = 2000
+CHUNK_SIZE: int = 200
 SAMPLES: int = 288  # 5 min
 SATURE_H: int = 45  # minimum duration (min) of saturation to have a saturated hour
 
@@ -42,6 +42,7 @@ OVERLOAD_RATIO = 0.2
 MAX_SESSION_DURATION_HOURS: float = 10
 
 
+@task(task_run_name="read-S3-{bucket}-{day:%y-%m-%d}", cache_policy=NONE)
 def read_s3_data(day: date, environment: str, bucket: str) -> pd.DataFrame:
     """Read S3 data for state historicization."""
     dir_path = f"{bucket}/{day.year}/{day.month}/{day.day}"
@@ -127,7 +128,7 @@ def get_sampled_state_poc(
     return to_sampled_state_poc(sampled_sessions, sampled_statuses)
 
 
-@task(task_run_name="sampled_chunk-d-00-{day:%y-%m-%d}", cache_policy=NONE)
+@task(task_run_name="sampled_chunk-{day:%y-%m-%d}", cache_policy=NONE)
 def get_sampled_state_poc_for_chunk(
     day: date,
     samples_per_day: int,
@@ -216,12 +217,28 @@ def e2_e3(  # noqa: PLR0913
         indicators_e2, environment, flow_name_e2, desc_e2, create_artifact, persist
     )
 
-    sample_state_station = to_sampled_state_grp(
-        sampled_state_poc, statics, ID_STATION, SATURATION_RATIO, OVERLOAD_RATIO
+    codes, _ = pd.factorize(statics[ID_STATION])
+    statics["chunk"] = codes // chunk_size
+    chunks_group = statics.groupby("chunk")
+
+    futures = [
+        to_sampled_state_grp.submit(
+            sampled_state_poc[sampled_state_poc[ID_POC].isin(chunk[ID_POC])],
+            chunk,
+            ID_STATION,
+            SATURATION_RATIO,
+            OVERLOAD_RATIO,
+        )  # type: ignore[call-overload]
+        for _, chunk in chunks_group
+    ]
+    wait(futures)
+
+    sampled_state_station = pd.concat(
+        [future.result() for future in futures], ignore_index=True
     )
 
     state_station_h = to_state_grp_h(
-        sample_state_station, ID_STATION, SAMPLES, SATURE_H
+        sampled_state_station, ID_STATION, SAMPLES, SATURE_H
     )
     state_station_d = to_state_grp_d(state_station_h, ID_STATION)
 
