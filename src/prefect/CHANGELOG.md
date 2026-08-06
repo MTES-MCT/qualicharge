@@ -62,7 +62,7 @@ and this project adheres to
 - Add OperationalUnit level for infrastructure and usage indicators
 - Add a 15-day offset for session indicators (u5, u6, u9, u10, u11, u14, e4)
 - Replace `statique` by `_pointdecharge` + `_station` for usage indicators u5, u6, u9, u10, u11, u14
-- Filter statuses and sessions for e2 and e3
+- Filter statuses and sessions for e2 and e3 (without schedule)
 
 ### Fixed
 

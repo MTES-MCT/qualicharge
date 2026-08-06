@@ -8,6 +8,7 @@ from string import Template
 
 import pandas as pd
 from pandas import NamedAgg
+from prefect import task
 from sqlalchemy.orm import Session
 
 from indicators.db import get_indicators_db_engine
@@ -201,6 +202,7 @@ def to_sampled_state_poc(
     )
 
 
+@task(task_run_name="state-poc-d")
 def to_state_poc_d(state_poc: pd.DataFrame, samples_per_day: int) -> pd.DataFrame:
     """Generate daily states for the charge points based on their sampled state.
 
@@ -219,6 +221,7 @@ def to_state_poc_d(state_poc: pd.DataFrame, samples_per_day: int) -> pd.DataFram
     return state_d[["id_pdc_itinerance", "occupe", "hors_service", "libre"]]
 
 
+@task(task_run_name="sampled_grp")
 def to_sampled_state_grp(
     state_poc: pd.DataFrame,
     pdc_group: pd.DataFrame,
@@ -298,6 +301,7 @@ def to_sampled_state_grp(
     ]
 
 
+@task(task_run_name="state-grp-h")
 def to_state_grp_h(
     state_grp: pd.DataFrame,
     group_name: str,
@@ -348,6 +352,7 @@ def to_state_grp_h(
     ]
 
 
+@task(task_run_name="state-grp-d")
 def to_state_grp_d(
     state_grp_h: pd.DataFrame,
     group_name: str,
