@@ -93,6 +93,10 @@ deployments:
   - name: e2_e3-daily
     entrypoint: indicators/extract/e2_e3.py:e2_e3
     concurrency_limit: 10
+    schedules:
+      - cron: "45 5 * * *"
+        timezone: "Europe/Paris"
+        active: true
     parameters:
       environment: production
       min_power: 75

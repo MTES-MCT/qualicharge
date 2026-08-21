@@ -63,6 +63,12 @@ and this project adheres to
 - Add a 15-day offset for session indicators (u5, u6, u9, u10, u11, u14, e4)
 - Replace `statique` by `_pointdecharge` + `_station` for usage indicators u5, u6, u9, u10, u11, u14
 - Filter statuses and sessions for e2 and e3 (without schedule)
+- Add fields in e2 indicator :
+  - statuses quality fields (`pseudo_occupe` and `pseudo_libre`)
+  - sessions activity fields (`occupe_max`, `sessions_nb`, `energy_cum`)
+- Add fields in e3 indicator :
+  - "pleine occupation" fields (`pu_cum`, `pu_max`, `pu_len`)
+  - sessions activity fields (`sature_max`, `sessions_nb`, `energy_cum`)
 
 ### Fixed
 
