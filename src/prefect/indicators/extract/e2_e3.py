@@ -135,7 +135,7 @@ def get_sampled_state_poc_for_chunk(
     statics_chunk: pd.DataFrame,
     sessions: pd.DataFrame,
     statuses: pd.DataFrame,
-) -> pd.DataFrame:
+) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Calculate sampled_state_poc for a chunk."""
     statuses_chunk, sessions_chunk = filter_statuses_sessions(
         sessions, statuses, statics_chunk
@@ -146,7 +146,77 @@ def get_sampled_state_poc_for_chunk(
         sessions_chunk,
         statuses_chunk,
     )
-    return sampled_state_poc_chunk
+    state_poc_d_chunk = to_state_poc_d(sampled_state_poc_chunk, samples_per_day)
+    return (sampled_state_poc_chunk, state_poc_d_chunk)
+
+
+def get_chunked_state_poc(  # noqa: PLR0913
+    statics: pd.DataFrame,
+    day: date,
+    samples_per_day: int,
+    chunk_size: int,
+    sessions: pd.DataFrame,
+    statuses: pd.DataFrame,
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Calculate sampled_state_poc and state_poc in chunks."""
+    chunks = [
+        statics.iloc[i : i + chunk_size] for i in range(0, len(statics), chunk_size)
+    ]
+    futures = [
+        get_sampled_state_poc_for_chunk.submit(
+            day,
+            samples_per_day,
+            chunk,
+            sessions,
+            statuses,
+        )
+        for chunk in chunks
+    ]
+    wait(futures)
+
+    sampled_state_poc = pd.concat(
+        [future.result()[0] for future in futures], ignore_index=True
+    )
+    state_poc = pd.concat([future.result()[1] for future in futures], ignore_index=True)
+    return (sampled_state_poc, state_poc)
+
+
+def get_chunked_state_grp(  # noqa: PLR0913
+    statics: pd.DataFrame,
+    sampled_state_poc: pd.DataFrame,
+    chunk_size: int,
+    id_grp: str,
+    samples_per_day: int,
+    saturation_ratio: float,
+    overload_ratio: float,
+) -> pd.DataFrame:
+    """Calculate state_grp in chunks."""
+    codes, _ = pd.factorize(statics[id_grp])
+    statics["chunk"] = codes // chunk_size
+    chunks = statics.groupby("chunk")
+
+    futures = [
+        to_state_grp_d.submit(
+            to_state_grp_h(
+                to_sampled_state_grp(
+                    sampled_state_poc[sampled_state_poc[ID_POC].isin(chunk[ID_POC])],
+                    chunk,
+                    id_grp,
+                    saturation_ratio,
+                    overload_ratio,
+                ),
+                id_grp,
+                samples_per_day,
+                SATURE_H,
+            ),
+            id_grp,
+        )
+        for _, chunk in chunks
+    ]
+    wait(futures)
+
+    state_grp = pd.concat([future.result() for future in futures], ignore_index=True)
+    return state_grp
 
 
 @flow(
@@ -172,25 +242,9 @@ def e2_e3(  # noqa: PLR0913
     statuses = read_s3_data(day, environment, "qualicharge-statuses")
     sessions = read_s3_data(day, environment, "qualicharge-sessions")
     statics = read_statics(day, environment, min_power)
-    chunks = [
-        statics.iloc[i : i + chunk_size] for i in range(0, len(statics), chunk_size)
-    ]
-    futures = [
-        get_sampled_state_poc_for_chunk.submit(
-            day,
-            samples_per_day,
-            chunk,
-            sessions,
-            statuses,
-        )  # type: ignore[call-overload]
-        for chunk in chunks
-    ]
-    wait(futures)
-
-    sampled_state_poc = pd.concat(
-        [future.result() for future in futures], ignore_index=True
-    )
-    state_poc_d = to_state_poc_d(sampled_state_poc, samples_per_day)
+    sampled_state_poc, state_poc_d = get_chunked_state_poc(
+        statics, day, samples_per_day, chunk_size, sessions, statuses
+    )  # type: ignore[call-overload]
 
     indicators_e2 = pd.DataFrame(
         {
@@ -216,31 +270,15 @@ def e2_e3(  # noqa: PLR0913
     export_indicators(
         indicators_e2, environment, flow_name_e2, desc_e2, create_artifact, persist
     )
-
-    codes, _ = pd.factorize(statics[ID_STATION])
-    statics["chunk"] = codes // chunk_size
-    chunks_group = statics.groupby("chunk")
-
-    futures = [
-        to_sampled_state_grp.submit(
-            sampled_state_poc[sampled_state_poc[ID_POC].isin(chunk[ID_POC])],
-            chunk,
-            ID_STATION,
-            SATURATION_RATIO,
-            OVERLOAD_RATIO,
-        )  # type: ignore[call-overload]
-        for _, chunk in chunks_group
-    ]
-    wait(futures)
-
-    sampled_state_station = pd.concat(
-        [future.result() for future in futures], ignore_index=True
-    )
-
-    state_station_h = to_state_grp_h(
-        sampled_state_station, ID_STATION, SAMPLES, SATURE_H
-    )
-    state_station_d = to_state_grp_d(state_station_h, ID_STATION)
+    state_station_d = get_chunked_state_grp(
+        statics,
+        sampled_state_poc,
+        chunk_size,
+        ID_STATION,
+        samples_per_day,
+        SATURATION_RATIO,
+        OVERLOAD_RATIO,
+    )  # type: ignore[call-overload]
 
     indicators_e3 = pd.DataFrame(
         {
@@ -266,7 +304,6 @@ def e2_e3(  # noqa: PLR0913
             ],
         }
     )
-
     desc_e3 = f"e3 report at {day} (period: {PERIOD})"
     flow_name_e3 = "e3-" + runtime.flow_run.name
     export_indicators(
