@@ -206,7 +206,7 @@ def to_sampled_state_poc(
 def to_state_poc_d(state_poc: pd.DataFrame, samples_per_day: int) -> pd.DataFrame:
     """Generate daily states for the charge points based on their sampled state.
 
-    The time spent in each state is returne d in minutes.
+    The time spent in each state is returned in minutes.
     """
     sampled = state_poc[["id_pdc_itinerance", "state"]].reset_index()
     sampled["occupe"] = sampled["state"] == "occupe"
