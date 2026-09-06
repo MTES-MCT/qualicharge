@@ -7,19 +7,19 @@ version = "0.4.0"
 requires-python = "~=3.12.0"
 dependencies = [
   "Django==6.0.6",
-  "django-anymail==15.0",
-  "django-dsfr==3.5.2",
+  "django-anymail==15.1",
+  "django-dsfr==3.6.0",
   "django-environ==0.14.0",
   "django-extensions==4.1",
-  "django-stubs[compatible-mypy]==6.0.6",
-  "gunicorn==26.0.0",
+  "django-stubs[compatible-mypy]==6.1.0",
+  "gunicorn==26.2.0",
   "jsonschema==4.26.0",
   "mozilla-django-oidc==5.0.2",
   "psycopg[pool,binary]==3.3.4",
   "python-dateutil==2.9.0.post0",
   "qualicharge-client==0.3.0",
   "requests==2.34.2",
-  "sentry-sdk[django]==2.64.0",
+  "sentry-sdk[django]==2.68.1",
   "whitenoise==6.12.0",
 ]
 
@@ -30,22 +30,22 @@ build-backend = "hatchling.build"
 [dependency-groups]
 dev = [
   "black==26.5.1",
-  "django-debug-toolbar==7.0.0",
-  "djlint==1.40.2",
+  "django-debug-toolbar==7.1.1",
+  "djlint==1.44.2",
   "factory-boy==3.3.3",
   "honcho==2.0.0",
   "mock==5.2.0",
-  "mypy==2.1.0",
+  "mypy==2.3.1",
   "pytest==9.1.1",
   "pytest-asyncio==1.4.0",
   "pytest-cov==7.1.0",
-  "pytest-django==4.12.0",
+  "pytest-django==4.14.0",
   "pytest-httpx==0.36.2",
-  "responses==0.26.1",
-  "ruff==0.15.20",
+  "responses==0.26.3",
+  "ruff==0.16.5",
   "types-mock==5.2.0.20260518",
-  "types-python-dateutil==2.9.0.20260518",
-  "types-requests==2.33.0.20260518",
+  "types-python-dateutil==2.9.0.20260807",
+  "types-requests==2.33.0.20260712",
 ]
 
 [tool.uv]
