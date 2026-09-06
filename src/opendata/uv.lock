@@ -48,7 +48,7 @@ wheels = [
 
 [[package]]
 name = "data7"
-version = "1.0.2"
+version = "1.0.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "dynaconf" },
@@ -61,9 +61,9 @@ dependencies = [
     { name = "typer" },
     { name = "uvicorn", extra = ["standard"] },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/3b/b1/f94d42ca2caa18625a58425588f81419071d311d1accc18574a50343d873/data7-1.0.2.tar.gz", hash = "sha256:56f6a4503259473fddc799c4e09e4539ac93b58d274437bc5f20c045447d397e", size = 219550, upload-time = "2026-06-05T08:32:27.593Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/d1/03/541b4fd64bcffa23e750d3883a167d2f2dd25956d911d8297c0ce77c3f1d/data7-1.0.3.tar.gz", hash = "sha256:07fc28a515a79f6c3740b35e2e6adbe5fabbfde1c8319ea4c878ef822abc33bf", size = 219620, upload-time = "2026-07-28T13:49:50.669Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/85/22/6d8172c99260fb98b9838f3c51b49be8abd8880eda6343540a15fd4229f2/data7-1.0.2-py3-none-any.whl", hash = "sha256:83c0781aa3bd0ab21dd2696264abb477967c392123ae0804d8875fcbaed10c96", size = 12773, upload-time = "2026-06-05T08:32:26.366Z" },
+    { url = "https://files.pythonhosted.org/packages/51/db/b4dfa4fec60e284c879ff06398291fec0013a47462a1aae3e384011b20c0/data7-1.0.3-py3-none-any.whl", hash = "sha256:af9ff7d8113a3d26a606db9b9971dfea963a559296135df839c6bbcc4c37e2e5", size = 12773, upload-time = "2026-07-28T13:49:49.591Z" },
 ]
 
 [[package]]
@@ -354,7 +354,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "data7", specifier = "==1.0.2" },
+    { name = "data7", specifier = "==1.0.3" },
     { name = "psycopg", extras = ["binary", "pool"], specifier = "==3.3.4" },
 ]
 
