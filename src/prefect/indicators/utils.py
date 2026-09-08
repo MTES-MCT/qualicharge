@@ -57,7 +57,7 @@ ALIMENTATION: dict = {"alimentation": """
       ELSE 'AC_indirect'
     END
 """}
-POOLS_FILE: Path = Path("./data/aires_dmr_2026-07-08.geojson")
+POOLS_FILE: Path = Path("./data/last_statics_dmr.geojson")
 
 
 def init_pools(file_path: Path) -> gpd.GeoDataFrame:

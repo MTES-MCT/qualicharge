@@ -17,8 +17,8 @@ N_POOLS_STATIONS = 403
 TIMESPAN = IndicatorTimeSpan(start=datetime(2025, 1, 1), period=IndicatorPeriod.DAY)
 
 
-def test_get_pdc_station_for_day():
-    """Test the `get_pdc_station_for_day` function."""
+def test_get_poc_station_for_day():
+    """Test the `get_poc_station_for_day` function."""
     e5.e5(
         Environment.TEST,
         [Level.NATIONAL],
@@ -26,7 +26,7 @@ def test_get_pdc_station_for_day():
         period=TIMESPAN.period.value,
         persist=True,
     )
-    poc_station = e1.get_pdc_station_for_day(TIMESPAN.start.date(), Environment.TEST)
+    poc_station = e1.get_poc_station_for_day(TIMESPAN.start.date(), Environment.TEST)
     assert not poc_station.empty
     assert set(poc_station.columns) == {
         "latitude",
@@ -75,6 +75,9 @@ def test_flow_e1():
 
 def test_flow_e1_persistence(indicators_db_engine):
     """Test the `e1` flow."""
+    with indicators_db_engine.connect() as connection:
+        result = connection.execute(text("SELECT COUNT(*) FROM test WHERE code = 'e1'"))
+        init_len = result.one()[0]
     e5.e5(
         Environment.TEST,
         [Level.NATIONAL],
@@ -82,9 +85,7 @@ def test_flow_e1_persistence(indicators_db_engine):
         period=TIMESPAN.period.value,
         persist=True,
     )
-    indicators = e1.e1(
-        Environment.TEST, start=TIMESPAN.start, create_artifact=False, persist=True
-    )
+    e1.e1(Environment.TEST, start=TIMESPAN.start, create_artifact=False, persist=True)
     with indicators_db_engine.connect() as connection:
         result = connection.execute(text("SELECT COUNT(*) FROM test WHERE code = 'e1'"))
-        assert result.one()[0] == len(indicators)
+        assert result.one()[0] == init_len + 1

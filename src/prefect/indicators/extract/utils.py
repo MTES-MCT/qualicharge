@@ -16,7 +16,7 @@ from indicators.db import get_indicators_db_engine
 from indicators.models import IndicatorPeriod
 from indicators.types import Environment
 
-PDC_STATION_FOR_DAY_TEMPLATE = """
+POC_STATION_FOR_DAY_TEMPLATE = """
 SELECT
   value,
   extras
@@ -29,9 +29,20 @@ WHERE
 ORDER BY
   value desc
 """
+STATION_POOL_FOR_DAY_TEMPLATE = """
+SELECT
+  value,
+  extras
+FROM
+  $environment
+WHERE
+  code = 'e1' and level = 0  and period = 'd' and target = '00'
+  AND timestamp >= '$from_date'
+  AND timestamp < '$to_date'
+ORDER BY
+  value desc
+"""
 PERIOD = IndicatorPeriod.DAY
-ID_POC: str = "id_pdc_itinerance"
-ID_STATION: str = "id_station_itinerance"
 MAX_SESSION_DURATION_HOURS: float = 10
 START_FULL_USE: float = 0.99
 END_FULL_USE: float = 0.8
@@ -117,9 +128,30 @@ def filter_sessions_duration(
     return filtered_sessions
 
 
-def get_pdc_station_for_day(from_date: date, environment: Environment) -> pd.DataFrame:
+def get_chunks(
+    statics: pd.DataFrame, id_grp: str, chunk_size: int
+) -> list[pd.DataFrame]:
+    """Group pdc based on cumulative sum of nb_pdc."""
+    df_nb_pocs = (
+        statics.groupby(id_grp)
+        .agg(nb_pocs=NamedAgg("id_pdc_itinerance", "count"))
+        .reset_index()
+    )
+    df_nb_pocs["cumsum"] = df_nb_pocs["nb_pocs"].cumsum()
+    df_nb_pocs["group"] = (df_nb_pocs["cumsum"] - 1) // chunk_size
+    field_pool = ["id_pool"] if id_grp == "id_pool" else []
+    static_chunks = [
+        statics[statics[id_grp].isin(group[id_grp])].copy()[
+            ["id_pdc_itinerance", "id_station_itinerance"] + field_pool
+        ]
+        for _, group in df_nb_pocs.groupby("group")
+    ]
+    return static_chunks
+
+
+def get_poc_station_for_day(from_date: date, environment: Environment) -> pd.DataFrame:
     """Get points of charge and stations for a given day."""
-    query_template = Template(PDC_STATION_FOR_DAY_TEMPLATE)
+    query_template = Template(POC_STATION_FOR_DAY_TEMPLATE)
     query_params = {
         "from_date": from_date,
         "to_date": from_date + timedelta(days=1),
@@ -131,10 +163,30 @@ def get_pdc_station_for_day(from_date: date, environment: Environment) -> pd.Dat
         )
     if e5_data.empty:
         return pd.DataFrame()
-    pdc_station = pd.DataFrame(e5_data["extras"][0])
-    if len(pdc_station) != e5_data["value"][0]:
+    poc_station = pd.DataFrame(e5_data["extras"][0])
+    if len(poc_station) != e5_data["value"][0]:
         return pd.DataFrame()
-    return pdc_station
+    return poc_station
+
+
+def get_station_pool_for_day(from_date: date, environment: Environment) -> pd.DataFrame:
+    """Get pools and stations for a given day."""
+    query_template = Template(STATION_POOL_FOR_DAY_TEMPLATE)
+    query_params = {
+        "from_date": from_date,
+        "to_date": from_date + timedelta(days=1),
+        "environment": environment.value,
+    }
+    with Session(get_indicators_db_engine()) as session:
+        e1_data = pd.read_sql_query(
+            query_template.substitute(query_params), con=session.connection()
+        )
+    if e1_data.empty:
+        return pd.DataFrame()
+    station_pool = pd.DataFrame(e1_data["extras"][0])
+    if len(station_pool) != e1_data["value"][0]:
+        return pd.DataFrame()
+    return station_pool
 
 
 def to_sampled_statuses(

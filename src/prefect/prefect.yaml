@@ -90,8 +90,8 @@ deployments:
       name: indicators
       work_queue_name: default
 
-  - name: e2_e3-daily
-    entrypoint: indicators/extract/e2_e3.py:e2_e3
+  - name: e2_e3_e6-daily
+    entrypoint: indicators/extract/e2_e3_e6.py:e2_e3_e6
     concurrency_limit: 10
     schedules:
       - cron: "45 5 * * *"
