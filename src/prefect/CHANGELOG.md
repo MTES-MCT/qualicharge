@@ -19,7 +19,7 @@ and this project adheres to
 - Add usage indicator u14
 - Add extract indicator e5
 - Add extract indicator e1
-- Add extract indicators e2 and e3
+- Add extract indicators e2, e3 and e6
 
 #### Quality
 

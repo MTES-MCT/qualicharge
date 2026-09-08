@@ -11,7 +11,7 @@ import geopandas as gpd  # type: ignore
 import pandas as pd  # type: ignore
 from prefect import flow, runtime, task
 
-from indicators.extract.utils import get_pdc_station_for_day
+from indicators.extract.utils import get_poc_station_for_day
 from indicators.models import IndicatorPeriod, Level
 from indicators.types import Environment
 from indicators.utils import (
@@ -29,7 +29,7 @@ PERIOD = IndicatorPeriod.DAY
 def get_station_pool_for_day(from_date: date, environment: Environment) -> pd.DataFrame:
     """Get stations for a list of pools."""
     pools = init_pools(POOLS_FILE)
-    pdc_station = get_pdc_station_for_day(from_date, environment)
+    pdc_station = get_poc_station_for_day(from_date, environment)
     stations_df = pdc_station.drop_duplicates(
         subset=["id_station_itinerance"]
     ).reset_index(drop=True)

@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 import pandas as pd
 from pandas import NamedAgg
 
-from indicators.extract import e5, utils
+from indicators.extract import e1, e5, utils
 from indicators.models import IndicatorPeriod, Level
 from indicators.types import Environment
 
@@ -15,8 +15,8 @@ OVERLOAD_RATIO = 0.2
 LEN_RES = 48
 
 
-def test_get_pdc_station_for_day():
-    """Test the `get_pdc_station_for_day` function."""
+def test_get_poc_station_for_day():
+    """Test the `get_poc_station_for_day` function."""
     e5.e5(
         Environment.TEST,
         [Level.NATIONAL],
@@ -24,7 +24,7 @@ def test_get_pdc_station_for_day():
         period=IndicatorPeriod.DAY.value,
         persist=True,
     )
-    poc_station = utils.get_pdc_station_for_day(DATE, Environment.TEST)
+    poc_station = utils.get_poc_station_for_day(DATE, Environment.TEST)
     assert not poc_station.empty
     assert set(poc_station.columns) == {
         "latitude",
@@ -33,6 +33,43 @@ def test_get_pdc_station_for_day():
         "id_pdc_itinerance",
         "id_station_itinerance",
     }
+
+
+def test_get_station_pool_for_day():
+    """Test the `get_station_pool_for_day` function."""
+    e1.e1(
+        Environment.TEST,
+        start=DATE + IndicatorPeriod.DAY.duration,
+        persist=True,
+    )
+    pools_stations = utils.get_station_pool_for_day(DATE, Environment.TEST)
+    assert not pools_stations.empty
+    assert set(pools_stations.columns) == {
+        "id_pool",
+        "id_station_itinerance",
+    }
+
+
+def test_get_chunks():
+    """Test the `get_chunks` function."""
+    pocs = ["p1", "p2", "p3", "p4", "p5", "p6", "p7", "p8", "p9", "p10", "p11"]
+    stat = ["s1", "s1", "s21", "s22", "s3", "s3", "s4", "s5", "s5", "s6", "s6"]
+    pool = ["A1", "A1", "A2", "A2", "A3", "A3", "A4", "A5", "A5", "A6", "A6"]
+    df_pdc = pd.DataFrame(
+        {
+            "id_pdc_itinerance": pocs,
+            "id_station_itinerance": stat,
+            "id_pool": pool,
+        }
+    )
+
+    chunks = utils.get_chunks(df_pdc, "id_pool", chunk_size=3)
+
+    assert chunks[0]["id_pdc_itinerance"].tolist() == ["p1", "p2"]
+    assert chunks[0]["id_pool"].drop_duplicates().tolist() == ["A1"]
+    assert chunks[1]["id_pdc_itinerance"].tolist() == ["p3", "p4", "p5", "p6"]
+    assert chunks[2]["id_pdc_itinerance"].tolist() == ["p7", "p8", "p9"]
+    assert chunks[3]["id_pdc_itinerance"].tolist() == ["p10", "p11"]
 
 
 def test_to_sampled_sessions() -> None:
