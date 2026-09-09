@@ -56,7 +56,7 @@ def download_fixtures() -> Dict[str, AdministrativeBoundary]:
     # Download
     for level, ab in boundaries.items():
         print(f"Downloading {level} file to {ab.path}...")
-        response = httpx.get(ab.url)
+        response = httpx.get(ab.url, follow_redirects=True)
         with open(ab.path, "wb") as output_file:
             output_file.write(gzip.decompress(response.content))
 
