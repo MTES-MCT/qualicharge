@@ -67,26 +67,34 @@ def test_get_authorized_date_range_different_quarters(
         (
             "2999-01-01",
             100.5,
-            "The date cannot be in the future. <br />Collected date should be "
-            "between 16/03/2025 and 31/03/2025.",
+            (
+                "The date cannot be in the future. <br />Collected date should be "
+                "between 16/03/2025 and 31/03/2025."
+            ),
         ),
         (
             "2000-01-01",
             100.5,
-            "The date cannot be earlier than 16/03/2025.<br />Collected date should"
-            " be between 16/03/2025 and 31/03/2025.",
+            (
+                "The date cannot be earlier than 16/03/2025.<br />Collected date should"
+                " be between 16/03/2025 and 31/03/2025."
+            ),
         ),
         (
             "2025-03-15",
             100.5,
-            "The date cannot be earlier than 16/03/2025.<br />Collected date should"
-            " be between 16/03/2025 and 31/03/2025.",
+            (
+                "The date cannot be earlier than 16/03/2025.<br />Collected date should"
+                " be between 16/03/2025 and 31/03/2025."
+            ),
         ),
         (
             "2025-04-01",
             100.5,
-            "The date cannot be in the future. <br />Collected date should be "
-            "between 16/03/2025 and 31/03/2025.",
+            (
+                "The date cannot be in the future. <br />Collected date should be "
+                "between 16/03/2025 and 31/03/2025."
+            ),
         ),
     ],
 )

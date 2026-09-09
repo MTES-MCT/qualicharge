@@ -18,7 +18,7 @@ CURL = $(COMPOSE_RUN) curl
 # -- Ressources
 AFIREV_CHARGING_DATASET_URL = https://afirev.fr/en/liste-des-identifiants-attribues/
 
-PREFECT_MODULES = $(subst src/prefect/,./,$(sort $(dir $(wildcard src/prefect/*/))))
+PREFECT_MODULES = $(subst src/prefect/,./,$(sort $(dir $(wildcard src/prefect/*/*.py))))
 # ==============================================================================
 # RULES
 
@@ -593,7 +593,7 @@ lint-prefect-ruff-fix: ## lint and fix prefect python sources with ruff
 
 lint-prefect-mypy: ## lint prefect python sources with mypy
 	@echo 'lint:mypy started…'
-	@$(COMPOSE_RUN_PREFECT_UV) mypy $(PREFECT_MODULES)
+	$(COMPOSE_RUN_PREFECT_UV) mypy $(PREFECT_MODULES)
 .PHONY: lint-prefect-mypy
 
 lint-dashboard-black: ## lint dashboard python sources with black
