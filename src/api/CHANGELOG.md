@@ -17,6 +17,24 @@ and this project adheres to
 - Require at least one target when creating a tariff
 - Store only raw tariff non-null fields
 
+#### Dependencies
+
+- upgrade `alembic` to `1.19.1`
+- upgrade `annotated-types` to `0.8.0`
+- upgrade `cachetools` to `7.1.8`
+- upgrade `fastapi` to `0.141.1`
+- upgrade `pandas` to `3.0.5`
+- upgrade `postgresql-audit` to `0.17.1`
+- upgrade `psycopg[pool, binary]` to `3.3.5`
+- upgrade `pyarrow` to `25.0.1`
+- upgrade `pydantic` to `2.13.5`
+- upgrade `pydantic-settings` to `2.15.0`
+- upgrade `pyinstrument` to `5.1.3`
+- upgrade `python-multipart` to `0.0.32`
+- upgrade `sentry-sdk[fastapi]` to `2.68.1`
+- upgrade `sqlmodel` to `0.0.42`
+- upgrade `typer` to `0.27.2`
+
 ### Fixed
 
 - Add redirection support for database fixture download in migrations
