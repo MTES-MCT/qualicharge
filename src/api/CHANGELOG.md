@@ -17,6 +17,10 @@ and this project adheres to
 - Require at least one target when creating a tariff
 - Store only raw tariff non-null fields
 
+### Fixed
+
+- Add redirection support for database fixture download in migrations
+
 ## [0.34.1] - 2026-07-10
 
 ### Changed
