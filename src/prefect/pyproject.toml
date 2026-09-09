@@ -35,7 +35,7 @@ dev = [
   "pytest-cov==7.1.0",
   "pytest-responses>=0.5.1",
   "ruff==0.15.20",
-  "setuptools==82.0.1",
+  "setuptools==83.0.0",
   "types-python-dateutil",
   "types-requests>=2.32.4.20250913",
 ]
