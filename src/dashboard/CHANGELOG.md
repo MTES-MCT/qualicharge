@@ -15,7 +15,7 @@ and this project adheres to
 
 #### Dependencies
 
-- Upgrade `Django` to `6.0.6`
+- Upgrade `Django` to `6.0.7`
 - Upgrade `django-anymail` to `15.0`
 - Upgrade `django-dsfr` to `3.5.2`
 - Upgrade `django-environ` to `0.14.0`
@@ -50,21 +50,22 @@ and this project adheres to
 - Add `legal_form`, `siret`, and `naf` fields to `control authority` schema
 - Add `legal_form` `siret` and `naf` fields to the `consent` form management interface
 - Add `footer` block with legal and accessibility links in base template
-- Add explicit session management configuration to enhance security (`SESSION_COOKIE_AGE` and 
+- Add explicit session management configuration to enhance security (`SESSION_COOKIE_AGE` and
   `SESSION_EXPIRE_AT_BROWSER_CLOSE`)
 - Improved sorting of delivery points by station name in meter reading management forms
-- Added an utility function `sort_delivery_points_by_station()` to `apps/renewable/helpers.py` 
-to centralize the logic for sorting delivery points by station name
- 
+- Added an utility function `sort_delivery_points_by_station()` to `apps/renewable/helpers.py`
+  to centralize the logic for sorting delivery points by station name
+
 ### Changed
 
 - Update French translations for improved readability and consistency
 - Update content wording in html templates
 - Update html templates to improve responsiveness
-- Update the display of stations in the management form tables to ensure complete 
+- Update the display of stations in the management form tables to ensure complete
   rendering of information
 
 ### Fixed
+
 - Fixed form sorting to prevent misalignment between checkboxes and displayed data
 
 #### Dependencies
