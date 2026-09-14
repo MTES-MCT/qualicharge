@@ -17,15 +17,13 @@ also be automatically decommissioned.
 Once decommissioned a charge point will no longer be listed in static data
 related to your account. This means that you will receive a 404 HTTP response
 if you try to send dynamic data (status or session) for this charge point. This
-also means that this charge point will no longer be listed in our [IRVE open
-data
-files](https://www.data.gouv.fr/datasets/infrastructures-de-recharge-pour-vehicules-electriques-donnees-ouvertes/).
+also means that this charge point will no longer be listed in our [IRVE open data files](https://www.data.gouv.fr/datasets/infrastructures-de-recharge-pour-vehicules-electriques-donnees-ouvertes/).
 
 Note that decommissioning a charge point (or a station) does not delete
 concerned charge point (or station) nor related object in database (such as
 sessions and statuses); it is "soft-deleted" instead. Thus, you can
-recommission a charge point (and related station) using the `POST
-/statique/{id_pdc_itinerance}/up` dedicated API endpoint (no payload is
+recommission a charge point (and related station) using the
+`POST /statique/{id_pdc_itinerance}/up` dedicated API endpoint (no payload is
 expected in this request).
 
 > Note that decommissioning an already decommissioned charge point has no

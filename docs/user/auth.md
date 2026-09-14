@@ -32,7 +32,7 @@ every object. Instead API permissions follow two simple rules:
 | `static:create`  | create static data (charge points declaration) | :white_check_mark: |
 | `static:read`    | read static data (declared charge points)      | :white_check_mark: |
 | `static:update`  | update static data (charge points metadata)    | :white_check_mark: |
-| `static:delete`  | delete static data (delete charge points)      | :x:                |
+| `static:delete`  | delete static data (delete charge points)      | :white_check_mark: |
 | `dynamic:create` | create dynamic data (status or sessions)       | :white_check_mark: |
 | `dynamic:read`   | read dynamic data (status or sessions)         | :white_check_mark: |
 | `dynamic:update` | update dynamic data (status or session)        | :x:                |
