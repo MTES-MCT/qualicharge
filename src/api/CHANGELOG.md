@@ -8,6 +8,8 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.35.0] - 2026-09-18
+
 ### Added
 
 - Add tariffs support
@@ -808,7 +810,8 @@ update` command
 
 - Implement base FastAPI app
 
-[unreleased]: https://github.com/MTES-MCT/qualicharge/compare/v0.34.1...main
+[unreleased]: https://github.com/MTES-MCT/qualicharge/compare/v0.35.0...main
+[0.35.0]: https://github.com/MTES-MCT/qualicharge/compare/v0.34.1...v0.35.0
 [0.34.1]: https://github.com/MTES-MCT/qualicharge/compare/v0.34.0...v0.34.1
 [0.34.0]: https://github.com/MTES-MCT/qualicharge/compare/v0.33.1...v0.34.0
 [0.33.1]: https://github.com/MTES-MCT/qualicharge/compare/v0.33.0...v0.33.1
