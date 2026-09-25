@@ -8,7 +8,10 @@ and this project adheres to
 
 ## [Unreleased]
 
-### Changed
+### Added
+
+- Add tariff API client endpoint and CLI commands
+- Add `original_id` filtering to tariff client list calls
 
 #### Dependencies
 

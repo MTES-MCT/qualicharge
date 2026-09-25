@@ -4,6 +4,7 @@ from .endpoints.auth import Auth
 from .endpoints.dynamic import Session, Status
 from .endpoints.manage import Manage
 from .endpoints.static import Static
+from .endpoints.tariff import Tariff
 from .exceptions import ConfigurationError
 from .http import HTTPClient
 
@@ -31,3 +32,4 @@ class QCC:
         self.static = Static(self.client)
         self.status = Status(self.client)
         self.session = Session(self.client)
+        self.tariff = Tariff(self.client)
