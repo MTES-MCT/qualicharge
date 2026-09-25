@@ -13,6 +13,7 @@ and this project adheres to
 - Configured Data7 1.0.3
 - Use the `Statique` materialized view for the `statiques` dataset
 - Integrate HTTP Basic Authentication using NGINX as a reverse-proxy
+- Export active tariffs and their active charge-point associations
 
 ### Changed
 
