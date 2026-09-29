@@ -207,6 +207,24 @@ erDiagram
 Les `statuts` sont associés aux `sessions` mais peuvent également signaler d'autres évènements comme par exemple une panne d'un `point de recharge` ou sa remise en service.
 Les `statuts` de passage vers un état transitoire sont optionnels pour Qualicharge.
 
+### Structure tarifaire
+
+Les tarifs ad-hoc (hors abonnement) appliqués aux sessions de recharge sont intégrés dans Qualicharge pour être mis à disposition.
+
+Les tarifs sont associés aux points de recharge qui appliquent la tarification associée.
+
+Un tarif est une donnée dynamique et Qualicharge conserve l'historique des tarifs appliqués (un tarif ne peut être mis à jour).
+
+Le modèle ci-dessous représente l'intégration des tarifs :
+
+```mermaid
+erDiagram
+    "POINT DE RECHARGE" }|--|{ "TARIFF" : "a pour tarif ad-hoc"
+```
+Un tarif est formalisé suivant la structure JSON OCPI définie pour l'entité `Tariff` (aucune autre donnée n'est nécessaire).
+
+A tout instant, un seul tarif est applicable pour un point de recharge en fonction des dates d'application définies dans l'entité `Tariff`.
+
 ### Structure globale
 
 Le modèle ci-dessous regroupe l'ensemble des vues précédentes.
@@ -226,6 +244,7 @@ erDiagram
     "POINT DE RECHARGE" ||..|| "PLACE DE RECHARGE" : "dessert"
     "POINT DE RECHARGE" ||--|{ "STATUS" : "est suivi par"
     "POINT DE RECHARGE" ||--|{ "SESSION" : "distribue de l'énergie par"
+    "POINT DE RECHARGE" }|--|{ "TARIFF" : "a pour tarif ad-hoc"
     "SESSION" ||..|| "STATUS" : "est initialisée par"
 ```
 
@@ -482,6 +501,54 @@ Une `session` ne dispose pas d'identifiant unique. La contrainte d'unicité est 
 
 - on ne peut avoir deux `sessions` associés au même `point de recharge` avec un chevauchement temporel.
 
+### Tariff
+
+Un `Tariff` a deux représentations :
+- une représentation interne respectant le modèle OCPI
+- une représentation externe pour l'intégration des tarifs dans la structure Qualicharge
+
+#### Représentation interne
+
+Un `Tariff` respecte la structure OCPI 2.2 ou 2.3 (non rappelée ici).
+
+Les règles complémentaires suivantes sont appliquées :
+
+* le champ `currency` s'il est présent doit avoir la valeur "EUR"
+* le champ `type` s'il est présent doit avoir la valeur "AD_HOC_PAYMENT"
+* le champ `vat` s'il est présent doit avoir la valeur 20
+* la date `end_date_time` doit être postérieure à la date `start_date_time` si ces deux dates sont présentes
+* la date `last_updated` doit être antérieure à la date `end_date_time` si celle-ci est présente
+
+#### Représentation externe
+
+Un tarif est identifié dans Qualicharge par :
+
+* un identifiant unique **original_id** (concaténation des champs OCPI `country_code`, `party_id`, `id`)
+* une date de mise à jour : **original_last_updated** (correspondant au champ OCPI `last_updated`).
+
+Cette identification permet de gérer des versions d'un même tarif.
+
+```mermaid
+erDiagram
+TARIFF {
+  string  original_id "I"
+  datetime original_last_updated "M"
+  datetime start "M"
+  datetime end 
+  json raw "M"
+  }
+```
+
+La **date d'application** (`start`) d'un tarif est la plus récente des dates OCPI `start_date_time` et `last_updated` (on ne tient pas compte des dates de chargement dans Qualicharge). Ceci empèche qu'un tarif soit appliqué de façon rétro-active.
+
+L'**intervalle d'application** d'un tarif est l'intervalle entre la date d'application et la date `end` correspondant à la fin de validité du tarif : date OCPI `end_date_time` (lorsque la date `end_date_time` n'est pas présente, l'intervalle n'a pas de limite supérieure).
+
+Un tarif est **appliqué** s'il est associé à au moins un point de recharge et si sa date d'application est située dans le passé.
+
+Pour un point de recharge donné, le tarif **applicable** à un instant donné est le tarif avec la date d'application la plus proche de l'instant (et si son intervalle d'application contient l'instant). 
+
+Un point de recharge est **sans tarif** à un instant donné si aucun tarif n'est associé ou bien si le tarif avec la date d'application la plus proche de l'instant a un intervalle d'application ne contenant pas l'instant donné.
+
 ## Représentation globale
 
 Le modèle ci-dessous regroupe l'ensemble des données présentées.
@@ -551,7 +618,7 @@ erDiagram
   datetime end "M"
   number energy "M"
   }
-  "STATUS" {
+  STATUS {
     datetime horodatage "M"
     enum     etat_pdc "M"
     enum     occupation_pdc "M"
@@ -559,6 +626,13 @@ erDiagram
     enum     etat_prise_type_combo_ccs
     enum     etat_prise_type_chademo
     enum     etat_prise_type_ef
+  }
+  TARIFF {
+    string   original_id "I"
+    datetime original_last_updated "M"
+    datetime start "M"
+    datetime end 
+    json     raw "M"
   }
   AMENAGEUR ||..|{ "STATION DE RECHARGE" : "offre un service de recharge"
   AMENAGEUR ||--|{ "UNITE D'EXPLOITATION" : "gère"
@@ -571,5 +645,6 @@ erDiagram
   "STATION DE RECHARGE" ||--|{ "POINT DE RECHARGE" : regroupe
   "POINT DE RECHARGE" ||--|{ "STATUS" : "est suivi par"
   "POINT DE RECHARGE" ||--|{ "SESSION" : "distribue de l'énergie par"
+  "POINT DE RECHARGE" }|--|{ "TARIFF" : "a pour tarif ad-hoc"
   "SESSION" ||--|| "STATUS" : "est initialisée par"
 ```
