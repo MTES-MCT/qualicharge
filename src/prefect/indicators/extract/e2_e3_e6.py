@@ -12,7 +12,8 @@ import pandas as pd
 from pandas import NamedAgg
 from prefect import flow, runtime, task
 from prefect.cache_policies import NONE
-from prefect.futures import wait
+from prefect.exceptions import FailedRun
+from prefect.futures import PrefectFuture, wait
 
 from indicators.extract.utils import (
     filter_sessions_duration,
@@ -398,6 +399,15 @@ def e2_e3_e6(  # noqa: PLR0913
     ]
     wait(futures_pools)
 
+    def assert_futures_ok(futures: list[PrefectFuture], step: str, day: date) -> None:
+        """Ensure all submitted tasks succeeded and returned the expected result."""
+        if any(future.state.is_failed() for future in futures) or not all(
+            isinstance(future.result(raise_on_failure=False), tuple)
+            for future in futures
+        ):
+            raise FailedRun(f"Calculation of {step} state failed for day: {day}.")
+
+    assert_futures_ok(futures_pools, "pool", day)
     statics_no_pools = statics[~statics[ID_POC].isin(pools_stations_pocs[ID_POC])]
     chunks_no_pools = get_chunks(statics_no_pools, ID_STATION, chunk_size)
     futures_no_pools = [
@@ -413,6 +423,7 @@ def e2_e3_e6(  # noqa: PLR0913
         for chunk in chunks_no_pools
     ]
     wait(futures_no_pools)
+    assert_futures_ok(futures_no_pools, "station", day)
 
     # e2 indicator
     state_poc = pd.concat(

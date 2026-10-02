@@ -48,6 +48,25 @@ START_FULL_USE: float = 0.99
 END_FULL_USE: float = 0.8
 
 
+def full_use_poc(
+    group: pd.Series, occupation: pd.Series, add_latency=True
+) -> pd.Series:
+    """Extend the occupation of the pocs."""
+    if not add_latency:
+        return occupation
+    df = pd.DataFrame({"occupe": occupation, "group": group})
+    df["pu_inv"] = 1 - df.groupby(group)["occupe"].transform(
+        lambda x: x.rolling(3, min_periods=1).max()
+    )
+    df_inv = df.iloc[::-1].reset_index(drop=True)
+
+    df_inv["pu"] = 1 - df_inv.groupby(group)["pu_inv"].transform(
+        lambda x: x.rolling(3, min_periods=1).max()
+    )
+    df_final = df_inv.iloc[::-1].reset_index(drop=True)
+    return df_final["pu"].astype(bool)
+
+
 def hysteresis(
     x: pd.Series, low_hysteresis_level: float, high_hysteresis_level: float
 ) -> pd.Series:
@@ -203,6 +222,8 @@ def to_sampled_statuses(
     ('inconnu' value is not taken into account).
     The output states ('occupation_pdc') are either 'occupe', 'libre' or 'inconnu'.
     """
+    if len(data) == 0:
+        return pd.DataFrame()
     samples = pd.date_range(
         start=timestamp,
         end=timestamp + pd.Timedelta(days=1),
@@ -310,28 +331,35 @@ def to_sampled_state_poc(
     The 'pseudo-libre' corresponds to a 'libre' status with a session that is not.
     The 'pseudo-occupe' corresponds to a 'occupe' status with a session that is not.
     """
-    statuses = statuses.rename(columns={"occupation_pdc": "occupation_pdc_status"})
-    merged = pd.merge(
-        sessions, statuses, how="outer", on=["id_pdc_itinerance", "periode"]
-    ).fillna("aaa")
+    if len(statuses) > 0:
+        statuses = statuses.rename(columns={"occupation_pdc": "occupation_pdc_status"})
+        merged = pd.merge(
+            sessions, statuses, how="outer", on=["id_pdc_itinerance", "periode"]
+        ).fillna("aaa")
 
-    # ! The state names are chosen so that alphabetical sorting respects
-    # the order of priority.
-    merged["state"] = (
-        merged[["etat_pdc", "occupation_pdc"]]
-        .agg("max", axis=1)
-        .replace("en_service", "libre")
-    )
-    merged["pseudo_libre"] = (
-        merged["occupation_pdc_status"].eq("libre")
-        & merged["occupation_pdc"].ne("f_libre")
-        & merged["etat_pdc"].eq("en_service")
-    )
-    merged["pseudo_occupe"] = (
-        merged["occupation_pdc_status"].eq("occupe")
-        & merged["occupation_pdc"].ne("occupe")
-        & merged["etat_pdc"].eq("en_service")
-    )
+        # ! The state names are chosen so that alphabetical sorting respects
+        # the order of priority.
+        merged["state"] = (
+            merged[["etat_pdc", "occupation_pdc"]]
+            .agg("max", axis=1)
+            .replace("en_service", "libre")
+        )
+        merged["pseudo_libre"] = (
+            merged["occupation_pdc_status"].eq("libre")
+            & merged["occupation_pdc"].ne("f_libre")
+            & merged["etat_pdc"].eq("en_service")
+        )
+        merged["pseudo_occupe"] = (
+            merged["occupation_pdc_status"].eq("occupe")
+            & merged["occupation_pdc"].ne("occupe")
+            & merged["etat_pdc"].eq("en_service")
+        )
+    else:
+        merged = sessions
+        merged["state"] = merged["occupation_pdc"]
+        merged["pseudo_libre"] = False
+        merged["pseudo_occupe"] = False
+
     merged = merged[
         ["id_pdc_itinerance", "periode", "state", "pseudo_libre", "pseudo_occupe"]
     ].replace("f_libre", "libre")
@@ -442,17 +470,12 @@ def to_sampled_state_grp(  # noqa: PLR0913
     merged["occupe"] = merged["state"] == "occupe"
     merged["hors_service"] = merged["state"] == "hors_service"
     merged["libre"] = merged["state"] == "libre"
-    # add a 5 min interval for 'pleine utilisation'
-    if add_latency:
-        occupe_hs = merged["occupe"] | merged["hors_service"]
-        merged["pleine_utilisation"] = (
-            occupe_hs | occupe_hs.shift(fill_value=False)
-        ) & (
-            merged["id_pdc_itinerance"]
-            == merged["id_pdc_itinerance"].shift(fill_value="")
-        )
-    else:
-        merged["pleine_utilisation"] = merged["occupe"]
+    # add a 10 min interval for 'pleine utilisation'
+    merged["pleine_utilisation"] = full_use_poc(
+        merged["id_pdc_itinerance"],
+        merged["occupe"] | merged["hors_service"],
+        add_latency=add_latency,
+    )
     grouped = (
         merged[
             [

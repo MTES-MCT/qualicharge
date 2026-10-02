@@ -73,5 +73,7 @@ and this project adheres to
 ### Fixed
 
 - Define a correct time range for queries using `lateststatus`
+- (e2_e3_e6) Extend "pleine utilisation" latency to 10 min
+- (e2_e3_e6) Add the no-status case
 
 [unreleased]: https://github.com/MTES-MCT/qualicharge/

@@ -333,6 +333,21 @@ def test_to_sampled_state_poc_and_to_state_poc() -> None:
             ],
         }
     )
+    status_null = pd.DataFrame()
+    merged = utils.to_sampled_state_poc(sessions, status_null)
+    assert list(merged["pseudo_libre"]) == [False] * 9
+    assert list(merged["pseudo_occupe"]) == [False] * 9
+    assert list(merged["state"]) == [
+        "occupe",
+        "libre",
+        "occupe",
+        "libre",
+        "occupe",
+        "libre",
+        "libre",
+        "occupe",
+        "occupe",
+    ]
 
     merged = utils.to_sampled_state_poc(sessions, status)
     assert merged["pseudo_libre"].eq(pd.Series([False] * 9)).all()
@@ -468,6 +483,8 @@ def test_to_sampled_state_grp_and_to_state_grp() -> None:
                 "p1",
                 "p1",
                 "p1",
+                "p1",
+                "p2",
                 "p2",
                 "p2",
                 "p2",
@@ -476,6 +493,8 @@ def test_to_sampled_state_grp_and_to_state_grp() -> None:
                 "p3",
                 "p3",
                 "p3",
+                "p3",
+                "p4",
                 "p4",
                 "p4",
                 "p4",
@@ -484,18 +503,19 @@ def test_to_sampled_state_grp_and_to_state_grp() -> None:
                 "p5",
                 "p5",
                 "p5",
+                "p5",
                 "p6",
                 "p6",
                 "p6",
                 "p6",
+                "p3",
             ],
             "periode": [
-                timestamp + pd.Timedelta(hours=val) for val in [0, 1, 2, 3] * 6
+                timestamp + pd.Timedelta(hours=val) for val in [0, 1, 2, 3, 4] * 6
             ],
-            # 'periode' : timestamp,
-            "state": ["libre", "occupe", "occupe", "occupe"] * 6,
-            "pseudo_libre": [True, True, False, False] * 6,
-            "pseudo_occupe": [False, True, True, False] * 6,
+            "state": ["libre", "occupe", "occupe", "occupe", "occupe"] * 6,
+            "pseudo_libre": [True, True, False, False, False] * 6,
+            "pseudo_occupe": [False, True, True, False, False] * 6,
         }
     )
     stations = pd.DataFrame(
@@ -504,7 +524,9 @@ def test_to_sampled_state_grp_and_to_state_grp() -> None:
             "id_station_itinerance": ["s1"] * 6,
         }
     )
-    res = utils.to_sampled_state_grp(test, stations, "id_station_itinerance", 0.01, 0.2)
+    res = utils.to_sampled_state_grp(
+        test, stations, "id_station_itinerance", SATURATION_RATIO_MIN, OVERLOAD_RATIO
+    )
     assert res["sature"][3]
     res = utils.to_sampled_state_grp(
         test,
@@ -515,7 +537,7 @@ def test_to_sampled_state_grp_and_to_state_grp() -> None:
         add_full_use=True,
         add_latency=True,
     )
-    assert (res["sature"] == res["pu"]).all()
+    assert (res["sature"][2:] == res["pu"][2:]).all()
     test.loc[2, "state"] = "libre"
     test.loc[3, "state"] = "libre"
     res = utils.to_sampled_state_grp(
@@ -528,10 +550,11 @@ def test_to_sampled_state_grp_and_to_state_grp() -> None:
         add_latency=True,
     )
     assert not res["sature"][2]
-    assert res["pu"][2]
     assert res["pu"][3]
-    test.loc[6, "state"] = "libre"
-    test.loc[7, "state"] = "libre"
+    assert res["pu"][4]
+    test.loc[4, "state"] = "libre"
+    test.loc[8, "state"] = "libre"
+    test.loc[9, "state"] = "libre"
     res = utils.to_sampled_state_grp(
         test,
         stations,
@@ -541,8 +564,8 @@ def test_to_sampled_state_grp_and_to_state_grp() -> None:
         add_full_use=True,
         add_latency=True,
     )
-    assert res["pu"][2]
-    assert not res["pu"][3]
+    assert res["pu"][3]
+    assert res["pu"][4]
 
     res_d = utils.to_state_grp(res, "id_station_itinerance", 24)
     assert res_d["pu_max"].values[0] == EXPECTED_MAX_DURATION
@@ -605,6 +628,44 @@ def test_maxi_duration() -> None:
     pu_duration = utils.maxi_duration(df, "station", "periode", "occupe")
     assert pu_duration["duration"].iloc[0] == 1
     assert len(pu_duration) == 1
+
+
+def test_full_use_poc() -> None:
+    """Test full_use_poc function."""
+    df = pd.DataFrame(
+        {
+            "occupe": [
+                False,
+                True,
+                True,
+                False,
+                False,
+                False,
+                True,
+                False,
+                False,
+                True,
+                False,
+                True,
+                False,
+                True,
+                True,
+                False,
+                False,
+                True,
+                False,
+                False,
+                False,
+                True,
+                False,
+                False,
+            ],
+            "station": ["s1"] * 12 + ["s2"] * 12,
+        }
+    )
+    df["pu"] = utils.full_use_poc(df["station"], df["occupe"])
+    assert df["pu"].iloc[15]
+    assert not df["pu"].iloc[18]
 
 
 def test_adding_energy_and_number_of_sessions() -> None:
