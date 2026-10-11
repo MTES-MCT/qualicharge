@@ -1,6 +1,7 @@
 """QualiCharge API settings."""
 
 import logging
+from datetime import timedelta
 from pathlib import Path
 from typing import List, Optional
 
@@ -111,6 +112,8 @@ class Settings(BaseSettings):
     PASSWORD_HASHERS: list[str] = [
         "bcrypt",
     ]
+    PASSWORD_RENEWAL_EXPIRES: bool = True
+    PASSWORD_RENEWAL_EXPIRACY_DELAY: timedelta = timedelta(weeks=4)
 
     @computed_field  # type: ignore[misc]
     @property

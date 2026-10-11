@@ -1,16 +1,20 @@
 """QualiCharge authentication schemas."""
 
+import logging
+from datetime import datetime, timezone
 from enum import StrEnum
 from typing import List, Optional
 from uuid import UUID, uuid4
 
-from pydantic import EmailStr, PastDatetime
+from pydantic import EmailStr, FutureDate, PastDatetime
 from sqlalchemy.types import ARRAY, DateTime, String
 from sqlmodel import Field, Relationship, SQLModel
 
 from qualicharge.conf import settings
 from qualicharge.schemas import BaseAuditableSQLModel
 from qualicharge.schemas.core import OperationalUnit
+
+logger = logging.getLogger(__name__)
 
 
 # -- Many-to-many relationships
@@ -75,6 +79,12 @@ class User(BaseAuditableSQLModel, table=True):
     first_name: Optional[str] = Field(max_length=150)
     last_name: Optional[str] = Field(max_length=150)
     password: str = Field(max_length=128)
+    old_password: Optional[str] = Field(max_length=128)
+    old_password_expires_at: Optional[FutureDate] = Field(
+        sa_type=DateTime(timezone=True),
+        description=("The timestamp indicating when the user's old password expires."),
+        nullable=True,
+    )  # type: ignore
     is_active: bool = False
     is_staff: bool = False
     is_superuser: bool = False
@@ -111,9 +121,42 @@ class User(BaseAuditableSQLModel, table=True):
             for operational_unit in group.operational_units
         ]
 
-    def check_password(self, password: str) -> bool:
-        """Check raw password hash compared to database hashed password."""
-        return settings.PASSWORD_CONTEXT.verify(password, self.password)
+    def check_password(self, password: str) -> tuple[bool, bool]:
+        """Check raw password hash compared to database hashed password.
+
+        Returns:
+            [is_valid, used_old_password]: if password check validates against
+                `password` or `old_password`, then `is_valid` is True, and if the
+                old password has been used to validate then, `used_old_password`
+                is also True.
+        """
+        if settings.PASSWORD_CONTEXT.verify(password, self.password):
+            return True, False
+
+        # Should we fallback to the old password?
+        if not self.old_password:
+            return False, False
+
+        # Does it expired?
+        now = datetime.now(timezone.utc)
+        if (
+            self.old_password_expires_at is not None
+            and self.old_password_expires_at < now
+        ):
+            return False, True
+
+        # Fallback to the old password with a warning
+        logger.warning("Old password is still in use for user %s", self.username)
+        return settings.PASSWORD_CONTEXT.verify(password, self.old_password), True
+
+    def clean_old_password(self):
+        """Clean old password.
+
+        Should be called when the new password has been successfully used or when the
+        old password expired.
+        """
+        self.old_password = None
+        self.old_password_expires_at = None
 
 
 class Group(BaseAuditableSQLModel, table=True):

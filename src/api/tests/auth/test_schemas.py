@@ -1,5 +1,8 @@
 """Tests for qualicharge.auth.schemas module."""
 
+import logging
+from datetime import datetime, timedelta, timezone
+
 import pytest
 from sqlmodel import select
 
@@ -106,16 +109,11 @@ def test_user_set_password(db_session):
 
     # Create a database user from this user instance
     db_user = User(**user.model_dump())
-
-    # Save user to database
-    db_session.add(db_user)
-    db_session.commit()
-    db_session.refresh(db_user)
     assert settings.PASSWORD_CONTEXT.identify(db_user.password)
 
 
 def test_user_check_password(db_session):
-    """Test user check_password validator."""
+    """Test user check_password method."""
     UserFactory.__session__ = db_session
 
     user = UserFactory.build()
@@ -123,12 +121,63 @@ def test_user_check_password(db_session):
         user.password = UserCreate.set_password(None)
     user.password = UserCreate.set_password("foo")
 
-    # Save user to database
-    db_session.add(user)
-    db_session.commit()
-    db_session.refresh(user)
+    # Check password
+    assert settings.PASSWORD_CONTEXT.identify(user.password)
+    # We did not fall back to the old password
+    assert user.check_password("bar") == (False, False)
+    assert user.check_password("foo") == (True, False)
+
+
+def test_user_check_password_with_old_passord(db_session, caplog):
+    """Test user check_password method using the old password."""
+    UserFactory.__session__ = db_session
+
+    caplog.set_level(logging.INFO)
+    user = UserFactory.build()
+    user.password = UserCreate.set_password("foo")
+    user.old_password = UserCreate.set_password("bar")
+    user.old_password_expires_at = datetime.now(timezone.utc) + timedelta(days=1)
 
     # Check password
     assert settings.PASSWORD_CONTEXT.identify(user.password)
-    assert user.check_password("bar") is False
-    assert user.check_password("foo")
+    assert settings.PASSWORD_CONTEXT.identify(user.old_password)
+
+    # We felt back to the old password
+    assert user.check_password("bar") == (True, True)
+
+    # We should have logged a message
+    assert caplog.record_tuples == [
+        ("schema", logging.WARNING, "Old password is still in use for user johndoe")
+    ]
+
+    # The new password is ok
+    assert user.check_password("foo") == (True, False)
+
+
+def test_user_check_password_with_expired_old_passord(db_session):
+    """Test user check_password method using the expired old password."""
+    UserFactory.__session__ = db_session
+
+    user = UserFactory.build()
+    user.password = UserCreate.set_password("foo")
+    user.old_password = UserCreate.set_password("bar")
+    user.old_password_expires_at = datetime.now(timezone.utc) - timedelta(days=1)
+
+    # We felt back to the old password that expired
+    assert user.check_password("bar") == (False, True)
+
+
+def test_user_clean_old_password(db_session):
+    """Test user clean_old_password method."""
+    UserFactory.__session__ = db_session
+
+    user = UserFactory.build(
+        old_password_expires_at=datetime.now(timezone.utc) + timedelta(days=1)
+    )
+    user.password = UserCreate.set_password("foo")
+    user.old_password = UserCreate.set_password("bar")
+
+    user.clean_old_password()
+
+    assert user.old_password is None
+    assert user.old_password_expires_at is None

@@ -2,6 +2,7 @@
 
 import itertools
 import logging
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Annotated, Optional, Sequence, cast
 
@@ -360,6 +361,7 @@ def update_user(  # noqa: PLR0912, PLR0913, PLR0915
     email: Optional[str] = None,
     first_name: Optional[str] = None,
     last_name: Optional[str] = None,
+    password: Optional[str] = None,
     scopes: Optional[list[str]] = None,
     groups: Optional[list[str]] = None,
     is_active: Optional[bool] = None,
@@ -399,6 +401,13 @@ def update_user(  # noqa: PLR0912, PLR0913, PLR0915
         questionary.password(
             "Confirm password:", validate=lambda value: value == password
         ).ask()
+    if password:
+        if settings.PASSWORD_RENEWAL_EXPIRES:
+            now = datetime.now(timezone.utc)
+            db_user.old_password_expires_at = (
+                now + settings.PASSWORD_RENEWAL_EXPIRACY_DELAY
+            )
+        db_user.old_password = db_user.password
         db_user.password = settings.PASSWORD_CONTEXT.hash(password)
     if scopes:
         db_user.scopes = [ScopesEnum(scope) for scope in scopes if scope in ScopesEnum]
