@@ -1,16 +1,20 @@
 """QualiCharge authentication schemas."""
 
+import logging
+from datetime import datetime, timezone
 from enum import StrEnum
 from typing import List, Optional
 from uuid import UUID, uuid4
 
-from pydantic import EmailStr, PastDatetime
+from pydantic import EmailStr, FutureDatetime, PastDatetime
 from sqlalchemy.types import ARRAY, DateTime, String
 from sqlmodel import Field, Relationship, SQLModel
 
 from qualicharge.conf import settings
 from qualicharge.schemas import BaseAuditableSQLModel
 from qualicharge.schemas.core import OperationalUnit
+
+logger = logging.getLogger(__name__)
 
 
 # -- Many-to-many relationships
@@ -61,12 +65,22 @@ class ScopesEnum(StrEnum):
     TARIFF_DELETE = "tariff:delete"
 
 
+class PasswordCheckStatus(StrEnum):
+    """Password check status."""
+
+    VALID = "valid"
+    INVALID = "invalid"
+    OLD = "old"
+    EXPIRED = "expired"
+
+
 # -- Core schemas
 class User(BaseAuditableSQLModel, table=True):
     """QualiCharge User."""
 
     __versioned__ = {
-        "exclude": BaseAuditableSQLModel.__versioned__["exclude"] + ["password"]
+        "exclude": BaseAuditableSQLModel.__versioned__["exclude"]
+        + ["password", "old_password"]
     }
 
     id: UUID = Field(default_factory=uuid4, primary_key=True)
@@ -75,6 +89,12 @@ class User(BaseAuditableSQLModel, table=True):
     first_name: Optional[str] = Field(max_length=150)
     last_name: Optional[str] = Field(max_length=150)
     password: str = Field(max_length=128)
+    old_password: Optional[str] = Field(max_length=128)
+    old_password_expires_at: Optional[FutureDatetime] = Field(
+        sa_type=DateTime(timezone=True),
+        description=("The timestamp indicating when the user's old password expires."),
+        nullable=True,
+    )  # type: ignore
     is_active: bool = False
     is_staff: bool = False
     is_superuser: bool = False
@@ -111,9 +131,42 @@ class User(BaseAuditableSQLModel, table=True):
             for operational_unit in group.operational_units
         ]
 
-    def check_password(self, password: str) -> bool:
-        """Check raw password hash compared to database hashed password."""
-        return settings.PASSWORD_CONTEXT.verify(password, self.password)
+    def check_password(self, password: str) -> PasswordCheckStatus:
+        """Check raw password hash compared to database hashed passwords.
+
+        Returns:
+            The password check status:
+            - `valid`: the password validated against `password`
+            - `old`: the password validated against `old_password` (grace period)
+            - `expired`: the old password expired and cannot be used anymore
+            - `invalid`: the password matches neither `password` nor `old_password`
+        """
+        if settings.PASSWORD_CONTEXT.verify(password, self.password):
+            return PasswordCheckStatus.VALID
+
+        # Should we fallback to the old password?
+        if not self.old_password:
+            return PasswordCheckStatus.INVALID
+
+        # Does it expired?
+        now = datetime.now(timezone.utc)
+        if self.old_password_expires_at is None or self.old_password_expires_at < now:
+            return PasswordCheckStatus.EXPIRED
+
+        # Fallback to the old password with a warning
+        if settings.PASSWORD_CONTEXT.verify(password, self.old_password):
+            logger.warning("Old password is still in use for user %s", self.username)
+            return PasswordCheckStatus.OLD
+        return PasswordCheckStatus.INVALID
+
+    def clean_old_password(self):
+        """Clean old password.
+
+        Should be called when the new password has been successfully used or when the
+        old password expired.
+        """
+        self.old_password = None
+        self.old_password_expires_at = None
 
 
 class Group(BaseAuditableSQLModel, table=True):

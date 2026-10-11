@@ -2,6 +2,8 @@
 
 import itertools
 import logging
+import sys
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Annotated, Optional, Sequence, cast
 
@@ -360,6 +362,7 @@ def update_user(  # noqa: PLR0912, PLR0913, PLR0915
     email: Optional[str] = None,
     first_name: Optional[str] = None,
     last_name: Optional[str] = None,
+    password_stdin: bool = False,
     scopes: Optional[list[str]] = None,
     groups: Optional[list[str]] = None,
     is_active: Optional[bool] = None,
@@ -394,11 +397,32 @@ def update_user(  # noqa: PLR0912, PLR0913, PLR0915
     if set_password:
         if force:
             print("[bold red]Cannot set password in force mode![/bold red]")
-            raise typer.Exit()
+            raise typer.Exit(1)
         password = questionary.password("Password:").ask()
         questionary.password(
             "Confirm password:", validate=lambda value: value == password
         ).ask()
+    elif password_stdin:
+        password = sys.stdin.readline().rstrip("\n")
+        if not password:
+            print("[bold red]No password provided via stdin![/bold red]")
+            raise typer.Exit(1)
+    else:
+        password = None
+    if password:
+        now = datetime.now(timezone.utc)
+        # Rotate the old password unless a live one is still pending in its
+        # grace period (an old password without expiry is considered expired,
+        # see the User.check_password method)
+        if (
+            not db_user.old_password
+            or db_user.old_password_expires_at is None
+            or db_user.old_password_expires_at <= now
+        ):
+            db_user.old_password = db_user.password
+            db_user.old_password_expires_at = (
+                now + settings.PASSWORD_RENEWAL_EXPIRY_DELAY
+            )
         db_user.password = settings.PASSWORD_CONTEXT.hash(password)
     if scopes:
         db_user.scopes = [ScopesEnum(scope) for scope in scopes if scope in ScopesEnum]
@@ -434,6 +458,9 @@ def update_user(  # noqa: PLR0912, PLR0913, PLR0915
         for field in fields:
             old = getattr(old_user, field)
             new = getattr(db_user, field)
+            if field == "password":
+                old = "•••" if old else None
+                new = "•••" if new else None
             if old != new:
                 table.add_row(field, str(old), str(new))
         # Scopes

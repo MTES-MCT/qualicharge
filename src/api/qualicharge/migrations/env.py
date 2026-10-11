@@ -38,7 +38,9 @@ config = context.config
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
 if config.config_file_name is not None:
-    fileConfig(config.config_file_name)
+    # Do not disable existing loggers (useful while running test as it would hide
+    # all logs when running alembic stamp).
+    fileConfig(config.config_file_name, disable_existing_loggers=False)
 
 # Set Database URL from QualiCharge API's configuration
 config.set_main_option("sqlalchemy.url", str(settings.DATABASE_URL))
