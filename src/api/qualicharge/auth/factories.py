@@ -43,6 +43,8 @@ class UserFactory(AuditableSQLModelFactory[User]):
     first_name = Use(FrenchDataclassFactory.__faker__.first_name)
     last_name = Use(FrenchDataclassFactory.__faker__.last_name)
     scopes = Use(FrenchDataclassFactory.__random__.sample, list(ScopesEnum), 2)
+    old_password = None
+    old_password_expires_at = None
 
 
 class GroupFactory(AuditableSQLModelFactory[Group]):

@@ -1,6 +1,7 @@
 """Tests for the QualiCharge API auth router."""
 
 import datetime
+from datetime import timedelta, timezone
 
 import jwt
 import pytest
@@ -251,3 +252,108 @@ def test_login(client, db_session, monkeypatch):
     db_session.refresh(user)
     assert user.last_login is not None
     assert user.last_login == frozen
+
+
+def test_login_with_old_password(client, db_session):
+    """Test the login endpoint when using an old password."""
+    user = User(
+        **UserCreate(
+            username="johndoe",
+            password="foo",  # noqa: S106
+            email="john@doe.com",
+            first_name="John",
+            last_name="Doe",
+            is_superuser=False,
+            is_staff=False,
+            is_active=True,
+        ).model_dump(),
+        old_password=UserCreate.set_password("bar"),
+        old_password_expires_at=datetime.datetime.now(timezone.utc) + timedelta(days=1),
+    )
+    db_session.add(user)
+
+    # Login with an old password
+    response = client.post(
+        "/auth/token", data={"username": "johndoe", "password": "bar"}
+    )
+    assert response.status_code == status.HTTP_200_OK
+    token = response.json()
+    assert token["token_type"] == "bearer"  # noqa: S105
+    decoded = jwt.decode(
+        token["access_token"],
+        key=settings.OAUTH2_TOKEN_ENCODING_KEY,
+        algorithms=settings.OAUTH2_TOKEN_ALGORITHMS,
+        audience=settings.OIDC_EXPECTED_AUDIENCE,
+    )
+    id_token = IDToken(**decoded)
+    assert id_token.sub == "johndoe"
+    assert id_token.email == "john@doe.com"
+
+
+def test_login_with_expired_old_password(client, db_session):
+    """Test the login endpoint when using an expired old password."""
+    user = User(
+        **UserCreate(
+            username="johndoe",
+            password="foo",  # noqa: S106
+            email="john@doe.com",
+            first_name="John",
+            last_name="Doe",
+            is_superuser=False,
+            is_staff=False,
+            is_active=True,
+        ).model_dump(),
+        old_password=UserCreate.set_password("bar"),
+        old_password_expires_at=datetime.datetime.now(timezone.utc) - timedelta(days=1),
+    )
+    db_session.add(user)
+
+    # Login with an old password
+    response = client.post(
+        "/auth/token", data={"username": "johndoe", "password": "bar"}
+    )
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED
+    assert response.json() == {
+        "message": "Authentication failed: Wrong login or password"
+    }
+
+
+def test_login_with_new_password_cleans_old_password(client, db_session):
+    """Test the login endpoint when using a new password cleans the old password."""
+    user = User(
+        **UserCreate(
+            username="johndoe",
+            password="foo",  # noqa: S106
+            email="john@doe.com",
+            first_name="John",
+            last_name="Doe",
+            is_superuser=False,
+            is_staff=False,
+            is_active=True,
+        ).model_dump(),
+        old_password=UserCreate.set_password("bar"),
+        old_password_expires_at=datetime.datetime.now(timezone.utc) + timedelta(days=1),
+    )
+    db_session.add(user)
+
+    # Login with an old password
+    response = client.post(
+        "/auth/token", data={"username": "johndoe", "password": "foo"}
+    )
+    assert response.status_code == status.HTTP_200_OK
+    token = response.json()
+    assert token["token_type"] == "bearer"  # noqa: S105
+    decoded = jwt.decode(
+        token["access_token"],
+        key=settings.OAUTH2_TOKEN_ENCODING_KEY,
+        algorithms=settings.OAUTH2_TOKEN_ALGORITHMS,
+        audience=settings.OIDC_EXPECTED_AUDIENCE,
+    )
+    id_token = IDToken(**decoded)
+    assert id_token.sub == "johndoe"
+    assert id_token.email == "john@doe.com"
+
+    # old password fields should have been reset
+    db_session.refresh(user)
+    assert user.old_password is None
+    assert user.old_password_expires_at is None

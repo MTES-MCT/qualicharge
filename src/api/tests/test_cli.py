@@ -2,6 +2,7 @@
 
 import copy
 from contextlib import chdir
+from datetime import datetime, timezone
 from io import StringIO
 from typing import cast
 
@@ -18,8 +19,10 @@ from qualicharge.afirev.models import (
     AfirevPrefixTypeEnum,
 )
 from qualicharge.auth.factories import GroupFactory, UserFactory
+from qualicharge.auth.models import UserCreate
 from qualicharge.auth.schemas import Group, GroupOperationalUnit, User, UserGroup
 from qualicharge.cli import app
+from qualicharge.conf import settings
 from qualicharge.factories.static import StatiqueFactory
 from qualicharge.schemas.core import (
     Amenageur,
@@ -481,6 +484,151 @@ def test_update_user(runner, db_session):
     for field in fields:
         assert getattr(user, field) == getattr(new_user, field)
     assert user.groups == new_user.groups
+
+
+def test_update_user_password(runner, db_session):
+    """Test the `users update --password-stdin` command."""
+    UserFactory.__session__ = db_session
+
+    user = UserFactory.create_sync(
+        password=UserCreate.set_password("foo"),
+        old_password=None,
+        old_password_expires_at=None,
+    )
+    assert user.old_password is None
+    assert user.old_password_expires_at is None
+
+    # Proceed
+    result = runner.invoke(
+        app,
+        ["users", "update", user.username, "--password-stdin", "--force"],
+        obj=db_session,
+        input="bar\n",
+    )
+    assert result.exit_code == 0
+
+    db_session.refresh(user)
+    assert settings.PASSWORD_CONTEXT.verify("bar", user.password)
+    assert settings.PASSWORD_CONTEXT.verify("foo", user.old_password)
+    assert user.old_password_expires_at is not None
+    assert user.old_password_expires_at > datetime.now(timezone.utc)
+
+
+def test_update_user_password_keeps_pending_old_password(runner, db_session):
+    """Test the `users update --password-stdin` command keeps a pending old password."""
+    UserFactory.__session__ = db_session
+
+    user = UserFactory.create_sync(
+        password=UserCreate.set_password("bar"),
+        old_password=UserCreate.set_password("foo"),
+        old_password_expires_at=datetime.now(timezone.utc) + timedelta(weeks=2),
+    )
+
+    # Proceed
+    result = runner.invoke(
+        app,
+        ["users", "update", user.username, "--password-stdin", "--force"],
+        obj=db_session,
+        input="baz\n",
+    )
+    assert result.exit_code == 0
+
+    # The pending old password and its expiry are left untouched
+    db_session.refresh(user)
+    assert settings.PASSWORD_CONTEXT.verify("baz", user.password)
+    assert settings.PASSWORD_CONTEXT.verify("foo", user.old_password)
+    assert not settings.PASSWORD_CONTEXT.verify("bar", user.old_password)
+    assert user.old_password_expires_at is not None
+    assert user.old_password_expires_at < datetime.now(timezone.utc) + timedelta(
+        weeks=4
+    )
+
+
+def test_update_user_password_replaces_expired_old_password(runner, db_session):
+    """Test the `users update --password-stdin` replaces an expired old password."""
+    UserFactory.__session__ = db_session
+
+    user = UserFactory.create_sync(
+        password=UserCreate.set_password("bar"),
+        old_password=UserCreate.set_password("foo"),
+        old_password_expires_at=datetime.now(timezone.utc) - timedelta(weeks=1),
+    )
+
+    # Proceed
+    result = runner.invoke(
+        app,
+        ["users", "update", user.username, "--password-stdin", "--force"],
+        obj=db_session,
+        input="baz\n",
+    )
+    assert result.exit_code == 0
+
+    # The expired old password has been replaced by the previous current password
+    db_session.refresh(user)
+    assert settings.PASSWORD_CONTEXT.verify("baz", user.password)
+    assert settings.PASSWORD_CONTEXT.verify("bar", user.old_password)
+    assert not settings.PASSWORD_CONTEXT.verify("foo", user.old_password)
+    assert user.old_password_expires_at is not None
+    assert user.old_password_expires_at > datetime.now(timezone.utc)
+
+
+def test_update_user_password_with_empty_stdin(runner, db_session):
+    """Test the `users update --password-stdin` command with an empty stdin."""
+    UserFactory.__session__ = db_session
+
+    user = UserFactory.create_sync(
+        password=UserCreate.set_password("foo"),
+        old_password=None,
+        old_password_expires_at=None,
+    )
+
+    # Proceed
+    result = runner.invoke(
+        app,
+        ["users", "update", user.username, "--password-stdin", "--force"],
+        obj=db_session,
+        input="\n",
+    )
+    assert result.exit_code != 0
+
+    # Nothing has changed
+    db_session.refresh(user)
+    assert settings.PASSWORD_CONTEXT.verify("foo", user.password)
+    assert user.old_password is None
+    assert user.old_password_expires_at is None
+
+
+def test_update_user_password_stdin_with_set_password(runner, db_session):
+    """Test the `users update` command with both --set-password and --password-stdin."""
+    UserFactory.__session__ = db_session
+
+    user = UserFactory.create_sync(
+        password=UserCreate.set_password("foo"),
+        old_password=None,
+        old_password_expires_at=None,
+    )
+
+    # Proceed (--set-password takes precedence and forbids force mode)
+    result = runner.invoke(
+        app,
+        [
+            "users",
+            "update",
+            user.username,
+            "--password-stdin",
+            "--set-password",
+            "--force",
+        ],
+        obj=db_session,
+        input="bar\n",
+    )
+    assert result.exit_code != 0
+
+    # Nothing has changed
+    db_session.refresh(user)
+    assert settings.PASSWORD_CONTEXT.verify("foo", user.password)
+    assert user.old_password is None
+    assert user.old_password_expires_at is None
 
 
 def test_delete_user(runner, db_session):

@@ -1,11 +1,21 @@
 """Tests for qualicharge.auth.schemas module."""
 
+import logging
+from datetime import datetime, timedelta, timezone
+
 import pytest
+from sqlalchemy.types import UUID
 from sqlmodel import select
 
 from qualicharge.auth.factories import GroupFactory, UserFactory
 from qualicharge.auth.models import UserCreate
-from qualicharge.auth.schemas import GroupOperationalUnit, ScopesEnum, User, UserGroup
+from qualicharge.auth.schemas import (
+    GroupOperationalUnit,
+    PasswordCheckStatus,
+    ScopesEnum,
+    User,
+    UserGroup,
+)
 from qualicharge.conf import settings
 from qualicharge.schemas.core import OperationalUnit
 
@@ -106,16 +116,11 @@ def test_user_set_password(db_session):
 
     # Create a database user from this user instance
     db_user = User(**user.model_dump())
-
-    # Save user to database
-    db_session.add(db_user)
-    db_session.commit()
-    db_session.refresh(db_user)
     assert settings.PASSWORD_CONTEXT.identify(db_user.password)
 
 
 def test_user_check_password(db_session):
-    """Test user check_password validator."""
+    """Test user check_password method."""
     UserFactory.__session__ = db_session
 
     user = UserFactory.build()
@@ -123,12 +128,156 @@ def test_user_check_password(db_session):
         user.password = UserCreate.set_password(None)
     user.password = UserCreate.set_password("foo")
 
-    # Save user to database
+    # Check password
+    assert settings.PASSWORD_CONTEXT.identify(user.password)
+    # There is no old password to fall back to
+    assert user.check_password("bar") is PasswordCheckStatus.INVALID
+    assert user.check_password("foo") is PasswordCheckStatus.VALID
+
+
+def test_user_check_password_with_old_password(db_session, caplog):
+    """Test user check_password method using the old password."""
+    UserFactory.__session__ = db_session
+
+    caplog.set_level(logging.INFO)
+    user = UserFactory.build()
+    user.password = UserCreate.set_password("foo")
+    user.old_password = UserCreate.set_password("bar")
+    user.old_password_expires_at = datetime.now(timezone.utc) + timedelta(days=1)
+
+    # Check password
+    assert settings.PASSWORD_CONTEXT.identify(user.password)
+    assert settings.PASSWORD_CONTEXT.identify(user.old_password)
+
+    # We felt back to the old password
+    assert user.check_password("bar") is PasswordCheckStatus.OLD
+
+    # We should have logged a message
+    assert (
+        "qualicharge.auth.schemas",
+        logging.WARNING,
+        f"Old password is still in use for user {user.username}",
+    ) in caplog.record_tuples
+
+    # The new password is ok
+    assert user.check_password("foo") is PasswordCheckStatus.VALID
+
+
+def test_user_check_password_with_expired_old_password(db_session):
+    """Test user check_password method using the expired old password."""
+    UserFactory.__session__ = db_session
+
+    user = UserFactory.build()
+    user.password = UserCreate.set_password("foo")
+    user.old_password = UserCreate.set_password("bar")
+    user.old_password_expires_at = datetime.now(timezone.utc) - timedelta(days=1)
+
+    # The old password expired and cannot be used anymore
+    assert user.check_password("bar") is PasswordCheckStatus.EXPIRED
+
+
+def test_user_check_password_with_old_password_without_expiry(db_session, caplog):
+    """Test user check_password method when old password has no expiry set."""
+    UserFactory.__session__ = db_session
+
+    caplog.set_level(logging.INFO)
+    user = UserFactory.build()
+    user.password = UserCreate.set_password("foo")
+    user.old_password = UserCreate.set_password("bar")
+
+    # An old password without expiry is considered expired
+    assert user.check_password("bar") is PasswordCheckStatus.EXPIRED
+
+    # No fallback warning should have been logged
+    assert (
+        "qualicharge.auth.schemas",
+        logging.WARNING,
+        f"Old password is still in use for user {user.username}",
+    ) not in caplog.record_tuples
+
+
+def test_user_check_password_with_old_password_and_unknown_candidate(db_session):
+    """Test user check_password method when candidate matches neither password."""
+    UserFactory.__session__ = db_session
+
+    user = UserFactory.build()
+    user.password = UserCreate.set_password("foo")
+    user.old_password = UserCreate.set_password("bar")
+    user.old_password_expires_at = datetime.now(timezone.utc) + timedelta(days=1)
+
+    # The candidate matches neither the new nor the old password
+    assert user.check_password("baz") is PasswordCheckStatus.INVALID
+
+
+def test_user_clean_old_password(db_session):
+    """Test user clean_old_password method."""
+    UserFactory.__session__ = db_session
+
+    user = UserFactory.build(
+        old_password_expires_at=datetime.now(timezone.utc) + timedelta(days=1)
+    )
+    user.password = UserCreate.set_password("foo")
+    user.old_password = UserCreate.set_password("bar")
+
+    user.clean_old_password()
+
+    assert user.old_password is None
+    assert user.old_password_expires_at is None
+
+
+def test_user_password_rotation_audits(db_session, versioning_manager):
+    """Test that password hashes are excluded from the audit trail."""
+    UserFactory.__session__ = db_session
+    Activity = versioning_manager.activity_cls
+
+    user = UserFactory.create_sync()
+
+    def latest_user_activity() -> Activity:
+        return db_session.exec(
+            select(Activity)
+            .where(
+                Activity.table_name == "user",
+                Activity.data["id"].astext.cast(UUID) == user.id,
+            )
+            .order_by(Activity.issued_at.desc())
+        ).first()
+
+    # The insert activity should not expose the password hash
+    activity = latest_user_activity()
+    assert activity.verb == "insert"
+    assert "password" not in activity.changed_data
+    assert "old_password" not in activity.changed_data
+
+    # Rotate the user password
+    user.password = UserCreate.set_password("new-password")
+    user.old_password = UserCreate.set_password("old-password")
+    user.old_password_expires_at = datetime.now(timezone.utc) + timedelta(days=1)
     db_session.add(user)
     db_session.commit()
     db_session.refresh(user)
 
-    # Check password
-    assert settings.PASSWORD_CONTEXT.identify(user.password)
-    assert user.check_password("bar") is False
-    assert user.check_password("foo")
+    # The update activity should not expose password hashes, but should
+    # record the old password expiry timestamp
+    activity = latest_user_activity()
+    assert activity.verb == "update"
+    assert "password" not in activity.changed_data
+    assert "old_password" not in activity.changed_data
+    assert "password" not in activity.old_data
+    assert "old_password" not in activity.old_data
+    assert (
+        datetime.fromisoformat(activity.changed_data["old_password_expires_at"]).date()
+        == user.old_password_expires_at.date()
+    )
+
+    # Clean the old password
+    user.clean_old_password()
+    db_session.add(user)
+    db_session.commit()
+
+    # Neither the update activity nor the audit trail should expose hashes
+    activity = latest_user_activity()
+    assert activity.verb == "update"
+    assert "password" not in activity.changed_data
+    assert "old_password" not in activity.changed_data
+    # The old password expiry reset is tracked (without any hash)
+    assert activity.changed_data["old_password_expires_at"] is None
