@@ -146,9 +146,11 @@ def test_user_check_password_with_old_passord(db_session, caplog):
     assert user.check_password("bar") == (True, True)
 
     # We should have logged a message
-    assert caplog.record_tuples == [
-        ("schema", logging.WARNING, "Old password is still in use for user johndoe")
-    ]
+    assert (
+        "qualicharge.auth.schemas",
+        logging.WARNING,
+        f"Old password is still in use for user {user.username}",
+    ) in caplog.record_tuples
 
     # The new password is ok
     assert user.check_password("foo") == (True, False)
