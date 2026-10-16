@@ -54,7 +54,8 @@ async def login(
         raise AuthenticationError("Wrong login or password")
 
     # Check password
-    if not user.check_password(form_data.password):
+    is_valid, used_old_password = user.check_password(form_data.password)
+    if not is_valid:
         logger.error(f"User {form_data.username} tried to login with a wrong password")
         raise AuthenticationError("Wrong login or password")
 
@@ -67,10 +68,15 @@ async def login(
     now: datetime.datetime = datetime.datetime.now(datetime.timezone.utc)
     now_timestamp: int = int(now.timestamp())
     user.last_login = now
+
+    # Clean old password upon successful login with the new password
+    if user.old_password and not used_old_password:
+        user.clean_old_password()
+
     session.add(user)
     session.commit()
 
-    # Forge Token
+    # Forge the token
     id_token = IDToken(
         iss=str(settings.OAUTH2_TOKEN_ISSUER),
         sub=user.username,

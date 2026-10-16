@@ -8,6 +8,10 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Added
+
+- Allow user password rotation
+
 ## [0.35.0] - 2026-09-18
 
 ### Added

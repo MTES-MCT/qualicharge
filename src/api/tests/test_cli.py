@@ -2,6 +2,7 @@
 
 import copy
 from contextlib import chdir
+from datetime import datetime, timezone
 from io import StringIO
 from typing import cast
 
@@ -18,8 +19,10 @@ from qualicharge.afirev.models import (
     AfirevPrefixTypeEnum,
 )
 from qualicharge.auth.factories import GroupFactory, UserFactory
+from qualicharge.auth.models import UserCreate
 from qualicharge.auth.schemas import Group, GroupOperationalUnit, User, UserGroup
 from qualicharge.cli import app
+from qualicharge.conf import settings
 from qualicharge.factories.static import StatiqueFactory
 from qualicharge.schemas.core import (
     Amenageur,
@@ -481,6 +484,33 @@ def test_update_user(runner, db_session):
     for field in fields:
         assert getattr(user, field) == getattr(new_user, field)
     assert user.groups == new_user.groups
+
+
+def test_update_user_password(runner, db_session):
+    """Test the `users update --password` command."""
+    UserFactory.__session__ = db_session
+
+    user = UserFactory.create_sync(
+        password=UserCreate.set_password("foo"),
+        old_password=None,
+        old_password_expires_at=None,
+    )
+    assert user.old_password is None
+    assert user.old_password_expires_at is None
+
+    # Proceed
+    result = runner.invoke(
+        app,
+        ["users", "update", user.username, "--password", "bar", "--force"],
+        obj=db_session,
+    )
+    assert result.exit_code == 0
+
+    db_session.refresh(user)
+    assert settings.PASSWORD_CONTEXT.verify("bar", user.password)
+    assert settings.PASSWORD_CONTEXT.verify("foo", user.old_password)
+    assert user.old_password_expires_at is not None
+    assert user.old_password_expires_at > datetime.now(timezone.utc)
 
 
 def test_delete_user(runner, db_session):

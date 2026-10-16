@@ -75,6 +75,8 @@ omit = [
 
 [tool.pytest.ini_options]
 addopts = "-v --cov-report term-missing --cov=qualicharge"
+log_cli = true
+log_cli_level = "INFO"
 python_files = [
     "test_*.py",
     "tests.py",

@@ -61,6 +61,7 @@ function reset_password() {
 
   echo "⚙️ Will reset password for API user ${username}"
 
+  # shellcheck disable=SC2046
   # Get user first name and email
   # nota bene: the sed pattern removes ANSI colors from piped stdout (json)
   read -r firstname email <<<$( \
@@ -72,15 +73,7 @@ function reset_password() {
   )
 
   password=$(generate_password)
-
-  expect -c "
-  spawn bash -c \"qcm users update ${username} --set-password\"
-  expect \"*Password*\" {send -- \"${password}\n\"}
-  expect \"*Confirm*\" {send -- \"${password}\n\"}
-  expect \"*Apply*\" {send -- \"y\n\"}
-  interact
-  exit
-  "
+  qcm users update "${username}" --password "${password}" --force
 
   send_password=$(generate_password)
   send_url=$(
