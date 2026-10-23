@@ -29,7 +29,7 @@ build-backend = "hatchling.build"
 
 [dependency-groups]
 dev = [
-  "black==26.5.1",
+  "black==26.10.1",
   "django-debug-toolbar==8.0.0",
   "djlint==1.44.2",
   "factory-boy==3.3.3",
