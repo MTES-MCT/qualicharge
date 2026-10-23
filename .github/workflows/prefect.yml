@@ -107,6 +107,19 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      # pg_restore >= 17 (shipped with the ubuntu-26.04 runners, see
+      # actions/runner-images#14748) emits `SET transaction_timeout = 0;`
+      # which is rejected by the PG 15 server. Install a matching client
+      # and put it first on PATH.
+      - name: Install PostgreSQL 15 client tools
+        run: |
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl --fail -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          . /etc/os-release
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt ${VERSION_CODENAME}-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list > /dev/null
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends postgresql-client-15
+          echo "/usr/lib/postgresql/15/bin" >> "$GITHUB_PATH"
       - name: Create Indicators database
         run: |
           psql "postgresql://qualicharge:pass@localhost:5432/postgres" -c 'create database "qualicharge-indicators"'
