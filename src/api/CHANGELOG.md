@@ -8,6 +8,16 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.35.1] - 2026-10-24
+
+### Changed
+
+#### Dependencies
+
+- Upgrade `pyjwt` to `2.15.0`
+- Upgrade transitive dependencies: `anyio` to `4.14.2`, `certifi` to
+  `2026.10.23`, `mako` to `1.4.3`, `pymongo` to `4.19.0`, `urllib3` to `2.8.0`
+
 ## [0.35.0] - 2026-09-18
 
 ### Added
@@ -810,7 +820,8 @@ update` command
 
 - Implement base FastAPI app
 
-[unreleased]: https://github.com/MTES-MCT/qualicharge/compare/v0.35.0...main
+[unreleased]: https://github.com/MTES-MCT/qualicharge/compare/v0.35.1...main
+[0.35.1]: https://github.com/MTES-MCT/qualicharge/compare/v0.35.0...v0.35.1
 [0.35.0]: https://github.com/MTES-MCT/qualicharge/compare/v0.34.1...v0.35.0
 [0.34.1]: https://github.com/MTES-MCT/qualicharge/compare/v0.34.0...v0.34.1
 [0.34.0]: https://github.com/MTES-MCT/qualicharge/compare/v0.33.1...v0.34.0
