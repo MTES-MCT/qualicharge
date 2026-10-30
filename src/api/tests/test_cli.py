@@ -2,7 +2,7 @@
 
 import copy
 from contextlib import chdir
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from io import StringIO
 from typing import cast
 
@@ -20,7 +20,13 @@ from qualicharge.afirev.models import (
 )
 from qualicharge.auth.factories import GroupFactory, UserFactory
 from qualicharge.auth.models import UserCreate
-from qualicharge.auth.schemas import Group, GroupOperationalUnit, User, UserGroup
+from qualicharge.auth.schemas import (
+    Group,
+    GroupOperationalUnit,
+    PasswordCheckStatus,
+    User,
+    UserGroup,
+)
 from qualicharge.cli import app
 from qualicharge.conf import settings
 from qualicharge.factories.static import StatiqueFactory
@@ -629,6 +635,164 @@ def test_update_user_password_stdin_with_set_password(runner, db_session):
     assert settings.PASSWORD_CONTEXT.verify("foo", user.password)
     assert user.old_password is None
     assert user.old_password_expires_at is None
+
+
+def test_clean_users_expired_old_password(runner, db_session):
+    """Test the `users clean` command cleans expired old passwords."""
+    UserFactory.__session__ = db_session
+
+    # Create a user with an expired old password
+    user = UserFactory.create_sync(
+        password=UserCreate.set_password("foo"),
+        old_password=UserCreate.set_password("bar"),
+        old_password_expires_at=datetime.now(timezone.utc) - timedelta(weeks=1),
+    )
+
+    # Proceed
+    result = runner.invoke(app, ["users", "clean", "--force"], obj=db_session)
+    assert result.exit_code == 0
+
+    # The expired old password has been cleaned
+    db_session.refresh(user)
+    assert user.old_password is None
+    assert user.old_password_expires_at is None
+
+
+def test_clean_users_with_old_password_without_expiry(runner, db_session):
+    """Test the `users clean` command when old password has no expiry set."""
+    UserFactory.__session__ = db_session
+
+    # Create a user with an old password that has no expiry timestamp
+    user = UserFactory.create_sync(
+        password=UserCreate.set_password("foo"),
+        old_password=UserCreate.set_password("bar"),
+        old_password_expires_at=None,
+    )
+
+    # Proceed
+    result = runner.invoke(app, ["users", "clean", "--force"], obj=db_session)
+    assert result.exit_code == 0
+
+    # The old password is considered expired and has been cleaned
+    db_session.refresh(user)
+    assert user.old_password is None
+    assert user.old_password_expires_at is None
+
+
+def test_clean_users_does_not_clean_valid_old_password(runner, db_session):
+    """Test the `users clean` command does not clean valid old passwords."""
+    UserFactory.__session__ = db_session
+
+    # Create a user with an old password still in its grace period
+    user = UserFactory.create_sync(
+        password=UserCreate.set_password("foo"),
+        old_password=UserCreate.set_password("bar"),
+        old_password_expires_at=datetime.now(timezone.utc) + timedelta(weeks=1),
+    )
+
+    # Proceed
+    result = runner.invoke(app, ["users", "clean", "--force"], obj=db_session)
+    assert result.exit_code == 0
+
+    # The old password has not been cleaned
+    db_session.refresh(user)
+    assert user.old_password is not None
+    assert user.old_password_expires_at is not None
+
+
+def test_clean_users_with_no_old_password(runner, db_session):
+    """Test the `users clean` command when no user has an old password."""
+    UserFactory.__session__ = db_session
+
+    # Create a user without any old password
+    user = UserFactory.create_sync(
+        password=UserCreate.set_password("foo"),
+        old_password=None,
+        old_password_expires_at=None,
+    )
+
+    # Proceed
+    result = runner.invoke(app, ["users", "clean", "--force"], obj=db_session)
+    assert result.exit_code == 0
+    assert "No expired old passwords to clean" in result.stdout
+
+    # Nothing has changed
+    db_session.refresh(user)
+    assert user.old_password is None
+    assert user.old_password_expires_at is None
+    assert user.check_password("foo") == PasswordCheckStatus.VALID
+
+
+def test_clean_users_unknown_username(runner, db_session):
+    """Test the `users clean` command with an unknown username."""
+    result = runner.invoke(app, ["users", "clean", "johndoe"], obj=db_session)
+    assert result.exit_code == 0
+    assert "No expired old passwords to clean for user johndoe" in result.stdout
+
+
+def test_clean_users_with_confirmation(runner, db_session):
+    """Test the `users clean` command confirmation."""
+    UserFactory.__session__ = db_session
+
+    # Create a user with an expired old password
+    user = UserFactory.create_sync(
+        password=UserCreate.set_password("foo"),
+        old_password=UserCreate.set_password("bar"),
+        old_password_expires_at=datetime.now(timezone.utc) - timedelta(weeks=1),
+    )
+
+    # Decline the confirmation
+    result = runner.invoke(app, ["users", "clean"], obj=db_session, input="N\n")
+    assert result.exit_code == 1
+
+    # Nothing has changed
+    db_session.refresh(user)
+    assert user.old_password is not None
+    assert user.old_password_expires_at is not None
+
+    # Accept the confirmation
+    result = runner.invoke(app, ["users", "clean"], obj=db_session, input="y\n")
+    assert result.exit_code == 0
+
+    # The expired old password has been cleaned
+    db_session.refresh(user)
+    assert user.old_password is None
+    assert user.old_password_expires_at is None
+
+
+def test_clean_users_bulk_mode(runner, db_session):
+    """Test the `users clean` command cleans all expired old passwords."""
+    UserFactory.__session__ = db_session
+
+    # Create users with expired and valid old passwords
+    n_expired = 3
+    expired_users = UserFactory.create_batch_sync(
+        n_expired,
+        password=UserCreate.set_password("foo"),
+        old_password=UserCreate.set_password("bar"),
+        old_password_expires_at=datetime.now(timezone.utc) - timedelta(weeks=1),
+    )
+    valid_user = UserFactory.create_sync(
+        password=UserCreate.set_password("foo"),
+        old_password=UserCreate.set_password("bar"),
+        old_password_expires_at=datetime.now(timezone.utc) + timedelta(weeks=1),
+    )
+
+    # Proceed
+    result = runner.invoke(app, ["users", "clean", "--force"], obj=db_session)
+    assert result.exit_code == 0
+    assert f"{n_expired} user(s)" in result.stdout
+
+    # Expired old passwords have been cleaned
+    for user in expired_users:
+        db_session.refresh(user)
+        assert user.old_password is None
+        assert user.old_password_expires_at is None
+
+    # The valid old password has not been cleaned
+    db_session.refresh(valid_user)
+    assert valid_user.old_password is not None
+    assert valid_user.old_password_expires_at is not None
 
 
 def test_delete_user(runner, db_session):

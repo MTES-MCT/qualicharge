@@ -11,6 +11,9 @@
     },
     {
       "command": "42 3 * * * ${DYNAMIC_CLEAN} && dbclient-fetcher psql && psql --set=drop_after=\"${DYNAMIC_CLEAN_AFTER}\" $SCALINGO_POSTGRESQL_URL -f scripts/data_retention_procedure.sql"
+    },
+    {
+      "command": "14 4 * * * qcm users clean --force"
     }
   ]
 }
