@@ -6,20 +6,20 @@ name = "qualicharge-dashboard"
 version = "0.4.0"
 requires-python = "~=3.12.0"
 dependencies = [
-  "Django==6.0.8",
-  "django-anymail==15.1",
-  "django-dsfr==3.6.0",
+  "Django==6.1.2",
+  "django-anymail==15.2",
+  "django-dsfr==3.6.1",
   "django-environ==0.14.0",
   "django-extensions==4.1",
-  "django-stubs[compatible-mypy]==6.1.0",
+  "django-stubs[compatible-mypy]==6.1.2",
   "gunicorn==26.2.0",
   "jsonschema==4.26.0",
   "mozilla-django-oidc==5.0.2",
-  "psycopg[pool,binary]==3.3.5",
-  "python-dateutil==2.9.0.post0",
+  "psycopg[pool,binary]==3.3.6",
+  "python-dateutil==3.0.0",
   "qualicharge-client==0.3.0",
   "requests==2.34.2",
-  "sentry-sdk[django]==2.68.1",
+  "sentry-sdk[django]==2.73.0",
   "whitenoise==6.12.0",
 ]
 
@@ -31,21 +31,21 @@ build-backend = "hatchling.build"
 dev = [
   "black==26.10.1",
   "django-debug-toolbar==8.0.0",
-  "djlint==1.44.2",
+  "djlint==1.47.0",
   "factory-boy==3.3.3",
   "honcho==2.0.0",
   "mock==5.2.0",
-  "mypy==2.3.1",
+  "mypy==2.4.0",
   "pytest==9.1.1",
   "pytest-asyncio==1.4.0",
   "pytest-cov==7.1.0",
   "pytest-django==4.14.0",
   "pytest-httpx==0.36.2",
   "responses==0.26.3",
-  "ruff==0.16.5",
+  "ruff==0.17.2",
   "types-mock==5.2.0.20260518",
-  "types-python-dateutil==2.9.0.20260807",
-  "types-requests==2.33.0.20260712",
+  "types-python-dateutil==2.9.0.20261021",
+  "types-requests==2.33.0.20261006",
 ]
 
 [tool.uv]
