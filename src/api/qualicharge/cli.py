@@ -17,7 +17,7 @@ from rich.table import Table
 from sqlalchemy import Column as SAColumn
 from sqlalchemy_utils import refresh_materialized_view
 from sqlmodel import Session as SMSession
-from sqlmodel import select
+from sqlmodel import or_, select
 
 from .afirev.client import AfirevClient
 from .auth.models import UserCreate
@@ -505,6 +505,67 @@ def delete_user(ctx: typer.Context, username: str, force: bool = False):
     session.commit()
 
     print(f"[bold yellow]User {username} deleted.[/bold yellow]")
+
+
+@users_app.command("clean")
+def clean_users(
+    ctx: typer.Context,
+    username: Annotated[Optional[str], typer.Argument()] = None,
+    force: bool = False,
+):
+    """Clean expired old passwords.
+
+    By default, expired old passwords are cleaned for all users. Pass an optional
+    username to only clean a specific user.
+    """
+    session: SMSession = ctx.obj
+
+    # An old password is expired if no expiry timestamp is set or if it is in
+    # the past (see the User.check_password method)
+    now = datetime.now(timezone.utc)
+    stmt = select(User).where(
+        cast(SAColumn, User.old_password).is_not(None),
+        or_(
+            cast(SAColumn, User.old_password_expires_at).is_(None),
+            cast(SAColumn, User.old_password_expires_at) < now,
+        ),
+    )
+    if username:
+        stmt = stmt.where(User.username == username)
+    users_to_clean = session.exec(stmt).all()
+
+    # Nothing to clean
+    if not len(users_to_clean):
+        scope = f"user {username}" if username else "any user"
+        console.log(f"No expired old passwords to clean for {scope}.")
+        raise typer.Exit(0)
+
+    # Ask for confirmation
+    if not force:
+        table = Table(title="Users with expired old passwords")
+        table.add_column("Username", style="cyan", no_wrap=True)
+        table.add_column("Old password expired at", style="red")
+        for user in users_to_clean:
+            table.add_row(
+                user.username,
+                (
+                    str(user.old_password_expires_at)
+                    if user.old_password_expires_at
+                    else "N/A"
+                ),
+            )
+        console.print(table)
+        typer.confirm("Clean above user(s) expired old passwords?", abort=True)
+
+    for user in users_to_clean:
+        user.clean_old_password()
+    session.add_all(users_to_clean)
+    session.commit()
+
+    print(
+        f"[bold green]Cleaned expired old passwords for "
+        f"{len(users_to_clean)} user(s).[/bold green]"
+    )
 
 
 @operational_units_app.command("list")
