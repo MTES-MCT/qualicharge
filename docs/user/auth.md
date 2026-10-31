@@ -181,3 +181,26 @@ Expected JSON response should describe your user account:
 
 Now that you are able to login to the API and perform requests, it's time to
 explore API endpoints and what you can achieve with them.
+
+## Password rotation
+
+When your password is reset by an administrator, your previous password keeps
+working for a limited grace period (4 weeks by default). This is meant to ease
+the transition: any automated process that still uses the old password won't
+break immediately.
+
+During this period:
+
+- Login attempts with your **old password** are still accepted, and the new
+  password should be used as soon as possible.
+- Login with your **new password** immediately deactivates the old one.
+- Once the grace period expires, the old password is rejected.
+
+> :information_source: If your password is reset again while a grace period is
+> still running, your previous old password is preserved: the newest working
+> password becomes the new one and the original old password stays valid until
+> the end of the grace period.
+
+> :warning: Please note that using the old password during the grace period is
+> logged as a warning by the API. Make sure to update any scripts or processes
+> that rely on it as soon as you receive your new credentials.

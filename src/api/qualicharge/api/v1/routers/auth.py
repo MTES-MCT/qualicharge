@@ -12,7 +12,7 @@ from sqlmodel import select
 
 from qualicharge.auth.models import IDToken, Token, UserRead
 from qualicharge.auth.oidc import get_user
-from qualicharge.auth.schemas import User
+from qualicharge.auth.schemas import PasswordCheckStatus, User
 from qualicharge.conf import settings
 from qualicharge.db import get_session
 from qualicharge.exceptions import AuthenticationError
@@ -54,7 +54,8 @@ async def login(
         raise AuthenticationError("Wrong login or password")
 
     # Check password
-    if not user.check_password(form_data.password):
+    password_check = user.check_password(form_data.password)
+    if password_check not in (PasswordCheckStatus.VALID, PasswordCheckStatus.OLD):
         logger.error(f"User {form_data.username} tried to login with a wrong password")
         raise AuthenticationError("Wrong login or password")
 
@@ -67,10 +68,15 @@ async def login(
     now: datetime.datetime = datetime.datetime.now(datetime.timezone.utc)
     now_timestamp: int = int(now.timestamp())
     user.last_login = now
+
+    # Clean old password upon successful login with the new password
+    if password_check is PasswordCheckStatus.VALID:
+        user.clean_old_password()
+
     session.add(user)
     session.commit()
 
-    # Forge Token
+    # Forge the token
     id_token = IDToken(
         iss=str(settings.OAUTH2_TOKEN_ISSUER),
         sub=user.username,
