@@ -19,12 +19,21 @@ function generate_password() {
 }
 
 # QualiCharge API
+#
+# If the SCALINGO_RUN_FILE environment variable is defined, this file is
+# uploaded to the one-off container (in /tmp/uploads).
 function qcm() {
+
+  local -a run_opts=()
+
+  if [[ -n "${SCALINGO_RUN_FILE:-}" ]]; then
+    run_opts+=(--file "${SCALINGO_RUN_FILE}")
+  fi
 
   scalingo \
     --app "${SCALINGO_APP}" \
     --region osc-fr1 \
-    run --silent -- \
+    run --silent "${run_opts[@]}" -- \
     qcm "$@"
 }
 

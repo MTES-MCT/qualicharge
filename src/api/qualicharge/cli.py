@@ -363,6 +363,7 @@ def update_user(  # noqa: PLR0912, PLR0913, PLR0915
     first_name: Optional[str] = None,
     last_name: Optional[str] = None,
     password_stdin: bool = False,
+    password_file: Optional[Path] = None,
     scopes: Optional[list[str]] = None,
     groups: Optional[list[str]] = None,
     is_active: Optional[bool] = None,
@@ -406,6 +407,12 @@ def update_user(  # noqa: PLR0912, PLR0913, PLR0915
         password = sys.stdin.readline().rstrip("\n")
         if not password:
             print("[bold red]No password provided via stdin![/bold red]")
+            raise typer.Exit(1)
+    elif password_file:
+        with password_file.open() as f:
+            password = f.readline().rstrip("\n")
+        if not password:
+            print("[bold red]No password provided in file![/bold red]")
             raise typer.Exit(1)
     else:
         password = None
