@@ -70,6 +70,17 @@ and this project adheres to
   - "pleine occupation" fields (`pu_cum`, `pu_max`, `pu_len`)
   - sessions activity fields (`sature_max`, `sessions_nb`, `energy_cum`)
 
+#### Dependencies
+
+- Upgrade `geopandas` to `1.2.0`
+- Upgrade `great-expectations` to `1.24.1`
+- Upgrade `pandas` to `3.1.0`
+- Upgrade `prefect` to `3.9.0`
+- Upgrade `psycopg` to `3.3.6`
+- Upgrade `pyarrow` to `26.0.0`
+- Upgrade `pydantic` to `2.14.2`
+- Upgrade `s3fs` to `2026.9.0`
+
 ### Fixed
 
 - Define a correct time range for queries using `lateststatus`

@@ -12,6 +12,27 @@ and this project adheres to
 
 - Allow user password rotation
 
+### Changed
+
+#### Dependencies
+
+- Upgrade `alembic` to `1.20.1`
+- Upgrade `cachetools` to `7.2.7`
+- Upgrade `fastapi` to `0.162.0`
+- Upgrade `geoalchemy2` to `0.20.0`
+- Upgrade `geopandas` to `1.2.0`
+- Upgrade `pandas` to `3.1.0`
+- Upgrade `postgresql-audit` to `0.18.0`
+- Upgrade `psycopg` to `3.3.6`
+- Upgrade `pyarrow` to `26.0.0`
+- Upgrade `pydantic` to `2.14.2`
+- Upgrade `pydantic-settings` to `2.16.2`
+- Upgrade `pyjwt` to `2.15.1`
+- Upgrade `sentry-sdk` to `2.73.0`
+- Upgrade `sqlalchemy-utils` to `0.43.0`
+- Upgrade `sqlmodel` to `0.0.48`
+- Upgrade `typer` to `0.27.3`
+
 ## [0.35.1] - 2026-10-24
 
 ### Changed
