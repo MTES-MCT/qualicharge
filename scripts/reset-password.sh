@@ -47,6 +47,7 @@ function reset_password() {
   local email
   local firstname
   local password
+  local password_file
   local send_password
   local username="${1:-}"
 
@@ -72,7 +73,17 @@ function reset_password() {
   )
 
   password=$(generate_password)
-  qcm users update "${username}" --password-stdin --force <<< "${password}"
+
+  # Upload the password as a file to the one-off container instead of piping it
+  # through stdin: stdin is echoed by the remote TTY, hence leaked in app logs.
+  password_file=$(mktemp)
+  # shellcheck disable=SC2064
+  trap "rm -f '${password_file}'" EXIT
+  printf "%s" "${password}" > "${password_file}"
+  SCALINGO_RUN_FILE="${password_file}" \
+    qcm users update "${username}" \
+      --password-file "/tmp/uploads/$(basename "${password_file}")" \
+      --force
 
   send_password=$(generate_password)
   send_url=$(

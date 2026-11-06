@@ -637,6 +637,75 @@ def test_update_user_password_stdin_with_set_password(runner, db_session):
     assert user.old_password_expires_at is None
 
 
+def test_update_user_password_file(runner, db_session, tmp_path):
+    """Test the `users update --password-file` command."""
+    UserFactory.__session__ = db_session
+
+    user = UserFactory.create_sync(
+        password=UserCreate.set_password("foo"),
+        old_password=None,
+        old_password_expires_at=None,
+    )
+    password_file = tmp_path / "password"
+    password_file.write_text("bar")
+
+    # Proceed
+    result = runner.invoke(
+        app,
+        [
+            "users",
+            "update",
+            user.username,
+            "--password-file",
+            str(password_file),
+            "--force",
+        ],
+        obj=db_session,
+    )
+    assert result.exit_code == 0
+    assert "bar" not in result.output
+
+    db_session.refresh(user)
+    assert settings.PASSWORD_CONTEXT.verify("bar", user.password)
+    assert settings.PASSWORD_CONTEXT.verify("foo", user.old_password)
+    assert user.old_password_expires_at is not None
+    assert user.old_password_expires_at > datetime.now(timezone.utc)
+
+
+def test_update_user_password_with_empty_file(runner, db_session, tmp_path):
+    """Test the `users update --password-file` command with an empty file."""
+    UserFactory.__session__ = db_session
+
+    user = UserFactory.create_sync(
+        password=UserCreate.set_password("foo"),
+        old_password=None,
+        old_password_expires_at=None,
+    )
+    password_file = tmp_path / "password"
+    password_file.write_text("\n")
+
+    # Proceed
+    result = runner.invoke(
+        app,
+        [
+            "users",
+            "update",
+            user.username,
+            "--password-file",
+            str(password_file),
+            "--force",
+        ],
+        obj=db_session,
+    )
+    assert result.exit_code != 0
+
+    # Nothing has changed
+    db_session.refresh(user)
+    assert settings.PASSWORD_CONTEXT.verify("foo", user.password)
+    assert user.old_password is None
+    assert user.old_password_expires_at is None
+
+
 def test_clean_users_expired_old_password(runner, db_session):
     """Test the `users clean` command cleans expired old passwords."""
     UserFactory.__session__ = db_session
