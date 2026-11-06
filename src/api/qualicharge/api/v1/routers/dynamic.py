@@ -2,7 +2,7 @@
 
 import logging
 from threading import Lock
-from typing import Annotated, List, cast
+from typing import Annotated, List, Literal, cast
 from uuid import UUID, uuid4
 
 from annotated_types import Len
@@ -84,7 +84,10 @@ class DynamiqueItemsCreatedResponse(BaseModel):
     ),
     lock=Lock(),
     key=lambda id_pdc_itinerance, session: id_pdc_itinerance,
-    info=settings.API_GET_PDC_ID_CACHE_INFO,
+    info=cast(
+        Literal[False, True],
+        settings.API_GET_PDC_ID_CACHE_INFO,
+    ),
 )
 def get_pdc_id(id_pdc_itinerance: str, session: Session, active: bool = True) -> UUID:
     """Get (active) PointDeCharge.id from an `id_pdc_itinerance`."""

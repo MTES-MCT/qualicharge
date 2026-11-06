@@ -5,7 +5,7 @@ import logging
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Annotated, Optional, Sequence, cast
+from typing import Annotated, Optional, cast
 
 import pandas as pd
 import questionary
@@ -95,13 +95,15 @@ def create_group(
         selected_operational_units = operational_units
 
     # Get database operational_units
-    db_operational_units: Sequence[OperationalUnit] = []
+    db_operational_units: list[OperationalUnit] = []
     if len(selected_operational_units):
-        db_operational_units = session.exec(
-            select(OperationalUnit).filter(
-                cast(SAColumn, OperationalUnit.code).in_(selected_operational_units)
-            )
-        ).all()
+        db_operational_units = list(
+            session.exec(
+                select(OperationalUnit).filter(
+                    cast(SAColumn, OperationalUnit.code).in_(selected_operational_units)
+                )
+            ).all()
+        )
 
     group = Group(name=name, operational_units=db_operational_units)
 
@@ -327,9 +329,11 @@ def create_user(  # noqa: PLR0913
                 ).ask()
     else:
         selected_group_names = groups
-    user_groups = session.exec(
-        select(Group).filter(cast(SAColumn, Group.name).in_(selected_group_names))
-    ).all()
+    user_groups = list(
+        session.exec(
+            select(Group).filter(cast(SAColumn, Group.name).in_(selected_group_names))
+        ).all()
+    )
 
     user = UserCreate(
         username=username,
