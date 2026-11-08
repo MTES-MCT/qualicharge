@@ -10,7 +10,7 @@ from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
-from postgresql_audit.base import versioning_manager
+from postgresql_audit.base import versioning_manager, XID8
 from sqlalchemy import MetaData
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.orm import declarative_base
@@ -38,15 +38,12 @@ def upgrade() -> None:
     op.create_table(
         "transaction",
         sa.Column("id", sa.BigInteger(), nullable=False),
-        sa.Column("native_transaction_id", sa.BigInteger(), nullable=True),
+        sa.Column("native_transaction_id", XID8(), nullable=True),
         sa.Column("issued_at", sa.DateTime(), nullable=True),
         sa.Column("client_addr", postgresql.INET(), nullable=True),
         sa.Column("actor_id", sa.Text(), nullable=True),
-        postgresql.ExcludeConstraint(
-            (sa.column("native_transaction_id"), "="),
-            (sa.text("tsrange(issued_at - INTERVAL '1 hour', issued_at)"), "&&"),
-            using="gist",
-            name="transaction_unique_native_tx_id",
+        sa.UniqueConstraint(
+            "native_transaction_id", name="transaction_unique_native_tx_id"
         ),
         sa.PrimaryKeyConstraint("id"),
     )
@@ -57,7 +54,7 @@ def upgrade() -> None:
         sa.Column("table_name", sa.Text(), nullable=True),
         sa.Column("relid", sa.Integer(), nullable=True),
         sa.Column("issued_at", sa.DateTime(), nullable=True),
-        sa.Column("native_transaction_id", sa.BigInteger(), nullable=True),
+        sa.Column("native_transaction_id", XID8(), nullable=True),
         sa.Column("verb", sa.Text(), nullable=True),
         sa.Column(
             "old_data",

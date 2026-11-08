@@ -33,6 +33,13 @@ and this project adheres to
 - Upgrade `sqlmodel` to `0.0.48`
 - Upgrade `typer` to `0.27.3`
 
+### Fixed
+
+- Fix `statique` MV spatial index: use a plain column GIST index instead of a
+  functional index over `st_geomfromewkb` (unsupported by GeoAlchemy2 0.20.0)
+- Fix audit `native_transaction_id` columns: migrate them to `xid8` for
+  postgresql-audit 0.18.0 trigger compatibility
+
 ## [0.35.1] - 2026-10-24
 
 ### Changed
