@@ -9,7 +9,6 @@ Create Date: 2025-01-16 15:02:04.004411
 from typing import Sequence, Union
 
 from alembic import op
-from geoalchemy2.functions import ST_GeomFromEWKB
 from geoalchemy2.types import Geometry
 from sqlalchemy import MetaData, select
 from sqlalchemy import cast as SA_cast
@@ -108,7 +107,7 @@ def upgrade() -> None:
     op.create_geospatial_index(
         "idx_statique_coordonneesXY",
         _StatiqueMV.__table__.fullname,
-        [ST_GeomFromEWKB(StatiqueMV.coordonneesXY)],
+        [StatiqueMV.__table__.c.coordonneesXY],
         unique=False,
         postgresql_using="gist",
     )

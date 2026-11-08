@@ -13,7 +13,6 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 from sqlalchemy_utils.view import CreateView, DropView
 
-from geoalchemy2.functions import ST_GeomFromEWKB
 from qualicharge.schemas.core import (
     ActivePointsDeChargeView,
     ActiveStationsView,
@@ -64,7 +63,7 @@ def upgrade() -> None:
     op.create_geospatial_index(
         "idx_statique_coordonneesXY",
         _StatiqueMV.__table__.fullname,
-        [ST_GeomFromEWKB(StatiqueMV.coordonneesXY)],
+        [StatiqueMV.__table__.c.coordonneesXY],
         unique=False,
         postgresql_using="gist",
     )
@@ -101,7 +100,7 @@ def downgrade() -> None:
     op.create_geospatial_index(
         "idx_statique_coordonneesXY",
         _StatiqueMV.__table__.fullname,
-        [ST_GeomFromEWKB(StatiqueMV.coordonneesXY)],
+        [StatiqueMV.__table__.c.coordonneesXY],
         unique=False,
         postgresql_using="gist",
     )
